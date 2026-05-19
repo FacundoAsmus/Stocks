@@ -11,7 +11,8 @@ export function StockCard({ stock }: { stock: StockSummary }) {
   const isPositive = (stock.changePercent ?? 0) >= 0;
   
   // 1. Calculate yesterday's close price to act as our true visual baseline
-  const yesterdayClose = stock.price - (stock.change ?? 0);
+  const currentPrice = stock.price ?? 0;
+  const yesterdayClose = currentPrice - (stock.change ?? 0);
 
   // 2. Inject yesterday's close as the first item in the array if it exists
   const adjustedSparkline = stock.sparkline && stock.sparkline.length > 0
@@ -39,7 +40,8 @@ export function StockCard({ stock }: { stock: StockSummary }) {
           {/* Header and Financials */}
           <div className="flex flex-col gap-2">
             <div className="min-w-0 flex items-center gap-3">
-              {stock.logo ? (
+                {stock.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={stock.logo}
                   alt=""
