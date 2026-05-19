@@ -354,7 +354,7 @@ async function fetchYahooCandles(symbol: string, period: ChartPeriod): Promise<C
         date: new Date(time * 1000).toISOString().slice(0, 10)
       };
     })
-    .filter((point): point is CandlePoint => Boolean(point));
+    .filter((point): point is NonNullable<typeof point> => Boolean(point));
 
   memoryCache.set(cacheKey, { value: candles, expiresAt: Date.now() + 1000 * 60 * 15 });
   return candles;
