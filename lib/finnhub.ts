@@ -252,7 +252,7 @@ function periodToDays(period: ChartPeriod) {
   }
 }
 
-function periodToResolution(period: ChartPeriod): "D" | "W" {
+function periodToResolution(period: ChartPeriod): "60" | "D" | "W" {
   if (period === "1D") return "60";
   return period === "1Y" ? "W" : "D";
 }
