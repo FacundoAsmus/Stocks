@@ -151,31 +151,23 @@ export function Watchlist() {
         }}
       />
       <div className="relative z-10 p-8">
-        <section className="grid grid-cols-2 gap-x-2 gap-y-4 px-1 sm:gap-4 sm:px-4 xl:grid-cols-3 justify-center items-stretch w-full max-w-full overflow-hidden">
-          {displayedStocks.map((stock, index) => (
-            <div
-              key={stock.symbol}
-              draggable
-              onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; handleDragStart(index); }}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDrop={() => handleDrop(index)}
-              onDragEnd={handleDragEnd}
-              className={`cursor-grab active:cursor-grabbing transition-all duration-150 rounded-[32px] ${
-                dragOverIndex === index ? "ring-2 ring-accent/60" : ""
-              }`}
-            >
-              {/* Desktop / Tablet version: Runs normal size */}
-              <div className="hidden sm:block h-full w-full">
-                <StockCard stock={stock} />
-              </div>
-
-              {/* Mobile version: Uniformly zooms down the original card geometry to 62% scale */}
-              <div className="block sm:hidden origin-top-left w-[161.29%] h-[161.29%]" style={{ transform: "scale(0.62)" }}>
-                <StockCard stock={stock} />
-              </div>
-            </div>
-          ))}
-        </section>
+        <section className="grid grid-cols-2 gap-3 px-2 sm:gap-6 sm:px-4 md:grid-cols-2 xl:grid-cols-3 justify-center items-stretch w-full auto-rows-fr">
+                  {displayedStocks.map((stock, index) => (
+                    <div
+                      key={stock.symbol}
+                      draggable
+                      onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; handleDragStart(index); }}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDrop={() => handleDrop(index)}
+                      onDragEnd={handleDragEnd}
+                      className={`cursor-grab active:cursor-grabbing transition-all duration-150 rounded-2xl sm:rounded-[32px] ${
+                        dragOverIndex === index ? "ring-2 ring-accent/60" : ""
+                      }`}
+                    >
+                      <StockCard stock={stock} />
+                    </div>
+                  ))}
+                </section>
       </div>
     </div>
   );

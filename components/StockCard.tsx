@@ -25,58 +25,57 @@ export function StockCard({ stock }: { stock: StockSummary }) {
   const gradientId = `spark-${stock.symbol.replace(/[^a-zA-Z0-9]/g, "")}`;
 
   return (
-    <article className="group relative flex flex-col min-h-[440px] w-full origin-top-left rounded-[32px] border border-border-subtle bg-panel transition-all duration-300 ease-out hover:border-accent/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]">
-      {/* 1. Watchlist Button: Absolutely positioned with a high z-index to stay functional */}
+    <article className="group relative flex flex-col min-h-[260px] sm:min-h-[440px] w-full rounded-2xl sm:rounded-[32px] border border-border-subtle bg-panel transition-all duration-300 ease-out hover:border-accent/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]">
       <div className="absolute right-8 top-8 z-30">
         <AddToWatchlistButton symbol={stock.symbol} name={stock.name} compact />
       </div>
 
       {/* 2. The Link: It now handles the padding (p-8) and expands to fill the entire article shape */}
       <Link 
-        href={`/stock/${stock.symbol}`} 
-        className="z-10 flex flex-1 flex-col p-8 rounded-[32px] outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        href={`/stock/${stock.symbol}`}
+        className="z-10 flex flex-1 flex-col p-4 sm:p-8 rounded-2xl sm:rounded-[32px] outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         {/* Header and Financials */}
           {/* Header and Financials */}
-          <div className="flex flex-col gap-2">
-            <div className="min-w-0 flex items-center gap-3">
-                {stock.logo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={stock.logo}
-                  alt=""
-                  className="h-12 w-12 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
-                />
-              ) : (
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-sm font-semibold text-text-primary">
-                  {stock.symbol.replace("^", "").slice(0, 2)}
-                </div>
-              )}
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight text-text-primary">{stock.symbol}</h2>
-                <p className="text-sm font-medium text-text-muted">{stock.name}</p>
+          <div className="flex flex-col gap-1 sm:gap-2">
+          <div className="min-w-0 flex items-center gap-2 sm:gap-3">
+            {stock.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={stock.logo}
+                alt=""
+                className="h-8 w-8 sm:h-12 sm:w-12 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
+              />
+            ) : (
+              <div className="flex h-8 w-8 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs sm:text-sm font-semibold text-text-primary">
+                {stock.symbol.replace("^", "").slice(0, 2)}
               </div>
-            </div>
-
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-4xl font-semibold tracking-tight text-text-primary">
-                  {formatCurrency(stock.price)}
-                </p>
-                <p className={`mt-1 text-sm font-medium opacity-70 ${isPositive ? "text-positive" : "text-negative"}`}>
-                  {stock.change && stock.change >= 0 ? "+" : ""}
-                  {formatCurrency(stock.change)}
-                </p>
-              </div>
-              <div className={`flex items-center gap-1 text-2xl font-semibold ${isPositive ? "text-positive" : "text-negative"}`}>
-                <span>{isPositive ? "↑" : "↓"}</span>
-                {formatPercent(stock.changePercent)}
-              </div>
+            )}
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-2xl font-bold tracking-tight text-text-primary truncate">{stock.symbol}</h2>
+              <p className="text-xs sm:text-sm font-medium text-text-muted truncate">{stock.name}</p>
             </div>
           </div>
 
+          <div className="flex items-start justify-between mt-2 sm:mt-0">
+            <div>
+              <p className="text-xl sm:text-4xl font-semibold tracking-tight text-text-primary">
+                {formatCurrency(stock.price)}
+              </p>
+              <p className={`mt-0.5 text-xs sm:text-sm font-medium opacity-70 ${isPositive ? "text-positive" : "text-negative"}`}>
+                {stock.change && stock.change >= 0 ? "+" : ""}
+                {formatCurrency(stock.change)}
+              </p>
+            </div>
+            <div className={`flex items-center gap-0.5 sm:gap-1 text-lg sm:text-2xl font-semibold ${isPositive ? "text-positive" : "text-negative"}`}>
+              <span>{isPositive ? "↑" : "↓"}</span>
+              {formatPercent(stock.changePercent)}
+            </div>
+          </div>
+        </div>
+
         {/* Graph Section */}
-        <div className="mt-23 mb-8 block h-44 w-full">
+        <div className="mt-4 sm:mt-23 mb-2 sm:mb-8 block h-24 sm:h-44 w-full">
           {hasSparkline ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={adjustedSparkline} margin={{ left: 4, right: 4, top: 4, bottom: 4 }}>
