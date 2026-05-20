@@ -25,7 +25,7 @@ export function StockCard({ stock }: { stock: StockSummary }) {
   const gradientId = `spark-${stock.symbol.replace(/[^a-zA-Z0-9]/g, "")}`;
 
   return (
-    <article className="group relative flex flex-col min-h-[320px] sm:min-h-[440px] rounded-2xl sm:rounded-[32px] border border-border-subtle bg-panel transition-all duration-300 ease-out hover:border-accent/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]">
+    <article className="group relative flex flex-col min-h-[440px] w-full origin-top-left rounded-[32px] border border-border-subtle bg-panel transition-all duration-300 ease-out hover:border-accent/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]">
       {/* 1. Watchlist Button: Absolutely positioned with a high z-index to stay functional */}
       <div className="absolute right-8 top-8 z-30">
         <AddToWatchlistButton symbol={stock.symbol} name={stock.name} compact />
@@ -34,7 +34,7 @@ export function StockCard({ stock }: { stock: StockSummary }) {
       {/* 2. The Link: It now handles the padding (p-8) and expands to fill the entire article shape */}
       <Link 
         href={`/stock/${stock.symbol}`} 
-        className="z-10 flex flex-1 flex-col p-4 sm:p-8 rounded-2xl sm:rounded-[32px] outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="z-10 flex flex-1 flex-col p-8 rounded-[32px] outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         {/* Header and Financials */}
           {/* Header and Financials */}
@@ -76,7 +76,7 @@ export function StockCard({ stock }: { stock: StockSummary }) {
           </div>
 
         {/* Graph Section */}
-        <div className="mt-8 sm:mt-23 mb-4 sm:mb-8 block h-32 sm:h-44 w-full">
+        <div className="mt-23 mb-8 block h-44 w-full">
           {hasSparkline ? (
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={adjustedSparkline} margin={{ left: 4, right: 4, top: 4, bottom: 4 }}>
