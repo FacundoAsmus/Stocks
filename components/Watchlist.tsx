@@ -151,7 +151,7 @@ export function Watchlist() {
         }}
       />
       <div className="relative z-10 p-8">
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <section className="grid grid-cols-1 gap-4 px-4 sm:grid-cols-2 xl:grid-cols-3 justify-center">
           {displayedStocks.map((stock, index) => (
             <div
               key={stock.symbol}
