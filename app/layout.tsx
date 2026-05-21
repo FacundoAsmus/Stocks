@@ -26,8 +26,8 @@ export default function RootLayout({
           <div className="min-h-screen">
             <header className="sticky top-0 z-40 border-b border-border-subtle/70 bg-background/86 backdrop-blur-xl">
               <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-                <Link href="/" className="flex items-center gap-3">
-                  <span className="flex items-center gap-3 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04]">
+                <a href="/" className="flex items-center gap-3 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04]">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-md border border-positive/30 bg-positive/10 text-positive">
                     <Home className="h-5 w-5" aria-hidden />
                   </span>
                   <span>
@@ -36,7 +36,7 @@ export default function RootLayout({
                     </span>
                     <span className="block text-xs text-text-muted">News and fundamentals</span>
                   </span>
-                </Link>
+                </a>
                 <SearchBar />
               </div>
             </header>

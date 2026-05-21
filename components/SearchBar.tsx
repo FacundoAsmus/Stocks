@@ -110,7 +110,7 @@ export function SearchBar() {
           onChange={(event) => setQuery(event.target.value)}
           onFocus={handleFocus}
           placeholder="Search stocks"
-          className="h-11 w-full rounded-md border border-border-subtle bg-panel px-10 text-sm text-text-primary outline-none transition placeholder:text-text-muted focus:border-accent focus:ring-2 focus:ring-accent/20"
+          className="h-11 w-full rounded-md border border-border-subtle bg-panel px-10 text-sm text-text-primary outline-none transition placeholder:text-text-muted focus:border-positive focus:ring-2 focus:ring-positive/20"
         />
         {isLoading ? (
           <span className="absolute right-3 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-accent" />
