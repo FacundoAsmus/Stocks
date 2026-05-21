@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Plus, Star, Trash2 } from "lucide-react";
+import { Star, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { useToast } from "./ToastProvider";
@@ -67,11 +67,11 @@ export function AddToWatchlistButton({
         className={cn(
           "rounded-md border p-2 transition",
           isSaved
-            ? "border-accent/40 bg-accent/10 text-accent"
-            : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-text-primary"
+            ? "border-positive/40 bg-positive/10 text-positive"
+            : "border-border-subtle text-text-muted hover:border-positive/50 hover:text-positive"
         )}
       >
-        {isSaved ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+        <Star className="h-4 w-4" fill={isSaved ? "currentColor" : "none"} />
       </button>
     );
   }

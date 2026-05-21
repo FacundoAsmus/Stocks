@@ -26,8 +26,7 @@ body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.14), transparent 34rem),
-    linear-gradient(180deg, #080b12 0%, #0b1019 42%, #080b12 100%);
+    linear-gradient(180deg, #000000 0%, #0a0005 60%, #1a0008 100%);
   color: #f3f7fb;
   font-family: var(--font-sans);
 }
