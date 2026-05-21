@@ -23,11 +23,11 @@ export function AnalystSection({
 
   const breakdown = latest
     ? [
-        ["Strong Buy", latest.strongBuy, "bg-positive"],
-        ["Buy", latest.buy, "bg-positive/80"],
-        ["Hold", latest.hold, "bg-accent"],
-        ["Sell", latest.sell, "bg-negative/80"],
-        ["Strong Sell", latest.strongSell, "bg-negative"]
+        ["Strong Buy", latest.strongBuy, "bg-emerald-400"],
+        ["Buy",        latest.buy,       "bg-lime-400"],
+        ["Hold",       latest.hold,      "bg-yellow-400"],
+        ["Sell",       latest.sell,      "bg-orange-500"],
+        ["Strong Sell",latest.strongSell,"bg-red-600"]
       ] as const
     : [];
 
