@@ -2,10 +2,10 @@
 
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-  --color-background: #080b12;
-  --color-panel: #101722;
-  --color-panel-muted: #151f2e;
-  --color-border-subtle: #243244;
+  --color-background: #050507;
+  --color-panel: #0a0a0d;
+  --color-panel-muted: #111114;
+  --color-border-subtle: #1e1e24;
   --color-text-primary: #f3f7fb;
   --color-text-muted: #93a4b8;
   --color-accent: #38bdf8;

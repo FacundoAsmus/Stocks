@@ -137,7 +137,7 @@ export default async function StockPage({ params }: StockPageProps) {
           }}
         />
         <div className="relative z-10 space-y-6">
-        <section className="relative rounded-md border border-border-subtle bg-panel/90 p-5 shadow-2xl shadow-black/20">
+        <section className="relative rounded-md  p-5 shadow-2xl shadow-black/20">
           <div className="absolute right-5 top-5 z-10">
             <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
           </div>
@@ -151,20 +151,20 @@ export default async function StockPage({ params }: StockPageProps) {
                   className="h-14 w-14 rounded-md border border-white/10 bg-white/5 object-contain"
                 />
               ) : (
-                <div className="flex h-14 w-14 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-lg font-semibold">
+                <div className="flex h-14 w-14 items-center justify-center rounded-md -muted text-lg font-semibold">
                   {stock.symbol.replace("^", "").slice(0, 2)}
                 </div>
               )}
               <div>
                 <div className="flex flex-wrap items-center gap-3">
                   <h1 className="text-3xl font-semibold tracking-normal text-text-primary sm:text-4xl">
-                    {stock.symbol}
+                    {stock.profile.name ?? stock.symbol}
                   </h1>
                   <span className="rounded-md border border-border-subtle px-2 py-1 text-xs text-text-muted">
                     {stock.profile.exchange ?? "US Market"}
                   </span>
                 </div>
-                <p className="mt-0.5 text-base text-text-muted">{stock.profile.name ?? stock.symbol}</p>
+                <p className="mt-0.5 text-base text-text-muted">{stock.symbol}</p>
                 <p className="mt-0.5 text-sm text-text-muted">
                   {stock.profile.finnhubIndustry ?? "Index or market instrument"}
                 </p>
@@ -193,7 +193,7 @@ export default async function StockPage({ params }: StockPageProps) {
           </div>
         </section>
 
-        <section className="rounded-md border border-border-subtle bg-panel p-4">
+        <section className="rounded-md  p-4">
           <PriceChart symbol={stock.symbol} />
         </section>
 
@@ -214,7 +214,7 @@ export default async function StockPage({ params }: StockPageProps) {
             {stock.news.length ? (
               stock.news.map((article) => <NewsCard key={article.id} article={article} />)
             ) : (
-              <div className="rounded-md border border-border-subtle bg-panel p-5 text-sm text-text-muted">
+              <div className="rounded-md  p-5 text-sm text-text-muted">
                 No recent Finnhub news was available for this symbol.
               </div>
             )}
