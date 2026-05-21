@@ -206,7 +206,7 @@ export default async function StockPage({ params }: StockPageProps) {
         <section>
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">News</p>
+              <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">News</p>
               <h2 className="mt-2 text-2xl font-semibold text-text-primary">Latest headlines</h2>
             </div>
           </div>

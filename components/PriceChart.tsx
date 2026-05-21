@@ -149,8 +149,8 @@ export function PriceChart({
               <Tooltip
                 animationDuration={150}
                 contentStyle={{
-                  background: "#101722",
-                  border: "1px solid #243244",
+                  background: "#0a0a0d",
+                  border: "1px solid #1e1e24",
                   borderRadius: 8,
                   color: "#f3f7fb"
                 }}

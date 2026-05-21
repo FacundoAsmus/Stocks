@@ -8,7 +8,7 @@ export default function HomePage() {
     <div className="space-y-8">
       <section className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Watchlist</p>
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">Watchlist</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary sm:text-4xl">
             Your Stocks
           </h1>

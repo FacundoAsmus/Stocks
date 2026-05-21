@@ -35,7 +35,7 @@ export function AnalystSection({
     <section className="rounded-md border border-border-subtle bg-panel p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Analysts</p>
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">Analysts</p>
           <h2 className="mt-2 text-2xl font-semibold text-text-primary">Recommendations</h2>
         </div>
         {priceTarget.lastUpdated ? (

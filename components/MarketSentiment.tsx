@@ -27,7 +27,7 @@ export function MarketSentiment({
 
   return (
     <section className="rounded-md border border-border-subtle bg-panel p-5">
-      <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market Sentiment</p>
+      <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">Market Sentiment</p>
       <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-text-primary">{label}</h2>

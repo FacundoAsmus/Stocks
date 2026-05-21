@@ -25,7 +25,7 @@ export function StockCard({ stock }: { stock: StockSummary }) {
   const gradientId = `spark-${stock.symbol.replace(/[^a-zA-Z0-9]/g, "")}`;
 
   return (
-    <article className="group relative flex flex-col min-h-[260px] sm:min-h-[440px] w-full rounded-2xl sm:rounded-[32px] border border-border-subtle bg-panel transition-all duration-300 ease-out hover:border-accent/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]">
+    <article className="group relative flex flex-col min-h-[260px] sm:min-h-[440px] w-full rounded-2xl sm:rounded-[32px] border border-border-subtle bg-panel transition-all duration-300 ease-out hover:border-positive/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]">
       <div className="absolute right-8 top-8 z-30">
         <AddToWatchlistButton symbol={stock.symbol} name={stock.name} compact />
       </div>

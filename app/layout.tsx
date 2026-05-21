@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BarChart3 } from "lucide-react";
+import { Home } from "lucide-react";
 import { DM_Sans } from "next/font/google";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
@@ -27,8 +27,8 @@ export default function RootLayout({
             <header className="sticky top-0 z-40 border-b border-border-subtle/70 bg-background/86 backdrop-blur-xl">
               <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
                 <Link href="/" className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-md border border-accent/30 bg-accent/10 text-accent">
-                    <BarChart3 className="h-5 w-5" aria-hidden />
+                  <span className="flex h-10 w-10 items-center justify-center rounded-md border border-positive/30 bg-positive/10 text-positive transition hover:-translate-y-1">
+                    <Home className="h-5 w-5" aria-hidden />
                   </span>
                   <span>
                     <span className="block text-base font-semibold tracking-normal text-text-primary">

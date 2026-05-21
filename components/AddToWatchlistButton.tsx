@@ -65,7 +65,7 @@ export function AddToWatchlistButton({
         aria-label={isSaved ? `Remove ${name} from watchlist` : `Add ${name} to watchlist`}
         onClick={toggleWatchlist}
         className={cn(
-          "rounded-md border p-2 transition",
+          "rounded-md border p-2 transition hover:-translate-y-0.5",
           isSaved
             ? "border-positive/40 bg-positive/10 text-positive"
             : "border-border-subtle text-text-muted hover:border-positive/50 hover:text-positive"
