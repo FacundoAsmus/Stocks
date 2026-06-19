@@ -18,7 +18,6 @@ function getStoredSymbols() {
 
 function setStoredSymbols(symbols: string[]) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(symbols));
-  window.dispatchEvent(new Event("watchlist-updated"));
 }
 
 export function AddToWatchlistButton({
@@ -65,7 +64,7 @@ export function AddToWatchlistButton({
         aria-label={isSaved ? `Remove ${name} from watchlist` : `Add ${name} to watchlist`}
         onClick={toggleWatchlist}
         className={cn(
-          "rounded-md border p-2 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.12]",
+          "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border p-0 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.12]",
           isSaved
             ? "border-positive/40 bg-positive/10 text-positive"
             : "border-border-subtle text-text-muted hover:border-positive/50 hover:text-positive"

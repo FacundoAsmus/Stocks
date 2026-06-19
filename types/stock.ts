@@ -43,6 +43,17 @@ export interface CompanyNewsArticle {
   url: string;
 }
 
+export interface MarketNewsArticle {
+  category: string;
+  datetime: number;
+  headline: string;
+  id: number;
+  image: string;
+  source: string;
+  summary: string;
+  url: string;
+}
+
 export interface AnalystRecommendation {
   buy: number;
   hold: number;

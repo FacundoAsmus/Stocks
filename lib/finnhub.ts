@@ -8,18 +8,48 @@ import type {
   CompanyNewsArticle,
   CompanyProfile,
   FinnhubQuote,
+  MarketNewsArticle,
   PriceTarget,
   StockDetail,
   StockSummary,
   SymbolSearchResult
 } from "@/types/stock";
-import { MAJOR_INDICES } from "@/lib/constants";
+import { MAJOR_INDICES, MARKET_MOVER_FALLBACK_SYMBOLS } from "@/lib/constants";
 
 const BASE_URL = "https://finnhub.io/api/v1";
 const YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
+const YAHOO_SCREENER_BASE_URL = "https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved";
 const DEFAULT_CACHE_TTL_MS = 60_000;
 const PROFILE_CACHE_TTL_MS = 1000 * 60 * 60 * 24;
 const NEWS_CACHE_TTL_MS = 1000 * 60 * 10;
+const FINANCE_NEWS_TERMS = [
+  "stock",
+  "stocks",
+  "market",
+  "markets",
+  "wall street",
+  "fed",
+  "rate",
+  "rates",
+  "inflation",
+  "earnings",
+  "shares",
+  "investor",
+  "investors",
+  "trading",
+  "nasdaq",
+  "s&p",
+  "dow",
+  "treasury",
+  "oil",
+  "gold",
+  "chip",
+  "chips",
+  "ai",
+  "finance",
+  "economy",
+  "economic"
+];
 
 type CacheEntry<T> = {
   expiresAt: number;
@@ -194,6 +224,118 @@ export async function getCompanyNews(symbol: string) {
     },
     NEWS_CACHE_TTL_MS
   );
+}
+
+export async function getMarketNews() {
+  const news = await fetchFinnhub<MarketNewsArticle[]>(
+    "/news",
+    { category: "general" },
+    NEWS_CACHE_TTL_MS
+  );
+
+  const financeNews = news.filter((article) => {
+    const text = `${article.headline} ${article.summary} ${article.category}`.toLowerCase();
+    return FINANCE_NEWS_TERMS.some((term) => text.includes(term));
+  });
+
+  return financeNews.length >= 6 ? financeNews : news;
+}
+
+type YahooScreenerQuote = {
+  displayName?: string;
+  longName?: string;
+  regularMarketChange?: { raw?: number };
+  regularMarketChangePercent?: { raw?: number };
+  regularMarketPrice?: { raw?: number };
+  shortName?: string;
+  symbol?: string;
+};
+
+async function fetchYahooMovers(kind: "gainers" | "losers") {
+  const url = new URL(YAHOO_SCREENER_BASE_URL);
+  url.searchParams.set("scrIds", kind === "gainers" ? "day_gainers" : "day_losers");
+  url.searchParams.set("count", "20");
+
+  const cacheKey = `yahoo-movers:${kind}`;
+  const cached = memoryCache.get(cacheKey) as CacheEntry<StockSummary[]> | undefined;
+  if (cached && cached.expiresAt > Date.now()) return cached.value;
+
+  const response = await fetch(url, {
+    headers: { "User-Agent": "Mozilla/5.0 MarketLens/1.0" },
+    next: { revalidate: 60 * 5 }
+  });
+
+  if (!response.ok) {
+    throw new FinnhubError(`Market movers request failed with status ${response.status}.`, response.status);
+  }
+
+  const payload = (await response.json()) as {
+    finance?: { result?: Array<{ quotes?: YahooScreenerQuote[] }> };
+  };
+
+  const quotes = payload.finance?.result?.[0]?.quotes ?? [];
+  const stocks = quotes
+    .filter((quote) => quote.symbol && quote.regularMarketPrice?.raw)
+    .slice(0, 20)
+    .map((quote) => {
+      const price = quote.regularMarketPrice?.raw ?? null;
+      const change = quote.regularMarketChange?.raw ?? null;
+      const previous = price !== null && change !== null ? price - change : null;
+      const sparkline = price !== null
+        ? [
+            { date: "Previous", time: 0, close: previous && previous > 0 ? previous : price },
+            { date: "Current", time: 1, close: price }
+          ]
+        : [];
+
+      return {
+        symbol: quote.symbol ?? "",
+        name: quote.longName || quote.shortName || quote.displayName || quote.symbol || "",
+        price,
+        change,
+        changePercent: quote.regularMarketChangePercent?.raw ?? null,
+        sparkline
+      };
+    });
+
+  memoryCache.set(cacheKey, { value: stocks, expiresAt: Date.now() + 1000 * 60 * 5 });
+  return stocks;
+}
+
+export async function getMarketMovers() {
+  const [gainers, losers] = await Promise.all([
+    fetchYahooMovers("gainers").catch(() => []),
+    fetchYahooMovers("losers").catch(() => [])
+  ]);
+
+  if (gainers.length || losers.length) {
+    const limitedGainers = gainers.slice(0, 10);
+    const limitedLosers = losers.slice(0, 10);
+    const enriched = await getStockSummaries([
+      ...limitedGainers.map((stock) => stock.symbol),
+      ...limitedLosers.map((stock) => stock.symbol)
+    ]).catch(() => []);
+
+    function mergeSummaries(stocks: StockSummary[]) {
+      return stocks.map((stock) => {
+        const summary = enriched.find((item) => item.symbol === stock.symbol);
+        return {
+          ...stock,
+          name: summary?.name || stock.name,
+          logo: summary?.logo,
+          sparkline: summary?.sparkline?.length ? summary.sparkline : stock.sparkline
+        };
+      });
+    }
+
+    return { gainers: mergeSummaries(limitedGainers), losers: mergeSummaries(limitedLosers) };
+  }
+
+  const fallback = await getStockSummaries(MARKET_MOVER_FALLBACK_SYMBOLS);
+  return {
+    gainers: [...fallback].sort((a, b) => (b.changePercent ?? -Infinity) - (a.changePercent ?? -Infinity)).slice(0, 10),
+    losers: [...fallback].sort((a, b) => (a.changePercent ?? Infinity) - (b.changePercent ?? Infinity)).slice(0, 10)
+  };
 }
 
 export async function getAnalystRecommendations(symbol: string) {
@@ -493,7 +635,7 @@ export async function getStockDetail(symbol: string): Promise<StockDetail> {
 }
 
 export async function getStockSummaries(symbols: string[]) {
-  const uniqueSymbols = [...new Set(symbols.map(cleanSymbol).filter(Boolean))].slice(0, 20);
+  const uniqueSymbols = [...new Set(symbols.map(cleanSymbol).filter(Boolean))].slice(0, 30);
   const settled = await Promise.allSettled(uniqueSymbols.map((symbol) => getStockSummary(symbol)));
 
   return settled

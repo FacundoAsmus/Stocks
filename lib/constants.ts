@@ -21,3 +21,49 @@ export const MAJOR_INDICES = [
 ];
 
 export const DEFAULT_WATCHLIST = ["AAPL", "MSFT", "NVDA", "^GSPC"];
+
+export const MARKET_BAR_SYMBOLS = [
+  "^GSPC",
+  "^IXIC",
+  "GLD",
+  "SMH",
+  "AAPL",
+  "NVDA",
+  "MSFT",
+  "META",
+  "AMZN",
+  "GOOGL"
+];
+
+export const MARKET_MOVER_FALLBACK_SYMBOLS = [
+  "NVDA",
+  "AMD",
+  "AVGO",
+  "TSLA",
+  "AAPL",
+  "MSFT",
+  "META",
+  "AMZN",
+  "GOOGL",
+  "NFLX",
+  "PLTR",
+  "COIN",
+  "MSTR",
+  "SMCI",
+  "ARM",
+  "CRWD",
+  "SHOP",
+  "UBER",
+  "LLY",
+  "JPM",
+  "XOM",
+  "GLD",
+  "SLV",
+  "QQQ",
+  "SPY",
+  "DIA",
+  "IWM",
+  "SMH",
+  "SOXX",
+  "TLT"
+];

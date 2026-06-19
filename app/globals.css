@@ -9,8 +9,8 @@
   --color-text-primary: #f3f7fb;
   --color-text-muted: #93a4b8;
   --color-accent: #38bdf8;
-  --color-positive: #22c55e;
-  --color-negative: #ef4444;
+  --color-positive: #00c805;
+  --color-negative: #ff3003;
 }
 
 * {
@@ -43,4 +43,23 @@ input {
 
 ::selection {
   background: rgba(56, 189, 248, 0.35);
+}
+
+.market-ticker {
+  animation: market-ticker 92s linear infinite;
+  transition: filter 420ms ease;
+}
+
+.market-ticker:hover {
+  animation-play-state: paused;
+  filter: brightness(1.08);
+}
+
+@keyframes market-ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
