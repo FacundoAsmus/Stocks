@@ -81,7 +81,7 @@ export function PriceChart({
     if (!hasData) return true;
     return data[data.length - 1].close >= data[0].close;
   }, [data, hasData]);
-  const lineColor = isPositive ? "#22c55e" : "#ef4444";
+  const lineColor = isPositive ? "#00c805" : "#ff3003";
 
   return (
     <div>
@@ -131,12 +131,6 @@ export function PriceChart({
         ) : hasData ? (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
-              <defs>
-                <linearGradient id={`detail-price-${symbol.replace(/[^a-zA-Z0-9]/g, "")}`} x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="5%" stopColor={lineColor} stopOpacity={0.35} />
-                  <stop offset="95%" stopColor={lineColor} stopOpacity={0} />
-                </linearGradient>
-              </defs>
               <CartesianGrid stroke="#243244" strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="date" tick={{ fill: "#93a4b8", fontSize: 12 }} tickLine={false} minTickGap={24} />
               <YAxis
@@ -158,10 +152,13 @@ export function PriceChart({
                 labelStyle={{ color: "#93a4b8" }}
               />
               <Area
+                type="monotone"
                 dataKey="close"
                 stroke={lineColor}
-                fill={`url(#detail-price-${symbol.replace(/[^a-zA-Z0-9]/g, "")})`}
-                strokeWidth={2}
+                fill="transparent"
+                strokeWidth={3}
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 dot={false}
                 isAnimationActive={false}
               />

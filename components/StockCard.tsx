@@ -21,11 +21,9 @@ export function StockCard({ stock }: { stock: StockSummary }) {
 
   const hasSparkline = adjustedSparkline.length > 1;
   const sparklinePositive = isPositive;
-  
-  const gradientId = `spark-${stock.symbol.replace(/[^a-zA-Z0-9]/g, "")}`;
 
   return (
-    <article className="group relative flex flex-col min-h-[260px] sm:min-h-[440px] w-full rounded-2xl sm:rounded-[32px] border border-border-subtle bg-panel transition-all duration-300 ease-out hover:border-positive/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]">
+    <article className="group relative flex flex-col min-h-[260px] sm:min-h-[440px] w-full rounded-2xl sm:rounded-[32px] border border-[#3a3a42] bg-black transition-all duration-300 ease-out hover:border-positive/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]">
       <div className="absolute right-8 top-8 z-30">
         <AddToWatchlistButton symbol={stock.symbol} name={stock.name} compact />
       </div>
@@ -80,17 +78,14 @@ export function StockCard({ stock }: { stock: StockSummary }) {
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={adjustedSparkline} margin={{ left: 4, right: 4, top: 4, bottom: 4 }}>
                 <YAxis domain={["dataMin", "dataMax"]} hide />
-                <defs>
-                  <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="5%" stopColor={sparklinePositive ? "#22c55e" : "#ef4444"} stopOpacity={0.15} />
-                    <stop offset="95%" stopColor={sparklinePositive ? "#22c55e" : "#ef4444"} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
                   <Area
+                    type="monotone"
                     dataKey="close"
-                    stroke={sparklinePositive ? "#22c55e" : "#ef4444"}
-                    fill={`url(#${gradientId})`}
-                    strokeWidth={1.5}
+                    stroke={sparklinePositive ? "#00c805" : "#ff3003"}
+                    fill="transparent"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                     dot={(props) => {
                       const { cx, cy, index } = props;
                       // Use adjustedSparkline here so the endpoint dot renders on the final item
@@ -101,7 +96,7 @@ export function StockCard({ stock }: { stock: StockSummary }) {
                           cx={cx}
                           cy={cy}
                           r={3}
-                          fill={sparklinePositive ? "#22c55e" : "#ef4444"}
+                          fill={sparklinePositive ? "#00c805" : "#ff3003"}
                           stroke="none"
                         />
                       );

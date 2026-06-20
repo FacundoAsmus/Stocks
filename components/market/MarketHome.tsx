@@ -45,10 +45,13 @@ function MiniSparkline({ stock, className }: { stock: StockSummary; className?: 
         <AreaChart data={data} margin={{ left: 0, right: 0, top: 6, bottom: 6 }}>
           <YAxis domain={["dataMin", "dataMax"]} hide />
           <Area
+            type="monotone"
             dataKey="close"
             stroke={isPositive ? "#00c805" : "#ff3003"}
             fill="transparent"
-            strokeWidth={1.4}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
             dot={false}
             isAnimationActive={false}
           />
