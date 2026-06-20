@@ -26,7 +26,7 @@ export function MarketSentiment({
   const label = labelForScore(score);
 
   return (
-    <section className="rounded-md border border-border-subtle bg-panel p-5">
+    <section className="rounded-md border border-[#3a3a42] bg-black p-5">
       <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">Market Sentiment</p>
       <div className="mt-4 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div>
@@ -36,7 +36,7 @@ export function MarketSentiment({
             52-week range. It is a UI signal, not investment advice.
           </p>
         </div>
-        <div className="min-w-48 rounded-md bg-panel-muted p-4 text-center">
+        <div className="min-w-48 rounded-md border border-[#3a3a42] bg-black p-4 text-center">
           <p className="text-4xl font-semibold text-text-primary">{score}</p>
           <p className="text-sm text-text-muted">out of 100</p>
         </div>

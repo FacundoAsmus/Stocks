@@ -131,7 +131,7 @@ export function FundamentalsGrid({
   return (
     <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
       {items.map((item) => (
-        <div key={item.label} className="rounded-md border border-border-subtle bg-panel p-4 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.03] hover:border-positive/50 hover:shadow-xl hover:shadow-black/20">
+        <div key={item.label} className="rounded-md border border-[#3a3a42] bg-black p-4 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.03] hover:border-positive/50 hover:shadow-xl hover:shadow-black/20">
           <div className="flex items-start justify-between gap-3">
             <p className="text-xs uppercase tracking-[0.14em] text-text-muted">{item.label}</p>
             <span className={`rounded-md border px-2 py-1 text-[11px] font-medium ${toneClasses(item.tone)}`}>

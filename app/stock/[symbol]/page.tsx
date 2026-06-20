@@ -129,6 +129,7 @@ export default async function StockPage({ params }: StockPageProps) {
 
     return (
       //
+      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="relative space-y-6">
         <div
           className="fixed inset-0 z-[0] pointer-events-none transition-all duration-1000 ease-in-out"
@@ -137,7 +138,7 @@ export default async function StockPage({ params }: StockPageProps) {
           }}
         />
         <div className="relative z-10 space-y-6">
-        <section className="relative rounded-md  p-5 shadow-2xl shadow-black/20">
+        <section className="relative rounded-md border border-[#3a3a42] bg-black p-5 shadow-2xl shadow-black/20">
           <div className="absolute right-5 top-5 z-10">
             <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
           </div>
@@ -193,7 +194,7 @@ export default async function StockPage({ params }: StockPageProps) {
           </div>
         </section>
 
-        <section className="rounded-md  p-4">
+        <section className="rounded-md border border-[#3a3a42] bg-black p-4">
           <PriceChart symbol={stock.symbol} />
         </section>
 
@@ -229,6 +230,7 @@ export default async function StockPage({ params }: StockPageProps) {
 
         <MarketSentiment score={sentiment.score} drivers={sentiment.drivers} />
         </div>
+      </div>
       </div>
     );
   } catch (error) {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
+import { CandleLoader, LoadingScreen } from "@/components/EmptyWatchlist";
 import { ErrorState } from "@/components/ErrorState";
 import { formatCurrency, formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -73,7 +74,7 @@ function TickerBar({ stocks }: { stocks: StockSummary[] }) {
   }
 
   return (
-    <section className="sticky top-[97px] z-30 w-screen overflow-hidden border-y border-border-subtle bg-black">
+    <section className="sticky top-[97px] z-30 overflow-hidden border-y border-border-subtle bg-black">
       <div className="market-ticker flex w-max items-stretch">
         {tickerStocks.map((stock, index) => {
           const isPositive = (stock.changePercent ?? 0) >= 0;
@@ -112,7 +113,7 @@ function MoverRow({ stock }: { stock: StockSummary }) {
   const isPositive = (stock.changePercent ?? 0) >= 0;
 
   return (
-    <div className="group grid min-h-[58px] grid-cols-[34px_minmax(76px,0.95fr)_minmax(104px,1.25fr)_minmax(92px,auto)_40px] items-center gap-3 border border-transparent border-b-border-subtle/70 px-3 py-3 transition-all duration-200 hover:-translate-y-1 hover:border-positive/50 hover:bg-panel-muted/75 hover:shadow-2xl hover:shadow-black/25">
+    <div className="group grid min-h-[66px] grid-cols-[34px_minmax(76px,0.95fr)_minmax(104px,1.25fr)_minmax(92px,auto)_40px] items-center gap-3 rounded-md border border-transparent border-b-border-subtle/70 px-4 py-3 transition-all duration-200 hover:-translate-y-1 hover:border-positive/50 hover:bg-panel-muted/75 hover:shadow-2xl hover:shadow-black/25 hover:z-10 relative">
       <Link href={`/stock/${encodeURIComponent(stock.symbol)}`} aria-label={`Open ${stock.symbol}`}>
         {stock.logo ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -156,7 +157,7 @@ function MoversList({ title, stocks }: { title: string; stocks: StockSummary[] }
   return (
     <section>
       <h2 className="mb-4 text-2xl font-semibold tracking-normal text-text-primary">{title}</h2>
-      <div className="rounded-lg border border-border-subtle bg-black p-2 shadow-2xl shadow-black/20">
+      <div className="rounded-lg border border-border-subtle bg-black p-2 shadow-2xl shadow-black/20 overflow-visible">
         {stocks.length ? (
           stocks.slice(0, 10).map((stock) => <MoverRow key={stock.symbol} stock={stock} />)
         ) : (
@@ -296,7 +297,7 @@ export function MarketHome() {
   if (error) return <ErrorState title="Market unavailable" message={error} />;
 
   return (
-    <div className="relative -mt-8 min-h-dvh w-screen ml-[calc(50%-50vw)]">
+    <div className="relative min-h-dvh">
       <div
         className="fixed inset-0 z-0 transition-all duration-1000 ease-in-out"
         style={{
@@ -308,13 +309,9 @@ export function MarketHome() {
         <TickerBar stocks={data.tickerStocks ?? []} />
 
         {isLoading ? (
-          <div className="grid gap-8 px-5 pt-20 lg:grid-cols-[minmax(420px,0.95fr)_minmax(420px,0.95fr)_minmax(0,1.55fr)] lg:px-8">
-            <div className="h-[520px] animate-pulse rounded-lg border border-border-subtle bg-panel" />
-            <div className="h-[520px] animate-pulse rounded-lg border border-border-subtle bg-panel" />
-            <div className="h-[520px] animate-pulse rounded-lg border border-border-subtle bg-panel" />
-          </div>
+          <LoadingScreen label="Loading market data" />
         ) : (
-          <div className="grid gap-8 px-5 pt-20 lg:grid-cols-[minmax(420px,0.95fr)_minmax(420px,0.95fr)_minmax(0,1.55fr)] lg:px-8">
+          <div className="grid gap-8 px-5 py-8 pt-12 lg:grid-cols-[minmax(420px,0.95fr)_minmax(420px,0.95fr)_minmax(0,1.55fr)] lg:px-8">
             <MoversList title="Top Winners" stocks={data.gainers ?? []} />
             <MoversList title="Top Losers" stocks={data.losers ?? []} />
             <NewsPanel articles={data.news ?? []} />

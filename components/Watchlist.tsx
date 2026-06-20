@@ -161,7 +161,7 @@ export function Watchlist() {
                       onDrop={() => handleDrop(index)}
                       onDragEnd={handleDragEnd}
                       className={`cursor-grab active:cursor-grabbing transition-all duration-150 rounded-2xl sm:rounded-[32px] ${
-                        dragOverIndex === index ? "ring-2 ring-accent/60" : ""
+                        dragOverIndex === index ? "ring-2 ring-positive/60" : ""
                       }`}
                     >
                       <StockCard stock={stock} />

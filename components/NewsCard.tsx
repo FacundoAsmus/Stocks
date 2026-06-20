@@ -5,7 +5,7 @@ import type { CompanyNewsArticle } from "@/types/stock";
 
 export function NewsCard({ article }: { article: CompanyNewsArticle }) {
   return (
-    <article className="rounded-md border border-border-subtle bg-panel p-5 transition-all duration-200 hover:border-positive/50 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-2xl hover:shadow-black/30">
+    <article className="rounded-md border border-[#3a3a42] bg-black p-5 transition-all duration-200 hover:border-positive/50 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-2xl hover:shadow-black/30">
       <div className="flex items-start gap-4">
         {article.image ? (
           // eslint-disable-next-line @next/next/no-img-element
