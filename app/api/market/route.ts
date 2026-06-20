@@ -12,22 +12,31 @@ function parseWatchlist(searchParams: URLSearchParams) {
 }
 
 export async function GET(request: Request) {
+  const requestStart = performance.now();
   const { searchParams } = new URL(request.url);
   const watchlist = parseWatchlist(searchParams);
 
   try {
-    const movers = await getMarketMovers();
-    const topPerformerSymbols = movers.gainers.slice(0, 2).map((stock) => stock.symbol);
     const baseSymbols = watchlist.length >= 10 ? watchlist : MARKET_BAR_SYMBOLS;
 
-    const [baseTickerStocks, topTickerStocks, news] = await Promise.all([
+    // getMarketMovers() already fetches enriched summaries (logo + sparkline) for
+    // its top gainers/losers internally, so we run it alongside the ticker-bar
+    // fetch instead of awaiting it first and then re-fetching the top performers
+    // a second time. This removes one full sequential round-trip wave.
+    const [movers, baseTickerStocks, news] = await Promise.all([
+      getMarketMovers(),
       getStockSummaries(baseSymbols),
-      getStockSummaries(topPerformerSymbols),
       getMarketNews().catch(() => [])
     ]);
 
+    const topPerformerStocks = movers.gainers.slice(0, 2);
+
+    if (process.env.DEBUG_PERF === "1") {
+      console.log(`[perf] TOTAL /api/market: ${(performance.now() - requestStart).toFixed(0)}ms`);
+    }
+
     return NextResponse.json({
-      tickerStocks: [...baseTickerStocks, ...topTickerStocks],
+      tickerStocks: [...baseTickerStocks, ...topPerformerStocks],
       gainers: movers.gainers,
       losers: movers.losers,
       news: news.slice(0, 12)

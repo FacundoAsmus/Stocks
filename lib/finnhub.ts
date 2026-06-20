@@ -22,6 +22,7 @@ const YAHOO_SCREENER_BASE_URL = "https://query1.finance.yahoo.com/v1/finance/scr
 const DEFAULT_CACHE_TTL_MS = 60_000;
 const PROFILE_CACHE_TTL_MS = 1000 * 60 * 60 * 24;
 const NEWS_CACHE_TTL_MS = 1000 * 60 * 10;
+
 const FINANCE_NEWS_TERMS = [
   "stock",
   "stocks",
@@ -57,6 +58,27 @@ type CacheEntry<T> = {
 };
 
 const memoryCache = new Map<string, CacheEntry<unknown>>();
+
+// --- Temporary perf diagnostics -------------------------------------------
+// Set DEBUG_PERF=1 in .env.local to log timing for every outbound fetch.
+// Safe to remove once we've identified the bottleneck.
+const PERF_DEBUG = process.env.DEBUG_PERF === "1";
+
+async function timeit<T>(label: string, fn: () => Promise<T>): Promise<T> {
+  if (!PERF_DEBUG) return fn();
+  const start = performance.now();
+  try {
+    const result = await fn();
+    const ms = (performance.now() - start).toFixed(0);
+    console.log(`[perf] ${label}: ${ms}ms`);
+    return result;
+  } catch (error) {
+    const ms = (performance.now() - start).toFixed(0);
+    console.log(`[perf] ${label}: ${ms}ms (FAILED)`);
+    throw error;
+  }
+}
+// ---------------------------------------------------------------------------
 
 class FinnhubError extends Error {
   constructor(message: string, public status?: number) {
@@ -97,10 +119,13 @@ async function fetchYahooQuote(symbol: string): Promise<Partial<FinnhubQuote>> {
   url.searchParams.set("range", "1d");
   url.searchParams.set("interval", "1d");
 
-  const response = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0 MarketLens/1.0" },
-    next: { revalidate: 30 }
-  });
+  const response = await timeit(`yahoo quote fallback ${symbol}`, () =>
+    fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 MarketLens/1.0" },
+      next: { revalidate: 30 },
+      signal: AbortSignal.timeout(5000)
+    })
+  );
 
   if (!response.ok) return {};
 
@@ -161,12 +186,17 @@ async function fetchFinnhub<T>(
   const cached = memoryCache.get(cacheKey) as CacheEntry<T> | undefined;
 
   if (cached && cached.expiresAt > Date.now()) {
+    if (PERF_DEBUG) console.log(`[perf] CACHE HIT  ${endpoint} ${params.symbol ?? ""}`);
     return cached.value;
   }
 
-  const response = await fetch(url, {
-    next: { revalidate: Math.floor(ttlMs / 1000) }
-  });
+  if (PERF_DEBUG) console.log(`[perf] CACHE MISS ${endpoint} ${params.symbol ?? ""}`);
+
+  const response = await timeit(`finnhub ${endpoint} ${params.symbol ?? ""}`, () =>
+    fetch(url, {
+      next: { revalidate: Math.floor(ttlMs / 1000) }
+    })
+  );
 
   if (response.status === 429) {
     throw new FinnhubError("Finnhub rate limit reached. Please wait a minute and try again.", 429);
@@ -194,6 +224,7 @@ export async function getQuote(symbol: string): Promise<FinnhubQuote> {
   if (finnhubQuote.c && finnhubQuote.c > 0) return finnhubQuote;
 
   // Fallback to Yahoo for indices and unsupported symbols
+  if (PERF_DEBUG) console.log(`[perf] ${normalizedSymbol}: finnhub quote empty, falling back to Yahoo`);
   const yahooQuote = await fetchYahooQuote(normalizedSymbol).catch(() => ({}));
   return { ...finnhubQuote, ...yahooQuote } as FinnhubQuote;
 }
@@ -260,10 +291,13 @@ async function fetchYahooMovers(kind: "gainers" | "losers") {
   const cached = memoryCache.get(cacheKey) as CacheEntry<StockSummary[]> | undefined;
   if (cached && cached.expiresAt > Date.now()) return cached.value;
 
-  const response = await fetch(url, {
-    headers: { "User-Agent": "Mozilla/5.0 MarketLens/1.0" },
-    next: { revalidate: 60 * 5 }
-  });
+  const response = await timeit(`yahoo movers ${kind}`, () =>
+    fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0 MarketLens/1.0" },
+      next: { revalidate: 60 * 5 },
+      signal: AbortSignal.timeout(5000)
+    })
+  );
 
   if (!response.ok) {
     throw new FinnhubError(`Market movers request failed with status ${response.status}.`, response.status);
@@ -311,24 +345,36 @@ export async function getMarketMovers() {
   if (gainers.length || losers.length) {
     const limitedGainers = gainers.slice(0, 10);
     const limitedLosers = losers.slice(0, 10);
-    const enriched = await getStockSummaries([
-      ...limitedGainers.map((stock) => stock.symbol),
-      ...limitedLosers.map((stock) => stock.symbol)
-    ]).catch(() => []);
 
-    function mergeSummaries(stocks: StockSummary[]) {
-      return stocks.map((stock) => {
-        const summary = enriched.find((item) => item.symbol === stock.symbol);
-        return {
-          ...stock,
-          name: summary?.name || stock.name,
-          logo: summary?.logo,
-          sparkline: summary?.sparkline?.length ? summary.sparkline : stock.sparkline
-        };
-      });
+    // The Yahoo screener response already includes name, price, change,
+    // changePercent, and a basic sparkline for every mover — so the only
+    // thing worth enriching is the logo, which only Finnhub's profile
+    // endpoint provides. Fetching full summaries (quote + candle + profile)
+    // here was re-deriving data we already had, tripling the request count
+    // for no benefit. Each profile lookup fails independently and silently;
+    // a missing logo just means the UI shows its fallback, not a broken row.
+    const allSymbols = [...limitedGainers, ...limitedLosers].map((stock) => stock.symbol);
+    const logoEntries = await Promise.allSettled(
+      allSymbols.map(async (symbol) => {
+        const profile = await getCompanyProfile(symbol);
+        return [symbol, profile.logo] as const;
+      })
+    );
+
+    const logosBySymbol = new Map(
+      logoEntries
+        .filter((result): result is PromiseFulfilledResult<readonly [string, string | undefined]> => result.status === "fulfilled")
+        .map((result) => result.value)
+    );
+
+    function withLogo(stocks: StockSummary[]) {
+      return stocks.map((stock) => ({
+        ...stock,
+        logo: logosBySymbol.get(stock.symbol)
+      }));
     }
 
-    return { gainers: mergeSummaries(limitedGainers), losers: mergeSummaries(limitedLosers) };
+    return { gainers: withLogo(limitedGainers), losers: withLogo(limitedLosers) };
   }
 
   const fallback = await getStockSummaries(MARKET_MOVER_FALLBACK_SYMBOLS);
@@ -445,12 +491,15 @@ async function fetchYahooCandles(symbol: string, period: ChartPeriod): Promise<C
     return cached.value;
   }
 
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "Mozilla/5.0 MarketLens/1.0"
-    },
-    next: { revalidate: 60 * 15 }
-  });
+  const response = await timeit(`yahoo candles fallback ${symbol} ${period}`, () =>
+    fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 MarketLens/1.0"
+      },
+      next: { revalidate: 60 * 15 },
+      signal: AbortSignal.timeout(5000)
+    })
+  );
 
   if (!response.ok) {
     throw new FinnhubError(`Historical fallback request failed with status ${response.status}.`, response.status);
@@ -504,51 +553,55 @@ async function fetchYahooCandles(symbol: string, period: ChartPeriod): Promise<C
 
 export async function getStockCandles(symbol: string, period: ChartPeriod = "3M") {
   const normalizedSymbol = cleanSymbol(symbol);
+
+  // Finnhub's /stock/candle endpoint is gated on free-tier plans and reliably
+  // returns 403 on this key (confirmed via DEBUG_PERF logging — every single
+  // call failed the same way). Calling it first meant paying a ~300ms+
+  // round trip per stock for a guaranteed failure before falling back to
+  // Yahoo, and Finnhub appears to rate-limit repeated 403s, making each
+  // subsequent call slower (observed up to 7-8s on a ~40-stock page load).
+  // Yahoo is tried first instead; Finnhub is kept as a last-resort fallback
+  // in case Yahoo has an outage, or in case this key's plan changes later.
+  try {
+    return await fetchYahooCandles(normalizedSymbol, period);
+  } catch (error) {
+    if (PERF_DEBUG) {
+      const message = error instanceof Error ? error.message : "";
+      console.log(`[perf] ${normalizedSymbol}: yahoo candles failed (${message}), trying finnhub as last resort`);
+    }
+  }
+
   const to = Math.floor(Date.now() / 1000);
   const from = unixDaysAgo(periodToDays(period));
   const resolution = periodToResolution(period);
 
-  try {
-    const response = await fetchFinnhub<{
-      c?: number[];
-      h?: number[];
-      l?: number[];
-      o?: number[];
-      t?: number[];
-      v?: number[];
-      s: string;
-    }>(
-      "/stock/candle",
-      { symbol: normalizedSymbol, resolution, from, to },
-      1000 * 60 * 15
-    );
+  const response = await fetchFinnhub<{
+    c?: number[];
+    h?: number[];
+    l?: number[];
+    o?: number[];
+    t?: number[];
+    v?: number[];
+    s: string;
+  }>(
+    "/stock/candle",
+    { symbol: normalizedSymbol, resolution, from, to },
+    1000 * 60 * 15
+  );
 
-    if (response.s === "ok" && response.c?.length && response.t?.length) {
-      return response.c.map((close, index) => ({
-        close,
-        high: response.h?.[index],
-        low: response.l?.[index],
-        open: response.o?.[index],
-        time: response.t?.[index] ?? 0,
-        volume: response.v?.[index],
-        date: new Date((response.t?.[index] ?? 0) * 1000).toISOString().slice(0, 10)
-      }));
-    }
-  } catch (error) {
-    const status = error instanceof FinnhubError ? error.status : undefined;
-    const message = error instanceof Error ? error.message : "";
-    const shouldFallback =
-      status === 403 ||
-      status === 429 ||
-      message.includes("status 403") ||
-      message.includes("status 429");
-
-    if (!shouldFallback) {
-      throw error;
-    }
+  if (response.s === "ok" && response.c?.length && response.t?.length) {
+    return response.c.map((close, index) => ({
+      close,
+      high: response.h?.[index],
+      low: response.l?.[index],
+      open: response.o?.[index],
+      time: response.t?.[index] ?? 0,
+      volume: response.v?.[index],
+      date: new Date((response.t?.[index] ?? 0) * 1000).toISOString().slice(0, 10)
+    }));
   }
 
-  return fetchYahooCandles(normalizedSymbol, period);
+  return [];
 }
 
 export async function getCandles(symbol: string, resolution: "D" | "W", days: number) {
@@ -636,7 +689,9 @@ export async function getStockDetail(symbol: string): Promise<StockDetail> {
 
 export async function getStockSummaries(symbols: string[]) {
   const uniqueSymbols = [...new Set(symbols.map(cleanSymbol).filter(Boolean))].slice(0, 30);
-  const settled = await Promise.allSettled(uniqueSymbols.map((symbol) => getStockSummary(symbol)));
+  const settled = await timeit(`getStockSummaries [${uniqueSymbols.join(",")}]`, () =>
+    Promise.allSettled(uniqueSymbols.map((symbol) => getStockSummary(symbol)))
+  );
 
   return settled
     .filter((result): result is PromiseFulfilledResult<StockSummary> => result.status === "fulfilled")
