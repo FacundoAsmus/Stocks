@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getStockCandles } from "@/lib/finnhub";
 import type { ChartPeriod } from "@/types/stock";
 
-const PERIODS: ChartPeriod[] = ["1M", "3M", "6M", "1Y"];
+const PERIODS: ChartPeriod[] = ["1M", "3M", "6M", "1Y", "ALL"];
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   }
 
   if (!period || !PERIODS.includes(period)) {
-    return NextResponse.json({ error: "Use one of these periods: 1M, 3M, 6M, 1Y." }, { status: 400 });
+    return NextResponse.json({ error: "Use one of these periods: 1M, 3M, 6M, 1Y, ALL." }, { status: 400 });
   }
 
   try {

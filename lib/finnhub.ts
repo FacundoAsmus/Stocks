@@ -437,12 +437,14 @@ function periodToDays(period: ChartPeriod) {
       return 190;
     case "1Y":
       return 370;
+    case "ALL":
+      return 370; // unused — ALL goes straight to Yahoo
   }
 }
 
 function periodToResolution(period: ChartPeriod): "60" | "D" | "W" {
   if (period === "1D") return "60";
-  return period === "1Y" ? "W" : "D";
+  return (period === "1Y" || period === "ALL") ? "W" : "D";
 }
 
 function periodToYahooRange(period: ChartPeriod) {
@@ -457,12 +459,16 @@ function periodToYahooRange(period: ChartPeriod) {
       return "6mo";
     case "1Y":
       return "1y";
+    case "ALL":
+      return "max";
   }
 }
 
 function periodToYahooInterval(period: ChartPeriod) {
   if (period === "1D") return "60m";
-  return period === "1Y" ? "1wk" : "1d";
+  if (period === "1Y") return "1wk";
+  if (period === "ALL") return "1mo";
+  return "1d";
 }
 
 function toYahooSymbol(symbol: string) {

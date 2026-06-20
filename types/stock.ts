@@ -110,4 +110,4 @@ export interface SymbolSearchResult {
   type: string;
 }
 
-export type ChartPeriod = "1D" | "1M" | "3M" | "6M" | "1Y";
+export type ChartPeriod = "1D" | "1M" | "3M" | "6M" | "1Y" | "ALL";
