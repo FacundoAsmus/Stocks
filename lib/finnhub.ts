@@ -465,10 +465,10 @@ function periodToYahooRange(period: ChartPeriod) {
 }
 
 function periodToYahooInterval(period: ChartPeriod) {
-  // 1D: 15m bars during market hours → ~26 pts (max Yahoo allows for 1d range)
-  if (period === "1D") return "15m";
-  // 1W: 15m bars → ~130 pts across 5 trading days
-  if (period === "1W") return "15m";
+  // 1D: 5m bars during market hours → ~78 pts
+  if (period === "1D") return "5m";
+  // 1W: 5m bars → ~390 pts across 5 trading days
+  if (period === "1W") return "5m";
   // 1M: 30m bars → ~260 pts (~21 days × 13 bars)
   if (period === "1M") return "30m";
   // 2M: 60m bars → ~260 pts (~42 days × 6.5 bars) — within Yahoo's 730d cap

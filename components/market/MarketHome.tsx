@@ -7,6 +7,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { CandleLoader, LoadingScreen } from "@/components/EmptyWatchlist";
 import { ErrorState } from "@/components/ErrorState";
+import { MarketFearGreed } from "@/components/market/MarketFearGreed";
 import { formatCurrency, formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MarketNewsArticle, StockSummary } from "@/types/stock";
@@ -168,83 +169,179 @@ function MoversList({ title, stocks }: { title: string; stocks: StockSummary[] }
   );
 }
 
-function NewsPanel({ articles }: { articles: MarketNewsArticle[] }) {
-  const main = articles[0];
-  const side = articles.slice(1, 5);
-  const bottom = articles.slice(5, 11);
+
+/* ─── Market status helpers ──────────────────────────────────────────────── */
+// NYSE regular hours: Mon–Fri 09:30–16:00 ET (UTC-4 summer, UTC-5 winter)
+// We approximate ET offset based on month (DST: Mar 2nd Sun → Nov 1st Sun).
+function getETOffset(now: Date): number {
+  const year = now.getUTCFullYear();
+  // DST starts: 2nd Sunday of March
+  const dstStart = new Date(Date.UTC(year, 2, 1));
+  dstStart.setUTCDate(1 + (14 - dstStart.getUTCDay()) % 7);
+  // DST ends:   1st Sunday of November
+  const dstEnd = new Date(Date.UTC(year, 10, 1));
+  dstEnd.setUTCDate(1 + (7 - dstEnd.getUTCDay()) % 7);
+  return now >= dstStart && now < dstEnd ? -4 : -5; // hours offset from UTC
+}
+
+// NYSE holidays 2024-2026 (YYYY-MM-DD in ET)
+const NYSE_HOLIDAYS = new Set([
+  "2025-01-01","2025-01-20","2025-02-17","2025-04-18","2025-05-26",
+  "2025-06-19","2025-07-04","2025-09-01","2025-11-27","2025-12-25",
+  "2026-01-01","2026-01-19","2026-02-16","2026-04-03","2026-05-25",
+  "2026-06-19","2026-07-03","2026-09-07","2026-11-26","2026-12-25",
+]);
+
+function getMarketStatus(now: Date): {
+  isOpen: boolean;
+  label: string;
+  subLabel: string;
+} {
+  const etOffset = getETOffset(now);
+  const etMs = now.getTime() + etOffset * 3600_000;
+  const et = new Date(etMs);
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const dateStr = `${et.getUTCFullYear()}-${pad(et.getUTCMonth() + 1)}-${pad(et.getUTCDate())}`;
+  const dow = et.getUTCDay(); // 0=Sun 6=Sat
+  const hour = et.getUTCHours();
+  const min  = et.getUTCMinutes();
+  const timeMin = hour * 60 + min; // minutes since midnight ET
+
+  const OPEN  = 9 * 60 + 30;  // 09:30
+  const CLOSE = 16 * 60;      // 16:00
+
+  const isHoliday = NYSE_HOLIDAYS.has(dateStr);
+  const isWeekday = dow >= 1 && dow <= 5;
+  const isDuringHours = timeMin >= OPEN && timeMin < CLOSE;
+
+  const isOpen = isWeekday && !isHoliday && isDuringHours;
+
+  if (isOpen) {
+    const minsLeft = CLOSE - timeMin;
+    const h = Math.floor(minsLeft / 60);
+    const m = minsLeft % 60;
+    return {
+      isOpen: true,
+      label: "Open",
+      subLabel: h > 0
+        ? `Closes in ${h}h ${m}m`
+        : `Closes in ${m}m`,
+    };
+  }
+
+  // Find next open day
+  function nextOpen(from: Date): string {
+    const check = new Date(from.getTime());
+    for (let i = 1; i <= 10; i++) {
+      check.setUTCDate(check.getUTCDate() + 1);
+      const d = check.getUTCDay();
+      const ds = `${check.getUTCFullYear()}-${pad(check.getUTCMonth()+1)}-${pad(check.getUTCDate())}`;
+      if (d >= 1 && d <= 5 && !NYSE_HOLIDAYS.has(ds)) {
+        return check.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" });
+      }
+    }
+    return "soon";
+  }
+
+  // If today is a weekday but after close or before open
+  if (isWeekday && !isHoliday) {
+    if (timeMin < OPEN) {
+      const minsUntil = OPEN - timeMin;
+      const h = Math.floor(minsUntil / 60);
+      const m = minsUntil % 60;
+      return {
+        isOpen: false,
+        label: "Closed",
+        subLabel: `Opens in ${h}h ${m}m · 9:30 AM ET`,
+      };
+    }
+    // After close — find next day
+    return {
+      isOpen: false,
+      label: "Closed",
+      subLabel: `Opens ${nextOpen(et)}`,
+    };
+  }
+
+  return {
+    isOpen: false,
+    label: isHoliday ? "Holiday" : "Closed",
+    subLabel: `Opens ${nextOpen(et)}`,
+  };
+}
+
+/* ─── Welcome hero banner ────────────────────────────────────────────────── */
+function WelcomeHero() {
+  const [status, setStatus] = useState(() => getMarketStatus(new Date()));
+
+  // Refresh every minute so the countdown stays live
+  useEffect(() => {
+    const id = setInterval(() => setStatus(getMarketStatus(new Date())), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  const now = new Date();
+  const dayName   = now.toLocaleDateString("en-US", { weekday: "long" });
+  const dayNum    = now.getDate();
+  const monthName = now.toLocaleDateString("en-US", { month: "long" });
+  const year      = now.getFullYear();
+
+  // Ordinal suffix
+  const suffix = ["th","st","nd","rd"][dayNum % 10 > 3 || Math.floor(dayNum / 10) === 1 ? 0 : dayNum % 10] ?? "th";
 
   return (
-    <section>
-      <h2 className="mb-4 text-2xl font-semibold tracking-normal text-text-primary">News</h2>
-      {!main ? (
+    <div className="pb-2">
+      <h1 className="text-4xl font-bold tracking-tight text-text-primary leading-tight">
+        Welcome<br />
+        {dayName} {dayNum}{suffix}
+      </h1>
+      <p className="mt-1 text-base text-text-muted">{monthName} {year}</p>
+
+      {/* Market open/closed status */}
+      <div className="mt-8">
+        <p className={cn(
+          "text-4xl font-bold tracking-tight",
+          status.isOpen ? "text-positive" : "text-negative"
+        )}>
+          {status.label}
+        </p>
+        <p className="mt-1 text-sm text-text-muted">{status.subLabel}</p>
+      </div>
+    </div>
+  );
+}
+
+function NewsPanel({ articles }: { articles: MarketNewsArticle[] }) {
+  const items = articles.slice(0, 12);
+
+  return (
+    <section className="lg:sticky lg:top-[160px]">
+      <h2 className="mb-3 text-lg font-semibold tracking-normal text-text-primary">News</h2>
+      {!items.length ? (
         <div className="border-y border-border-subtle py-10 text-sm text-text-muted">Market news unavailable.</div>
       ) : (
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.6fr)_minmax(280px,0.75fr)]">
-          <a
-            href={main.url}
-            target="_blank"
-            rel="noreferrer"
-            className="group block overflow-hidden rounded-md border border-border-subtle bg-panel transition-all duration-200 hover:-translate-y-1 hover:border-positive/50 hover:shadow-2xl hover:shadow-black/30"
-          >
-            {main.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={main.image} alt="" className="h-72 w-full object-cover" />
-            ) : null}
-            <div className="p-5">
-              <h3 className="text-2xl font-bold leading-8 text-text-primary">{main.headline}</h3>
-              <p className="mt-3 line-clamp-3 text-sm leading-6 text-text-muted">{main.summary}</p>
-              <p className="mt-3 text-xs text-text-muted">
-                {main.source || "Market news"} / {formatDateTime(main.datetime)}
-              </p>
-            </div>
-          </a>
-
-          <div className="rounded-md border border-border-subtle bg-panel p-4">
-            <h3 className="mb-3 text-sm font-bold text-text-primary">Top Stories</h3>
-            <div className="space-y-3">
-              {side.map((article) => (
-                <a
-                  key={article.id}
-                  href={article.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="grid grid-cols-[72px_1fr] gap-3 rounded-md border border-transparent p-2 transition-all duration-200 hover:-translate-y-1 hover:border-positive/50 hover:bg-panel-muted hover:shadow-xl hover:shadow-black/25"
-                >
-                  {article.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={article.image} alt="" className="h-14 w-[72px] rounded-md object-cover" />
-                  ) : (
-                    <span className="h-14 w-[72px] rounded-md bg-panel-muted" />
-                  )}
-                  <span className="min-w-0">
-                    <span className="line-clamp-2 text-xs font-semibold leading-5 text-text-primary">{article.headline}</span>
-                    <span className="mt-1 block text-xs text-text-muted">{article.source || "Market news"}</span>
-                  </span>
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:col-span-2 xl:grid-cols-3">
-            {bottom.map((article) => (
-              <a
-                key={article.id}
-                href={article.url}
-                target="_blank"
-                rel="noreferrer"
-                className="group overflow-hidden rounded-md border border-border-subtle bg-panel transition-all duration-200 hover:-translate-y-1 hover:border-positive/50"
-              >
-                {article.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={article.image} alt="" className="h-28 w-full object-cover" />
-                ) : null}
-                <div className="p-3">
-                  <h3 className="line-clamp-2 text-sm font-bold leading-5 text-text-primary">{article.headline}</h3>
-                  <p className="mt-2 text-xs text-text-muted">{article.source || "Market news"}</p>
-                </div>
-              </a>
-            ))}
-          </div>
+        <div className="rounded-lg border border-border-subtle bg-panel divide-y divide-border-subtle/60">
+          {items.map((article) => (
+            <a
+              key={article.id}
+              href={article.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex gap-2.5 px-3 py-3 transition-all duration-150 hover:bg-panel-muted first:rounded-t-lg last:rounded-b-lg"
+            >
+              {article.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={article.image} alt="" className="h-10 w-14 rounded object-cover shrink-0 self-start mt-0.5" />
+              ) : (
+                <span className="h-10 w-14 rounded bg-panel-muted shrink-0 self-start mt-0.5" />
+              )}
+              <span className="min-w-0 flex flex-col justify-center">
+                <span className="line-clamp-2 text-xs font-semibold leading-4 text-text-primary">{article.headline}</span>
+                <span className="mt-1 text-[10px] text-text-muted">{article.source || "Market news"} · {formatDateTime(article.datetime)}</span>
+              </span>
+            </a>
+          ))}
         </div>
       )}
     </section>
@@ -258,14 +355,17 @@ export function MarketHome() {
   const [initialWatchlist] = useState<string[]>(() => readWatchlist());
 
   const watchlistQuery = useMemo(() => initialWatchlist.join(","), [initialWatchlist]);
-  const sentimentColor = useMemo(() => {
+  const { sentimentColor } = useMemo(() => {
     const stocks = [...(data.gainers ?? []), ...(data.losers ?? [])];
-    if (!stocks.length) return "transparent";
+    if (!stocks.length) return { sentimentColor: "transparent" };
     const greenCount = stocks.filter((stock) => (stock.changePercent ?? 0) > 0).length;
-    const redCount = stocks.filter((stock) => (stock.changePercent ?? 0) < 0).length;
-    if (greenCount > redCount) return "rgba(0, 200, 5, 0.22)";
-    if (redCount > greenCount) return "rgba(255, 48, 3, 0.22)";
-    return "rgba(250, 204, 21, 0.14)";
+    const redCount   = stocks.filter((stock) => (stock.changePercent ?? 0) < 0).length;
+    const color      = greenCount > redCount
+      ? "rgba(0, 200, 5, 0.22)"
+      : redCount > greenCount
+        ? "rgba(255, 48, 3, 0.22)"
+        : "rgba(250, 204, 21, 0.14)";
+    return { sentimentColor: color };
   }, [data.gainers, data.losers]);
 
   useEffect(() => {
@@ -311,11 +411,24 @@ export function MarketHome() {
         {isLoading ? (
           <LoadingScreen label="Loading market data" />
         ) : (
-          <div className="grid gap-8 px-5 py-8 pt-12 lg:grid-cols-[minmax(420px,0.95fr)_minmax(420px,0.95fr)_minmax(0,1.55fr)] lg:px-8">
-            <MoversList title="Top Winners" stocks={data.gainers ?? []} />
-            <MoversList title="Top Losers" stocks={data.losers ?? []} />
-            <NewsPanel articles={data.news ?? []} />
-          </div>
+          <>
+            {/* ── Full page: 70% left | 30% right ── */}
+            <div className="grid gap-8 px-5 pt-12 pb-8 lg:grid-cols-[minmax(0,2.33fr)_minmax(0,1fr)] lg:px-8 lg:items-start">
+
+              {/* LEFT 70%: welcome → sentiment → movers */}
+              <div className="flex flex-col gap-10">
+                <WelcomeHero />
+                <MarketFearGreed />
+                <div className="grid gap-8 lg:grid-cols-2">
+                  <MoversList title="Top Winners" stocks={data.gainers ?? []} />
+                  <MoversList title="Top Losers" stocks={data.losers ?? []} />
+                </div>
+              </div>
+
+              {/* RIGHT 30%: news compact */}
+              <NewsPanel articles={data.news ?? []} />
+            </div>
+          </>
         )}
       </div>
     </div>

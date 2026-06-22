@@ -59,10 +59,18 @@ function tickGap(period: ChartPeriod): number {
 
 /* ─── Number-wheel digit ─────────────────────────────────────────────────── */
 // Each digit is a vertical strip of 0–9. We translate it up by idx × rowPx.
-// The clipping window width comes from a hidden measurement span so it matches
-// the actual rendered glyph width — this gives the Robinhood-style variable
-// spacing where "1" is narrower than "8", and the layout shifts smoothly.
+// Digit wheel — vertical strip of 0–9, clipped to one row height.
+// Width per digit is set via CSS `ch` units scoped to each size, which gives
+// natural variable spacing (1 narrower than 8) without any JS measurement loop.
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
+
+// Proportional widths as a fraction of rowPx (measured from Inter at text-5xl/text-2xl).
+// "1" is naturally narrow; "0","4","8" are wide. These ratios stay correct at any px size.
+const DIGIT_RATIO: Record<string, number> = {
+  "0": 0.62, "1": 0.36, "2": 0.58, "3": 0.58,
+  "4": 0.62, "5": 0.58, "6": 0.60, "7": 0.52,
+  "8": 0.62, "9": 0.60,
+};
 
 function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
   const isDigit = DIGIT_CHARS.includes(ch);
@@ -72,15 +80,6 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
   const fontClass = size === "lg"
     ? "text-5xl font-semibold text-text-primary"
     : "text-2xl font-medium";
-
-  // Measure the actual pixel width of this digit by rendering it invisibly
-  const measureRef = useRef<HTMLSpanElement>(null);
-  const [width, setWidth] = useState<number | null>(null);
-  useEffect(() => {
-    if (measureRef.current) {
-      setWidth(measureRef.current.getBoundingClientRect().width);
-    }
-  });
 
   if (!isDigit) {
     return (
@@ -93,40 +92,36 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
     );
   }
 
+  const slotPx = Math.round((DIGIT_RATIO[ch] ?? 0.62) * rowPx);
+
   return (
-    <span className="inline-block relative align-bottom" style={{ height: rowPx, width: width ?? undefined }}>
-      {/* Hidden span to measure natural width of current digit */}
+    // Clipping window — exact px height × proportional px width
+    <span
+      className="inline-block overflow-hidden align-bottom"
+      style={{
+        height: rowPx,
+        width: slotPx,
+        transition: "width 1.04s cubic-bezier(0.22, 1, 0.36, 1)",
+      }}
+    >
+      {/* Strip of 10 digits translated up by idx rows */}
       <span
-        ref={measureRef}
-        aria-hidden
-        className={cn(fontClass, "absolute opacity-0 pointer-events-none leading-none select-none whitespace-nowrap")}
-        style={{ lineHeight: `${rowPx}px` }}
+        className="flex flex-col"
+        style={{
+          transform: `translateY(-${idx * rowPx}px)`,
+          transition: "transform 1.04s cubic-bezier(0.22, 1, 0.36, 1)",
+          willChange: "transform",
+        }}
       >
-        {ch}
-      </span>
-      {/* Clipping window — sized to measured width */}
-      <span
-        className="inline-block overflow-hidden absolute inset-0"
-        style={{ width: width ?? "1em" }}
-      >
-        <span
-          className="flex flex-col"
-          style={{
-            transform: `translateY(-${idx * rowPx}px)`,
-            transition: "transform 0.45s cubic-bezier(0.22, 1, 0.36, 1)",
-            willChange: "transform",
-          }}
-        >
-          {DIGIT_CHARS.map((d) => (
-            <span
-              key={d}
-              className={cn(fontClass, "block text-center select-none leading-none")}
-              style={{ height: rowPx, lineHeight: `${rowPx}px` }}
-            >
-              {d}
-            </span>
-          ))}
-        </span>
+        {DIGIT_CHARS.map((d) => (
+          <span
+            key={d}
+            className={cn(fontClass, "block text-center select-none leading-none")}
+            style={{ height: rowPx, lineHeight: `${rowPx}px`, width: slotPx }}
+          >
+            {d}
+          </span>
+        ))}
       </span>
     </span>
   );
