@@ -427,47 +427,64 @@ export async function searchSymbols(query: string) {
 
 function periodToDays(period: ChartPeriod) {
   switch (period) {
-    case "1D": 
-      return 2;
-    case "1M":
-      return 35;
-    case "3M":
-      return 100;
-    case "6M":
-      return 190;
-    case "1Y":
-      return 370;
-    case "ALL":
-      return 370; // unused — ALL goes straight to Yahoo
+    case "1D":  return 1;
+    case "1W":  return 7;
+    case "1M":  return 35;
+    case "2M":  return 65;
+    case "3M":  return 100;
+    case "5M":  return 160;
+    case "6M":  return 190;
+    case "1Y":  return 370;
+    case "2Y":  return 730;
+    case "5Y":  return 1825;
+    case "ALL": return 1825;
   }
 }
 
-function periodToResolution(period: ChartPeriod): "60" | "D" | "W" {
-  if (period === "1D") return "60";
-  return (period === "1Y" || period === "ALL") ? "W" : "D";
+function periodToResolution(period: ChartPeriod): "30" | "60" | "D" | "W" {
+  if (period === "1D" || period === "1W") return "30";
+  if (period === "1M" || period === "2M" || period === "3M") return "60";
+  if (period === "1Y" || period === "2Y" || period === "5Y" || period === "ALL") return "W";
+  return "D"; // 5M, 6M
 }
 
 function periodToYahooRange(period: ChartPeriod) {
   switch (period) {
-    case "1D": 
-      return "1d";
-    case "1M":
-      return "1mo";
-    case "3M":
-      return "3mo";
-    case "6M":
-      return "6mo";
-    case "1Y":
-      return "1y";
-    case "ALL":
-      return "max";
+    case "1D":  return "1d";
+    case "1W":  return "5d";
+    case "1M":  return "1mo";
+    case "2M":  return "2mo";
+    case "3M":  return "3mo";
+    case "5M":  return "5mo"; // not a native Yahoo range — handled via fromDate below
+    case "6M":  return "6mo";
+    case "1Y":  return "1y";
+    case "2Y":  return "2y";
+    case "5Y":  return "5y";
+    case "ALL": return "max";
   }
 }
 
 function periodToYahooInterval(period: ChartPeriod) {
-  if (period === "1D") return "60m";
-  if (period === "1Y") return "1wk";
-  if (period === "ALL") return "1mo";
+  // 1D: 15m bars during market hours → ~26 pts (max Yahoo allows for 1d range)
+  if (period === "1D") return "15m";
+  // 1W: 15m bars → ~130 pts across 5 trading days
+  if (period === "1W") return "15m";
+  // 1M: 30m bars → ~260 pts (~21 days × 13 bars)
+  if (period === "1M") return "30m";
+  // 2M: 60m bars → ~260 pts (~42 days × 6.5 bars) — within Yahoo's 730d cap
+  if (period === "2M") return "60m";
+  // 3M: 60m bars → ~390 pts
+  if (period === "3M") return "60m";
+  // 5M: 60m bars → ~325 pts — within Yahoo 730d cap, much richer than 1d
+  if (period === "5M") return "60m";
+  // 6M: 1d bars → ~126 pts
+  if (period === "6M") return "1d";
+  // 1Y: 1d bars → ~252 pts — much richer than weekly
+  if (period === "1Y") return "1d";
+  // 2Y: 1wk bars → ~104 pts
+  if (period === "2Y") return "1wk";
+  // 5Y+: 1mo bars → ~60 pts (Yahoo doesn't support finer for this range)
+  if (period === "5Y" || period === "ALL") return "1mo";
   return "1d";
 }
 
@@ -548,7 +565,7 @@ async function fetchYahooCandles(symbol: string, period: ChartPeriod): Promise<C
         open: quote.open?.[index] ?? undefined,
         time,
         volume: quote.volume?.[index] ?? undefined,
-        date: new Date(time * 1000).toISOString().slice(0, 10)
+        date: new Date(time * 1000).toISOString()
       };
     })
     .filter((point): point is NonNullable<typeof point> => Boolean(point));
@@ -603,7 +620,7 @@ export async function getStockCandles(symbol: string, period: ChartPeriod = "3M"
       open: response.o?.[index],
       time: response.t?.[index] ?? 0,
       volume: response.v?.[index],
-      date: new Date((response.t?.[index] ?? 0) * 1000).toISOString().slice(0, 10)
+      date: new Date((response.t?.[index] ?? 0) * 1000).toISOString()
     }));
   }
 
@@ -637,7 +654,7 @@ export async function getCandles(symbol: string, resolution: "D" | "W", days: nu
     open: response.o?.[index],
     time: response.t?.[index] ?? 0,
     volume: response.v?.[index],
-    date: new Date((response.t?.[index] ?? 0) * 1000).toISOString().slice(0, 10)
+    date: new Date((response.t?.[index] ?? 0) * 1000).toISOString()
   }));
 }
 

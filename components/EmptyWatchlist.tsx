@@ -20,12 +20,12 @@ export function LoadingScreen({ label = "Loading your watchlist" }: { label?: st
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 overflow-hidden">
       <style>{`
-        /*
-         * GRADIENT: a wide ellipse always anchored to the bottom.
-         * We animate a pseudoelement that is 300% wide so we can
-         * slide it left→right without it ever leaving the bottom edge.
-         * Color cycles red → green → red via a separate filter animation.
-         */
+        /* ── GRADIENT ─────────────────────────────────────────────────────────
+         * The trick: hue-rotate goes 0 → 230 → 460 (=0) in a single forward
+         * direction with LINEAR timing. No ease-in-out = no dwell at ends.
+         * The slide also runs linear so both loops are perfectly in sync
+         * and there is zero pause anywhere in the cycle.
+         * ──────────────────────────────────────────────────────────────────── */
         .loading-bg {
           position: fixed;
           inset: 0;
@@ -41,44 +41,60 @@ export function LoadingScreen({ label = "Loading your watchlist" }: { label?: st
           height: 100%;
           background: radial-gradient(
             ellipse 55% 42% at 50% 100%,
-            rgba(255, 48, 3, 0.35) 0%,
+            rgba(255, 48, 3, 0.38) 0%,
             transparent 70%
           );
           animation:
-            wave-slide  6s  ease-in-out infinite,
-            wave-color  6s  ease-in-out infinite;
+            wave-slide 8s  linear infinite,
+            wave-color 8s  linear infinite;
           will-change: transform, filter;
         }
 
-        /* Slide the 300%-wide element so the hot-spot drifts right then left */
+        /* Smooth pendulum slide — pre-baked sine curve at 10% steps */
         @keyframes wave-slide {
-          0%   { transform: translateX(0%);   }
-          50%  { transform: translateX(33%);  }
-          100% { transform: translateX(0%);   }
+          0%   { transform: translateX(0%);     }
+          10%  { transform: translateX(9.5%);   }
+          20%  { transform: translateX(17.6%);  }
+          30%  { transform: translateX(22.5%);  }
+          40%  { transform: translateX(23%);    }
+          50%  { transform: translateX(19%);    }
+          60%  { transform: translateX(11.5%);  }
+          70%  { transform: translateX(2%);     }
+          80%  { transform: translateX(-6.5%);  }
+          90%  { transform: translateX(-10.5%); }
+          100% { transform: translateX(0%);     }
         }
 
-        /* Hue-rotate the red glow to green and back — buttery smooth */
+        /* One full hue revolution forward: red(0) → green(115) → red(230≈0+230)
+         * At 460 it wraps back to identical red so the loop is seamless.      */
         @keyframes wave-color {
           0%   { filter: hue-rotate(0deg)   brightness(1);    }
-          50%  { filter: hue-rotate(115deg) brightness(1.15); }
-          100% { filter: hue-rotate(0deg)   brightness(1);    }
+          50%  { filter: hue-rotate(230deg) brightness(1.18); }
+          100% { filter: hue-rotate(460deg) brightness(1);    }
         }
 
-        /* CANDLES: scale from the bottom, staggered left→right */
-        @keyframes candle-scale {
-          0%, 100% { transform: scaleY(0.7);  }
-          50%       { transform: scaleY(1.3);  }
+        /* ── CANDLES ──────────────────────────────────────────────────────────
+         * Fix for start-jerk: negative delay puts each candle already
+         * mid-animation at its correct phase so there is NO jump on mount.
+         * Using a single shared keyframe with ease-in-out gives the natural
+         * breathe feel; the stagger is purely in the delay values.
+         * ──────────────────────────────────────────────────────────────────── */
+        @keyframes candle-breathe {
+          0%, 100% { transform: scaleY(0.68); }
+          50%       { transform: scaleY(1.32); }
         }
-        @keyframes wick-fade {
-          0%, 100% { opacity: 0.35; transform: scaleY(0.8); }
-          50%       { opacity: 1;   transform: scaleY(1.2); }
+        @keyframes wick-breathe {
+          0%, 100% { opacity: 0.28; transform: scaleY(0.75); }
+          50%       { opacity: 1;   transform: scaleY(1.25); }
         }
-        .c-candle-1 { animation: candle-scale 1.3s ease-in-out infinite 0s;    transform-origin: bottom; }
-        .c-candle-2 { animation: candle-scale 1.3s ease-in-out infinite 0.22s; transform-origin: bottom; }
-        .c-candle-3 { animation: candle-scale 1.3s ease-in-out infinite 0.44s; transform-origin: bottom; }
-        .c-wick-1   { animation: wick-fade    1.3s ease-in-out infinite 0s;    transform-origin: bottom; }
-        .c-wick-2   { animation: wick-fade    1.3s ease-in-out infinite 0.22s; transform-origin: bottom; }
-        .c-wick-3   { animation: wick-fade    1.3s ease-in-out infinite 0.44s; transform-origin: bottom; }
+
+        /* Negative delays = candles start already mid-cycle, never snap */
+        .c-candle-1 { animation: candle-breathe 1.8s ease-in-out infinite -1.8s;   transform-origin: bottom; }
+        .c-candle-2 { animation: candle-breathe 1.8s ease-in-out infinite -1.32s;  transform-origin: bottom; }
+        .c-candle-3 { animation: candle-breathe 1.8s ease-in-out infinite -0.84s;  transform-origin: bottom; }
+        .c-wick-1   { animation: wick-breathe   1.8s ease-in-out infinite -1.8s;   transform-origin: bottom; }
+        .c-wick-2   { animation: wick-breathe   1.8s ease-in-out infinite -1.32s;  transform-origin: bottom; }
+        .c-wick-3   { animation: wick-breathe   1.8s ease-in-out infinite -0.84s;  transform-origin: bottom; }
       `}</style>
 
       <div className="loading-bg" />

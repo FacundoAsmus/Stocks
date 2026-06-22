@@ -7,7 +7,7 @@ import { FundamentalsGrid } from "@/components/FundamentalsGrid";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { NewsCard } from "@/components/NewsCard";
 import { PriceChart } from "@/components/PriceChart";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatCurrency } from "@/lib/format";
 import { getStockDetail } from "@/lib/finnhub";
 
 interface StockPageProps {
@@ -117,7 +117,6 @@ export default async function StockPage({ params }: StockPageProps) {
     const stock = await getStockDetail(normalizedSymbol);
     const metrics = stock.financials.metric;
     const currentPrice = stock.quote.c || 0;
-    const priceChangeIsPositive = (stock.quote.dp ?? 0) >= 0;
     const sentiment = getSentimentScore({
       changePercent: stock.quote.dp,
       beta: metricValue(metrics, "beta"),
@@ -131,19 +130,14 @@ export default async function StockPage({ params }: StockPageProps) {
       //
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="relative space-y-6">
-        <div
-          className="fixed inset-0 z-[0] pointer-events-none transition-all duration-1000 ease-in-out"
-          style={{
-            background: `linear-gradient(to top, ${priceChangeIsPositive ? "rgba(34, 197, 94, 0.12)" : "rgba(239, 68, 68, 0.12)"} 0%, transparent 70%)`
-          }}
-        />
         <div className="relative z-10 space-y-6">
-        <section className="relative rounded-md border border-[#3a3a42] bg-black p-5 shadow-2xl shadow-black/20">
+        <section className="relative p-5">
           <div className="absolute right-5 top-5 z-10">
             <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
           </div>
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex gap-4">
+          {/* ── Logo + name row ── */}
+          <div className="flex gap-4 items-start">
+            <div className="shrink-0">
               {stock.profile.logo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -156,46 +150,23 @@ export default async function StockPage({ params }: StockPageProps) {
                   {stock.symbol.replace("^", "").slice(0, 2)}
                 </div>
               )}
-              <div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <h1 className="text-3xl font-semibold tracking-normal text-text-primary sm:text-4xl">
-                    {stock.profile.name ?? stock.symbol}
-                  </h1>
-                  <span className="rounded-md border border-border-subtle px-2 py-1 text-xs text-text-muted">
-                    {stock.profile.exchange ?? "US Market"}
-                  </span>
-                </div>
-                <p className="mt-0.5 text-base text-text-muted">{stock.symbol}</p>
-                <p className="mt-0.5 text-sm text-text-muted">
-                  {stock.profile.finnhubIndustry ?? "Index or market instrument"}
-                </p>
-              </div>
             </div>
-
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <div>
-                <p className="text-sm text-text-muted">Current price</p>
-                <div className="mt-1 flex items-end gap-3">
-                  <span className="text-5xl font-semibold text-text-primary">
-                    {formatCurrency(currentPrice)}
-                  </span>
-                  <span
-                    className={
-                      priceChangeIsPositive
-                        ? "text-2xl font-medium text-positive"
-                        : "text-2xl font-medium text-negative"
-                    }
-                  >
-                    {formatPercent(stock.quote.dp)}
-                  </span>
-                </div>
-              </div>
+            <div>
+              <h1 className="text-3xl font-semibold tracking-normal text-text-primary sm:text-4xl">
+                {stock.profile.name ?? stock.symbol}
+              </h1>
+              <p className="mt-0.5 text-base text-text-muted">{stock.symbol}</p>
             </div>
           </div>
-        </section>
-
-        <section className="rounded-md border border-[#3a3a42] bg-black p-4">
-          <PriceChart symbol={stock.symbol} />
+          {/* ── Price + chart — price indented to align with name, chart full width ── */}
+          <div className="mt-4">
+            <PriceChart
+              symbol={stock.symbol}
+              currentPrice={currentPrice}
+              currentChangePercent={stock.quote.dp ?? 0}
+              priceIndent="4.5rem"
+            />
+          </div>
         </section>
 
         <FundamentalsGrid
