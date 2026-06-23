@@ -23,6 +23,7 @@ const INTRADAY_SET   = new Set<ChartPeriod>(["1D", "1W"]);
 
 /* ─── Date label for tooltip crosshair ──────────────────────────────────── */
 function tooltipLabel(dateStr: string, period: ChartPeriod): string {
+  if (dateStr === "prev") return "Yesterday";
   const d = new Date(dateStr);
   if (period === "1D")
     return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
@@ -178,7 +179,7 @@ function CrosshairTooltip({
   if (!active || price === null || !date) return null;
 
   return (
-    <div className="rounded-md border border-white/10 bg-black/90 px-2.5 py-1.5 text-xs text-text-muted shadow-lg backdrop-blur-sm pointer-events-none">
+    <div className="rounded-md border border-positive/60 bg-black/90 px-2.5 py-1.5 text-xs text-text-muted shadow-lg shadow-positive/10 backdrop-blur-sm pointer-events-none">
       {tooltipLabel(date, period)}
     </div>
   );
@@ -189,13 +190,15 @@ export function PriceChart({
   symbol,
   currentPrice,
   currentChangePercent,
-  initialPeriod = "3M",
+  previousClose,
+  initialPeriod = "1D",
   heightClassName = "h-[320px]",
   priceIndent
 }: {
   symbol: string;
   currentPrice: number;
   currentChangePercent: number;
+  previousClose?: number;
   initialPeriod?: ChartPeriod;
   heightClassName?: string;
   priceIndent?: string;
@@ -234,7 +237,19 @@ export function PriceChart({
             if (livePrice) candles.push({ date: new Date().toISOString(), time: Date.now() / 1000, close: livePrice });
           }
         }
-        setData(candles);
+        // For 1D: prepend yesterday's close as the first data point
+        // Uses quote.pc (previousClose prop) — same technique as watchlist StockCard
+        if (period === "1D" && previousClose && previousClose > 0 && candles.length > 0) {
+          const prevPoint: CandlePoint = {
+            date: "prev",
+            time: candles[0].time - 1,
+            close: previousClose,
+          };
+          setData([prevPoint, ...candles]);
+        } else {
+          setData(candles);
+        }
+
       } catch (err) {
         if (!controller.signal.aborted) {
           setData([]);
@@ -254,8 +269,11 @@ export function PriceChart({
   /* Displayed price and % change — hover overrides live values */
   const displayPrice = hoverPrice ?? currentPrice;
   const startPrice   = hasData ? data[0].close : currentPrice;
-  const displayPct   = hoverPrice !== null
-    ? ((hoverPrice - startPrice) / startPrice) * 100
+  const endPrice     = hasData ? data[data.length - 1].close : currentPrice;
+  // When not hovering: show pct change across the full visible period (data[0] → latest)
+  // When hovering: show pct from period start to hovered point
+  const displayPct   = hasData
+    ? ((( hoverPrice ?? endPrice) - startPrice) / startPrice) * 100
     : currentChangePercent;
 
   const isPositive = useMemo(() => {
@@ -361,14 +379,7 @@ export function PriceChart({
               {/* No Y axis, no grid lines */}
               <CartesianGrid stroke="transparent" />
               <YAxis domain={["dataMin", "dataMax"]} hide />
-              <XAxis
-                dataKey="date"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: "#93a4b8", fontSize: 11 }}
-                tickFormatter={(v: string) => xAxisLabel(v, period)}
-                minTickGap={tickGap(period)}
-              />
+              <XAxis dataKey="date" hide />
 
               <Tooltip
                 cursor={{ stroke: "#ffffff22", strokeWidth: 1 }}

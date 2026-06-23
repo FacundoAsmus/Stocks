@@ -273,21 +273,11 @@ function getMarketStatus(now: Date): {
 
 /* ─── Welcome hero banner ────────────────────────────────────────────────── */
 function WelcomeHero() {
-  const [status, setStatus] = useState(() => getMarketStatus(new Date()));
-
-  // Refresh every minute so the countdown stays live
-  useEffect(() => {
-    const id = setInterval(() => setStatus(getMarketStatus(new Date())), 60_000);
-    return () => clearInterval(id);
-  }, []);
-
   const now = new Date();
   const dayName   = now.toLocaleDateString("en-US", { weekday: "long" });
   const dayNum    = now.getDate();
   const monthName = now.toLocaleDateString("en-US", { month: "long" });
   const year      = now.getFullYear();
-
-  // Ordinal suffix
   const suffix = ["th","st","nd","rd"][dayNum % 10 > 3 || Math.floor(dayNum / 10) === 1 ? 0 : dayNum % 10] ?? "th";
 
   return (
@@ -297,17 +287,26 @@ function WelcomeHero() {
         {dayName} {dayNum}{suffix}
       </h1>
       <p className="mt-1 text-base text-text-muted">{monthName} {year}</p>
+    </div>
+  );
+}
 
-      {/* Market open/closed status */}
-      <div className="mt-8">
-        <p className={cn(
-          "text-4xl font-bold tracking-tight",
-          status.isOpen ? "text-positive" : "text-negative"
-        )}>
-          {status.label}
-        </p>
-        <p className="mt-1 text-sm text-text-muted">{status.subLabel}</p>
-      </div>
+function MarketStatusCard() {
+  const [status, setStatus] = useState(() => getMarketStatus(new Date()));
+  useEffect(() => {
+    const id = setInterval(() => setStatus(getMarketStatus(new Date())), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="flex flex-col justify-center items-end text-right pt-6">
+      <p className={cn(
+        "text-4xl font-bold tracking-tight",
+        status.isOpen ? "text-positive" : "text-negative"
+      )}>
+        {status.label}
+      </p>
+      <p className="mt-1 text-sm text-text-muted">{status.subLabel}</p>
     </div>
   );
 }
@@ -415,9 +414,12 @@ export function MarketHome() {
             {/* ── Full page: 70% left | 30% right ── */}
             <div className="grid gap-8 px-5 pt-12 pb-8 lg:grid-cols-[minmax(0,2.33fr)_minmax(0,1fr)] lg:px-8 lg:items-start">
 
-              {/* LEFT 70%: welcome → sentiment → movers */}
+              {/* LEFT 70%: welcome+status row → sentiment → movers */}
               <div className="flex flex-col gap-10">
-                <WelcomeHero />
+                <div className="grid grid-cols-[auto_1fr] gap-6 items-start">
+                  <WelcomeHero />
+                  <MarketStatusCard />
+                </div>
                 <MarketFearGreed />
                 <div className="grid gap-8 lg:grid-cols-2">
                   <MoversList title="Top Winners" stocks={data.gainers ?? []} />

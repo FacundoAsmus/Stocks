@@ -285,7 +285,7 @@ type YahooScreenerQuote = {
 async function fetchYahooMovers(kind: "gainers" | "losers") {
   const url = new URL(YAHOO_SCREENER_BASE_URL);
   url.searchParams.set("scrIds", kind === "gainers" ? "day_gainers" : "day_losers");
-  url.searchParams.set("count", "20");
+  url.searchParams.set("count", "50");
 
   const cacheKey = `yahoo-movers:${kind}`;
   const cached = memoryCache.get(cacheKey) as CacheEntry<StockSummary[]> | undefined;
@@ -343,8 +343,11 @@ export async function getMarketMovers() {
   ]);
 
   if (gainers.length || losers.length) {
-    const limitedGainers = gainers.slice(0, 10);
-    const limitedLosers = losers.slice(0, 10);
+    // Sort to ensure we always show the true top movers
+    const sortedGainers = [...gainers].sort((a, b) => (b.changePercent ?? 0) - (a.changePercent ?? 0));
+    const sortedLosers  = [...losers].sort((a, b) => (a.changePercent ?? 0) - (b.changePercent ?? 0));
+    const limitedGainers = sortedGainers.slice(0, 10);
+    const limitedLosers = sortedLosers.slice(0, 10);
 
     // The Yahoo screener response already includes name, price, change,
     // changePercent, and a basic sparkline for every mover — so the only

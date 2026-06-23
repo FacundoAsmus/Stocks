@@ -164,10 +164,18 @@ export default async function StockPage({ params }: StockPageProps) {
               symbol={stock.symbol}
               currentPrice={currentPrice}
               currentChangePercent={stock.quote.dp ?? 0}
-              priceIndent="4.5rem"
+              previousClose={stock.quote.pc ?? undefined}
             />
           </div>
         </section>
+
+        <MarketSentiment score={sentiment.score} drivers={sentiment.drivers} />
+
+        <AnalystSection
+          recommendations={stock.recommendations}
+          priceTarget={stock.priceTarget}
+          currentPrice={currentPrice}
+        />
 
         <FundamentalsGrid
           metrics={metrics}
@@ -192,14 +200,6 @@ export default async function StockPage({ params }: StockPageProps) {
             )}
           </div>
         </section>
-
-        <AnalystSection
-          recommendations={stock.recommendations}
-          priceTarget={stock.priceTarget}
-          currentPrice={currentPrice}
-        />
-
-        <MarketSentiment score={sentiment.score} drivers={sentiment.drivers} />
         </div>
       </div>
       </div>
