@@ -19,7 +19,6 @@ import type { CandlePoint, ChartPeriod } from "@/types/stock";
 const SHORT_PERIODS: ChartPeriod[] = ["1D", "1W", "1M", "2M", "3M", "5M", "6M"];
 const LONG_PERIODS:  ChartPeriod[] = ["1Y", "2Y", "5Y", "ALL"];
 const LONG_TERM_SET  = new Set<ChartPeriod>(["1Y", "2Y", "5Y", "ALL"]);
-const INTRADAY_SET   = new Set<ChartPeriod>(["1D", "1W"]);
 
 /* ─── Date label for tooltip crosshair ──────────────────────────────────── */
 function tooltipLabel(dateStr: string, period: ChartPeriod): string {
@@ -50,13 +49,6 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function tickGap(period: ChartPeriod): number {
-  if (period === "1D") return 60;
-  if (period === "1W") return 55;
-  if (period === "5Y" || period === "ALL") return 44;
-  if (period === "1Y" || period === "2Y") return 36;
-  return 28;
-}
 
 /* ─── Number-wheel digit ─────────────────────────────────────────────────── */
 // Each digit is a vertical strip of 0–9. We translate it up by idx × rowPx.
@@ -259,6 +251,7 @@ export function PriceChart({
     }
     load();
     return () => controller.abort();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, reloadNonce, symbol]);
 
   const hasData    = data.length > 1;

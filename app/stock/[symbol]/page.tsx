@@ -7,7 +7,6 @@ import { FundamentalsGrid } from "@/components/FundamentalsGrid";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { NewsCard } from "@/components/NewsCard";
 import { PriceChart } from "@/components/PriceChart";
-import { formatCurrency } from "@/lib/format";
 import { getStockDetail } from "@/lib/finnhub";
 import { MobileStockPage } from "@/components/mobile/MobileStockPage";
 

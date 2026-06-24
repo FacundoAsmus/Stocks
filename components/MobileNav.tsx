@@ -69,7 +69,7 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
           </button>
         ))}
         {!loading && query && !results.length && (
-          <p className="px-4 py-6 text-sm text-text-muted">No results for "{query}"</p>
+          <p className="px-4 py-6 text-sm text-text-muted">No results for &ldquo;{query}&rdquo;</p>
         )}
       </div>
     </div>
