@@ -96,16 +96,10 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
   const slotPx = Math.round((DIGIT_RATIO[ch] ?? 0.62) * rowPx);
 
   return (
-    // Clipping window — exact px height × proportional px width
     <span
       className="inline-block overflow-hidden align-bottom"
-      style={{
-        height: rowPx,
-        width: slotPx,
-        transition: "width 1.04s cubic-bezier(0.22, 1, 0.36, 1)",
-      }}
+      style={{ height: rowPx, width: slotPx, transition: "width 1.04s cubic-bezier(0.22, 1, 0.36, 1)" }}
     >
-      {/* Strip of 10 digits translated up by idx rows */}
       <span
         className="flex flex-col"
         style={{
@@ -132,7 +126,7 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
 function WheelPrice({
   value,
   size = "lg",
-  colorClass
+  colorClass,
 }: {
   value: string;
   size?: "sm" | "lg";
@@ -210,6 +204,7 @@ export function PriceChart({
   const [reloadNonce, setReloadNonce] = useState(0);
   const [hoverPrice, setHoverPrice]   = useState<number | null>(null);
   const [hoverDate,  setHoverDate]    = useState<string | null>(null);
+  const [priceVisible, setPriceVisible] = useState(true);
 
   /* Load candles */
   useEffect(() => {
@@ -219,6 +214,7 @@ export function PriceChart({
       setError(null);
       setHoverPrice(null);
       setHoverDate(null);
+      setPriceVisible(false);
       try {
         const res = await fetch(
           `/api/candles?symbol=${encodeURIComponent(symbol)}&period=${period}`,
@@ -249,6 +245,8 @@ export function PriceChart({
         } else {
           setData(candles);
         }
+        // Small delay so digits have settled before fading back in
+        setTimeout(() => setPriceVisible(true), 40);
 
       } catch (err) {
         if (!controller.signal.aborted) {
@@ -313,7 +311,7 @@ export function PriceChart({
   return (
     <div>
       {/* ── Price header — indented to align with name when priceIndent is set ── */}
-      <div className="mb-6" style={priceIndent ? { paddingLeft: priceIndent } : undefined}>
+      <div className="mb-6" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible ? 1 : 0, transition: "opacity 0.18s ease" }}>
         <div className="flex items-end gap-3">
           <WheelPrice value={priceStr} size="lg" />
           <WheelPrice value={pctStr} size="sm" colorClass={pctColor} />

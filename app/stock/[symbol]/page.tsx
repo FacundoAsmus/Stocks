@@ -9,6 +9,7 @@ import { NewsCard } from "@/components/NewsCard";
 import { PriceChart } from "@/components/PriceChart";
 import { formatCurrency } from "@/lib/format";
 import { getStockDetail } from "@/lib/finnhub";
+import { MobileStockPage } from "@/components/mobile/MobileStockPage";
 
 interface StockPageProps {
   params: Promise<{ symbol: string }>;
@@ -127,7 +128,19 @@ export default async function StockPage({ params }: StockPageProps) {
     });
 
     return (
-      //
+      <>
+      {/* Mobile stock page */}
+      <div className="lg:hidden">
+        <MobileStockPage
+          stock={stock}
+          currentPrice={currentPrice}
+          sentiment={sentiment}
+          metrics={metrics}
+        />
+      </div>
+
+      {/* Desktop stock page */}
+      <div className="hidden lg:block">
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="relative space-y-6">
         <div className="relative z-10 space-y-6">
@@ -203,6 +216,8 @@ export default async function StockPage({ params }: StockPageProps) {
         </div>
       </div>
       </div>
+      </div>
+      </>
     );
   } catch (error) {
     return (
