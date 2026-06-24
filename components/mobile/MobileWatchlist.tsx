@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { Star } from "lucide-react";
 
+import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { StockSummary } from "@/types/stock";
@@ -20,7 +21,8 @@ function removeFromWatchlist(symbol: string) {
   const current = readWatchlist();
   const updated = current.filter(s => s !== symbol);
   try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated)); } catch { /* ignore */ }
-  window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+  // Note: do NOT dispatch storage event here — we update state directly in handleRemove
+  // to avoid triggering the listener which would cause a race condition re-fetch
 }
 
 function MiniSparkline({ stock }: { stock: StockSummary }) {
@@ -74,32 +76,29 @@ export function MobileWatchlist() {
   const [stocks, setStocks] = useState<StockSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Load watchlist on mount only — no re-fetch on symbol changes
   useEffect(() => {
-    setSymbols(readWatchlist());
-    function onStorage() { setSymbols(readWatchlist()); }
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  useEffect(() => {
-    if (!symbols.length) { setStocks([]); setLoading(false); return; }
-    setLoading(true);
+    const syms = readWatchlist();
+    setSymbols(syms);
+    if (!syms.length) { setLoading(false); return; }
     const ctrl = new AbortController();
-    fetch(`/api/market?watchlist=${symbols.join(",")}`, { signal: ctrl.signal })
+    fetch(`/api/market?watchlist=${syms.join(",")}`, { signal: ctrl.signal })
       .then(r => r.json() as Promise<{ tickerStocks?: StockSummary[] }>)
       .then(d => {
         const map = new Map((d.tickerStocks ?? []).map(s => [s.symbol, s]));
-        setStocks(symbols.map(sym => map.get(sym)).filter(Boolean) as StockSummary[]);
+        // Preserve watchlist order and include all symbols (even if API didn't return them)
+        setStocks(syms.map(sym => map.get(sym)).filter(Boolean) as StockSummary[]);
       })
       .catch(() => {})
       .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });
     return () => ctrl.abort();
-  }, [symbols]);
+  }, []);
 
   function handleRemove(symbol: string) {
+    // Update localStorage and state directly — no re-fetch needed
     removeFromWatchlist(symbol);
-    setStocks(prev => prev.filter(s => s.symbol !== symbol));
     setSymbols(prev => prev.filter(s => s !== symbol));
+    setStocks(prev => prev.filter(s => s.symbol !== symbol));
   }
 
   return (
@@ -110,7 +109,7 @@ export function MobileWatchlist() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-40"><span className="text-sm text-text-muted animate-pulse">Loading…</span></div>
+        <LoadingScreen label="Loading your watchlist" />
       ) : !stocks.length ? (
         <div className="mx-4 rounded-xl border border-dashed border-border-subtle p-8 text-center">
           <Star className="h-8 w-8 mx-auto mb-3 text-text-muted/40" />

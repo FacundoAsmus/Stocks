@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
+import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { MarketFearGreed } from "@/components/market/MarketFearGreed";
 import { formatCurrency, formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -148,7 +149,7 @@ export function MobileMarket() {
   const suffix  = ["th","st","nd","rd"][dayNum % 10 > 3 || Math.floor(dayNum / 10) === 1 ? 0 : dayNum % 10] ?? "th";
   const monthYear = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-  if (isLoading) return <div className="flex items-center justify-center h-64"><span className="text-sm text-text-muted animate-pulse">Loading…</span></div>;
+  if (isLoading) return <LoadingScreen label="Loading market data" />;
 
   return (
     <div className="relative min-h-dvh pb-24">
