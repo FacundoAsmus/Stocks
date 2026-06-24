@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Star, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { useToast } from "./ToastProvider";
 
 const STORAGE_KEY = "market-lens-watchlist";
 
@@ -29,7 +28,6 @@ export function AddToWatchlistButton({
   name: string;
   compact?: boolean;
 }) {
-  const { showToast } = useToast();
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
@@ -54,7 +52,8 @@ export function AddToWatchlistButton({
 
     setStoredSymbols(next);
     setIsSaved(next.includes(symbol));
-    showToast(next.includes(symbol) ? `${symbol} added to watchlist` : `${symbol} removed from watchlist`);
+    // Dispatch event so other components (MobileWatchlist, AppNav stars) stay in sync
+    window.dispatchEvent(new Event("watchlist-updated"));
   }
 
   if (compact) {
