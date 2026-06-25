@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
@@ -6,7 +8,6 @@ import { AnalystSection } from "@/components/AnalystSection";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { PriceChart } from "@/components/PriceChart";
-import { formatCurrency } from "@/lib/format";
 import type { StockDetail } from "@/types/stock";
 
 interface MobileStockPageProps {
@@ -17,16 +18,20 @@ interface MobileStockPageProps {
 }
 
 export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: MobileStockPageProps) {
+  const router = useRouter();
   const isPositive = (stock.quote.dp ?? 0) >= 0;
 
   return (
     <div className="pb-24">
       {/* Back bar */}
       <div className="sticky top-0 z-30 flex items-center gap-2 bg-black/90 backdrop-blur-xl px-4 py-3">
-        <Link href="/" className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
+        >
           <ChevronLeft className="h-4 w-4" />
           Back
-        </Link>
+        </button>
       </div>
 
       {/* Header: logo + name + watchlist */}

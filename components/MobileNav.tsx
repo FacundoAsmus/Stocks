@@ -100,7 +100,7 @@ export function MobileNav() {
           const inner = (
             <span className={cn(
               "flex items-center gap-1.5 px-5 py-2 rounded-full transition-all duration-200",
-              isActive ? "bg-positive" : "bg-black border border-border-subtle/60"
+              isActive ? "bg-positive" : ""
             )}>
               <span className={cn(
                 "flex h-4 w-4 items-center justify-center transition-colors shrink-0",
