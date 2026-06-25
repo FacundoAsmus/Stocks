@@ -326,13 +326,11 @@ export function PriceChart({
       const pts = dataRef.current;
       if (!pts.length) return;
       const rect = el.getBoundingClientRect();
-      // Clamp X within chart bounds for data lookup
       const clampedX = Math.max(rect.left, Math.min(rect.right, clientX));
       const xPct = (clampedX - rect.left) / rect.width;
       const idx  = Math.round(xPct * (pts.length - 1));
       const pt   = pts[Math.max(0, Math.min(pts.length - 1, idx))];
 
-      // Compute Y position within chart for overlay dot
       const prices = pts.map(p => p.close);
       const minP = Math.min(...prices);
       const maxP = Math.max(...prices);
@@ -345,21 +343,15 @@ export function PriceChart({
       requestAnimationFrame(() => { suppressRef.current = false; });
     };
 
-    const onTouchStart = (e: TouchEvent) => {
-      setIsTouching(true);
-      updateFromClientX(e.touches[0].clientX);
-
-      // Block scroll for entire gesture on document
-      const block = (ev: TouchEvent) => ev.preventDefault();
-      blockScrollRef.current = block;
-      document.addEventListener("touchmove", block, { passive: false });
-    };
-
     const onTouchMove = (e: TouchEvent) => {
       updateFromClientX(e.touches[0].clientX);
     };
 
     const onTouchEnd = () => {
+      // Remove the per-gesture listeners
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+      document.removeEventListener("touchcancel", onTouchEnd);
       if (blockScrollRef.current) {
         document.removeEventListener("touchmove", blockScrollRef.current);
         blockScrollRef.current = null;
@@ -367,14 +359,26 @@ export function PriceChart({
       clearHover();
     };
 
+    const onTouchStart = (e: TouchEvent) => {
+      setIsTouching(true);
+      updateFromClientX(e.touches[0].clientX);
+
+      // Attach move/end listeners only for this gesture — removed in onTouchEnd
+      document.addEventListener("touchmove", onTouchMove, { passive: true });
+      document.addEventListener("touchend", onTouchEnd);
+      document.addEventListener("touchcancel", onTouchEnd);
+
+      // Block scroll for entire gesture
+      const block = (ev: TouchEvent) => ev.preventDefault();
+      blockScrollRef.current = block;
+      document.addEventListener("touchmove", block, { passive: false });
+    };
+
     el.addEventListener("touchstart", onTouchStart, { passive: true });
-    // Move must be on document so it fires even when finger leaves chart bounds
-    document.addEventListener("touchmove", onTouchMove, { passive: true });
-    document.addEventListener("touchend", onTouchEnd);
-    document.addEventListener("touchcancel", onTouchEnd);
 
     return () => {
       el.removeEventListener("touchstart", onTouchStart);
+      // Clean up in case component unmounts mid-gesture
       document.removeEventListener("touchmove", onTouchMove);
       document.removeEventListener("touchend", onTouchEnd);
       document.removeEventListener("touchcancel", onTouchEnd);
@@ -383,7 +387,6 @@ export function PriceChart({
         blockScrollRef.current = null;
       }
     };
-  // clearHover is stable (useCallback with no deps), safe to include
   }, [clearHover]);
 
   function PeriodButton({ option }: { option: ChartPeriod }) {
@@ -480,13 +483,15 @@ export function PriceChart({
               <Tooltip
                 cursor={(() => {
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
-                  // On touch we draw our own crosshair; on desktop keep Recharts'
                   if (isTouchDevice) return false;
                   return { stroke: "#ffffff22", strokeWidth: 1 };
                 })()}
-                content={
-                  <CrosshairTooltip period={period} onHover={onHover} isTouching={isTouching} />
-                }
+                content={(() => {
+                  const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
+                  // On touch: custom overlay handles everything — give Recharts a no-op renderer
+                  if (isTouchDevice) return <></>;
+                  return <CrosshairTooltip period={period} onHover={onHover} isTouching={isTouching} />;
+                })()}
               />
 
               <Area
