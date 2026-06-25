@@ -76,7 +76,12 @@ function MoverRow({ stock, rank }: { stock: StockSummary; rank: number }) {
         <span className="block text-xs text-text-muted truncate">{stock.name}</span>
       </span>
       <MiniSparkline stock={stock} />
-      <span className={cn("text-sm font-bold shrink-0 min-w-[52px] text-right", isPos ? "text-positive" : "text-negative")}>{formatPercent(stock.changePercent)}</span>
+      <span className={cn(
+        "text-sm font-bold text-black shrink-0 px-3 py-1 rounded-lg min-w-[52px] text-center",
+        isPos ? "bg-positive" : "bg-negative"
+      )}>
+        {formatPercent(stock.changePercent)}
+      </span>
     </Link>
   );
 }

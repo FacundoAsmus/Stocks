@@ -70,13 +70,17 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
         }
         <span className="flex-1 min-w-0">
           <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
-          <span className="block text-xs text-text-muted truncate">{stock.name}</span>
-        </span>
-        <MiniSparkline stock={stock} />
-        <span className="ml-3 text-right shrink-0">
-          <span className="block text-sm font-bold text-text-primary">{formatCurrency(stock.price)}</span>
           <span className={cn("block text-xs font-semibold", isPos ? "text-positive" : "text-negative")}>
             {formatPercent(stock.changePercent)}
+          </span>
+        </span>
+        <MiniSparkline stock={stock} />
+        <span className="ml-3 shrink-0">
+          <span className={cn(
+            "inline-block text-sm font-bold text-black px-3 py-1 rounded-lg",
+            isPos ? "bg-positive" : "bg-negative"
+          )}>
+            {formatCurrency(stock.price)}
           </span>
         </span>
       </Link>

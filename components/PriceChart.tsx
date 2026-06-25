@@ -292,8 +292,8 @@ export function PriceChart({
         type="button"
         onClick={() => { setPeriod(option); }}
         className={cn(
-          "rounded-md px-2.5 py-1.5 text-xs font-medium transition sm:px-3 sm:py-2 sm:text-sm",
-          active ? "bg-positive/15 text-positive" : "text-text-muted hover:text-text-primary"
+          "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition sm:px-3 sm:py-2 sm:text-sm",
+          active ? "bg-positive text-black" : "text-positive hover:text-positive/80"
         )}
       >
         {option}

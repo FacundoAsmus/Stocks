@@ -86,6 +86,10 @@ export function MobileNav() {
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Only show nav on market and watchlist pages
+  const showNav = pathname === "/" || pathname === "/watchlist";
+  if (!showNav) return null;
+
   return (
     <>
       {searchOpen && <MobileSearchOverlay onClose={() => setSearchOpen(false)} />}
@@ -101,7 +105,7 @@ export function MobileNav() {
           const inner = (
             <span className={cn(
               "flex items-center gap-1.5 px-5 py-2 rounded-full transition-all duration-200",
-              isActive ? "bg-positive" : "bg-black/60 backdrop-blur-md"
+              isActive ? "bg-positive" : "bg-black/60 backdrop-blur-md border border-white/20"
             )}>
               <span className={cn(
                 "flex h-4 w-4 items-center justify-center transition-colors shrink-0",
