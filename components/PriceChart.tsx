@@ -283,6 +283,8 @@ export function PriceChart({
   // suppressRef: when true, CrosshairTooltip's onHover calls are ignored for one frame.
   // This prevents Recharts re-firing onHover(active values) after we already cleared on touchend.
   const suppressRef = useRef(false);
+  // isTouching: drives the `active` prop override on Tooltip so Recharts hides its cursor dot too
+  const [isTouching, setIsTouching] = useState(false);
 
   const onHover = useCallback((price: number | null, date: string | null) => {
     if (suppressRef.current) return;
@@ -292,6 +294,7 @@ export function PriceChart({
 
   const clearHover = useCallback(() => {
     suppressRef.current = true;
+    setIsTouching(false);
     setHoverPrice(null);
     setHoverDate(null);
     // Release suppression after two animation frames — enough for Recharts to settle
@@ -341,6 +344,7 @@ export function PriceChart({
       <div
         ref={chartRef}
         className={cn(heightClassName, "relative")}
+        onTouchStart={() => setIsTouching(true)}
         onTouchEnd={() => clearHover()}
         onTouchCancel={() => clearHover()}
       >
@@ -401,9 +405,10 @@ export function PriceChart({
               <XAxis dataKey="date" hide />
 
               <Tooltip
-                cursor={{ stroke: "#ffffff22", strokeWidth: 1 }}
-                content={
-                  <CrosshairTooltip period={period} onHover={onHover} />
+                cursor={isTouching ? { stroke: "#ffffff22", strokeWidth: 1 } : false}
+                content={isTouching
+                  ? <CrosshairTooltip period={period} onHover={onHover} />
+                  : <></>
                 }
               />
 
