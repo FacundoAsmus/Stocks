@@ -90,7 +90,7 @@ export function MobileNav() {
     <>
       {searchOpen && <MobileSearchOverlay onClose={() => setSearchOpen(false)} />}
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border-subtle bg-black/95 backdrop-blur-xl flex lg:hidden">
+      <nav className="fixed bottom-0 inset-x-0 z-40 bg-black/95 backdrop-blur-xl flex lg:hidden items-center justify-around px-4 py-3 pb-safe">
         {tabs.map(tab => {
           const isSearch = tab.icon === "search";
           const isActive = isSearch
@@ -98,32 +98,37 @@ export function MobileNav() {
             : tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
 
           const inner = (
-            <span className="flex flex-col items-center gap-1 py-3 px-4 w-full">
+            <span className={cn(
+              "flex items-center gap-1.5 px-5 py-2 rounded-full transition-all duration-200",
+              isActive ? "bg-positive" : "bg-black border border-border-subtle/60"
+            )}>
               <span className={cn(
-                "flex h-6 w-6 items-center justify-center transition-colors",
-                isActive ? "text-positive" : "text-text-muted"
+                "flex h-4 w-4 items-center justify-center transition-colors shrink-0",
+                isActive ? "text-black" : "text-positive"
               )}>
-                {tab.icon === "globe"   && <GlobeIcon className="h-5 w-5" />}
-                {tab.icon === "list"    && <List className="h-5 w-5" />}
-                {tab.icon === "search"  && <Search className="h-5 w-5" />}
+                {tab.icon === "globe"   && <GlobeIcon className="h-4 w-4" />}
+                {tab.icon === "list"    && <List className="h-4 w-4" />}
+                {tab.icon === "search"  && <Search className="h-4 w-4" />}
               </span>
-              <span className={cn("text-[10px] font-medium tracking-wide", isActive ? "text-positive" : "text-text-muted")}>
+              <span className={cn(
+                "text-xs font-semibold tracking-wide",
+                isActive ? "text-black" : "text-positive"
+              )}>
                 {tab.label}
               </span>
-              {isActive && <span className="absolute bottom-0 h-0.5 w-8 rounded-full bg-positive" />}
             </span>
           );
 
           if (isSearch) {
             return (
-              <button key="search" className="relative flex-1 flex items-center justify-center" onClick={() => setSearchOpen(true)}>
+              <button key="search" className="flex items-center justify-center" onClick={() => setSearchOpen(true)}>
                 {inner}
               </button>
             );
           }
 
           return (
-            <Link key={tab.href} href={tab.href} className="relative flex-1 flex items-center justify-center">
+            <Link key={tab.href} href={tab.href} className="flex items-center justify-center">
               {inner}
             </Link>
           );

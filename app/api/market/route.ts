@@ -17,7 +17,8 @@ export async function GET(request: Request) {
   const watchlist = parseWatchlist(searchParams);
 
   try {
-    const baseSymbols = watchlist.length >= 10 ? watchlist : MARKET_BAR_SYMBOLS;
+    // Always include watchlist symbols + ticker bar symbols (deduped)
+    const baseSymbols = [...new Set([...watchlist, ...MARKET_BAR_SYMBOLS])];
 
     // getMarketMovers() already fetches enriched summaries (logo + sparkline) for
     // its top gainers/losers internally, so we run it alongside the ticker-bar

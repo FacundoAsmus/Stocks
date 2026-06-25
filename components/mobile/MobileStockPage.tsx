@@ -22,10 +22,10 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   return (
     <div className="pb-24">
       {/* Back bar */}
-      <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-border-subtle bg-black/90 backdrop-blur-xl px-4 py-3">
-        <Link href="/" className="flex items-center gap-1 text-positive text-sm font-medium">
+      <div className="sticky top-0 z-30 flex items-center gap-2 bg-black/90 backdrop-blur-xl px-4 py-3">
+        <Link href="/" className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg">
           <ChevronLeft className="h-4 w-4" />
-          Market
+          Back
         </Link>
       </div>
 
