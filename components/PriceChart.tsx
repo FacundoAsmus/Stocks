@@ -288,10 +288,11 @@ export function PriceChart({
   const pctStr   = `${pctSign}${displayPct.toFixed(2)}%`;
 
   // suppressRef: when true, CrosshairTooltip's onHover calls are ignored for one frame.
-  // This prevents Recharts re-firing onHover(active values) after we already cleared on touchend.
   const suppressRef = useRef(false);
   // isTouching: true only while a finger is actively on the chart
   const [isTouching, setIsTouching] = useState(false);
+  // touchOverlay: the computed X% and Y% for the custom dot/crosshair overlay (touch only)
+  const [touchOverlay, setTouchOverlay] = useState<{ xPct: number; yPct: number } | null>(null);
 
   const onHover = useCallback((price: number | null, date: string | null) => {
     if (suppressRef.current) return;
@@ -302,14 +303,17 @@ export function PriceChart({
   const clearHover = useCallback(() => {
     suppressRef.current = true;
     setIsTouching(false);
+    setTouchOverlay(null);
     setHoverPrice(null);
     setHoverDate(null);
-    // Release suppression after two animation frames — enough for Recharts to settle
     requestAnimationFrame(() => requestAnimationFrame(() => { suppressRef.current = false; }));
   }, []);
 
-  // Scroll-lock: block page scroll for the entire duration the finger is down on the chart,
-  // even if it drifts outside the chart bounds. Attach to document on touchstart, remove on touchend.
+  // dataRef always holds the latest data so touch handlers (attached once) can read it
+  const dataRef = useRef<CandlePoint[]>([]);
+  useEffect(() => { dataRef.current = data; }, [data]);
+
+  // Scroll-lock + full custom touch tracking on document so finger can roam anywhere
   const chartRef = useRef<HTMLDivElement>(null);
   const blockScrollRef = useRef<((e: TouchEvent) => void) | null>(null);
 
@@ -317,10 +321,42 @@ export function PriceChart({
     const el = chartRef.current;
     if (!el) return;
 
-    const onTouchStart = () => {
-      const block = (e: TouchEvent) => e.preventDefault();
+    // Given a clientX, find the closest data point and update hover + overlay state
+    const updateFromClientX = (clientX: number) => {
+      const pts = dataRef.current;
+      if (!pts.length) return;
+      const rect = el.getBoundingClientRect();
+      // Clamp X within chart bounds for data lookup
+      const clampedX = Math.max(rect.left, Math.min(rect.right, clientX));
+      const xPct = (clampedX - rect.left) / rect.width;
+      const idx  = Math.round(xPct * (pts.length - 1));
+      const pt   = pts[Math.max(0, Math.min(pts.length - 1, idx))];
+
+      // Compute Y position within chart for overlay dot
+      const prices = pts.map(p => p.close);
+      const minP = Math.min(...prices);
+      const maxP = Math.max(...prices);
+      const yPct = maxP === minP ? 0.5 : 1 - (pt.close - minP) / (maxP - minP);
+
+      suppressRef.current = true;
+      setHoverPrice(pt.close);
+      setHoverDate(pt.date);
+      setTouchOverlay({ xPct, yPct });
+      requestAnimationFrame(() => { suppressRef.current = false; });
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      setIsTouching(true);
+      updateFromClientX(e.touches[0].clientX);
+
+      // Block scroll for entire gesture on document
+      const block = (ev: TouchEvent) => ev.preventDefault();
       blockScrollRef.current = block;
       document.addEventListener("touchmove", block, { passive: false });
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      updateFromClientX(e.touches[0].clientX);
     };
 
     const onTouchEnd = () => {
@@ -328,22 +364,27 @@ export function PriceChart({
         document.removeEventListener("touchmove", blockScrollRef.current);
         blockScrollRef.current = null;
       }
+      clearHover();
     };
 
     el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchend", onTouchEnd);
-    el.addEventListener("touchcancel", onTouchEnd);
+    // Move must be on document so it fires even when finger leaves chart bounds
+    document.addEventListener("touchmove", onTouchMove, { passive: true });
+    document.addEventListener("touchend", onTouchEnd);
+    document.addEventListener("touchcancel", onTouchEnd);
 
     return () => {
       el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchend", onTouchEnd);
-      el.removeEventListener("touchcancel", onTouchEnd);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+      document.removeEventListener("touchcancel", onTouchEnd);
       if (blockScrollRef.current) {
         document.removeEventListener("touchmove", blockScrollRef.current);
         blockScrollRef.current = null;
       }
     };
-  }, []);
+  // clearHover is stable (useCallback with no deps), safe to include
+  }, [clearHover]);
 
   function PeriodButton({ option }: { option: ChartPeriod }) {
     const active = period === option;
@@ -378,9 +419,6 @@ export function PriceChart({
       <div
         ref={chartRef}
         className={cn(heightClassName, "relative")}
-        onTouchStart={() => setIsTouching(true)}
-        onTouchEnd={() => clearHover()}
-        onTouchCancel={() => clearHover()}
       >
         {isLoading ? (
           <div className="flex h-full flex-col items-center justify-center gap-5 rounded-md border border-dashed border-border-subtle">
@@ -420,6 +458,7 @@ export function PriceChart({
             </button>
           </div>
         ) : hasData ? (
+          <>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}
@@ -441,7 +480,8 @@ export function PriceChart({
               <Tooltip
                 cursor={(() => {
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
-                  if (isTouchDevice && !isTouching) return false;
+                  // On touch we draw our own crosshair; on desktop keep Recharts'
+                  if (isTouchDevice) return false;
                   return { stroke: "#ffffff22", strokeWidth: 1 };
                 })()}
                 content={
@@ -460,9 +500,9 @@ export function PriceChart({
                 dot={false}
                 activeDot={(props: Record<string, unknown>) => {
                   const { cx, cy } = props as { cx?: number; cy?: number };
-                  // On touch: only show dot while finger is down. On desktop: always show.
+                  // On touch we draw our own dot overlay; on desktop keep Recharts'
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
-                  if (isTouchDevice && !isTouching) return <g key="no-dot" />;
+                  if (isTouchDevice) return <g key="no-dot" />;
                   if (cx == null || cy == null) return <g key="no-dot2" />;
                   return <circle key="dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} />;
                 }}
@@ -470,6 +510,51 @@ export function PriceChart({
               />
             </AreaChart>
           </ResponsiveContainer>
+
+          {/* ── Custom touch overlay: dot + crosshair line + date bubble ── */}
+          {isTouching && touchOverlay && (() => {
+            const xPct = touchOverlay.xPct * 100;
+            // Recharts renders the data area with margin top:8 bottom:0.
+            // Convert yPct (0=top of data area) into % of the full container height.
+            const chartMarginTopPx = 8;
+            const rect = chartRef.current?.getBoundingClientRect();
+            const containerH = rect?.height ?? 260;
+            const dataAreaH = containerH - chartMarginTopPx;
+            const dotTopPx = chartMarginTopPx + touchOverlay.yPct * dataAreaH;
+            const dotTopPct = (dotTopPx / containerH) * 100;
+            return (
+              <div className="absolute inset-0 pointer-events-none" aria-hidden>
+                {/* Vertical crosshair line */}
+                <div
+                  className="absolute top-0 bottom-0 w-px bg-white/20"
+                  style={{ left: `${xPct}%` }}
+                />
+                {/* Dot */}
+                <div
+                  className="absolute w-3 h-3 rounded-full border-2 border-black"
+                  style={{
+                    left: `${xPct}%`,
+                    top: `${dotTopPct}%`,
+                    transform: "translate(-50%, -50%)",
+                    background: lineColor,
+                  }}
+                />
+                {/* Date bubble — flip to left side if too close to right edge */}
+                {hoverDate && (
+                  <div
+                    className="absolute top-2 rounded-md border border-positive/60 bg-black/90 px-2.5 py-1.5 text-xs text-text-muted shadow-lg shadow-positive/10 backdrop-blur-sm"
+                    style={{
+                      left: xPct > 65 ? undefined : `calc(${xPct}% + 10px)`,
+                      right: xPct > 65 ? `calc(${100 - xPct}% + 10px)` : undefined,
+                    }}
+                  >
+                    {tooltipLabel(hoverDate, period)}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          </>
         ) : (
           <div className="flex h-full items-center justify-center rounded-md border border-dashed border-border-subtle px-4 text-center text-sm text-text-muted">
             Price history is not available for this symbol and period.
