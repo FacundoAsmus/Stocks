@@ -308,14 +308,41 @@ export function PriceChart({
     requestAnimationFrame(() => requestAnimationFrame(() => { suppressRef.current = false; }));
   }, []);
 
-  // Prevent page scroll while finger drags on the chart (passive:false must be set via ref)
+  // Scroll-lock: block page scroll for the entire duration the finger is down on the chart,
+  // even if it drifts outside the chart bounds. Attach to document on touchstart, remove on touchend.
   const chartRef = useRef<HTMLDivElement>(null);
+  const blockScrollRef = useRef<((e: TouchEvent) => void) | null>(null);
+
   useEffect(() => {
     const el = chartRef.current;
     if (!el) return;
-    const block = (e: TouchEvent) => e.preventDefault();
-    el.addEventListener("touchmove", block, { passive: false });
-    return () => el.removeEventListener("touchmove", block);
+
+    const onTouchStart = () => {
+      const block = (e: TouchEvent) => e.preventDefault();
+      blockScrollRef.current = block;
+      document.addEventListener("touchmove", block, { passive: false });
+    };
+
+    const onTouchEnd = () => {
+      if (blockScrollRef.current) {
+        document.removeEventListener("touchmove", blockScrollRef.current);
+        blockScrollRef.current = null;
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchend", onTouchEnd);
+    el.addEventListener("touchcancel", onTouchEnd);
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+      if (blockScrollRef.current) {
+        document.removeEventListener("touchmove", blockScrollRef.current);
+        blockScrollRef.current = null;
+      }
+    };
   }, []);
 
   function PeriodButton({ option }: { option: ChartPeriod }) {
@@ -412,7 +439,11 @@ export function PriceChart({
               <XAxis dataKey="date" hide />
 
               <Tooltip
-                cursor={{ stroke: "#ffffff22", strokeWidth: 1 }}
+                cursor={(() => {
+                  const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
+                  if (isTouchDevice && !isTouching) return false;
+                  return { stroke: "#ffffff22", strokeWidth: 1 };
+                })()}
                 content={
                   <CrosshairTooltip period={period} onHover={onHover} isTouching={isTouching} />
                 }
