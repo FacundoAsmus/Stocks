@@ -40,7 +40,7 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
   if (!stocks.length) return null;
   const duped = [...stocks, ...stocks];
   return (
-    <div className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle/40 bg-black/90 backdrop-blur-xl">
+    <div className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle/30 bg-black/60 backdrop-blur-md" style={{ WebkitBackdropFilter: "blur(12px)" }}>
       <div
         className="market-ticker flex w-max items-center"
         style={{ pointerEvents: "none" }}
@@ -161,8 +161,8 @@ export function MobileMarket() {
 
   return (
     <div className="relative min-h-dvh pb-24" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}>
-      <div className="fixed inset-0 z-0 pointer-events-none transition-all duration-1000"
-        style={{ background: `linear-gradient(to top, ${sentimentColor} 0%, transparent 60%)` }} />
+      <div className="fixed inset-x-0 top-0 bottom-0 z-0 pointer-events-none transition-all duration-1000"
+        style={{ bottom: "env(safe-area-inset-bottom)", background: `linear-gradient(to top, ${sentimentColor} 0%, transparent 60%)` }} />
       <div className="relative z-10">
         <MobileTicker stocks={data.tickerStocks ?? []} />
 

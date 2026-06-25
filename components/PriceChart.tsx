@@ -140,13 +140,15 @@ function CrosshairTooltip({
   payload,
   label,
   period,
-  onHover
+  onHover,
+  isTouching,
 }: {
   active?: boolean;
   payload?: { value: number }[];
   label?: string;
   period: ChartPeriod;
   onHover: (price: number | null, date: string | null) => void;
+  isTouching?: boolean;
 }) {
   const price = payload?.[0]?.value ?? null;
   const date  = label ?? null;
@@ -162,7 +164,12 @@ function CrosshairTooltip({
     }
   });
 
-  if (!active || price === null || !date) return null;
+  // On touch devices, hide the bubble when finger is lifted (isTouching=false).
+  // On desktop (mouse), always show when active.
+  const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
+  const showBubble = active && price !== null && date && (!isTouchDevice || isTouching);
+
+  if (!showBubble) return null;
 
   return (
     <div className="rounded-md border border-positive/60 bg-black/90 px-2.5 py-1.5 text-xs text-text-muted shadow-lg shadow-positive/10 backdrop-blur-sm pointer-events-none">
@@ -283,7 +290,7 @@ export function PriceChart({
   // suppressRef: when true, CrosshairTooltip's onHover calls are ignored for one frame.
   // This prevents Recharts re-firing onHover(active values) after we already cleared on touchend.
   const suppressRef = useRef(false);
-  // isTouching: drives the `active` prop override on Tooltip so Recharts hides its cursor dot too
+  // isTouching: true only while a finger is actively on the chart
   const [isTouching, setIsTouching] = useState(false);
 
   const onHover = useCallback((price: number | null, date: string | null) => {
@@ -405,10 +412,9 @@ export function PriceChart({
               <XAxis dataKey="date" hide />
 
               <Tooltip
-                cursor={isTouching ? { stroke: "#ffffff22", strokeWidth: 1 } : false}
-                content={isTouching
-                  ? <CrosshairTooltip period={period} onHover={onHover} />
-                  : <></>
+                cursor={{ stroke: "#ffffff22", strokeWidth: 1 }}
+                content={
+                  <CrosshairTooltip period={period} onHover={onHover} isTouching={isTouching} />
                 }
               />
 
@@ -421,6 +427,14 @@ export function PriceChart({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 dot={false}
+                activeDot={(props: Record<string, unknown>) => {
+                  const { cx, cy } = props as { cx?: number; cy?: number };
+                  // On touch: only show dot while finger is down. On desktop: always show.
+                  const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
+                  if (isTouchDevice && !isTouching) return <g key="no-dot" />;
+                  if (cx == null || cy == null) return <g key="no-dot2" />;
+                  return <circle key="dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} />;
+                }}
                 isAnimationActive={false}
               />
             </AreaChart>
