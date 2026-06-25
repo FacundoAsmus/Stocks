@@ -6,6 +6,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { MarketFearGreed } from "@/components/market/MarketFearGreed";
+import { EtfMobileList } from "@/components/market/EtfList";
 import { formatCurrency, formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MarketNewsArticle, StockSummary } from "@/types/stock";
@@ -41,10 +42,7 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
   const duped = [...stocks, ...stocks];
   return (
     <div className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle/30 bg-black/60 backdrop-blur-md" style={{ WebkitBackdropFilter: "blur(12px)" }}>
-      <div
-        className="market-ticker flex w-max items-center"
-        style={{ pointerEvents: "none" }}
-      >
+      <div className="market-ticker flex w-max items-center" style={{ pointerEvents: "none" }}>
         {duped.map((s, i) => {
           const pos = (s.changePercent ?? 0) >= 0;
           return (
@@ -103,23 +101,34 @@ function NewsRow({ article }: { article: MarketNewsArticle }) {
   );
 }
 
+type MoverTab = "etf" | "winners" | "losers";
+
 function MoversSection({ gainers, losers }: { gainers: StockSummary[]; losers: StockSummary[] }) {
-  const [tab, setTab] = useState<"winners" | "losers">("winners");
-  const stocks = tab === "winners" ? gainers : losers;
+  const [tab, setTab] = useState<MoverTab>("etf");
+
   return (
     <div>
-      <div className="flex px-4 gap-3 mb-3">
-        {(["winners", "losers"] as const).map(t => (
+      <div className="flex px-4 gap-2 mb-3 overflow-x-auto no-scrollbar">
+        {(["etf", "winners", "losers"] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={cn("text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full transition-colors",
-              tab === t ? "bg-positive text-black" : "text-text-muted border border-border-subtle")}>
-            {t === "winners" ? "Top Winners" : "Top Losers"}
+            className={cn(
+              "text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full transition-colors shrink-0",
+              tab === t ? "bg-positive text-black" : "text-text-muted border border-border-subtle"
+            )}>
+            {t === "etf" ? "ETF" : t === "winners" ? "Top Winners" : "Top Losers"}
           </button>
         ))}
       </div>
-      <div className="mx-4 rounded-xl border border-border-subtle bg-panel overflow-hidden">
-        {stocks.slice(0, 8).map((s, i) => <MoverRow key={s.symbol} stock={s} rank={i + 1} />)}
-      </div>
+
+      {tab === "etf" && <EtfMobileList />}
+
+      {tab !== "etf" && (
+        <div className="mx-4 rounded-xl border border-border-subtle bg-panel overflow-hidden">
+          {(tab === "winners" ? gainers : losers).slice(0, 8).map((s, i) => (
+            <MoverRow key={s.symbol} stock={s} rank={i + 1} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -166,7 +175,8 @@ export function MobileMarket() {
       <div className="relative z-10">
         <MobileTicker stocks={data.tickerStocks ?? []} />
 
-        <div className="flex items-start justify-between px-4 pt-5 pb-1">
+        {/* Welcome + status — more breathing room */}
+        <div className="flex items-start justify-between px-4 pt-6 pb-2">
           <div>
             <h1 className="text-2xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
             <p className="text-xs text-text-muted mt-0.5">{monthYear}</p>
@@ -174,10 +184,14 @@ export function MobileMarket() {
           <p className={cn("text-xl font-bold pt-1", status.isOpen ? "text-positive" : "text-negative")}>{status.label}</p>
         </div>
 
-        <div className="px-4 mt-4"><MarketFearGreed /></div>
-        <div className="mt-6"><MoversSection gainers={data.gainers ?? []} losers={data.losers ?? []} /></div>
+        {/* Fear & Greed — spaced from welcome */}
+        <div className="px-4 mt-6"><MarketFearGreed /></div>
 
-        <div className="mt-6">
+        {/* Movers / ETF tabs — spaced from fear & greed */}
+        <div className="mt-8"><MoversSection gainers={data.gainers ?? []} losers={data.losers ?? []} /></div>
+
+        {/* News — always spaced below the list, never overlapping */}
+        <div className="mt-8">
           <p className="px-4 text-xs font-semibold uppercase tracking-widest text-positive mb-3">News</p>
           <div className="mx-4 rounded-xl border border-border-subtle bg-panel overflow-hidden">
             {(data.news ?? []).slice(0, 10).map(a => <NewsRow key={a.id} article={a} />)}

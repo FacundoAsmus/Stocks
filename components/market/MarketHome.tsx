@@ -8,6 +8,7 @@ import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { CandleLoader, LoadingScreen } from "@/components/EmptyWatchlist";
 import { ErrorState } from "@/components/ErrorState";
 import { MarketFearGreed } from "@/components/market/MarketFearGreed";
+import { EtfRow } from "@/components/market/EtfList";
 import { formatCurrency, formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MarketNewsArticle, StockSummary } from "@/types/stock";
@@ -414,13 +415,18 @@ export function MarketHome() {
             {/* ── Full page: 70% left | 30% right ── */}
             <div className="grid gap-8 px-5 pt-12 pb-8 lg:grid-cols-[minmax(0,2.33fr)_minmax(0,1fr)] lg:px-8 lg:items-start">
 
-              {/* LEFT 70%: welcome+status row → sentiment → movers */}
+              {/* LEFT 70%: welcome+status row → sentiment → ETF → movers */}
               <div className="flex flex-col gap-10">
                 <div className="grid grid-cols-[auto_1fr] gap-6 items-start">
                   <WelcomeHero />
                   <MarketStatusCard />
                 </div>
                 <MarketFearGreed />
+                {/* ETF row — full width of the left column */}
+                <section>
+                  <h2 className="mb-3 text-2xl font-semibold tracking-normal text-text-primary">Sector ETFs</h2>
+                  <EtfRow />
+                </section>
                 <div className="grid gap-8 lg:grid-cols-2">
                   <MoversList title="Top Winners" stocks={data.gainers ?? []} />
                   <MoversList title="Top Losers" stocks={data.losers ?? []} />

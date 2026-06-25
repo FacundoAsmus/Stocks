@@ -91,18 +91,18 @@ export function MobileNav() {
     <>
       {searchOpen && <MobileSearchOverlay onClose={() => setSearchOpen(false)} />}
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center px-4 py-3 pointer-events-none" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+      <nav className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center px-4 py-4 pointer-events-none" style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}>
         {/* Left side: Market + Watchlist pills */}
         <div className="flex items-center gap-3 flex-1">
           <Link href="/" className="flex items-center justify-center pointer-events-auto">
             <span className={cn(
-              "flex items-center gap-1.5 px-5 py-2 rounded-full transition-all duration-200",
+              "flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-200",
               isMarket ? "bg-positive" : "bg-black/60 backdrop-blur-md border border-white/20"
             )}>
-              <span className={cn("flex h-4 w-4 items-center justify-center shrink-0", isMarket ? "text-black" : "text-positive")}>
-                <GlobeIcon className="h-4 w-4" />
+              <span className={cn("flex h-5 w-5 items-center justify-center shrink-0", isMarket ? "text-black" : "text-positive")}>
+                <GlobeIcon className="h-5 w-5" />
               </span>
-              <span className={cn("text-xs font-semibold tracking-wide", isMarket ? "text-black" : "text-positive")}>
+              <span className={cn("text-sm font-semibold tracking-wide", isMarket ? "text-black" : "text-positive")}>
                 Market
               </span>
             </span>
@@ -110,13 +110,13 @@ export function MobileNav() {
 
           <Link href="/watchlist" className="flex items-center justify-center pointer-events-auto">
             <span className={cn(
-              "flex items-center gap-1.5 px-5 py-2 rounded-full transition-all duration-200",
+              "flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-200",
               isWatchlist ? "bg-positive" : "bg-black/60 backdrop-blur-md border border-white/20"
             )}>
-              <span className={cn("flex h-4 w-4 items-center justify-center shrink-0", isWatchlist ? "text-black" : "text-positive")}>
-                <List className="h-4 w-4" />
+              <span className={cn("flex h-5 w-5 items-center justify-center shrink-0", isWatchlist ? "text-black" : "text-positive")}>
+                <List className="h-5 w-5" />
               </span>
-              <span className={cn("text-xs font-semibold tracking-wide", isWatchlist ? "text-black" : "text-positive")}>
+              <span className={cn("text-sm font-semibold tracking-wide", isWatchlist ? "text-black" : "text-positive")}>
                 Watchlist
               </span>
             </span>
@@ -125,11 +125,11 @@ export function MobileNav() {
 
         {/* Right side: Search circle */}
         <button
-          className="pointer-events-auto flex items-center justify-center h-10 w-10 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-positive"
+          className="pointer-events-auto flex items-center justify-center h-11 w-11 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-positive"
           onClick={() => setSearchOpen(true)}
           aria-label="Search"
         >
-          <Search className="h-4 w-4" />
+          <Search className="h-5 w-5" />
         </button>
       </nav>
     </>
