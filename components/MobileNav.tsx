@@ -76,12 +76,6 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
   );
 }
 
-const tabs = [
-  { href: "/",          label: "Market",    icon: "globe" as const },
-  { href: "/watchlist", label: "Watchlist", icon: "list"  as const },
-  { href: "#search",    label: "Search",    icon: "search" as const },
-] as const;
-
 export function MobileNav() {
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -90,54 +84,53 @@ export function MobileNav() {
   const showNav = pathname === "/" || pathname === "/watchlist";
   if (!showNav) return null;
 
+  const isMarket    = pathname === "/";
+  const isWatchlist = pathname === "/watchlist";
+
   return (
     <>
       {searchOpen && <MobileSearchOverlay onClose={() => setSearchOpen(false)} />}
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center justify-around px-4 py-3 pb-safe pointer-events-none">
-
-        {tabs.map(tab => {
-          const isSearch = tab.icon === "search";
-          const isActive = isSearch
-            ? false
-            : tab.href === "/" ? pathname === "/" : pathname.startsWith(tab.href);
-
-          const inner = (
+      <nav className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center px-4 py-3 pb-safe pointer-events-none">
+        {/* Left side: Market + Watchlist pills */}
+        <div className="flex items-center gap-3 flex-1">
+          <Link href="/" className="flex items-center justify-center pointer-events-auto">
             <span className={cn(
               "flex items-center gap-1.5 px-5 py-2 rounded-full transition-all duration-200",
-              isActive ? "bg-positive" : "bg-black/60 backdrop-blur-md border border-white/20"
+              isMarket ? "bg-positive" : "bg-black/60 backdrop-blur-md border border-white/20"
             )}>
-              <span className={cn(
-                "flex h-4 w-4 items-center justify-center transition-colors shrink-0",
-                isActive ? "text-black" : "text-positive"
-              )}>
-                {tab.icon === "globe"   && <GlobeIcon className="h-4 w-4" />}
-                {tab.icon === "list"    && <List className="h-4 w-4" />}
-                {tab.icon === "search"  && <Search className="h-4 w-4" />}
+              <span className={cn("flex h-4 w-4 items-center justify-center shrink-0", isMarket ? "text-black" : "text-positive")}>
+                <GlobeIcon className="h-4 w-4" />
               </span>
-              <span className={cn(
-                "text-xs font-semibold tracking-wide",
-                isActive ? "text-black" : "text-positive"
-              )}>
-                {tab.label}
+              <span className={cn("text-xs font-semibold tracking-wide", isMarket ? "text-black" : "text-positive")}>
+                Market
               </span>
             </span>
-          );
+          </Link>
 
-          if (isSearch) {
-            return (
-              <button key="search" className="flex items-center justify-center pointer-events-auto" onClick={() => setSearchOpen(true)}>
-                {inner}
-              </button>
-            );
-          }
+          <Link href="/watchlist" className="flex items-center justify-center pointer-events-auto">
+            <span className={cn(
+              "flex items-center gap-1.5 px-5 py-2 rounded-full transition-all duration-200",
+              isWatchlist ? "bg-positive" : "bg-black/60 backdrop-blur-md border border-white/20"
+            )}>
+              <span className={cn("flex h-4 w-4 items-center justify-center shrink-0", isWatchlist ? "text-black" : "text-positive")}>
+                <List className="h-4 w-4" />
+              </span>
+              <span className={cn("text-xs font-semibold tracking-wide", isWatchlist ? "text-black" : "text-positive")}>
+                Watchlist
+              </span>
+            </span>
+          </Link>
+        </div>
 
-          return (
-            <Link key={tab.href} href={tab.href} className="flex items-center justify-center pointer-events-auto">
-              {inner}
-            </Link>
-          );
-        })}
+        {/* Right side: Search circle */}
+        <button
+          className="pointer-events-auto flex items-center justify-center h-10 w-10 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-positive"
+          onClick={() => setSearchOpen(true)}
+          aria-label="Search"
+        >
+          <Search className="h-4 w-4" />
+        </button>
       </nav>
     </>
   );
