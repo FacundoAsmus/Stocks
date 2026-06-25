@@ -6,7 +6,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { Star } from "lucide-react";
 
 import { LoadingScreen } from "@/components/EmptyWatchlist";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatPercent } from "@/lib/format";
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { StockSummary } from "@/types/stock";
@@ -70,9 +70,6 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
         }
         <span className="flex-1 min-w-0">
           <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
-          <span className={cn("block text-xs font-semibold", isPos ? "text-positive" : "text-negative")}>
-            {formatPercent(stock.changePercent)}
-          </span>
         </span>
         <MiniSparkline stock={stock} />
         <span className="ml-3 shrink-0">
@@ -80,7 +77,7 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
             "inline-block text-sm font-bold text-black px-3 py-1 rounded-lg",
             isPos ? "bg-positive" : "bg-negative"
           )}>
-            {formatCurrency(stock.price)}
+            {formatPercent(stock.changePercent)}
           </span>
         </span>
       </Link>

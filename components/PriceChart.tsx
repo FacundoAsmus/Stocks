@@ -285,6 +285,23 @@ export function PriceChart({
     setHoverDate(date);
   }, []);
 
+  // Touch support: block page scroll while finger is on the chart, clear crosshair on lift
+  const chartRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = chartRef.current;
+    if (!el) return;
+    const preventScroll = (e: TouchEvent) => { e.preventDefault(); };
+    const clearOnLift   = () => { onHover(null, null); };
+    el.addEventListener("touchmove",   preventScroll, { passive: false });
+    el.addEventListener("touchend",    clearOnLift,   { passive: true  });
+    el.addEventListener("touchcancel", clearOnLift,   { passive: true  });
+    return () => {
+      el.removeEventListener("touchmove",   preventScroll);
+      el.removeEventListener("touchend",    clearOnLift);
+      el.removeEventListener("touchcancel", clearOnLift);
+    };
+  }, [onHover]);
+
   function PeriodButton({ option }: { option: ChartPeriod }) {
     const active = period === option;
     return (
@@ -315,7 +332,7 @@ export function PriceChart({
       </div>
 
       {/* ── Chart area ────────────────────────────────────────────────── */}
-      <div className={heightClassName}>
+      <div ref={chartRef} className={heightClassName}>
         {isLoading ? (
           <div className="flex h-full flex-col items-center justify-center gap-5 rounded-md border border-dashed border-border-subtle">
             <style>{`

@@ -40,15 +40,18 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
   if (!stocks.length) return null;
   const duped = [...stocks, ...stocks];
   return (
-    <div className="overflow-hidden border-b border-border-subtle bg-black">
-      <div className="market-ticker flex w-max items-center">
+    <div className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle bg-black/80 backdrop-blur-md">
+      <div
+        className="market-ticker flex w-max items-center"
+        style={{ pointerEvents: "none" }}
+      >
         {duped.map((s, i) => {
           const pos = (s.changePercent ?? 0) >= 0;
           return (
-            <Link key={`${s.symbol}-${i}`} href={`/stock/${s.symbol}`} className="flex items-center gap-2 border-r border-border-subtle/60 px-3 py-2">
+            <span key={`${s.symbol}-${i}`} className="flex items-center gap-2 border-r border-border-subtle/60 px-3 py-2">
               <span className="text-xs font-bold text-text-primary">{s.symbol}</span>
               <span className={cn("text-xs font-semibold", pos ? "text-positive" : "text-negative")}>{formatPercent(s.changePercent)}</span>
-            </Link>
+            </span>
           );
         })}
       </div>

@@ -26,7 +26,7 @@ body {
   min-height: 100vh;
   margin: 0;
   overflow-x: hidden;
-  background: #000000;
+  background: transparent;
   color: #f3f7fb;
   font-family: var(--font-sans);
 }
@@ -47,12 +47,6 @@ input {
 
 .market-ticker {
   animation: market-ticker 92s linear infinite;
-  transition: filter 420ms ease;
-}
-
-.market-ticker:hover {
-  animation-play-state: paused;
-  filter: brightness(1.08);
 }
 
 @keyframes market-ticker {
