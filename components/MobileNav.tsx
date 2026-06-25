@@ -90,7 +90,8 @@ export function MobileNav() {
     <>
       {searchOpen && <MobileSearchOverlay onClose={() => setSearchOpen(false)} />}
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 bg-black/95 backdrop-blur-xl flex lg:hidden items-center justify-around px-4 py-3 pb-safe">
+      <nav className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center justify-around px-4 py-3 pb-safe pointer-events-none">
+
         {tabs.map(tab => {
           const isSearch = tab.icon === "search";
           const isActive = isSearch
@@ -100,7 +101,7 @@ export function MobileNav() {
           const inner = (
             <span className={cn(
               "flex items-center gap-1.5 px-5 py-2 rounded-full transition-all duration-200",
-              isActive ? "bg-positive" : ""
+              isActive ? "bg-positive" : "bg-black/60 backdrop-blur-md"
             )}>
               <span className={cn(
                 "flex h-4 w-4 items-center justify-center transition-colors shrink-0",
@@ -121,14 +122,14 @@ export function MobileNav() {
 
           if (isSearch) {
             return (
-              <button key="search" className="flex items-center justify-center" onClick={() => setSearchOpen(true)}>
+              <button key="search" className="flex items-center justify-center pointer-events-auto" onClick={() => setSearchOpen(true)}>
                 {inner}
               </button>
             );
           }
 
           return (
-            <Link key={tab.href} href={tab.href} className="flex items-center justify-center">
+            <Link key={tab.href} href={tab.href} className="flex items-center justify-center pointer-events-auto">
               {inner}
             </Link>
           );
