@@ -40,7 +40,7 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
   if (!stocks.length) return null;
   const duped = [...stocks, ...stocks];
   return (
-    <div className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle bg-black/80 backdrop-blur-md">
+    <div className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle/40 backdrop-blur-md">
       <div
         className="market-ticker flex w-max items-center"
         style={{ pointerEvents: "none" }}

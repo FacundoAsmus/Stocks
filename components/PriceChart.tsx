@@ -197,6 +197,10 @@ export function PriceChart({
   const [hoverPrice, setHoverPrice]   = useState<number | null>(null);
   const [hoverDate,  setHoverDate]    = useState<string | null>(null);
   const [priceVisible, setPriceVisible] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    setIsMobile(window.matchMedia("(hover: none) and (pointer: coarse)").matches);
+  }, []);
 
   /* Load candles */
   useEffect(() => {
@@ -285,22 +289,65 @@ export function PriceChart({
     setHoverDate(date);
   }, []);
 
-  // Touch support: block page scroll while finger is on the chart, clear crosshair on lift
-  const chartRef = useRef<HTMLDivElement>(null);
+  // ── Mobile touch handling ────────────────────────────────────────────────
+  // We bypass Recharts' Tooltip entirely on touch devices:
+  // - touchmove: find nearest data point by finger X position → update crosshair
+  // - touchend/touchcancel: clear crosshair immediately
+  // - preventDefault on touchmove: stops page scrolling while finger is on chart
+  const chartRef    = useRef<HTMLDivElement>(null);
+  const isTouching  = useRef(false);
+  const dataRef     = useRef<CandlePoint[]>([]);
+  dataRef.current   = data;
+  const [touchXPct, setTouchXPct] = useState<number | null>(null);
+
   useEffect(() => {
     const el = chartRef.current;
     if (!el) return;
-    const preventScroll = (e: TouchEvent) => { e.preventDefault(); };
-    const clearOnLift   = () => { onHover(null, null); };
-    el.addEventListener("touchmove",   preventScroll, { passive: false });
-    el.addEventListener("touchend",    clearOnLift,   { passive: true  });
-    el.addEventListener("touchcancel", clearOnLift,   { passive: true  });
+
+    function getPointFromTouch(touch: Touch) {
+      const rect   = el!.getBoundingClientRect();
+      const relX   = Math.max(0, Math.min(touch.clientX - rect.left, rect.width));
+      const pct    = relX / rect.width;
+      const pts    = dataRef.current;
+      if (!pts.length) return;
+      const idx     = Math.round(pct * (pts.length - 1));
+      const clamped = Math.max(0, Math.min(pts.length - 1, idx));
+      const pt      = pts[clamped];
+      setTouchXPct(pct * 100);
+      setHoverPrice(pt.close);
+      setHoverDate(pt.date);
+    }
+
+    function onTouchStart(e: TouchEvent) {
+      isTouching.current = true;
+      if (e.touches[0]) getPointFromTouch(e.touches[0]);
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      if (!isTouching.current) return;
+      e.preventDefault(); // block page scroll
+      if (e.touches[0]) getPointFromTouch(e.touches[0]);
+    }
+
+    function onTouchEnd() {
+      isTouching.current = false;
+      setHoverPrice(null);
+      setHoverDate(null);
+      setTouchXPct(null);
+    }
+
+    el.addEventListener("touchstart",  onTouchStart,  { passive: true  });
+    el.addEventListener("touchmove",   onTouchMove,   { passive: false });
+    el.addEventListener("touchend",    onTouchEnd,    { passive: true  });
+    el.addEventListener("touchcancel", onTouchEnd,    { passive: true  });
     return () => {
-      el.removeEventListener("touchmove",   preventScroll);
-      el.removeEventListener("touchend",    clearOnLift);
-      el.removeEventListener("touchcancel", clearOnLift);
+      el.removeEventListener("touchstart",  onTouchStart);
+      el.removeEventListener("touchmove",   onTouchMove);
+      el.removeEventListener("touchend",    onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [onHover]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function PeriodButton({ option }: { option: ChartPeriod }) {
     const active = period === option;
@@ -332,7 +379,7 @@ export function PriceChart({
       </div>
 
       {/* ── Chart area ────────────────────────────────────────────────── */}
-      <div ref={chartRef} className={heightClassName}>
+      <div ref={chartRef} className={cn(heightClassName, "relative")}>
         {isLoading ? (
           <div className="flex h-full flex-col items-center justify-center gap-5 rounded-md border border-dashed border-border-subtle">
             <style>{`
@@ -390,9 +437,9 @@ export function PriceChart({
               <XAxis dataKey="date" hide />
 
               <Tooltip
-                cursor={{ stroke: "#ffffff22", strokeWidth: 1 }}
+                cursor={isMobile ? false : { stroke: "#ffffff22", strokeWidth: 1 }}
                 content={
-                  <CrosshairTooltip period={period} onHover={onHover} />
+                  isMobile ? <></> : <CrosshairTooltip period={period} onHover={onHover} />
                 }
               />
 
@@ -412,6 +459,18 @@ export function PriceChart({
         ) : (
           <div className="flex h-full items-center justify-center rounded-md border border-dashed border-border-subtle px-4 text-center text-sm text-text-muted">
             Price history is not available for this symbol and period.
+          </div>
+        )}
+        {/* Mobile touch crosshair overlay */}
+        {isMobile && touchXPct !== null && (
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{ left: `${touchXPct}%`, width: 0 }}
+          >
+            {/* Vertical hairline */}
+            <div className="absolute inset-y-0 -translate-x-px w-px bg-white/30" />
+            {/* Dot */}
+            <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-positive border-2 border-white shadow-lg shadow-positive/40" />
           </div>
         )}
       </div>

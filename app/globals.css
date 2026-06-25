@@ -19,13 +19,15 @@
 
 html {
   color-scheme: dark;
-  background: #080b12;
+  /* Pure black — also paints behind Safari's browser chrome on iOS */
+  background: #000000;
 }
 
 body {
   min-height: 100vh;
   margin: 0;
   overflow-x: hidden;
+  /* Transparent so html's #000000 shows through everywhere, including behind Safari UI */
   background: transparent;
   color: #f3f7fb;
   font-family: var(--font-sans);
@@ -45,15 +47,21 @@ input {
   background: rgba(56, 189, 248, 0.35);
 }
 
+/* Ticker: always animating. Desktop hover pauses it; touch devices ignore hover. */
 .market-ticker {
   animation: market-ticker 92s linear infinite;
+  transition: filter 420ms ease;
+}
+
+@media (hover: hover) {
+  /* Only on devices that support true hover (desktop/mouse) */
+  .market-ticker:hover {
+    animation-play-state: paused;
+    filter: brightness(1.08);
+  }
 }
 
 @keyframes market-ticker {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
 }
