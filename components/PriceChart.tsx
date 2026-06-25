@@ -280,9 +280,22 @@ export function PriceChart({
   const priceStr = formatPrice(displayPrice);
   const pctStr   = `${pctSign}${displayPct.toFixed(2)}%`;
 
+  // suppressRef: when true, CrosshairTooltip's onHover calls are ignored for one frame.
+  // This prevents Recharts re-firing onHover(active values) after we already cleared on touchend.
+  const suppressRef = useRef(false);
+
   const onHover = useCallback((price: number | null, date: string | null) => {
+    if (suppressRef.current) return;
     setHoverPrice(price);
     setHoverDate(date);
+  }, []);
+
+  const clearHover = useCallback(() => {
+    suppressRef.current = true;
+    setHoverPrice(null);
+    setHoverDate(null);
+    // Release suppression after two animation frames — enough for Recharts to settle
+    requestAnimationFrame(() => requestAnimationFrame(() => { suppressRef.current = false; }));
   }, []);
 
   // Prevent page scroll while finger drags on the chart (passive:false must be set via ref)
@@ -328,8 +341,8 @@ export function PriceChart({
       <div
         ref={chartRef}
         className={cn(heightClassName, "relative")}
-        onTouchEnd={() => onHover(null, null)}
-        onTouchCancel={() => onHover(null, null)}
+        onTouchEnd={() => clearHover()}
+        onTouchCancel={() => clearHover()}
       >
         {isLoading ? (
           <div className="flex h-full flex-col items-center justify-center gap-5 rounded-md border border-dashed border-border-subtle">
@@ -373,7 +386,7 @@ export function PriceChart({
             <AreaChart
               data={data}
               margin={{ left: 0, right: 0, top: 8, bottom: 0 }}
-              onMouseLeave={() => onHover(null, null)}
+              onMouseLeave={() => clearHover()}
             >
               <defs>
                 <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
