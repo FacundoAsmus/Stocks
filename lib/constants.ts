@@ -35,6 +35,12 @@ export const MARKET_BAR_SYMBOLS = [
   "GOOGL"
 ];
 
+export const ETF_SYMBOLS = [
+  "SPY", "QQQ", "SOXX", "XLF", "XLE", "XLV",
+  "XLI", "XLY", "XLP", "XLB", "XLRE", "XLU",
+  "GLD", "IEF", "DIA"
+];
+
 export const MARKET_MOVER_FALLBACK_SYMBOLS = [
   "NVDA",
   "AMD",

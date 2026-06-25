@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import type { MarketNewsArticle, StockSummary } from "@/types/stock";
 
 const STORAGE_KEY = "market-lens-watchlist";
-type MarketPayload = { tickerStocks?: StockSummary[]; gainers?: StockSummary[]; losers?: StockSummary[]; news?: MarketNewsArticle[]; error?: string; };
+type MarketPayload = { tickerStocks?: StockSummary[]; gainers?: StockSummary[]; losers?: StockSummary[]; etfs?: StockSummary[]; news?: MarketNewsArticle[]; error?: string; };
 
 function readWatchlist() {
   if (typeof window === "undefined") return [];
@@ -103,7 +103,7 @@ function NewsRow({ article }: { article: MarketNewsArticle }) {
 
 type MoverTab = "etf" | "winners" | "losers";
 
-function MoversSection({ gainers, losers }: { gainers: StockSummary[]; losers: StockSummary[] }) {
+function MoversSection({ gainers, losers, etfs }: { gainers: StockSummary[]; losers: StockSummary[]; etfs: StockSummary[] }) {
   const [tab, setTab] = useState<MoverTab>("etf");
 
   return (
@@ -120,7 +120,7 @@ function MoversSection({ gainers, losers }: { gainers: StockSummary[]; losers: S
         ))}
       </div>
 
-      {tab === "etf" && <EtfMobileList />}
+      {tab === "etf" && <EtfMobileList etfs={etfs} />}
 
       {tab !== "etf" && (
         <div className="mx-4 rounded-xl border border-border-subtle bg-panel overflow-hidden">
@@ -188,7 +188,7 @@ export function MobileMarket() {
         <div className="px-4 mt-6"><MarketFearGreed /></div>
 
         {/* Movers / ETF tabs — spaced from fear & greed */}
-        <div className="mt-8"><MoversSection gainers={data.gainers ?? []} losers={data.losers ?? []} /></div>
+        <div className="mt-8"><MoversSection gainers={data.gainers ?? []} losers={data.losers ?? []} etfs={data.etfs ?? []} /></div>
 
         {/* News — always spaced below the list, never overlapping */}
         <div className="mt-8">

@@ -19,6 +19,7 @@ type MarketPayload = {
   tickerStocks?: StockSummary[];
   gainers?: StockSummary[];
   losers?: StockSummary[];
+  etfs?: StockSummary[];
   news?: MarketNewsArticle[];
   error?: string;
 };
@@ -425,7 +426,7 @@ export function MarketHome() {
                 {/* ETF row — full width of the left column */}
                 <section>
                   <h2 className="mb-3 text-2xl font-semibold tracking-normal text-text-primary">Sector ETFs</h2>
-                  <EtfRow />
+                  <EtfRow etfs={data.etfs ?? []} />
                 </section>
                 <div className="grid gap-8 lg:grid-cols-2">
                   <MoversList title="Top Winners" stocks={data.gainers ?? []} />

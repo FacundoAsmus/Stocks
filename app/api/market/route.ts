@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { MARKET_BAR_SYMBOLS } from "@/lib/constants";
+import { ETF_SYMBOLS, MARKET_BAR_SYMBOLS } from "@/lib/constants";
 import { getMarketMovers, getMarketNews, getStockSummaries } from "@/lib/finnhub";
 
 function parseWatchlist(searchParams: URLSearchParams) {
@@ -24,10 +24,11 @@ export async function GET(request: Request) {
     // its top gainers/losers internally, so we run it alongside the ticker-bar
     // fetch instead of awaiting it first and then re-fetching the top performers
     // a second time. This removes one full sequential round-trip wave.
-    const [movers, baseTickerStocks, news] = await Promise.all([
+    const [movers, baseTickerStocks, news, etfStocks] = await Promise.all([
       getMarketMovers(),
       getStockSummaries(baseSymbols),
-      getMarketNews().catch(() => [])
+      getMarketNews().catch(() => []),
+      getStockSummaries(ETF_SYMBOLS).catch(() => [])
     ]);
 
     const topPerformerStocks = movers.gainers.slice(0, 2);
@@ -40,6 +41,7 @@ export async function GET(request: Request) {
       tickerStocks: [...baseTickerStocks, ...topPerformerStocks],
       gainers: movers.gainers,
       losers: movers.losers,
+      etfs: etfStocks,
       news: news.slice(0, 12)
     });
   } catch (error) {

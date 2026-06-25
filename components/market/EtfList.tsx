@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
+import { formatPercent } from "@/lib/format";
+import type { StockSummary } from "@/types/stock";
 
 export type EtfEntry = {
   symbol: string;
@@ -9,7 +12,6 @@ export type EtfEntry = {
   sector: string;
 };
 
-// Major sector ETFs — one per sector
 export const SECTOR_ETFS: EtfEntry[] = [
   { symbol: "SPY",  name: "S&P 500",         sector: "Main Market" },
   { symbol: "QQQ",  name: "Nasdaq 100",       sector: "Technology" },
@@ -28,52 +30,119 @@ export const SECTOR_ETFS: EtfEntry[] = [
   { symbol: "DIA",  name: "Dow Jones",        sector: "Dow" },
 ];
 
-// ─── Web version: horizontal scrollable pill row ─────────────────────────
-export function EtfRow() {
+function MiniSparkline({ stock, height = 32 }: { stock: StockSummary; height?: number }) {
+  const isPos = (stock.changePercent ?? 0) >= 0;
+  const data = stock.sparkline?.length
+    ? stock.sparkline
+    : [
+        { time: 0, close: (stock.price ?? 0) - (stock.change ?? 0) },
+        { time: 1, close: stock.price ?? 0 },
+      ];
   return (
-    <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
-      {SECTOR_ETFS.map((etf) => (
-        <Link
-          key={etf.symbol}
-          href={`/stock/${etf.symbol}`}
-          className="flex flex-col shrink-0 rounded-lg border border-border-subtle bg-panel px-4 py-3 hover:border-positive/50 hover:bg-panel-muted transition-all duration-150 min-w-[110px]"
-        >
-          <span className="text-[10px] font-medium text-text-muted mb-0.5 truncate">{etf.sector}</span>
-          <span className="text-sm font-bold text-text-primary">{etf.symbol}</span>
-          <span className="text-[10px] text-text-muted truncate">{etf.name}</span>
-        </Link>
-      ))}
+    <div style={{ height, width: "100%" }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ left: 0, right: 0, top: 2, bottom: 2 }}>
+          <YAxis domain={["dataMin", "dataMax"]} hide />
+          <Area
+            type="monotone"
+            dataKey="close"
+            stroke={isPos ? "#00c805" : "#ff3003"}
+            fill={isPos ? "rgba(0,200,5,0.08)" : "rgba(255,48,3,0.08)"}
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            dot={false}
+            isAnimationActive={false}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
 
-// ─── Mobile version: list rows ───────────────────────────────────────────
-export function EtfMobileList() {
+// ─── Web version: horizontal scrollable cards with sparkline + % ──────────
+export function EtfRow({ etfs }: { etfs: StockSummary[] }) {
+  const etfMap = new Map(etfs.map(e => [e.symbol, e]));
+
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
+      {SECTOR_ETFS.map((etf) => {
+        const stock = etfMap.get(etf.symbol);
+        const isPos = (stock?.changePercent ?? 0) >= 0;
+        return (
+          <Link
+            key={etf.symbol}
+            href={`/stock/${etf.symbol}`}
+            className="flex flex-col shrink-0 rounded-lg border border-border-subtle bg-panel px-3 py-3 hover:border-positive/50 hover:bg-panel-muted transition-all duration-150 min-w-[120px] gap-1"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-sm font-bold text-text-primary">{etf.symbol}</span>
+              {stock && (
+                <span className={cn("text-xs font-bold", isPos ? "text-positive" : "text-negative")}>
+                  {formatPercent(stock.changePercent)}
+                </span>
+              )}
+            </div>
+            <span className="text-[10px] text-text-muted truncate">{etf.name}</span>
+            {stock && (
+              <div className="mt-1 w-full">
+                <MiniSparkline stock={stock} height={28} />
+              </div>
+            )}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Mobile version: list rows with sparkline + % ────────────────────────
+export function EtfMobileList({ etfs }: { etfs: StockSummary[] }) {
+  const etfMap = new Map(etfs.map(e => [e.symbol, e]));
+
   return (
     <div className="mx-4 rounded-xl border border-border-subtle bg-panel overflow-hidden">
-      {SECTOR_ETFS.map((etf, i) => (
-        <Link
-          key={etf.symbol}
-          href={`/stock/${etf.symbol}`}
-          className={cn(
-            "flex items-center justify-between px-4 py-3 active:bg-panel-muted",
-            i !== SECTOR_ETFS.length - 1 && "border-b border-border-subtle/40"
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <span className="h-8 w-8 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-[10px] font-bold text-text-primary shrink-0">
-              {etf.symbol.slice(0, 2)}
-            </span>
-            <div>
-              <span className="block text-sm font-bold text-text-primary">{etf.symbol}</span>
-              <span className="block text-xs text-text-muted truncate">{etf.name}</span>
+      {SECTOR_ETFS.map((etf, i) => {
+        const stock = etfMap.get(etf.symbol);
+        const isPos = (stock?.changePercent ?? 0) >= 0;
+        return (
+          <Link
+            key={etf.symbol}
+            href={`/stock/${etf.symbol}`}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 active:bg-panel-muted",
+              i !== SECTOR_ETFS.length - 1 && "border-b border-border-subtle/40"
+            )}
+          >
+            {/* Symbol + name */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <span className="h-8 w-8 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-[10px] font-bold text-text-primary shrink-0">
+                {etf.symbol.slice(0, 2)}
+              </span>
+              <div className="min-w-0">
+                <span className="block text-sm font-bold text-text-primary">{etf.symbol}</span>
+                <span className="block text-xs text-text-muted truncate">{etf.name}</span>
+              </div>
             </div>
-          </div>
-          <span className="text-xs font-medium text-positive border border-positive/30 rounded-full px-2 py-0.5 shrink-0 ml-2">
-            {etf.sector}
-          </span>
-        </Link>
-      ))}
+
+            {/* Sparkline */}
+            {stock && (
+              <div className="w-16 shrink-0">
+                <MiniSparkline stock={stock} height={32} />
+              </div>
+            )}
+
+            {/* % badge */}
+            {stock && (
+              <span className={cn(
+                "text-sm font-bold text-black shrink-0 px-3 py-1 rounded-lg min-w-[52px] text-center",
+                isPos ? "bg-positive" : "bg-negative"
+              )}>
+                {formatPercent(stock.changePercent)}
+              </span>
+            )}
+          </Link>
+        );
+      })}
     </div>
   );
 }
