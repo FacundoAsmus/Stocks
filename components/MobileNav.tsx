@@ -91,7 +91,7 @@ export function MobileNav() {
     <>
       {searchOpen && <MobileSearchOverlay onClose={() => setSearchOpen(false)} />}
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center px-4 py-3 pb-safe pointer-events-none">
+      <nav className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center px-4 py-3 pointer-events-none" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
         {/* Left side: Market + Watchlist pills */}
         <div className="flex items-center gap-3 flex-1">
           <Link href="/" className="flex items-center justify-center pointer-events-auto">
