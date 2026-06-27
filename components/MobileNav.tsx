@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { List, Search, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -21,59 +20,96 @@ function GlobeIcon({ className }: { className?: string }) {
   );
 }
 
-// ─── Search overlay: expands from the search button (bottom-right) ────────
-function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
-  const router = useRouter();
+// ─── Module-level flag: did we navigate to a stock page from search? ──────
+// This lets MobileStockPage know to reverse-collapse the search circle on back.
+export let navigatedFromSearch = false;
+export function setNavigatedFromSearch(v: boolean) { navigatedFromSearch = v; }
+
+// ─── Search overlay ───────────────────────────────────────────────────────
+// Expands from the search button position (bottom-right corner).
+// When a result is tapped: navigate immediately (search stays visible as a
+// full-screen overlay during the stock page load). The stock page's back
+// button will then collapse this overlay instead of doing the sink animation.
+
+interface SearchOverlayProps {
+  onClose: () => void;
+  /** called with the symbol when the user picks a result */
+  onNavigate: (symbol: string) => void;
+  /** when true, immediately start collapsing (used by stock page back from search) */
+  forceCollapse?: boolean;
+}
+
+export function MobileSearchOverlay({ onClose, onNavigate, forceCollapse }: SearchOverlayProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Array<{ symbol: string; name: string }>>([]);
-  const [loading, setLoading] = useState(false);
+  const [searching, setSearching] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Expand on mount (skip if forceCollapse — start already expanded, collapse immediately)
   useEffect(() => {
-    // Double rAF to ensure the initial (collapsed) state is painted before expanding
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setExpanded(true);
-        // Focus input after expand animation completes
-        setTimeout(() => inputRef.current?.focus(), 720);
-      });
-    });
-  }, []);
+    if (forceCollapse) {
+      // Already should appear expanded; we'll collapse via the forceCollapse effect below
+      setExpanded(true);
+      return;
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => setExpanded(true)));
+  }, [forceCollapse]);
 
-  function handleClose() {
+  // Trigger collapse when forceCollapse becomes true
+  useEffect(() => {
+    if (forceCollapse) {
+      // Small delay so it renders expanded first, then collapses
+      const t = setTimeout(() => {
+        setExpanded(false);
+        setTimeout(onClose, 700);
+      }, 50);
+      return () => clearTimeout(t);
+    }
+  }, [forceCollapse, onClose]);
+
+  // Focus keyboard once fully expanded (not when collapsing)
+  useEffect(() => {
+    if (expanded && !forceCollapse) {
+      const t = setTimeout(() => inputRef.current?.focus(), 720);
+      return () => clearTimeout(t);
+    }
+  }, [expanded, forceCollapse]);
+
+  /** Collapse and then call onClose */
+  function collapse(cb?: () => void) {
     setExpanded(false);
-    setTimeout(onClose, 700);
+    setTimeout(() => { onClose(); cb?.(); }, 700);
   }
 
-  async function search(q: string) {
+  async function doSearch(q: string) {
     setQuery(q);
     if (!q.trim()) { setResults([]); return; }
-    setLoading(true);
+    setSearching(true);
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       const data = await res.json() as { results?: Array<{ symbol: string; description: string }> };
       setResults((data.results ?? []).slice(0, 8).map(r => ({ symbol: r.symbol, name: r.description })));
     } catch { setResults([]); }
-    finally { setLoading(false); }
+    finally { setSearching(false); }
   }
 
   return (
     <div
       className="fixed z-50 overflow-hidden bg-black/96 backdrop-blur-xl"
       style={{
-        // Always anchored to bottom-right. Animate width/height + border-radius.
-        bottom: "calc(1.25rem + env(safe-area-inset-bottom))",
-        right: "1rem",
-        // Collapsed: same size as the search button
+        bottom: expanded ? 0 : "calc(1.25rem + env(safe-area-inset-bottom))",
+        right:  expanded ? 0 : "1rem",
         width:  expanded ? "100vw"  : "2.75rem",
         height: expanded ? "100dvh" : "2.75rem",
         borderRadius: expanded ? "0px" : "50%",
-        // Grow toward top-left from the bottom-right corner
-        transformOrigin: "bottom right",
-        transition: "width 700ms cubic-bezier(0.4, 0, 0.2, 1), height 700ms cubic-bezier(0.4, 0, 0.2, 1), border-radius 700ms cubic-bezier(0.4, 0, 0.2, 1)",
-        // When fully expanded, align to true screen edges
-        ...(expanded ? { bottom: 0, right: 0 } : {}),
+        transition: [
+          "width 700ms cubic-bezier(0.4,0,0.2,1)",
+          "height 700ms cubic-bezier(0.4,0,0.2,1)",
+          "border-radius 700ms cubic-bezier(0.4,0,0.2,1)",
+          "bottom 700ms cubic-bezier(0.4,0,0.2,1)",
+          "right 700ms cubic-bezier(0.4,0,0.2,1)",
+        ].join(", "),
       }}
     >
       {/* Content fades in after the circle is big enough */}
@@ -83,6 +119,7 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
           opacity: expanded ? 1 : 0,
           transition: "opacity 250ms ease",
           transitionDelay: expanded ? "420ms" : "0ms",
+          pointerEvents: expanded ? "auto" : "none",
         }}
       >
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 pt-14 pb-4">
@@ -90,22 +127,22 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
           <input
             ref={inputRef}
             value={query}
-            onChange={e => search(e.target.value)}
+            onChange={e => doSearch(e.target.value)}
             placeholder="Search stocks…"
             className="flex-1 bg-transparent text-lg text-text-primary placeholder:text-text-muted outline-none"
           />
-          <button onClick={handleClose} className="text-text-muted active:text-text-primary p-1">
+          <button onClick={() => collapse()} className="text-text-muted active:text-text-primary p-1">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {loading && <p className="px-4 py-6 text-sm text-text-muted">Searching…</p>}
+          {searching && <p className="px-4 py-6 text-sm text-text-muted">Searching…</p>}
           {results.map(r => (
             <button
               key={r.symbol}
               className="w-full flex items-center gap-3 px-4 py-4 border-b border-border-subtle/40 text-left active:bg-panel-muted"
-              onClick={() => { handleClose(); setTimeout(() => router.push(`/stock/${r.symbol}`), 710); }}
+              onClick={() => onNavigate(r.symbol)}
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
                 {r.symbol.slice(0, 2)}
@@ -116,7 +153,7 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
               </span>
             </button>
           ))}
-          {!loading && query && !results.length && (
+          {!searching && query && !results.length && (
             <p className="px-4 py-6 text-sm text-text-muted">No results for &ldquo;{query}&rdquo;</p>
           )}
         </div>
@@ -125,13 +162,8 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Page-slide helpers ───────────────────────────────────────────────────
-// The strategy: apply the exit animation to <main>, WAIT for it to finish
-// (so the loading skeleton slides in as part of the same motion), then push
-// the route. The new page's loading.tsx gets the enter-slide class so it
-// appears to arrive from the correct side.
-
-const SLIDE_DURATION = 480; // must match CSS animation duration
+// ─── Slide helpers ────────────────────────────────────────────────────────
+const SLIDE_MS = 480;
 
 function slideAndNavigate(
   router: ReturnType<typeof useRouter>,
@@ -140,29 +172,20 @@ function slideAndNavigate(
 ) {
   const main = document.querySelector("main");
   if (!main) { router.push(href); return; }
-
-  // Remove any stale class first
-  main.classList.remove("page-slide-left", "page-slide-right", "page-enter-left", "page-enter-right");
-
-  // Kick off exit animation
+  main.classList.remove("page-slide-left", "page-slide-right");
   main.classList.add(exitClass);
-
-  // Navigate once the exit animation has had time to complete
   setTimeout(() => {
     router.push(href);
-    // Clean up exit class after navigation settles
-    setTimeout(() => {
-      main.classList.remove(exitClass);
-    }, 100);
-  }, SLIDE_DURATION - 40); // slightly before end so there's no gap
+    setTimeout(() => main.classList.remove(exitClass), 100);
+  }, SLIDE_MS - 40);
 }
 
+// ─── MobileNav ────────────────────────────────────────────────────────────
 export function MobileNav() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [searchOpen, setSearchOpen] = useState(false);
-
-  const [activePill, setActivePill] = useState<"market" | "watchlist">(
+  const router   = useRouter();
+  const [searchOpen, setSearchOpen]     = useState(false);
+  const [activePill, setActivePill]     = useState<"market" | "watchlist">(
     pathname === "/watchlist" ? "watchlist" : "market"
   );
 
@@ -179,22 +202,30 @@ export function MobileNav() {
   function navigateTo(href: "/" | "/watchlist") {
     const goingToWatchlist = href === "/watchlist";
     const currentIsMarket  = pathname === "/";
-    const alreadyThere = (goingToWatchlist && !currentIsMarket) || (!goingToWatchlist && currentIsMarket);
-    if (alreadyThere) return;
-
-    // Animate pill immediately so it switches in sync with the swipe
+    if ((goingToWatchlist && !currentIsMarket) || (!goingToWatchlist && currentIsMarket)) return;
     setActivePill(goingToWatchlist ? "watchlist" : "market");
+    slideAndNavigate(router, href, goingToWatchlist ? "page-slide-left" : "page-slide-right");
+  }
 
-    // Market is RIGHT of Watchlist:
-    //   going to watchlist → current slides LEFT
-    //   going to market    → current slides RIGHT
-    const exitClass = goingToWatchlist ? "page-slide-left" : "page-slide-right";
-    slideAndNavigate(router, href, exitClass);
+  function handleSearchNavigate(symbol: string) {
+    // Mark that next stock page was opened via search
+    setNavigatedFromSearch(true);
+    // Navigate immediately — the search overlay stays mounted and acts as the
+    // "loading screen" visual while the stock page loads behind it.
+    router.push(`/stock/${symbol}`);
+    // Close the overlay after enough time for the stock page to start rendering
+    // (it will appear under/through the overlay gracefully)
+    setTimeout(() => setSearchOpen(false), 800);
   }
 
   return (
     <>
-      {searchOpen && <MobileSearchOverlay onClose={() => setSearchOpen(false)} />}
+      {searchOpen && (
+        <MobileSearchOverlay
+          onClose={() => setSearchOpen(false)}
+          onNavigate={handleSearchNavigate}
+        />
+      )}
 
       <nav
         className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center px-4 pointer-events-none"
@@ -230,7 +261,6 @@ export function MobileNav() {
           </button>
         </div>
 
-        {/* Search circle — this is the origin point of the expand animation */}
         <button
           className="pointer-events-auto flex items-center justify-center h-11 w-11 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-positive transition-transform duration-200 active:scale-90"
           onClick={() => setSearchOpen(true)}

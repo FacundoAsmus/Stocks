@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
+import { MobileSearchOverlay, navigatedFromSearch, setNavigatedFromSearch } from "@/components/MobileNav";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
@@ -22,8 +23,24 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   const router = useRouter();
   const isPositive = (stock.quote.dp ?? 0) >= 0;
   const pageRef = useRef<HTMLDivElement>(null);
+  // If we got here from search, show the search overlay on back instead of sink
+  const [showSearchOnBack, setShowSearchOnBack] = useState(() => {
+    const v = navigatedFromSearch;
+    // Consume the flag immediately
+    setNavigatedFromSearch(false);
+    return v;
+  });
+  const [searchCollapsing, setSearchCollapsing] = useState(false);
 
   function handleBack() {
+    if (showSearchOnBack) {
+      // Reverse-expand the search circle back to the button, then go back
+      setSearchCollapsing(true);
+      setTimeout(() => {
+        router.back();
+      }, 720);
+      return;
+    }
     const el = pageRef.current;
     if (el) {
       el.classList.add("page-exit-sink");
@@ -34,7 +51,16 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   }
 
   return (
-    <div ref={pageRef} className="pb-24">
+    <>
+    {/* When coming back from a search-originated stock page, collapse the search circle */}
+    {showSearchOnBack && (
+      <MobileSearchOverlay
+        onClose={() => setShowSearchOnBack(false)}
+        onNavigate={() => {}}
+        forceCollapse={searchCollapsing}
+      />
+    )}
+    <div ref={pageRef} className="pb-24 page-enter-rise">
       {/* Back bar */}
       <div className="sticky top-0 z-30 flex items-center gap-2 bg-black/90 backdrop-blur-xl px-4 py-3">
         <button
@@ -114,5 +140,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         )}
       </div>
     </div>
+    </>
   );
 }
