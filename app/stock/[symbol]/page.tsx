@@ -129,7 +129,7 @@ export default async function StockPage({ params }: StockPageProps) {
     return (
       <>
       {/* Mobile stock page */}
-      <div className="lg:hidden page-enter-grow">
+      <div className="lg:hidden page-enter-rise">
         <MobileStockPage
           stock={stock}
           currentPrice={currentPrice}

@@ -21,7 +21,7 @@ function GlobeIcon({ className }: { className?: string }) {
   );
 }
 
-// ─── Search overlay: pill expands to fill screen ─────────────────────────
+// ─── Search overlay: expands from the search button (bottom-right) ────────
 function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -30,19 +30,20 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Trigger expand animation on mount
   useEffect(() => {
+    // Double rAF to ensure the initial (collapsed) state is painted before expanding
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setExpanded(true);
-        setTimeout(() => inputRef.current?.focus(), 350);
+        // Focus input after expand animation completes
+        setTimeout(() => inputRef.current?.focus(), 720);
       });
     });
   }, []);
 
   function handleClose() {
     setExpanded(false);
-    setTimeout(onClose, 350);
+    setTimeout(onClose, 700);
   }
 
   async function search(q: string) {
@@ -59,28 +60,32 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className={cn(
-        "fixed z-50 bg-black/95 backdrop-blur-xl transition-all ease-in-out overflow-hidden",
-        // Start: small pill at bottom-right, End: full screen
-        expanded
-          ? "inset-0 rounded-none duration-350"
-          : "bottom-6 right-4 h-11 w-11 rounded-full duration-350"
-      )}
+      className="fixed z-50 overflow-hidden bg-black/96 backdrop-blur-xl"
       style={{
-        transitionDuration: "350ms",
-        // When collapsed, match the search button position exactly
-        ...(expanded ? {} : {
-          bottom: "calc(1.25rem + env(safe-area-inset-bottom))",
-        }),
+        // Always anchored to bottom-right. Animate width/height + border-radius.
+        bottom: "calc(1.25rem + env(safe-area-inset-bottom))",
+        right: "1rem",
+        // Collapsed: same size as the search button
+        width:  expanded ? "100vw"  : "2.75rem",
+        height: expanded ? "100dvh" : "2.75rem",
+        borderRadius: expanded ? "0px" : "50%",
+        // Grow toward top-left from the bottom-right corner
+        transformOrigin: "bottom right",
+        transition: "width 700ms cubic-bezier(0.4, 0, 0.2, 1), height 700ms cubic-bezier(0.4, 0, 0.2, 1), border-radius 700ms cubic-bezier(0.4, 0, 0.2, 1)",
+        // When fully expanded, align to true screen edges
+        ...(expanded ? { bottom: 0, right: 0 } : {}),
       }}
     >
-      {/* Content only visible once expanded enough */}
-      <div className={cn(
-        "flex flex-col h-full transition-opacity duration-200",
-        expanded ? "opacity-100 delay-200" : "opacity-0"
-      )}>
-        {/* Search bar row */}
-        <div className="flex items-center gap-3 border-b border-border-subtle px-4 pt-12 pb-4">
+      {/* Content fades in after the circle is big enough */}
+      <div
+        className="flex flex-col h-full"
+        style={{
+          opacity: expanded ? 1 : 0,
+          transition: "opacity 250ms ease",
+          transitionDelay: expanded ? "420ms" : "0ms",
+        }}
+      >
+        <div className="flex items-center gap-3 border-b border-border-subtle px-4 pt-14 pb-4">
           <Search className="h-5 w-5 text-text-muted shrink-0" />
           <input
             ref={inputRef}
@@ -94,14 +99,13 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* Results */}
         <div className="flex-1 overflow-y-auto">
           {loading && <p className="px-4 py-6 text-sm text-text-muted">Searching…</p>}
           {results.map(r => (
             <button
               key={r.symbol}
               className="w-full flex items-center gap-3 px-4 py-4 border-b border-border-subtle/40 text-left active:bg-panel-muted"
-              onClick={() => { handleClose(); setTimeout(() => router.push(`/stock/${r.symbol}`), 360); }}
+              onClick={() => { handleClose(); setTimeout(() => router.push(`/stock/${r.symbol}`), 710); }}
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
                 {r.symbol.slice(0, 2)}
@@ -121,29 +125,47 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Page transition context ──────────────────────────────────────────────
-// We intercept nav clicks and apply CSS animations before the route changes.
-// Market (/) is conceptually to the RIGHT of Watchlist (/watchlist).
-// So: Market → Watchlist = slide right-to-left; Watchlist → Market = slide left-to-right.
+// ─── Page-slide helpers ───────────────────────────────────────────────────
+// The strategy: apply the exit animation to <main>, WAIT for it to finish
+// (so the loading skeleton slides in as part of the same motion), then push
+// the route. The new page's loading.tsx gets the enter-slide class so it
+// appears to arrive from the correct side.
 
-type NavAnim = "slide-left" | "slide-right" | "none";
+const SLIDE_DURATION = 480; // must match CSS animation duration
 
-// We store the pending animation in module scope so the page layout can read it
-let pendingAnimation: NavAnim = "none";
-export function getPendingAnimation() { return pendingAnimation; }
-export function clearPendingAnimation() { pendingAnimation = "none"; }
+function slideAndNavigate(
+  router: ReturnType<typeof useRouter>,
+  href: "/" | "/watchlist",
+  exitClass: "page-slide-left" | "page-slide-right",
+) {
+  const main = document.querySelector("main");
+  if (!main) { router.push(href); return; }
+
+  // Remove any stale class first
+  main.classList.remove("page-slide-left", "page-slide-right", "page-enter-left", "page-enter-right");
+
+  // Kick off exit animation
+  main.classList.add(exitClass);
+
+  // Navigate once the exit animation has had time to complete
+  setTimeout(() => {
+    router.push(href);
+    // Clean up exit class after navigation settles
+    setTimeout(() => {
+      main.classList.remove(exitClass);
+    }, 100);
+  }, SLIDE_DURATION - 40); // slightly before end so there's no gap
+}
 
 export function MobileNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Track which pill is "active" independently so we can animate it during transition
   const [activePill, setActivePill] = useState<"market" | "watchlist">(
     pathname === "/watchlist" ? "watchlist" : "market"
   );
 
-  // Sync activePill when pathname settles
   useEffect(() => {
     setActivePill(pathname === "/watchlist" ? "watchlist" : "market");
   }, [pathname]);
@@ -154,36 +176,20 @@ export function MobileNav() {
   const isMarket    = activePill === "market";
   const isWatchlist = activePill === "watchlist";
 
-  function navigateTo(href: string) {
+  function navigateTo(href: "/" | "/watchlist") {
     const goingToWatchlist = href === "/watchlist";
     const currentIsMarket  = pathname === "/";
+    const alreadyThere = (goingToWatchlist && !currentIsMarket) || (!goingToWatchlist && currentIsMarket);
+    if (alreadyThere) return;
 
-    // Determine swipe direction:
-    // Market is RIGHT of Watchlist. Going TO watchlist FROM market = slide left.
-    // Going TO market FROM watchlist = slide right.
-    const anim: NavAnim = goingToWatchlist && currentIsMarket
-      ? "slide-left"
-      : !goingToWatchlist && !currentIsMarket
-        ? "slide-right"
-        : "none";
-
-    if (anim === "none") return; // already on this page
-
-    // Animate pill immediately
+    // Animate pill immediately so it switches in sync with the swipe
     setActivePill(goingToWatchlist ? "watchlist" : "market");
 
-    // Apply page animation class
-    const main = document.querySelector("main");
-    if (main) {
-      main.classList.remove("page-slide-left", "page-slide-right");
-      main.classList.add(anim === "slide-left" ? "page-slide-left" : "page-slide-right");
-      setTimeout(() => {
-        router.push(href as "/watchlist" | "/");
-        setTimeout(() => main.classList.remove("page-slide-left", "page-slide-right"), 400);
-      }, 50);
-    } else {
-      router.push(href as "/watchlist" | "/");
-    }
+    // Market is RIGHT of Watchlist:
+    //   going to watchlist → current slides LEFT
+    //   going to market    → current slides RIGHT
+    const exitClass = goingToWatchlist ? "page-slide-left" : "page-slide-right";
+    slideAndNavigate(router, href, exitClass);
   }
 
   return (
@@ -191,49 +197,40 @@ export function MobileNav() {
       {searchOpen && <MobileSearchOverlay onClose={() => setSearchOpen(false)} />}
 
       <nav
-        className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center px-4 py-4 pointer-events-none"
-        style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
+        className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center px-4 pointer-events-none"
+        style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))", paddingTop: "1rem" }}
       >
-        {/* Pills */}
         <div className="flex items-center gap-3 flex-1">
-          {/* Market pill */}
-          <button
-            className="flex items-center justify-center pointer-events-auto"
-            onClick={() => navigateTo("/")}
-          >
+          <button className="flex items-center justify-center pointer-events-auto" onClick={() => navigateTo("/")}>
             <span className={cn(
-              "flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-300",
+              "flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-400",
               isMarket ? "bg-positive" : "bg-black/60 backdrop-blur-md border border-white/20"
             )}>
-              <span className={cn("flex h-5 w-5 items-center justify-center shrink-0 transition-colors duration-300", isMarket ? "text-black" : "text-positive")}>
+              <span className={cn("flex h-5 w-5 items-center justify-center shrink-0 transition-colors duration-400", isMarket ? "text-black" : "text-positive")}>
                 <GlobeIcon className="h-5 w-5" />
               </span>
-              <span className={cn("text-sm font-semibold tracking-wide transition-colors duration-300", isMarket ? "text-black" : "text-positive")}>
+              <span className={cn("text-sm font-semibold tracking-wide transition-colors duration-400", isMarket ? "text-black" : "text-positive")}>
                 Market
               </span>
             </span>
           </button>
 
-          {/* Watchlist pill */}
-          <button
-            className="flex items-center justify-center pointer-events-auto"
-            onClick={() => navigateTo("/watchlist")}
-          >
+          <button className="flex items-center justify-center pointer-events-auto" onClick={() => navigateTo("/watchlist")}>
             <span className={cn(
-              "flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-300",
+              "flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-400",
               isWatchlist ? "bg-positive" : "bg-black/60 backdrop-blur-md border border-white/20"
             )}>
-              <span className={cn("flex h-5 w-5 items-center justify-center shrink-0 transition-colors duration-300", isWatchlist ? "text-black" : "text-positive")}>
+              <span className={cn("flex h-5 w-5 items-center justify-center shrink-0 transition-colors duration-400", isWatchlist ? "text-black" : "text-positive")}>
                 <List className="h-5 w-5" />
               </span>
-              <span className={cn("text-sm font-semibold tracking-wide transition-colors duration-300", isWatchlist ? "text-black" : "text-positive")}>
+              <span className={cn("text-sm font-semibold tracking-wide transition-colors duration-400", isWatchlist ? "text-black" : "text-positive")}>
                 Watchlist
               </span>
             </span>
           </button>
         </div>
 
-        {/* Search circle */}
+        {/* Search circle — this is the origin point of the expand animation */}
         <button
           className="pointer-events-auto flex items-center justify-center h-11 w-11 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-positive transition-transform duration-200 active:scale-90"
           onClick={() => setSearchOpen(true)}

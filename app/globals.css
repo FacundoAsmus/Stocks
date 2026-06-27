@@ -70,32 +70,58 @@ input {
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ─── Mobile page slide transitions ─────────────────────────────────────── */
+/* Slide the CURRENT page out — the loading skeleton will slide in with it  */
 @keyframes slideOutLeft {
-  from { transform: translateX(0); opacity: 1; }
-  to   { transform: translateX(-30%); opacity: 0; }
+  from { transform: translateX(0);    opacity: 1; }
+  to   { transform: translateX(-40%); opacity: 0; }
 }
 @keyframes slideOutRight {
-  from { transform: translateX(0); opacity: 1; }
-  to   { transform: translateX(30%); opacity: 0; }
+  from { transform: translateX(0);   opacity: 1; }
+  to   { transform: translateX(40%); opacity: 0; }
+}
+/* New page / loading screen slides IN from the opposite side */
+@keyframes slideInFromRight {
+  from { transform: translateX(40%); opacity: 0; }
+  to   { transform: translateX(0);   opacity: 1; }
+}
+@keyframes slideInFromLeft {
+  from { transform: translateX(-40%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
 }
 
 main.page-slide-left {
-  animation: slideOutLeft 320ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideOutLeft 480ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 main.page-slide-right {
-  animation: slideOutRight 320ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideOutRight 480ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+main.page-enter-left {
+  animation: slideInFromRight 420ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+main.page-enter-right {
+  animation: slideInFromLeft 420ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
-/* ─── Stock page enter: grow from center ────────────────────────────────── */
-@keyframes growFromCenter {
-  from { transform: scale(0.88); opacity: 0; }
-  to   { transform: scale(1);    opacity: 1; }
+/* ─── Stock page enter: rise from bottom ────────────────────────────────── */
+@keyframes riseFromBottom {
+  from { transform: translateY(60px) scale(0.96); opacity: 0; }
+  to   { transform: translateY(0)    scale(1);    opacity: 1; }
 }
-.page-enter-grow {
-  animation: growFromCenter 380ms cubic-bezier(0.34, 1.26, 0.64, 1) both;
+@keyframes sinkToBottom {
+  from { transform: translateY(0)    scale(1);    opacity: 1; }
+  to   { transform: translateY(60px) scale(0.96); opacity: 0; }
+}
+.page-enter-rise {
+  animation: riseFromBottom 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.page-exit-sink {
+  animation: sinkToBottom 400ms cubic-bezier(0.4, 0, 1, 1) forwards;
 }
 
-/* ─── Search pill expand ────────────────────────────────────────────────── */
+/* ─── Search pill expand from bottom-right corner ───────────────────────── */
+.duration-700 {
+  transition-duration: 700ms;
+}
 .duration-350 {
   transition-duration: 350ms;
 }

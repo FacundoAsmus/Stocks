@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
@@ -20,13 +21,24 @@ interface MobileStockPageProps {
 export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: MobileStockPageProps) {
   const router = useRouter();
   const isPositive = (stock.quote.dp ?? 0) >= 0;
+  const pageRef = useRef<HTMLDivElement>(null);
+
+  function handleBack() {
+    const el = pageRef.current;
+    if (el) {
+      el.classList.add("page-exit-sink");
+      setTimeout(() => router.back(), 380);
+    } else {
+      router.back();
+    }
+  }
 
   return (
-    <div className="pb-24">
+    <div ref={pageRef} className="pb-24">
       {/* Back bar */}
       <div className="sticky top-0 z-30 flex items-center gap-2 bg-black/90 backdrop-blur-xl px-4 py-3">
         <button
-          onClick={() => router.back()}
+          onClick={handleBack}
           className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
         >
           <ChevronLeft className="h-4 w-4" />
