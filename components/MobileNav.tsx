@@ -20,66 +20,61 @@ function GlobeIcon({ className }: { className?: string }) {
   );
 }
 
-// ─── Module-level flag: did we navigate to a stock page from search? ──────
-// This lets MobileStockPage know to reverse-collapse the search circle on back.
-export let navigatedFromSearch = false;
-export function setNavigatedFromSearch(v: boolean) { navigatedFromSearch = v; }
-
-// ─── Search overlay ───────────────────────────────────────────────────────
-// Expands from the search button position (bottom-right corner).
-// When a result is tapped: navigate immediately (search stays visible as a
-// full-screen overlay during the stock page load). The stock page's back
-// button will then collapse this overlay instead of doing the sink animation.
-
-interface SearchOverlayProps {
-  onClose: () => void;
-  /** called with the symbol when the user picks a result */
-  onNavigate: (symbol: string) => void;
-  /** when true, immediately start collapsing (used by stock page back from search) */
-  forceCollapse?: boolean;
+// ─── Session flag: did user navigate to stock page from search? ───────────
+// Uses sessionStorage so it survives Next.js server/client boundaries.
+const SEARCH_NAV_KEY = "ml_from_search";
+export function markNavigatedFromSearch() {
+  if (typeof window !== "undefined") sessionStorage.setItem(SEARCH_NAV_KEY, "1");
+}
+export function consumeNavigatedFromSearch(): boolean {
+  if (typeof window === "undefined") return false;
+  const v = sessionStorage.getItem(SEARCH_NAV_KEY) === "1";
+  sessionStorage.removeItem(SEARCH_NAV_KEY);
+  return v;
 }
 
-export function MobileSearchOverlay({ onClose, onNavigate, forceCollapse }: SearchOverlayProps) {
+// ─── Search Circle Overlay ────────────────────────────────────────────────
+// Exported so MobileStockPage can render it for the reverse-collapse on back.
+interface SearchOverlayProps {
+  onClose: () => void;
+  onNavigate: (symbol: string) => void;
+  /** Start already-expanded and immediately begin collapsing */
+  reverseOnly?: boolean;
+}
+
+export function MobileSearchOverlay({ onClose, onNavigate, reverseOnly = false }: SearchOverlayProps) {
+  const [expanded, setExpanded] = useState(reverseOnly); // if reversing, start expanded
+  const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Array<{ symbol: string; name: string }>>([]);
   const [searching, setSearching] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Expand on mount (skip if forceCollapse — start already expanded, collapse immediately)
   useEffect(() => {
-    if (forceCollapse) {
-      // Already should appear expanded; we'll collapse via the forceCollapse effect below
-      setExpanded(true);
-      return;
-    }
-    requestAnimationFrame(() => requestAnimationFrame(() => setExpanded(true)));
-  }, [forceCollapse]);
-
-  // Trigger collapse when forceCollapse becomes true
-  useEffect(() => {
-    if (forceCollapse) {
-      // Small delay so it renders expanded first, then collapses
+    if (reverseOnly) {
+      // Immediately collapse
       const t = setTimeout(() => {
         setExpanded(false);
-        setTimeout(onClose, 700);
-      }, 50);
+        setTimeout(onClose, 720);
+      }, 30); // tiny delay so the expanded state paints first
       return () => clearTimeout(t);
+    } else {
+      // Normal open: expand from circle
+      requestAnimationFrame(() => requestAnimationFrame(() => setExpanded(true)));
     }
-  }, [forceCollapse, onClose]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Focus keyboard once fully expanded (not when collapsing)
+  // Focus keyboard after expand animation finishes (normal open only)
   useEffect(() => {
-    if (expanded && !forceCollapse) {
-      const t = setTimeout(() => inputRef.current?.focus(), 720);
+    if (!reverseOnly && expanded) {
+      const t = setTimeout(() => inputRef.current?.focus(), 700);
       return () => clearTimeout(t);
     }
-  }, [expanded, forceCollapse]);
+  }, [expanded, reverseOnly]);
 
-  /** Collapse and then call onClose */
-  function collapse(cb?: () => void) {
+  function collapse() {
     setExpanded(false);
-    setTimeout(() => { onClose(); cb?.(); }, 700);
+    setTimeout(onClose, 720);
   }
 
   async function doSearch(q: string) {
@@ -112,51 +107,54 @@ export function MobileSearchOverlay({ onClose, onNavigate, forceCollapse }: Sear
         ].join(", "),
       }}
     >
-      {/* Content fades in after the circle is big enough */}
       <div
         className="flex flex-col h-full"
         style={{
           opacity: expanded ? 1 : 0,
           transition: "opacity 250ms ease",
-          transitionDelay: expanded ? "420ms" : "0ms",
+          transitionDelay: expanded ? "400ms" : "0ms",
           pointerEvents: expanded ? "auto" : "none",
         }}
       >
-        <div className="flex items-center gap-3 border-b border-border-subtle px-4 pt-14 pb-4">
-          <Search className="h-5 w-5 text-text-muted shrink-0" />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={e => doSearch(e.target.value)}
-            placeholder="Search stocks…"
-            className="flex-1 bg-transparent text-lg text-text-primary placeholder:text-text-muted outline-none"
-          />
-          <button onClick={() => collapse()} className="text-text-muted active:text-text-primary p-1">
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {searching && <p className="px-4 py-6 text-sm text-text-muted">Searching…</p>}
-          {results.map(r => (
-            <button
-              key={r.symbol}
-              className="w-full flex items-center gap-3 px-4 py-4 border-b border-border-subtle/40 text-left active:bg-panel-muted"
-              onClick={() => onNavigate(r.symbol)}
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
-                {r.symbol.slice(0, 2)}
-              </span>
-              <span>
-                <span className="block text-sm font-semibold text-text-primary">{r.symbol}</span>
-                <span className="block text-xs text-text-muted truncate">{r.name}</span>
-              </span>
-            </button>
-          ))}
-          {!searching && query && !results.length && (
-            <p className="px-4 py-6 text-sm text-text-muted">No results for &ldquo;{query}&rdquo;</p>
-          )}
-        </div>
+        {/* Only show search UI when not in reverse-only mode */}
+        {!reverseOnly && (
+          <>
+            <div className="flex items-center gap-3 border-b border-border-subtle px-4 pt-14 pb-4">
+              <Search className="h-5 w-5 text-text-muted shrink-0" />
+              <input
+                ref={inputRef}
+                value={query}
+                onChange={e => doSearch(e.target.value)}
+                placeholder="Search stocks…"
+                className="flex-1 bg-transparent text-lg text-text-primary placeholder:text-text-muted outline-none"
+              />
+              <button onClick={collapse} className="text-text-muted active:text-text-primary p-1">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {searching && <p className="px-4 py-6 text-sm text-text-muted">Searching…</p>}
+              {results.map(r => (
+                <button
+                  key={r.symbol}
+                  className="w-full flex items-center gap-3 px-4 py-4 border-b border-border-subtle/40 text-left active:bg-panel-muted"
+                  onClick={() => onNavigate(r.symbol)}
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
+                    {r.symbol.slice(0, 2)}
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold text-text-primary">{r.symbol}</span>
+                    <span className="block text-xs text-text-muted truncate">{r.name}</span>
+                  </span>
+                </button>
+              ))}
+              {!searching && query && !results.length && (
+                <p className="px-4 py-6 text-sm text-text-muted">No results for &ldquo;{query}&rdquo;</p>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -182,10 +180,10 @@ function slideAndNavigate(
 
 // ─── MobileNav ────────────────────────────────────────────────────────────
 export function MobileNav() {
-  const pathname = usePathname();
-  const router   = useRouter();
-  const [searchOpen, setSearchOpen]     = useState(false);
-  const [activePill, setActivePill]     = useState<"market" | "watchlist">(
+  const pathname  = usePathname();
+  const router    = useRouter();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [activePill, setActivePill] = useState<"market" | "watchlist">(
     pathname === "/watchlist" ? "watchlist" : "market"
   );
 
@@ -208,14 +206,13 @@ export function MobileNav() {
   }
 
   function handleSearchNavigate(symbol: string) {
-    // Mark that next stock page was opened via search
-    setNavigatedFromSearch(true);
-    // Navigate immediately — the search overlay stays mounted and acts as the
-    // "loading screen" visual while the stock page loads behind it.
+    // Mark that we're going to a stock page from search
+    markNavigatedFromSearch();
+    // Navigate immediately — the search overlay stays mounted and visible
+    // as the loading screen while the stock page fetches
     router.push(`/stock/${symbol}`);
-    // Close the overlay after enough time for the stock page to start rendering
-    // (it will appear under/through the overlay gracefully)
-    setTimeout(() => setSearchOpen(false), 800);
+    // Dismiss overlay after stock page starts rendering
+    setTimeout(() => setSearchOpen(false), 50);
   }
 
   return (

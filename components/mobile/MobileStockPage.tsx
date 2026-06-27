@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
-import { MobileSearchOverlay, navigatedFromSearch, setNavigatedFromSearch } from "@/components/MobileNav";
+import { MobileSearchOverlay, consumeNavigatedFromSearch } from "@/components/MobileNav";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
@@ -23,24 +23,29 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   const router = useRouter();
   const isPositive = (stock.quote.dp ?? 0) >= 0;
   const pageRef = useRef<HTMLDivElement>(null);
-  // If we got here from search, show the search overlay on back instead of sink
-  const [showSearchOnBack, setShowSearchOnBack] = useState(() => {
-    const v = navigatedFromSearch;
-    // Consume the flag immediately
-    setNavigatedFromSearch(false);
-    return v;
-  });
-  const [searchCollapsing, setSearchCollapsing] = useState(false);
+  // Read the flag once on mount — was this page opened from search?
+  const fromSearch = useRef(consumeNavigatedFromSearch());
+  // Only show the reverse-search overlay when back is pressed and we came from search
+  const [showReverseSearch, setShowReverseSearch] = useState(false);
+  // Delay the enter animation by 1 frame so it fires after the component
+  // actually paints — avoiding the race with loading.tsx
+  const [mounted, setMounted] = useState(false);
+  const mountedRef = useRef(false);
+  if (!mountedRef.current) {
+    mountedRef.current = true;
+    if (typeof requestAnimationFrame !== "undefined") {
+      requestAnimationFrame(() => setMounted(true));
+    }
+  }
 
   function handleBack() {
-    if (showSearchOnBack) {
-      // Reverse-expand the search circle back to the button, then go back
-      setSearchCollapsing(true);
-      setTimeout(() => {
-        router.back();
-      }, 720);
+    if (fromSearch.current) {
+      // Show the search circle collapsing back to the button, then go back
+      setShowReverseSearch(true);
+      setTimeout(() => router.back(), 720);
       return;
     }
+    // Normal back: sink the page down
     const el = pageRef.current;
     if (el) {
       el.classList.add("page-exit-sink");
@@ -52,15 +57,15 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
 
   return (
     <>
-    {/* When coming back from a search-originated stock page, collapse the search circle */}
-    {showSearchOnBack && (
-      <MobileSearchOverlay
-        onClose={() => setShowSearchOnBack(false)}
-        onNavigate={() => {}}
-        forceCollapse={searchCollapsing}
-      />
-    )}
-    <div ref={pageRef} className="pb-24 page-enter-rise">
+      {/* Reverse search circle animation on back (only when came from search) */}
+      {showReverseSearch && (
+        <MobileSearchOverlay
+          onClose={() => setShowReverseSearch(false)}
+          onNavigate={() => {}}
+          reverseOnly
+        />
+      )}
+      <div ref={pageRef} className={`pb-24 ${mounted ? "page-enter-rise" : "opacity-0"}`}>
       {/* Back bar */}
       <div className="sticky top-0 z-30 flex items-center gap-2 bg-black/90 backdrop-blur-xl px-4 py-3">
         <button
@@ -139,7 +144,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
           </section>
         )}
       </div>
-    </div>
+      </div>
     </>
   );
 }
