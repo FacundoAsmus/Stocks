@@ -329,7 +329,7 @@ function NewsPanel({ articles }: { articles: MarketNewsArticle[] }) {
               href={article.url}
               target="_blank"
               rel="noreferrer"
-              className="flex gap-2.5 px-3 py-3 transition-all duration-150 hover:bg-panel-muted first:rounded-t-lg last:rounded-b-lg"
+              className="flex gap-2.5 px-3 py-3 transition-all duration-200 hover:-translate-y-0.5 hover:bg-panel-muted hover:border-positive/50 hover:shadow-[0_0_12px_rgba(0,200,5,0.18)] relative z-0 hover:z-10 first:rounded-t-lg last:rounded-b-lg border border-transparent"
             >
               {article.image ? (
                 // eslint-disable-next-line @next/next/no-img-element

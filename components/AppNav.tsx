@@ -8,18 +8,14 @@ import { cn } from "@/lib/utils";
 
 function GlobeIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <circle cx="12" cy="12" r="9" />
-      {/* Vertical axis */}
       <line x1="12" y1="3" x2="12" y2="21" />
-      {/* Horizontal equator */}
       <line x1="3" y1="12" x2="21" y2="12" />
-      {/* Latitude curves */}
-      <path d="M5 7.5 Q12 5 19 7.5" />
-      <path d="M5 16.5 Q12 19 19 16.5" />
-      {/* Longitude curves */}
-      <path d="M12 3 Q7 12 12 21" />
-      <path d="M12 3 Q17 12 12 21" />
+      <path d="M4.5 7.5 Q12 6 19.5 7.5" />
+      <path d="M4.5 16.5 Q12 18 19.5 16.5" />
+      <path d="M12 3 Q6.5 12 12 21" />
+      <path d="M12 3 Q17.5 12 12 21" />
     </svg>
   );
 }

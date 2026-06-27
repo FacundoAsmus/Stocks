@@ -176,7 +176,7 @@ export function MobileMarket() {
         <MobileTicker stocks={data.tickerStocks ?? []} />
 
         {/* Welcome + status — more breathing room */}
-        <div className="flex items-start justify-between px-4 pt-6 pb-2">
+        <div className="flex items-start justify-between px-4 pt-8 pb-2">
           <div>
             <h1 className="text-2xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
             <p className="text-xs text-text-muted mt-0.5">{monthYear}</p>
@@ -185,7 +185,7 @@ export function MobileMarket() {
         </div>
 
         {/* Fear & Greed — spaced from welcome */}
-        <div className="px-4 mt-6"><MarketFearGreed /></div>
+        <div className="px-4 mt-8"><MarketFearGreed /></div>
 
         {/* Movers / ETF tabs — spaced from fear & greed */}
         <div className="mt-8"><MoversSection gainers={data.gainers ?? []} losers={data.losers ?? []} etfs={data.etfs ?? []} /></div>

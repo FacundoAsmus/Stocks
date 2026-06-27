@@ -59,36 +59,48 @@ function MiniSparkline({ stock, height = 32 }: { stock: StockSummary; height?: n
   );
 }
 
-// ─── Web version: horizontal scrollable cards with sparkline + % ──────────
+// ─── Web version: table-style list spanning full width ───────────────────
 export function EtfRow({ etfs }: { etfs: StockSummary[] }) {
   const etfMap = new Map(etfs.map(e => [e.symbol, e]));
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar">
+    <div className="rounded-lg border border-border-subtle bg-black p-2 shadow-2xl shadow-black/20 overflow-visible">
       {SECTOR_ETFS.map((etf) => {
         const stock = etfMap.get(etf.symbol);
         const isPos = (stock?.changePercent ?? 0) >= 0;
         return (
-          <Link
+          <div
             key={etf.symbol}
-            href={`/stock/${etf.symbol}`}
-            className="flex flex-col shrink-0 rounded-lg border border-border-subtle bg-panel px-3 py-3 hover:border-positive/50 hover:bg-panel-muted transition-all duration-150 min-w-[120px] gap-1"
+            className="group grid grid-cols-[34px_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(120px,1.5fr)_minmax(92px,auto)] items-center gap-3 rounded-md border border-transparent border-b-border-subtle/70 px-4 py-3 transition-all duration-200 hover:-translate-y-1 hover:border-positive/50 hover:bg-panel-muted/75 hover:shadow-2xl hover:shadow-black/25 hover:z-10 relative"
           >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-bold text-text-primary">{etf.symbol}</span>
-              {stock && (
-                <span className={cn("text-xs font-bold", isPos ? "text-positive" : "text-negative")}>
-                  {formatPercent(stock.changePercent)}
-                </span>
+            <Link href={`/stock/${etf.symbol}`} aria-label={`Open ${etf.symbol}`}>
+              <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-[10px] font-bold text-text-primary">
+                {etf.symbol.slice(0, 2)}
+              </span>
+            </Link>
+            <Link href={`/stock/${etf.symbol}`} className="min-w-0">
+              <span className="block truncate text-xs font-bold text-text-primary">{etf.symbol}</span>
+              <span className="block text-xs text-text-muted truncate">{etf.sector}</span>
+            </Link>
+            <Link href={`/stock/${etf.symbol}`} className="min-w-0">
+              <span className="block text-xs text-text-muted truncate">{etf.name}</span>
+            </Link>
+            <Link href={`/stock/${etf.symbol}`} aria-label={`Open ${etf.symbol}`}>
+              {stock
+                ? <MiniSparkline stock={stock} height={32} />
+                : <span className="block h-8 w-full rounded bg-panel-muted/40" />
+              }
+            </Link>
+            <Link
+              href={`/stock/${etf.symbol}`}
+              className={cn(
+                "min-w-[92px] rounded-md border px-2 py-2 text-center text-xs font-bold !text-black",
+                isPos ? "border-positive/40 bg-positive" : "border-negative/60 bg-negative"
               )}
-            </div>
-            <span className="text-[10px] text-text-muted truncate">{etf.name}</span>
-            {stock && (
-              <div className="mt-1 w-full">
-                <MiniSparkline stock={stock} height={28} />
-              </div>
-            )}
-          </Link>
+            >
+              {stock ? formatPercent(stock.changePercent) : "—"}
+            </Link>
+          </div>
         );
       })}
     </div>
