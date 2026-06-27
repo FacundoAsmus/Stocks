@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { List, Search, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -20,148 +21,117 @@ function GlobeIcon({ className }: { className?: string }) {
   );
 }
 
-// ─── Session flag: did user navigate to stock page from search? ───────────
-// Uses sessionStorage so it survives Next.js server/client boundaries.
-const SEARCH_NAV_KEY = "ml_from_search";
-export function markNavigatedFromSearch() {
-  if (typeof window !== "undefined") sessionStorage.setItem(SEARCH_NAV_KEY, "1");
-}
-export function consumeNavigatedFromSearch(): boolean {
-  if (typeof window === "undefined") return false;
-  const v = sessionStorage.getItem(SEARCH_NAV_KEY) === "1";
-  sessionStorage.removeItem(SEARCH_NAV_KEY);
-  return v;
-}
-
-// ─── Search Circle Overlay ────────────────────────────────────────────────
-// Exported so MobileStockPage can render it for the reverse-collapse on back.
-interface SearchOverlayProps {
-  onClose: () => void;
-  onNavigate: (symbol: string) => void;
-  /** Start already-expanded and immediately begin collapsing */
-  reverseOnly?: boolean;
-}
-
-export function MobileSearchOverlay({ onClose, onNavigate, reverseOnly = false }: SearchOverlayProps) {
-  const [expanded, setExpanded] = useState(reverseOnly); // if reversing, start expanded
-  const inputRef = useRef<HTMLInputElement>(null);
+// ─── Search overlay: expands from the search button (bottom-right) ────────
+function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Array<{ symbol: string; name: string }>>([]);
-  const [searching, setSearching] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (reverseOnly) {
-      // Immediately collapse
-      const t = setTimeout(() => {
-        setExpanded(false);
-        setTimeout(onClose, 720);
-      }, 30); // tiny delay so the expanded state paints first
-      return () => clearTimeout(t);
-    } else {
-      // Normal open: expand from circle
-      requestAnimationFrame(() => requestAnimationFrame(() => setExpanded(true)));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Double rAF to ensure the initial (collapsed) state is painted before expanding
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setExpanded(true);
+        // Focus input after expand animation completes
+        setTimeout(() => inputRef.current?.focus(), 720);
+      });
+    });
   }, []);
 
-  // Focus keyboard after expand animation finishes (normal open only)
-  useEffect(() => {
-    if (!reverseOnly && expanded) {
-      const t = setTimeout(() => inputRef.current?.focus(), 700);
-      return () => clearTimeout(t);
-    }
-  }, [expanded, reverseOnly]);
-
-  function collapse() {
+  function handleClose() {
     setExpanded(false);
-    setTimeout(onClose, 720);
+    setTimeout(onClose, 700);
   }
 
-  async function doSearch(q: string) {
+  async function search(q: string) {
     setQuery(q);
     if (!q.trim()) { setResults([]); return; }
-    setSearching(true);
+    setLoading(true);
     try {
       const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
       const data = await res.json() as { results?: Array<{ symbol: string; description: string }> };
       setResults((data.results ?? []).slice(0, 8).map(r => ({ symbol: r.symbol, name: r.description })));
     } catch { setResults([]); }
-    finally { setSearching(false); }
+    finally { setLoading(false); }
   }
 
   return (
     <div
       className="fixed z-50 overflow-hidden bg-black/96 backdrop-blur-xl"
       style={{
-        bottom: expanded ? 0 : "calc(1.25rem + env(safe-area-inset-bottom))",
-        right:  expanded ? 0 : "1rem",
+        // Always anchored to bottom-right. Animate width/height + border-radius.
+        bottom: "calc(1.25rem + env(safe-area-inset-bottom))",
+        right: "1rem",
+        // Collapsed: same size as the search button
         width:  expanded ? "100vw"  : "2.75rem",
         height: expanded ? "100dvh" : "2.75rem",
         borderRadius: expanded ? "0px" : "50%",
-        transition: [
-          "width 700ms cubic-bezier(0.4,0,0.2,1)",
-          "height 700ms cubic-bezier(0.4,0,0.2,1)",
-          "border-radius 700ms cubic-bezier(0.4,0,0.2,1)",
-          "bottom 700ms cubic-bezier(0.4,0,0.2,1)",
-          "right 700ms cubic-bezier(0.4,0,0.2,1)",
-        ].join(", "),
+        // Grow toward top-left from the bottom-right corner
+        transformOrigin: "bottom right",
+        transition: "width 700ms cubic-bezier(0.4, 0, 0.2, 1), height 700ms cubic-bezier(0.4, 0, 0.2, 1), border-radius 700ms cubic-bezier(0.4, 0, 0.2, 1)",
+        // When fully expanded, align to true screen edges
+        ...(expanded ? { bottom: 0, right: 0 } : {}),
       }}
     >
+      {/* Content fades in after the circle is big enough */}
       <div
         className="flex flex-col h-full"
         style={{
           opacity: expanded ? 1 : 0,
           transition: "opacity 250ms ease",
-          transitionDelay: expanded ? "400ms" : "0ms",
-          pointerEvents: expanded ? "auto" : "none",
+          transitionDelay: expanded ? "420ms" : "0ms",
         }}
       >
-        {/* Only show search UI when not in reverse-only mode */}
-        {!reverseOnly && (
-          <>
-            <div className="flex items-center gap-3 border-b border-border-subtle px-4 pt-14 pb-4">
-              <Search className="h-5 w-5 text-text-muted shrink-0" />
-              <input
-                ref={inputRef}
-                value={query}
-                onChange={e => doSearch(e.target.value)}
-                placeholder="Search stocks…"
-                className="flex-1 bg-transparent text-lg text-text-primary placeholder:text-text-muted outline-none"
-              />
-              <button onClick={collapse} className="text-text-muted active:text-text-primary p-1">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              {searching && <p className="px-4 py-6 text-sm text-text-muted">Searching…</p>}
-              {results.map(r => (
-                <button
-                  key={r.symbol}
-                  className="w-full flex items-center gap-3 px-4 py-4 border-b border-border-subtle/40 text-left active:bg-panel-muted"
-                  onClick={() => onNavigate(r.symbol)}
-                >
-                  <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
-                    {r.symbol.slice(0, 2)}
-                  </span>
-                  <span>
-                    <span className="block text-sm font-semibold text-text-primary">{r.symbol}</span>
-                    <span className="block text-xs text-text-muted truncate">{r.name}</span>
-                  </span>
-                </button>
-              ))}
-              {!searching && query && !results.length && (
-                <p className="px-4 py-6 text-sm text-text-muted">No results for &ldquo;{query}&rdquo;</p>
-              )}
-            </div>
-          </>
-        )}
+        <div className="flex items-center gap-3 border-b border-border-subtle px-4 pt-14 pb-4">
+          <Search className="h-5 w-5 text-text-muted shrink-0" />
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => search(e.target.value)}
+            placeholder="Search stocks…"
+            className="flex-1 bg-transparent text-lg text-text-primary placeholder:text-text-muted outline-none"
+          />
+          <button onClick={handleClose} className="text-text-muted active:text-text-primary p-1">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {loading && <p className="px-4 py-6 text-sm text-text-muted">Searching…</p>}
+          {results.map(r => (
+            <button
+              key={r.symbol}
+              className="w-full flex items-center gap-3 px-4 py-4 border-b border-border-subtle/40 text-left active:bg-panel-muted"
+              onClick={() => { handleClose(); setTimeout(() => router.push(`/stock/${r.symbol}`), 710); }}
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
+                {r.symbol.slice(0, 2)}
+              </span>
+              <span>
+                <span className="block text-sm font-semibold text-text-primary">{r.symbol}</span>
+                <span className="block text-xs text-text-muted truncate">{r.name}</span>
+              </span>
+            </button>
+          ))}
+          {!loading && query && !results.length && (
+            <p className="px-4 py-6 text-sm text-text-muted">No results for &ldquo;{query}&rdquo;</p>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Slide helpers ────────────────────────────────────────────────────────
-const SLIDE_MS = 480;
+// ─── Page-slide helpers ───────────────────────────────────────────────────
+// The strategy: apply the exit animation to <main>, WAIT for it to finish
+// (so the loading skeleton slides in as part of the same motion), then push
+// the route. The new page's loading.tsx gets the enter-slide class so it
+// appears to arrive from the correct side.
+
+const SLIDE_DURATION = 480; // must match CSS animation duration
 
 function slideAndNavigate(
   router: ReturnType<typeof useRouter>,
@@ -170,19 +140,28 @@ function slideAndNavigate(
 ) {
   const main = document.querySelector("main");
   if (!main) { router.push(href); return; }
-  main.classList.remove("page-slide-left", "page-slide-right");
+
+  // Remove any stale class first
+  main.classList.remove("page-slide-left", "page-slide-right", "page-enter-left", "page-enter-right");
+
+  // Kick off exit animation
   main.classList.add(exitClass);
+
+  // Navigate once the exit animation has had time to complete
   setTimeout(() => {
     router.push(href);
-    setTimeout(() => main.classList.remove(exitClass), 100);
-  }, SLIDE_MS - 40);
+    // Clean up exit class after navigation settles
+    setTimeout(() => {
+      main.classList.remove(exitClass);
+    }, 100);
+  }, SLIDE_DURATION - 40); // slightly before end so there's no gap
 }
 
-// ─── MobileNav ────────────────────────────────────────────────────────────
 export function MobileNav() {
-  const pathname  = usePathname();
-  const router    = useRouter();
+  const pathname = usePathname();
+  const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
+
   const [activePill, setActivePill] = useState<"market" | "watchlist">(
     pathname === "/watchlist" ? "watchlist" : "market"
   );
@@ -200,29 +179,22 @@ export function MobileNav() {
   function navigateTo(href: "/" | "/watchlist") {
     const goingToWatchlist = href === "/watchlist";
     const currentIsMarket  = pathname === "/";
-    if ((goingToWatchlist && !currentIsMarket) || (!goingToWatchlist && currentIsMarket)) return;
-    setActivePill(goingToWatchlist ? "watchlist" : "market");
-    slideAndNavigate(router, href, goingToWatchlist ? "page-slide-left" : "page-slide-right");
-  }
+    const alreadyThere = (goingToWatchlist && !currentIsMarket) || (!goingToWatchlist && currentIsMarket);
+    if (alreadyThere) return;
 
-  function handleSearchNavigate(symbol: string) {
-    // Mark that we're going to a stock page from search
-    markNavigatedFromSearch();
-    // Navigate immediately — the search overlay stays mounted and visible
-    // as the loading screen while the stock page fetches
-    router.push(`/stock/${symbol}`);
-    // Dismiss overlay after stock page starts rendering
-    setTimeout(() => setSearchOpen(false), 50);
+    // Animate pill immediately so it switches in sync with the swipe
+    setActivePill(goingToWatchlist ? "watchlist" : "market");
+
+    // Market is RIGHT of Watchlist:
+    //   going to watchlist → current slides LEFT
+    //   going to market    → current slides RIGHT
+    const exitClass = goingToWatchlist ? "page-slide-left" : "page-slide-right";
+    slideAndNavigate(router, href, exitClass);
   }
 
   return (
     <>
-      {searchOpen && (
-        <MobileSearchOverlay
-          onClose={() => setSearchOpen(false)}
-          onNavigate={handleSearchNavigate}
-        />
-      )}
+      {searchOpen && <MobileSearchOverlay onClose={() => setSearchOpen(false)} />}
 
       <nav
         className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center px-4 pointer-events-none"
@@ -258,6 +230,7 @@ export function MobileNav() {
           </button>
         </div>
 
+        {/* Search circle — this is the origin point of the expand animation */}
         <button
           className="pointer-events-auto flex items-center justify-center h-11 w-11 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-positive transition-transform duration-200 active:scale-90"
           onClick={() => setSearchOpen(true)}
