@@ -178,11 +178,11 @@ export function MobileNav() {
       main.classList.remove("page-slide-left", "page-slide-right");
       main.classList.add(anim === "slide-left" ? "page-slide-left" : "page-slide-right");
       setTimeout(() => {
-        router.push(href);
+        router.push(href as "/watchlist" | "/");
         setTimeout(() => main.classList.remove("page-slide-left", "page-slide-right"), 400);
       }, 50);
     } else {
-      router.push(href);
+      router.push(href as "/watchlist" | "/");
     }
   }
 
