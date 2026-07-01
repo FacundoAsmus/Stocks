@@ -22,8 +22,11 @@ function readWatchlist() {
 
 function MiniSparkline({ stock }: { stock: StockSummary }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
-  const data = stock.sparkline?.length ? stock.sparkline
-    : [{ time: 0, close: (stock.price ?? 0) - (stock.change ?? 0) }, { time: 1, close: stock.price ?? 0 }];
+  const yesterdayClose = (stock.price ?? 0) - (stock.change ?? 0);
+  const rawData = stock.sparkline?.length
+    ? [{ close: yesterdayClose, time: 0 }, ...stock.sparkline]
+    : [{ time: 0, close: yesterdayClose }, { time: 1, close: stock.price ?? 0 }];
+  const data = rawData;
   return (
     <div className="h-8 w-16 shrink-0">
       <ResponsiveContainer width="100%" height="100%">

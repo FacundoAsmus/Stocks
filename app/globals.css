@@ -90,16 +90,16 @@ input {
 }
 
 main.page-slide-left {
-  animation: slideOutLeft 480ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideOutLeft 260ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 main.page-slide-right {
-  animation: slideOutRight 480ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideOutRight 260ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 main.page-enter-left {
-  animation: slideInFromRight 420ms cubic-bezier(0.2, 0, 0, 1) both;
+  animation: slideInFromRight 220ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 main.page-enter-right {
-  animation: slideInFromLeft 420ms cubic-bezier(0.2, 0, 0, 1) both;
+  animation: slideInFromLeft 220ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 /* ─── Stock page enter: rise from bottom ────────────────────────────────── */
@@ -116,6 +116,13 @@ main.page-enter-right {
 }
 .page-exit-sink {
   animation: sinkToBottom 400ms cubic-bezier(0.4, 0, 1, 1) forwards;
+}
+
+/* ─── 7. Price block fade — all chars synchronised ──────────────────────── */
+/* Ensure the entire price block (digits + $ % . ,) fades as one GPU layer  */
+.price-block-fade {
+  will-change: opacity;
+  contain: paint;
 }
 
 /* ─── Search pill expand from bottom-right corner ───────────────────────── */

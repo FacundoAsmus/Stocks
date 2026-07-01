@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
@@ -20,12 +20,28 @@ interface MobileStockPageProps {
 
 export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: MobileStockPageProps) {
   const router = useRouter();
-  const isPositive = (stock.quote.dp ?? 0) >= 0;
   const pageRef = useRef<HTMLDivElement>(null);
+  const [fromSearch, setFromSearch] = useState(false);
+
+  useEffect(() => {
+    const flag = sessionStorage.getItem("nav-from-search");
+    if (flag) {
+      setFromSearch(true);
+      sessionStorage.removeItem("nav-from-search");
+    }
+    const el = pageRef.current;
+    if (el) {
+      el.classList.add("page-enter-rise");
+      el.addEventListener("animationend", () => el.classList.remove("page-enter-rise"), { once: true });
+    }
+  }, []);
 
   function handleBack() {
     const el = pageRef.current;
-    if (el) {
+    if (fromSearch) {
+      sessionStorage.setItem("reopen-search", "1");
+      router.back();
+    } else if (el) {
       el.classList.add("page-exit-sink");
       setTimeout(() => router.back(), 380);
     } else {
@@ -34,8 +50,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   }
 
   return (
-    <div ref={pageRef} className="pb-24">
-      {/* Back bar */}
+    <div ref={pageRef} className="pb-24" style={{ opacity: 1 }}>
       <div className="sticky top-0 z-30 flex items-center gap-2 bg-black/90 backdrop-blur-xl px-4 py-3">
         <button
           onClick={handleBack}
@@ -46,7 +61,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         </button>
       </div>
 
-      {/* Header: logo + name + watchlist */}
       <div className="flex items-center gap-3 px-4 pt-5 pb-3">
         {stock.profile.logo ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -64,7 +78,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
       </div>
 
-      {/* Chart — full bleed */}
       <div className="px-2">
         <PriceChart
           symbol={stock.symbol}
@@ -75,7 +88,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         />
       </div>
 
-      {/* Sections stacked */}
       <div className="flex flex-col gap-4 px-4 mt-4">
         <MarketSentiment score={sentiment.score} drivers={sentiment.drivers} />
 
@@ -91,7 +103,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
           currentPrice={currentPrice}
         />
 
-        {/* News */}
         {stock.news.length > 0 && (
           <section>
             <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-3">News</p>

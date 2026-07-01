@@ -85,7 +85,7 @@ function TickerBar({ stocks }: { stocks: StockSummary[] }) {
             <Link
               key={`${stock.symbol}-${index}`}
               href={`/stock/${encodeURIComponent(stock.symbol)}`}
-              className="flex min-w-[282px] items-center gap-4 border-x border-border-subtle/80 px-4 py-3 transition-all duration-300 hover:-translate-y-1 hover:border-positive/60 hover:bg-panel-muted/80 hover:shadow-2xl hover:shadow-black/40"
+              className="flex min-w-[282px] items-center gap-4 border-x border-border-subtle/80 px-4 py-3 transition-colors duration-300 hover:border-positive/60 hover:bg-panel-muted/80"
             >
               <span className="min-w-[78px]">
                 <span className="block truncate text-sm font-bold text-text-primary">{stock.symbol}</span>

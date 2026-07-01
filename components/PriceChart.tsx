@@ -408,7 +408,7 @@ export function PriceChart({
   return (
     <div>
       {/* ── Price header — indented to align with name when priceIndent is set ── */}
-      <div className="mb-6" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible ? 1 : 0, transition: "opacity 0.18s ease" }}>
+      <div className="mb-6 price-block-fade" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible ? 1 : 0, transition: "opacity 0.18s ease", WebkitTransition: "opacity 0.18s ease" }}>
         <div className="flex items-end gap-3">
           <WheelPrice value={priceStr} size="lg" />
           <WheelPrice value={pctStr} size="sm" colorClass={pctColor} />
