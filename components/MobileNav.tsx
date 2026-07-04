@@ -36,14 +36,14 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
       requestAnimationFrame(() => {
         setExpanded(true);
         // Focus input after expand animation completes
-        setTimeout(() => inputRef.current?.focus(), 720);
+        setTimeout(() => inputRef.current?.focus(), 320);
       });
     });
   }, []);
 
   function handleClose() {
     setExpanded(false);
-    setTimeout(onClose, 700);
+    setTimeout(onClose, 300);
   }
 
   async function search(q: string) {
@@ -71,7 +71,7 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
         borderRadius: expanded ? "0px" : "50%",
         // Grow toward top-left from the bottom-right corner
         transformOrigin: "bottom right",
-        transition: "width 700ms cubic-bezier(0.4, 0, 0.2, 1), height 700ms cubic-bezier(0.4, 0, 0.2, 1), border-radius 700ms cubic-bezier(0.4, 0, 0.2, 1)",
+        transition: "width 300ms cubic-bezier(0.4, 0, 0.2, 1), height 300ms cubic-bezier(0.4, 0, 0.2, 1), border-radius 300ms cubic-bezier(0.4, 0, 0.2, 1)",
         // When fully expanded, align to true screen edges
         ...(expanded ? { bottom: 0, right: 0 } : {}),
       }}
@@ -81,8 +81,8 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
         className="flex flex-col h-full"
         style={{
           opacity: expanded ? 1 : 0,
-          transition: "opacity 250ms ease",
-          transitionDelay: expanded ? "420ms" : "0ms",
+          transition: "opacity 150ms ease",
+          transitionDelay: expanded ? "160ms" : "0ms",
         }}
       >
         <div className="flex items-center gap-3 border-b border-border-subtle px-4 pt-14 pb-4">
@@ -105,7 +105,7 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
             <button
               key={r.symbol}
               className="w-full flex items-center gap-3 px-4 py-4 border-b border-border-subtle/40 text-left active:bg-panel-muted"
-              onClick={() => { handleClose(); setTimeout(() => router.push(`/stock/${r.symbol}`), 710); }}
+              onClick={() => { sessionStorage.setItem('nav-from-search', '1'); router.push(`/stock/${r.symbol}`); /* DO NOT close overlay — loading screen covers it */ }}
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
                 {r.symbol.slice(0, 2)}
@@ -131,7 +131,7 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
 // the route. The new page's loading.tsx gets the enter-slide class so it
 // appears to arrive from the correct side.
 
-const SLIDE_DURATION = 480; // must match CSS animation duration
+const SLIDE_DURATION = 260; // must match CSS animation duration
 
 function slideAndNavigate(
   router: ReturnType<typeof useRouter>,
@@ -154,7 +154,7 @@ function slideAndNavigate(
     setTimeout(() => {
       main.classList.remove(exitClass);
     }, 100);
-  }, SLIDE_DURATION - 40); // slightly before end so there's no gap
+  }, SLIDE_DURATION - 20); // slightly before end so there's no gap
 }
 
 export function MobileNav() {
@@ -168,6 +168,11 @@ export function MobileNav() {
 
   useEffect(() => {
     setActivePill(pathname === "/watchlist" ? "watchlist" : "market");
+    // Re-open search if we navigated back from a search-opened stock page
+    if (typeof window !== "undefined" && sessionStorage.getItem("reopen-search")) {
+      sessionStorage.removeItem("reopen-search");
+      setSearchOpen(true);
+    }
   }, [pathname]);
 
   const showNav = pathname === "/" || pathname === "/watchlist";

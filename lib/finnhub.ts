@@ -403,27 +403,107 @@ export async function getPriceTarget(symbol: string) {
   );
 }
 
+// Well-known company name → ticker map for reliable name searches
+const COMPANY_NAME_MAP: Record<string, string> = {
+  "META": "META", "FACEBOOK": "META",
+  "PALANTIR": "PLTR",
+  "GOOGLE": "GOOGL", "ALPHABET": "GOOGL",
+  "AMAZON": "AMZN",
+  "APPLE": "AAPL",
+  "MICROSOFT": "MSFT",
+  "NVIDIA": "NVDA",
+  "TESLA": "TSLA",
+  "NETFLIX": "NFLX",
+  "SALESFORCE": "CRM",
+  "UBER": "UBER",
+  "AIRBNB": "ABNB",
+  "COINBASE": "COIN",
+  "SPOTIFY": "SPOT",
+  "PINTEREST": "PINS",
+  "SNAP": "SNAP",
+  "TWITTER": "X",
+  "ROBINHOOD": "HOOD",
+  "RIVIAN": "RIVN",
+  "LUCID": "LCID",
+  "SHOPIFY": "SHOP",
+  "SNOWFLAKE": "SNOW",
+  "DATADOG": "DDOG",
+  "CLOUDFLARE": "NET",
+  "CROWDSTRIKE": "CRWD",
+  "AMD": "AMD",
+  "INTEL": "INTC",
+  "QUALCOMM": "QCOM",
+  "BROADCOM": "AVGO",
+  "MICRON": "MU",
+  "BOEING": "BA",
+  "DISNEY": "DIS",
+  "GOLDMAN": "GS",
+  "JPMORGAN": "JPM",
+  "BERKSHIRE": "BRK.B",
+  "VISA": "V",
+  "MASTERCARD": "MA",
+  "PAYPAL": "PYPL",
+};
+
 export async function searchSymbols(query: string) {
   if (!query.trim()) return [];
   const normalizedQuery = query.trim().toUpperCase();
+
+  // 1. Index matches (always fast, local)
   const indexMatches = MAJOR_INDICES.filter((index) => {
     const searchable = `${index.symbol} ${index.displaySymbol} ${index.description}`.toUpperCase();
     return searchable.includes(normalizedQuery);
   });
 
-  const response = await fetchFinnhub<{ result?: SymbolSearchResult[] }>(
-    "/search",
-    { q: query.trim() },
-    1000 * 60 * 10
-  ).catch(() => ({ result: [] }));
+  // 2. Company name map — ensures "Meta", "Palantir" etc. always resolve
+  const nameMapSymbols: string[] = [];
+  for (const [name, symbol] of Object.entries(COMPANY_NAME_MAP)) {
+    if (name.includes(normalizedQuery) || normalizedQuery.includes(name)) {
+      nameMapSymbols.push(symbol);
+    }
+  }
 
-  const stocks = (response.result ?? [])
+  // 3. Finnhub API search — run two queries in parallel for better coverage:
+  //    one for the raw query, one for the first word (catches "Meta Platforms" etc.)
+  const firstWord = normalizedQuery.split(" ")[0];
+  const [response1, response2] = await Promise.all([
+    fetchFinnhub<{ result?: SymbolSearchResult[] }>(
+      "/search", { q: query.trim() }, 1000 * 60 * 5
+    ).catch(() => ({ result: [] as SymbolSearchResult[] })),
+    firstWord !== normalizedQuery
+      ? fetchFinnhub<{ result?: SymbolSearchResult[] }>(
+          "/search", { q: firstWord }, 1000 * 60 * 5
+        ).catch(() => ({ result: [] as SymbolSearchResult[] }))
+      : Promise.resolve({ result: [] as SymbolSearchResult[] }),
+  ]);
+
+  const allResults = [...(response1.result ?? []), ...(response2.result ?? [])];
+
+  const stocks = allResults
     .filter((item) => item.type === "Common Stock" && /^[A-Z.^-]+$/.test(item.symbol))
-    .slice(0, 8);
+    // Prioritise exact symbol or description matches
+    .sort((a, b) => {
+      const aExact = a.symbol === normalizedQuery || a.displaySymbol === normalizedQuery ? 0 : 1;
+      const bExact = b.symbol === normalizedQuery || b.displaySymbol === normalizedQuery ? 0 : 1;
+      return aExact - bExact;
+    });
 
-  const deduped = [...indexMatches, ...stocks].filter(
-    (item, index, all) => all.findIndex((candidate) => candidate.symbol === item.symbol) === index
-  );
+  // 4. Build name-map synthetic entries to inject at top
+  const nameMapEntries: SymbolSearchResult[] = nameMapSymbols
+    .filter(sym => !indexMatches.some(i => i.symbol === sym))
+    .map(sym => ({ symbol: sym, displaySymbol: sym, description: COMPANY_NAME_MAP[
+      Object.keys(COMPANY_NAME_MAP).find(k => COMPANY_NAME_MAP[k] === sym) ?? ""
+    ] ?? sym, type: "Common Stock" }));
+
+  const combined = [...indexMatches, ...nameMapEntries, ...stocks];
+
+  // Deduplicate preserving order
+  const seen = new Set<string>();
+  const deduped = combined.filter(item => {
+    if (seen.has(item.symbol)) return false;
+    seen.add(item.symbol);
+    return true;
+  });
 
   return deduped.slice(0, 8);
 }

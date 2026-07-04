@@ -32,10 +32,11 @@ export const SECTOR_ETFS: EtfEntry[] = [
 
 function MiniSparkline({ stock, height = 32 }: { stock: StockSummary; height?: number }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
+  const yesterdayClose = (stock.price ?? 0) - (stock.change ?? 0);
   const data = stock.sparkline?.length
-    ? stock.sparkline
+    ? [{ time: 0, close: yesterdayClose }, ...stock.sparkline]
     : [
-        { time: 0, close: (stock.price ?? 0) - (stock.change ?? 0) },
+        { time: 0, close: yesterdayClose },
         { time: 1, close: stock.price ?? 0 },
       ];
   return (
