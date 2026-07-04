@@ -149,7 +149,7 @@ export function MobileWatchlist() {
 
   return (
     <div className="pb-24">
-      <div className="sticky top-0 z-10 px-4 pt-6 pb-4 bg-black/80 backdrop-blur-md">
+      <div className="sticky top-0 z-10 px-4 pt-6 pb-4 bg-black/55 backdrop-blur-md">
         <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
         <h1 className="mt-1 text-2xl font-bold text-text-primary">Your Stocks</h1>
       </div>
@@ -163,7 +163,7 @@ export function MobileWatchlist() {
           <p className="text-xs text-text-muted">Search for a stock and tap the star to add it.</p>
         </div>
       ) : (
-        <div className="mx-4 rounded-xl border border-border-subtle bg-black overflow-hidden">
+        <div className="mx-4 rounded-xl bg-black overflow-hidden">
           {orderedStocks.map(s => (
             <WatchlistRow key={s.symbol} stock={s} onRemove={handleRemove} />
           ))}

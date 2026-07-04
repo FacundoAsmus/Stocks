@@ -208,7 +208,7 @@ export function MobileNav() {
           <button className="flex items-center justify-center pointer-events-auto" onClick={() => navigateTo("/")}>
             <span className={cn(
               "flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-400",
-              isMarket ? "bg-positive" : "bg-black/60 backdrop-blur-md border border-white/20"
+              isMarket ? "bg-positive" : "bg-black/40 backdrop-blur-md border border-white/20"
             )}>
               <span className={cn("flex h-5 w-5 items-center justify-center shrink-0 transition-colors duration-400", isMarket ? "text-black" : "text-positive")}>
                 <GlobeIcon className="h-5 w-5" />
@@ -222,7 +222,7 @@ export function MobileNav() {
           <button className="flex items-center justify-center pointer-events-auto" onClick={() => navigateTo("/watchlist")}>
             <span className={cn(
               "flex items-center gap-2 px-5 py-2.5 rounded-full transition-all duration-400",
-              isWatchlist ? "bg-positive" : "bg-black/60 backdrop-blur-md border border-white/20"
+              isWatchlist ? "bg-positive" : "bg-black/40 backdrop-blur-md border border-white/20"
             )}>
               <span className={cn("flex h-5 w-5 items-center justify-center shrink-0 transition-colors duration-400", isWatchlist ? "text-black" : "text-positive")}>
                 <List className="h-5 w-5" />
@@ -236,7 +236,7 @@ export function MobileNav() {
 
         {/* Search circle — this is the origin point of the expand animation */}
         <button
-          className="pointer-events-auto flex items-center justify-center h-11 w-11 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-positive transition-transform duration-200 active:scale-90"
+          className="pointer-events-auto flex items-center justify-center h-11 w-11 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-positive transition-transform duration-200 active:scale-90"
           onClick={() => setSearchOpen(true)}
           aria-label="Search"
         >

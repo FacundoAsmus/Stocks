@@ -129,16 +129,18 @@ export function FundamentalsGrid({
   ];
 
   return (
-    <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+    <section className="grid grid-cols-2 gap-2">
       {items.map((item) => (
-        <div key={item.label} className="rounded-md bg-black p-4 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-xl hover:shadow-black/20">
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-xs uppercase tracking-[0.14em] text-text-muted">{item.label}</p>
-            <span className={`rounded-md border px-2 py-1 text-[11px] font-medium ${toneClasses(item.tone)}`}>
-              {item.note}
-            </span>
+        <div key={item.label} className="rounded-md bg-black p-4">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className={`h-2 w-2 rounded-full shrink-0 ${
+              item.tone === "positive" ? "bg-positive" :
+              item.tone === "negative" ? "bg-negative" :
+              "bg-text-muted/40"
+            }`} />
+            <p className="text-xs uppercase tracking-[0.12em] text-text-muted truncate">{item.label}</p>
           </div>
-          <p className="mt-3 text-xl font-semibold text-text-primary">{item.value}</p>
+          <p className="text-xl font-semibold text-text-primary">{item.value}</p>
         </div>
       ))}
     </section>

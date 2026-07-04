@@ -44,7 +44,11 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
   if (!stocks.length) return null;
   const duped = [...stocks, ...stocks];
   return (
-    <div className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle/30 bg-black/60 backdrop-blur-md" style={{ WebkitBackdropFilter: "blur(12px)" }}>
+    <div
+      className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle/30 bg-black/40 backdrop-blur-md"
+      style={{ WebkitBackdropFilter: "blur(12px)" }}
+      ref={(el) => { if (el) document.documentElement.style.setProperty("--ticker-height", el.offsetHeight + "px"); }}
+    >
       <div className="market-ticker flex w-max items-center" style={{ pointerEvents: "none" }}>
         {duped.map((s, i) => {
           const pos = (s.changePercent ?? 0) >= 0;
@@ -126,7 +130,7 @@ function MoversSection({ gainers, losers, etfs }: { gainers: StockSummary[]; los
       {tab === "etf" && <EtfMobileList etfs={etfs} />}
 
       {tab !== "etf" && (
-        <div className="mx-4 rounded-xl border border-border-subtle bg-black overflow-hidden">
+        <div className="mx-4 rounded-xl bg-black overflow-hidden">
           {(tab === "winners" ? gainers : losers).slice(0, 8).map((s, i) => (
             <MoverRow key={s.symbol} stock={s} rank={i + 1} />
           ))}
@@ -178,8 +182,8 @@ export function MobileMarket() {
       <div className="relative z-10">
         <MobileTicker stocks={data.tickerStocks ?? []} />
 
-        {/* Welcome + status — sticky so it stays visible while scrolling */}
-        <div className="sticky top-0 z-10 flex items-start justify-between px-4 pt-6 pb-3 bg-black/80 backdrop-blur-md">
+        {/* Welcome + status — sticky below the ticker bar */}
+        <div className="sticky z-10 flex items-start justify-between px-4 pt-4 pb-3 bg-black/55 backdrop-blur-md" style={{ top: "var(--ticker-height, 34px)" }}>
           <div>
             <h1 className="text-2xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
             <p className="text-xs text-text-muted mt-0.5">{monthYear}</p>
@@ -196,7 +200,7 @@ export function MobileMarket() {
         {/* News — always spaced below the list, never overlapping */}
         <div className="mt-8">
           <p className="px-4 text-xs font-semibold uppercase tracking-widest text-positive mb-3">News</p>
-          <div className="mx-4 rounded-xl border border-border-subtle bg-black overflow-hidden">
+          <div className="mx-4 rounded-xl bg-black overflow-hidden">
             {(data.news ?? []).slice(0, 10).map(a => <NewsRow key={a.id} article={a} />)}
           </div>
         </div>

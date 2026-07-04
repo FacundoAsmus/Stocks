@@ -96,7 +96,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
       )}
 
       <div ref={pageRef} className="pb-24" style={{ opacity: 1 }}>
-        <div className="sticky top-0 z-30 flex items-center gap-2 bg-black/90 backdrop-blur-xl px-4 py-3">
+        <div className="sticky top-0 z-30 flex items-center gap-2 bg-black/63 backdrop-blur-xl px-4 py-3">
           <button
             onClick={handleBack}
             className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
@@ -133,7 +133,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
           />
         </div>
 
-        <div className="flex flex-col gap-4 px-4 mt-4">
+        <div className="flex flex-col gap-4 px-2 mt-4">
           <MarketSentiment score={sentiment.score} drivers={sentiment.drivers} />
 
           <AnalystSection

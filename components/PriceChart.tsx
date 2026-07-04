@@ -197,6 +197,7 @@ export function PriceChart({
   priceIndent?: string;
 }) {
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
+  const [chartKey, setChartKey]       = useState(0);
   const [data, setData]               = useState<CandlePoint[]>([]);
   const [isLoading, setIsLoading]     = useState(true);
   const [error, setError]             = useState<string | null>(null);
@@ -394,7 +395,7 @@ export function PriceChart({
     return (
       <button
         type="button"
-        onClick={() => { setPeriod(option); }}
+        onClick={() => { setPeriod(option); setChartKey(k => k + 1); }}
         className={cn(
           "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition sm:px-3 sm:py-2 sm:text-sm",
           active ? "bg-positive text-black" : "text-positive hover:text-positive/80"
@@ -462,6 +463,16 @@ export function PriceChart({
           </div>
         ) : hasData ? (
           <>
+          <style>{`
+            @keyframes chart-reveal {
+              from { clip-path: inset(0 100% 0 0); }
+              to   { clip-path: inset(0 0% 0 0); }
+            }
+          `}</style>
+          <div
+            key={chartKey}
+            style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both", width: "100%", height: "100%" }}
+          >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={data}
@@ -515,6 +526,7 @@ export function PriceChart({
               />
             </AreaChart>
           </ResponsiveContainer>
+          </div>
 
           {/* ── Custom touch overlay: dot + crosshair line + date bubble ── */}
           {isTouching && touchOverlay && (() => {
