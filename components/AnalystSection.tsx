@@ -140,7 +140,7 @@ export function AnalystSection({
   }, []);
 
   return (
-    <section ref={ref} className="rounded-md border border-[#3a3a42] bg-black p-5">
+    <section ref={ref} className="rounded-md bg-black p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">Analysts</p>

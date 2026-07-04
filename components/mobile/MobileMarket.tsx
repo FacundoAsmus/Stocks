@@ -126,7 +126,7 @@ function MoversSection({ gainers, losers, etfs }: { gainers: StockSummary[]; los
       {tab === "etf" && <EtfMobileList etfs={etfs} />}
 
       {tab !== "etf" && (
-        <div className="mx-4 rounded-xl border border-border-subtle bg-panel overflow-hidden">
+        <div className="mx-4 rounded-xl border border-border-subtle bg-black overflow-hidden">
           {(tab === "winners" ? gainers : losers).slice(0, 8).map((s, i) => (
             <MoverRow key={s.symbol} stock={s} rank={i + 1} />
           ))}
@@ -178,8 +178,8 @@ export function MobileMarket() {
       <div className="relative z-10">
         <MobileTicker stocks={data.tickerStocks ?? []} />
 
-        {/* Welcome + status — more breathing room */}
-        <div className="flex items-start justify-between px-4 pt-8 pb-2">
+        {/* Welcome + status — sticky so it stays visible while scrolling */}
+        <div className="sticky top-0 z-10 flex items-start justify-between px-4 pt-6 pb-3 bg-black/80 backdrop-blur-md">
           <div>
             <h1 className="text-2xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
             <p className="text-xs text-text-muted mt-0.5">{monthYear}</p>
@@ -196,7 +196,7 @@ export function MobileMarket() {
         {/* News — always spaced below the list, never overlapping */}
         <div className="mt-8">
           <p className="px-4 text-xs font-semibold uppercase tracking-widest text-positive mb-3">News</p>
-          <div className="mx-4 rounded-xl border border-border-subtle bg-panel overflow-hidden">
+          <div className="mx-4 rounded-xl border border-border-subtle bg-black overflow-hidden">
             {(data.news ?? []).slice(0, 10).map(a => <NewsRow key={a.id} article={a} />)}
           </div>
         </div>

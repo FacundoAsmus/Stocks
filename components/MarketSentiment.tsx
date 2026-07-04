@@ -165,29 +165,12 @@ export function MarketSentiment({
   drivers: string[];
 }) {
   return (
-    <section className="rounded-xl border border-border-subtle bg-panel p-5">
+    <section className="rounded-xl bg-black p-5">
       <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-4">
         Stock Sentiment
       </p>
 
       <SentimentBar score={score} />
-
-      {drivers.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {drivers.map((driver) => (
-            <span
-              key={driver}
-              className="rounded-md border border-border-subtle bg-background px-2.5 py-1 text-xs text-text-muted"
-            >
-              {driver}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <p className="mt-3 text-xs text-text-muted leading-4">
-        Score based on price momentum, 52-week range, valuation and volatility. UI signal only — not investment advice.
-      </p>
     </section>
   );
 }

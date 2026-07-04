@@ -113,7 +113,7 @@ export function EtfMobileList({ etfs }: { etfs: StockSummary[] }) {
   const etfMap = new Map(etfs.map(e => [e.symbol, e]));
 
   return (
-    <div className="mx-4 rounded-xl border border-border-subtle bg-panel overflow-hidden">
+    <div className="mx-4 rounded-xl border border-border-subtle bg-black overflow-hidden">
       {SECTOR_ETFS.map((etf, i) => {
         const stock = etfMap.get(etf.symbol);
         const isPos = (stock?.changePercent ?? 0) >= 0;
