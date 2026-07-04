@@ -22,7 +22,7 @@ function GlobeIcon({ className }: { className?: string }) {
 }
 
 // ─── Search overlay: expands from the search button (bottom-right) ────────
-function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
+function MobileSearchOverlay({ onClose, origin }: { onClose: () => void; origin: string }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Array<{ symbol: string; name: string }>>([]);
@@ -107,7 +107,7 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
               className="w-full flex items-center gap-3 px-4 py-4 border-b border-border-subtle/40 text-left active:bg-panel-muted"
               onClick={() => { 
                 sessionStorage.setItem('nav-from-search', '1');
-                sessionStorage.setItem('search-origin', pathname);
+                sessionStorage.setItem('search-origin', origin);
                 router.push(`/stock/${r.symbol}`);
               }}
             >
@@ -198,7 +198,7 @@ export function MobileNav() {
 
   return (
     <>
-      {searchOpen && <MobileSearchOverlay onClose={() => setSearchOpen(false)} />}
+      {searchOpen && <MobileSearchOverlay onClose={() => setSearchOpen(false)} origin={pathname} />}
 
       <nav
         className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center px-4 pointer-events-none"
