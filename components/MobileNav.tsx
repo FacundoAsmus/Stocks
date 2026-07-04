@@ -105,7 +105,11 @@ function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
             <button
               key={r.symbol}
               className="w-full flex items-center gap-3 px-4 py-4 border-b border-border-subtle/40 text-left active:bg-panel-muted"
-              onClick={() => { sessionStorage.setItem('nav-from-search', '1'); router.push(`/stock/${r.symbol}`); /* DO NOT close overlay — loading screen covers it */ }}
+              onClick={() => { 
+                sessionStorage.setItem('nav-from-search', '1');
+                sessionStorage.setItem('search-origin', pathname);
+                router.push(`/stock/${r.symbol}`);
+              }}
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
                 {r.symbol.slice(0, 2)}
@@ -168,11 +172,6 @@ export function MobileNav() {
 
   useEffect(() => {
     setActivePill(pathname === "/watchlist" ? "watchlist" : "market");
-    // Re-open search if we navigated back from a search-opened stock page
-    if (typeof window !== "undefined" && sessionStorage.getItem("reopen-search")) {
-      sessionStorage.removeItem("reopen-search");
-      setSearchOpen(true);
-    }
   }, [pathname]);
 
   const showNav = pathname === "/" || pathname === "/watchlist";
