@@ -6,8 +6,8 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 // "gemini-pro" was retired long ago — it now 404s on every API version.
 // gemini-2.5-flash is the current free-tier-eligible model (fast + good quality).
 // If it ever gets deprecated too, gemini-2.5-flash-lite is the fallback below.
-const GEMINI_MODEL = "gemini-2.5-flash";
-const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash-lite";
+const GEMINI_MODEL = "gemini-3.5-flash";
+const GEMINI_FALLBACK_MODEL = "gemini-3.1-flash-lite";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const GEMINI_FALLBACK_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_FALLBACK_MODEL}:generateContent`;
 
