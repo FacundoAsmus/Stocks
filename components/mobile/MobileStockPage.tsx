@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Sparkles } from "lucide-react";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { PriceChart } from "@/components/PriceChart";
+import { StockAIChat } from "@/components/mobile/StockAIChat";
 import type { StockDetail } from "@/types/stock";
 
 interface MobileStockPageProps {
@@ -19,18 +20,13 @@ interface MobileStockPageProps {
 }
 
 // Plays the search-close animation (fullscreen → tiny circle in bottom-right).
-// Purely visual — pointer-events-none. Calls onDone after animation completes.
 function CollapsingSearchOverlay({ onDone }: { onDone: () => void }) {
   const [expanded, setExpanded] = useState(true);
-
   useEffect(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => setExpanded(false));
-    });
+    requestAnimationFrame(() => { requestAnimationFrame(() => setExpanded(false)); });
     const t = setTimeout(onDone, 320);
     return () => clearTimeout(t);
   }, [onDone]);
-
   return (
     <div
       className="fixed z-50 overflow-hidden bg-black/96 backdrop-blur-xl pointer-events-none"
@@ -40,7 +36,6 @@ function CollapsingSearchOverlay({ onDone }: { onDone: () => void }) {
         width:        expanded ? "100vw"  : "2.75rem",
         height:       expanded ? "100dvh" : "2.75rem",
         borderRadius: expanded ? "0px"   : "50%",
-        transformOrigin: "bottom right",
         transition: [
           "width 300ms cubic-bezier(0.4,0,0.2,1)",
           "height 300ms cubic-bezier(0.4,0,0.2,1)",
@@ -59,17 +54,15 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   const [fromSearch,       setFromSearch]       = useState(false);
   const [searchOrigin,     setSearchOrigin]     = useState<string>("/");
   const [playingCloseAnim, setPlayingCloseAnim] = useState(false);
+  const [chatOpen,         setChatOpen]         = useState(false);
 
   useEffect(() => {
     const flag = sessionStorage.getItem("nav-from-search");
     if (flag) {
       setFromSearch(true);
       sessionStorage.removeItem("nav-from-search");
-      // Read origin page (market "/" or watchlist "/watchlist")
-      const origin = sessionStorage.getItem("search-origin") ?? "/";
-      setSearchOrigin(origin);
+      setSearchOrigin(sessionStorage.getItem("search-origin") ?? "/");
     }
-
     const el = pageRef.current;
     if (el) {
       el.classList.add("page-enter-rise");
@@ -80,8 +73,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   function handleBack() {
     const el = pageRef.current;
     if (fromSearch) {
-      // Play the closing-search animation, then navigate directly to the origin page
-      // (never router.back() — that would land on the search overlay)
       setPlayingCloseAnim(true);
       router.push(searchOrigin as "/" | "/watchlist");
     } else if (el) {
@@ -98,14 +89,36 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         <CollapsingSearchOverlay onDone={() => setPlayingCloseAnim(false)} />
       )}
 
-      <div ref={pageRef} className="pb-24" style={{ opacity: 1 }}>
-        <div className="sticky top-0 z-30 flex items-center gap-2 bg-background/85 backdrop-blur-xl px-4 py-3">
+      {/* AI Chat overlay — rendered on top of everything, background stationary */}
+      {chatOpen && (
+        <StockAIChat
+          stock={stock}
+          currentPrice={currentPrice}
+          sentiment={sentiment}
+          metrics={metrics}
+          onDismiss={() => setChatOpen(false)}
+        />
+      )}
+
+      <div ref={pageRef} className="pb-24" style={{ opacity: 1 }} data-stock-page="">
+        {/* Top bar: Back ←  →  AI */}
+        <div className="sticky top-0 z-30 flex items-center justify-between gap-2 bg-background/85 backdrop-blur-xl px-4 py-3">
           <button
             onClick={handleBack}
             className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
           >
             <ChevronLeft className="h-4 w-4" />
             Back
+          </button>
+
+          {/* AI button — green Sparkles icon, right side */}
+          <button
+            onClick={() => setChatOpen(true)}
+            className="flex items-center gap-1.5 border border-positive/60 text-positive text-sm font-semibold px-3 py-1.5 rounded-lg hover:bg-positive/10 transition"
+            aria-label="Ask AI"
+          >
+            <Sparkles className="h-4 w-4 text-positive" />
+            <span className="text-positive text-xs font-semibold">AI</span>
           </button>
         </div>
 
