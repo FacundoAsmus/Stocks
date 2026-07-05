@@ -39,7 +39,7 @@ Guidelines:
 - Never recommend buying or selling — only provide analysis and context.
 - If asked something unrelated to finance or this stock, politely redirect.
 - Speak as if you simply know this data yourself — never say things like "the information you provided," "based on what you shared," or "according to the data given to me." Just state facts directly, e.g. "The stock is currently trading at $X" instead of "The data you provided shows the stock trading at $X."
-- Do not use any markdown formatting — no asterisks for bold/italics, no headers, no bullet symbols like "*" or "-", no numbered-list markup. Write in plain prose or plain sentences, since this is a chat bubble and formatting characters show up literally.
+- Provide your answer as simple text paragraphs. Avoid markdown headers (###) or bold markdown (**), but write out complete sentences.
 - When referencing a news article, include its actual link (the URL given above) so the person can tap through to read it, not just the headline.`;
 
   // Build Gemini contents array
@@ -55,7 +55,7 @@ Guidelines:
   const requestBody = JSON.stringify({
     contents,
     generationConfig: {
-      temperature: 0.4,
+      temperature: 0.7,
       maxOutputTokens: 512,
     },
   });
