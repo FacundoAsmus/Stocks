@@ -34,8 +34,8 @@ html.light-mode body {
 }
 html.light-mode :root,
 html.light-mode {
-  --color-background: #f5f5f7;
-  --color-panel: #ffffff;
+  --color-background: #ffffff;
+  --color-panel: #f5f5f7;
   --color-panel-muted: #e8e8ed;
   --color-border-subtle: #d1d1d6;
   --color-text-primary: #1a1a1e;
@@ -51,6 +51,24 @@ html.light-mode .text-text-primary { color: #1a1a1e; }
 html.light-mode .text-text-muted { color: #6e6e80; }
 html.light-mode .border-white\/10 { border-color: rgba(0,0,0,0.08) !important; }
 html.light-mode .border-white\/20 { border-color: rgba(0,0,0,0.12) !important; }
+
+/* Sticky glass headers: pure white in light mode */
+html.light-mode [class*="bg-background/85"] {
+  background-color: rgba(255,255,255,0.88) !important;
+}
+
+/* Chart vertical crosshair: darker in light mode so it's visible */
+html.light-mode .recharts-tooltip-cursor {
+  stroke: rgba(0,0,0,0.25) !important;
+}
+/* Touch overlay vertical line in light mode */
+html.light-mode [data-crosshair-v] {
+  background: rgba(0,0,0,0.2) !important;
+}
+/* Touch overlay horizontal line (pro mode) in light mode */
+html.light-mode [data-crosshair-h] {
+  background: rgba(0,0,0,0.15) !important;
+}
 
 
 body {

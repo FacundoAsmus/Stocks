@@ -40,12 +40,21 @@ function applyTheme(theme: Theme) {
 // ─── Settings panel ───────────────────────────────────────────────────────
 function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
+  const [proMode, setProMode] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
+  );
 
   function changeTheme(t: Theme) {
     setTheme(t);
     applyTheme(t);
-    // Reload so Safari chrome (top bar colour) updates too
     window.location.reload();
+  }
+
+  function toggleProMode() {
+    const next = !proMode;
+    setProMode(next);
+    localStorage.setItem("pro-mode", next ? "1" : "0");
+    window.dispatchEvent(new Event("pro-mode-changed"));
   }
 
   const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
@@ -92,6 +101,31 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
                 )} />
               </button>
             ))}
+          </div>
+        </section>
+
+        {/* Pro Mode */}
+        <section>
+          <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-3">Pro Mode</p>
+          <div className="rounded-xl border border-border-subtle bg-panel overflow-hidden">
+            <button
+              onClick={toggleProMode}
+              className="w-full flex items-center justify-between px-4 py-3.5 text-left"
+            >
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm text-text-primary font-medium">Horizontal crosshair</span>
+                <span className="text-xs text-text-muted">Adds a horizontal line at the hovered price to identify floors and ceilings</span>
+              </span>
+              <span className={cn(
+                "ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative",
+                proMode ? "border-positive bg-positive" : "border-border-subtle bg-panel-muted"
+              )}>
+                <span className={cn(
+                  "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200",
+                  proMode ? "translate-x-5" : "translate-x-0.5"
+                )} />
+              </span>
+            </button>
           </div>
         </section>
       </div>
@@ -287,9 +321,9 @@ export function MobileNav() {
       {searchOpen   && <MobileSearchOverlay onClose={() => setSearchOpen(false)}   origin={pathname} />}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
 
-      {/* Three pills: Market, Watchlist, Settings — centred */}
+      {/* Three pills: Market, Watchlist, Settings — left-grouped */}
       <nav
-        className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center justify-around px-6 pointer-events-none"
+        className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center justify-start gap-3 px-5 pointer-events-none"
         style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))", paddingTop: "1rem" }}
       >
         <button className={pillClass(isMarket)} onClick={() => navigateTo("/")}>

@@ -205,6 +205,22 @@ export function PriceChart({
   const [hoverPrice, setHoverPrice]   = useState<number | null>(null);
   const [hoverDate,  setHoverDate]    = useState<string | null>(null);
   const [priceVisible, setPriceVisible] = useState(true);
+  const [proMode, setProMode]         = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
+  );
+
+  // Keep proMode in sync across tabs and after settings toggle
+  useEffect(() => {
+    function sync() {
+      setProMode(localStorage.getItem("pro-mode") === "1");
+    }
+    window.addEventListener("pro-mode-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("pro-mode-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
 
   /* Load candles */
   useEffect(() => {
@@ -495,11 +511,27 @@ export function PriceChart({
                 cursor={(() => {
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return false;
+                  if (proMode) {
+                    const ProCursor = (props: Record<string, unknown>) => {
+                      const points = props.points as Array<{ x: number; y: number }> | undefined;
+                      if (!points?.length) return null;
+                      const x = points[0].x;
+                      const y = points[0].y;
+                      const h = (props.height as number) ?? 260;
+                      const w = (props.width  as number) ?? 600;
+                      return (
+                        <g>
+                          <line x1={x} y1={0} x2={x} y2={h} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
+                          <line x1={0} y1={y} x2={w} y2={y} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
+                        </g>
+                      );
+                    };
+                    return <ProCursor />;
+                  }
                   return { stroke: "#ffffff22", strokeWidth: 1 };
                 })()}
                 content={(() => {
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
-                  // On touch: custom overlay handles everything — give Recharts a no-op renderer
                   if (isTouchDevice) return <></>;
                   return <CrosshairTooltip period={period} onHover={onHover} isTouching={isTouching} />;
                 })()}
@@ -543,9 +575,18 @@ export function PriceChart({
               <div className="absolute inset-0 pointer-events-none" aria-hidden>
                 {/* Vertical crosshair line */}
                 <div
+                  data-crosshair-v=""
                   className="absolute top-0 bottom-0 w-px bg-white/20"
                   style={{ left: `${xPct}%` }}
                 />
+                {/* Horizontal crosshair line — Pro Mode only */}
+                {proMode && (
+                  <div
+                    data-crosshair-h=""
+                    className="absolute left-0 right-0 h-px"
+                    style={{ top: `${dotTopPct}%`, background: "rgba(255,255,255,0.18)" }}
+                  />
+                )}
                 {/* Dot */}
                 <div
                   className="absolute w-3 h-3 rounded-full border-2 border-black"
