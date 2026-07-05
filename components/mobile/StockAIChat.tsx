@@ -50,21 +50,22 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [visible, setVisible]   = useState(false);
-  const [keyboardInset, setKeyboardInset] = useState(0);
+  const [viewportRect, setViewportRect] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLInputElement>(null);
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
   const stockContext = buildStockContext(stock, currentPrice, sentiment, metrics);
 
-  // Track iOS visual viewport so the panel stays truly pinned to the bottom
-  // of the visible screen — without this, the panel can drift/get cut off
-  // when the on-screen keyboard opens or Safari's chrome shows/hides.
+  // Track the iOS visual viewport (not just window size) so the whole overlay
+  // is pinned to exactly what's on screen right now. Plain `position: fixed`
+  // can drift out of place on iOS Safari during scroll/keyboard/toolbar
+  // changes — anchoring to visualViewport's own rect fixes that at the root,
+  // so the chat never appears at "the scroll position of the button" again.
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
     const update = () => {
-      const inset = window.innerHeight - vv.height - vv.offsetTop;
-      setKeyboardInset(inset > 0 ? inset : 0);
+      setViewportRect({ top: vv.offsetTop, left: vv.offsetLeft, width: vv.width, height: vv.height });
     };
     update();
     vv.addEventListener("resize", update);
@@ -137,11 +138,16 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
     }
   }
 
-  // Backdrop touch: quick tap = dismiss, hold/move = ignore (let chat scroll)
-  function onBdTouchStart(e: React.TouchEvent) {
+  // Tap-to-dismiss on empty space: a quick tap (not a scroll/drag) that lands
+  // directly on a blank area — not on a message bubble or the input bar —
+  // closes the chat. Checking e.target === e.currentTarget is what makes
+  // this "empty space only", since bubbles/buttons are descendants and
+  // won't match their container.
+  function onEmptyAreaTouchStart(e: React.TouchEvent) {
+    if (e.target !== e.currentTarget) { touchStart.current = null; return; }
     touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
   }
-  function onBdTouchEnd(e: React.TouchEvent) {
+  function onEmptyAreaTouchEnd(e: React.TouchEvent) {
     if (!touchStart.current) return;
     const dx = Math.abs(e.changedTouches[0].clientX - touchStart.current.x);
     const dy = Math.abs(e.changedTouches[0].clientY - touchStart.current.y);
@@ -149,9 +155,22 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
     if (dx < 8 && dy < 8 && dt < 300) handleDismiss();
     touchStart.current = null;
   }
+  function onEmptyAreaClick(e: React.MouseEvent) {
+    if (e.target === e.currentTarget) handleDismiss();
+  }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 999, pointerEvents: "auto" }}>
+    <div
+      style={{
+        position: "fixed",
+        top: viewportRect?.top ?? 0,
+        left: viewportRect?.left ?? 0,
+        width: viewportRect?.width ?? "100%",
+        height: viewportRect?.height ?? "100%",
+        zIndex: 999,
+        pointerEvents: "auto",
+      }}
+    >
       {/* Frosted backdrop — covers full screen, tap dismisses */}
       <div
         style={{
@@ -160,35 +179,35 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
           WebkitBackdropFilter: visible ? "blur(8px) brightness(0.7)" : "none",
           transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
         }}
-        onTouchStart={onBdTouchStart}
-        onTouchEnd={onBdTouchEnd}
+        onTouchStart={onEmptyAreaTouchStart}
+        onTouchEnd={onEmptyAreaTouchEnd}
         onClick={handleDismiss}
       />
 
-      {/* Chat panel — pinned to the true bottom of the visible screen (above any
-          keyboard), reaching almost to the top so messages have room to grow
-          without being cut off mid-screen */}
+      {/* Chat panel — fills the (visualViewport-anchored) overlay from near the
+          top down to the true bottom, so it can't drift or get cut off */}
       <div
         style={{
-          position: "fixed",
+          position: "absolute",
           left: 0, right: 0,
           top: "max(3rem, calc(env(safe-area-inset-top) + 1rem))",
-          bottom: keyboardInset,
+          bottom: 0,
           display: "flex",
           flexDirection: "column",
           transform: visible ? "translateY(0)" : "translateY(100%)",
-          transition: "transform 0.32s cubic-bezier(0.2,0,0,1), bottom 0.15s ease",
+          transition: "transform 0.32s cubic-bezier(0.2,0,0,1)",
           zIndex: 1000,
         }}
-        onClick={e => e.stopPropagation()}
-        onTouchStart={e => e.stopPropagation()}
-        onTouchEnd={e => e.stopPropagation()}
       >
-        {/* Messages — scrollable area, grows upward */}
+        {/* Messages — scrollable area, grows upward. Tapping blank space here
+            (not a bubble) dismisses the chat, same as tapping the backdrop. */}
         <div
           ref={scrollRef}
           className="flex-1 overflow-y-auto flex flex-col gap-3 px-4 pt-4 pb-2 min-h-0"
           style={{ overscrollBehavior: "contain" }}
+          onClick={onEmptyAreaClick}
+          onTouchStart={onEmptyAreaTouchStart}
+          onTouchEnd={onEmptyAreaTouchEnd}
         >
           {messages.length === 0 && (
             <div className="flex items-center justify-center gap-2 py-6 text-xs" style={{ color: "#00c805aa" }}>
@@ -240,7 +259,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
           )}
         </div>
 
-        {/* Input bar — always at bottom of panel */}
+        {/* Input bar — always at bottom of panel; taps here never dismiss */}
         <div
           className="shrink-0 px-3 pt-2"
           style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
