@@ -45,7 +45,7 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
   const duped = [...stocks, ...stocks];
   return (
     <div
-      className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle/30 bg-black/40 backdrop-blur-md"
+      className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle/30 bg-background/80 backdrop-blur-md"
       style={{ WebkitBackdropFilter: "blur(12px)" }}
       ref={(el) => { if (el) document.documentElement.style.setProperty("--ticker-height", el.offsetHeight + "px"); }}
     >
@@ -73,7 +73,7 @@ function getMarketStatus(now: Date) {
 function MoverRow({ stock, rank }: { stock: StockSummary; rank: number }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
   return (
-    <Link href={`/stock/${stock.symbol}`} className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle/40 last:border-0 active:bg-panel-muted">
+    <Link href={`/stock/${stock.symbol}`} className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle/70 last:border-0 active:bg-panel-muted">
       <span className="text-xs text-text-muted w-4 shrink-0">{rank}</span>
       {stock.logo
         ? <img src={stock.logo} alt="" className="h-8 w-8 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
@@ -96,7 +96,7 @@ function MoverRow({ stock, rank }: { stock: StockSummary; rank: number }) {
 
 function NewsRow({ article }: { article: MarketNewsArticle }) {
   return (
-    <a href={article.url} target="_blank" rel="noreferrer" className="flex gap-3 px-4 py-3 border-b border-border-subtle/40 last:border-0 active:bg-panel-muted">
+    <a href={article.url} target="_blank" rel="noreferrer" className="flex gap-3 px-4 py-3 border-b border-border-subtle/70 last:border-0 active:bg-panel-muted">
       {article.image
         ? <img src={article.image} alt="" className="h-12 w-16 rounded-md object-cover shrink-0 self-start" />
         : <span className="h-12 w-16 rounded-md bg-panel-muted shrink-0" />}
@@ -183,7 +183,7 @@ export function MobileMarket() {
         <MobileTicker stocks={data.tickerStocks ?? []} />
 
         {/* Welcome + status — sticky below the ticker bar */}
-        <div className="sticky z-10 flex items-start justify-between px-4 pt-4 pb-3 bg-black/55 backdrop-blur-md" style={{ top: "var(--ticker-height, 34px)" }}>
+        <div className="sticky z-10 flex items-start justify-between px-4 pt-4 pb-3 bg-background/85 backdrop-blur-md" style={{ top: "var(--ticker-height, 34px)" }}>
           <div>
             <h1 className="text-2xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
             <p className="text-xs text-text-muted mt-0.5">{monthYear}</p>

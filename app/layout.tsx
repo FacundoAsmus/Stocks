@@ -19,6 +19,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className="dark">
       <body className={dmSans.className}>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function(){
+            var t = localStorage.getItem('theme') || 'dark';
+            var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            var isDark = t === 'dark' || (t === 'system' && prefersDark);
+            if (!isDark) document.documentElement.classList.add('light-mode');
+          })();
+        `}} />
         <ToastProvider>
           <div className="min-h-screen">
             {/* Desktop header — hidden on mobile */}

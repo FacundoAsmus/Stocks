@@ -57,8 +57,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   const router = useRouter();
   const pageRef = useRef<HTMLDivElement>(null);
   const [fromSearch, setFromSearch] = useState(false);
-  const [searchOrigin, setSearchOrigin] = useState<string>("/");
-  const [playingCloseAnim, setPlayingCloseAnim] = useState(false);
 
   useEffect(() => {
     const flag = sessionStorage.getItem("nav-from-search");
@@ -66,7 +64,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
       setFromSearch(true);
       sessionStorage.removeItem("nav-from-search");
     }
-    setSearchOrigin(sessionStorage.getItem("search-origin") ?? "/");
 
     const el = pageRef.current;
     if (el) {
@@ -78,9 +75,8 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   function handleBack() {
     const el = pageRef.current;
     if (fromSearch) {
-      // Show closing animation while navigating to origin page underneath
-      setPlayingCloseAnim(true);
-      router.push(searchOrigin as "/" | "/watchlist");
+      // Go back without any animation — search is gone, don't reopen it
+      router.back();
     } else if (el) {
       el.classList.add("page-exit-sink");
       setTimeout(() => router.back(), 380);
@@ -96,7 +92,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
       )}
 
       <div ref={pageRef} className="pb-24" style={{ opacity: 1 }}>
-        <div className="sticky top-0 z-30 flex items-center gap-2 bg-black/63 backdrop-blur-xl px-4 py-3">
+        <div className="sticky top-0 z-30 flex items-center gap-2 bg-background/85 backdrop-blur-xl px-4 py-3">
           <button
             onClick={handleBack}
             className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"

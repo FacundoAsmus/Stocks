@@ -60,7 +60,7 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
 function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: string) => void }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle/40 last:border-0">
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle/70 last:border-0">
       <Link href={`/stock/${stock.symbol}`} className="flex items-center gap-3 flex-1 min-w-0">
         {stock.logo
           ? <img src={stock.logo} alt="" className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
@@ -149,7 +149,7 @@ export function MobileWatchlist() {
 
   return (
     <div className="pb-24">
-      <div className="sticky top-0 z-10 px-4 pt-6 pb-4 bg-black/55 backdrop-blur-md">
+      <div className="sticky top-0 z-10 px-4 pt-6 pb-4 bg-background/85 backdrop-blur-md">
         <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
         <h1 className="mt-1 text-2xl font-bold text-text-primary">Your Stocks</h1>
       </div>
@@ -169,7 +169,7 @@ export function MobileWatchlist() {
           ))}
           {/* Placeholder rows for symbols still loading */}
           {symbols.filter(s => !stocks.has(s)).map(sym => (
-            <div key={sym} className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle/40 last:border-0 opacity-40">
+            <div key={sym} className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle/70 last:border-0 opacity-40">
               <span className="h-9 w-9 rounded-md bg-panel-muted shrink-0 animate-pulse" />
               <span className="flex-1">
                 <span className="block text-sm font-bold text-text-primary">{sym}</span>

@@ -322,7 +322,7 @@ function NewsPanel({ articles }: { articles: MarketNewsArticle[] }) {
       {!items.length ? (
         <div className="border-y border-border-subtle py-10 text-sm text-text-muted">Market news unavailable.</div>
       ) : (
-        <div className="rounded-lg border border-border-subtle bg-panel divide-y divide-border-subtle/60">
+        <div className="rounded-lg border border-border-subtle bg-panel divide-y divide-border-subtle/80">
           {items.map((article) => (
             <a
               key={article.id}

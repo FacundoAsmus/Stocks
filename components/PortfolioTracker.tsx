@@ -386,7 +386,7 @@ function PositionRow({
   const isPos         = pnlDollar >= 0;
 
   return (
-    <div className="border-b border-border-subtle/40 last:border-0 group">
+    <div className="border-b border-border-subtle/70 last:border-0 group">
       <div className="flex items-center gap-3 px-5 py-4">
         <Link href={`/stock/${position.ticker}`} className="flex items-center gap-3 flex-1 min-w-0">
           {stock?.logo
