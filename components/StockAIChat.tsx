@@ -97,8 +97,8 @@ async function callGemini(
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`AI error ${res.status}: ${err}`);
+    const err = await res.json().catch(() => ({})) as { error?: string };
+    throw new Error(err.error ?? String(res.status));
   }
 
   const data = await res.json() as {
@@ -184,7 +184,11 @@ export function StockAIChat(props: StockAIChatProps) {
       setMessages(prev => [...prev, { role: "model", text: reply }]);
     } catch (e) {
       if ((e as Error).name !== "AbortError") {
-        setMessages(prev => [...prev, { role: "model", text: "Sorry, something went wrong. Please try again." }]);
+        const msg = (e as Error).message ?? "";
+        let friendly = "Sorry, something went wrong. Please try again.";
+        if (msg.includes("429")) friendly = "Rate limit reached. Please wait a moment and try again.";
+        else if (msg.includes("401")) friendly = "Authentication error. Please check the API key.";
+        setMessages(prev => [...prev, { role: "model", text: friendly }]);
       }
     } finally {
       setLoading(false);

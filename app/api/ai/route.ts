@@ -12,7 +12,12 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
+    if (!res.ok) {
+      const code = data?.error?.code ?? res.status;
+      const message = data?.error?.message ?? "Unknown error";
+      return NextResponse.json({ error: `${code}: ${message}` }, { status: res.status });
+    }
+    return NextResponse.json(data);
   } catch (e) {
     return NextResponse.json({ error: String(e) }, { status: 500 });
   }
