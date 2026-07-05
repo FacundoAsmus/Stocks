@@ -72,10 +72,7 @@ ${newsStr}
 Answer questions about this stock using the above data. Always write complete sentences — never stop mid-sentence. Keep answers concise (under 150 words) unless the user asks for more detail.`;
 }
 
-// ─── Gemini API call ──────────────────────────────────────────────────────
-const GEMINI_KEY = "AQ.Ab8RN6IZeZc_E2TTp5Mrbufw4O21qop7zemfVehjsTGDKVgayg";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
-
+// ─── Gemini API call (proxied through /api/ai so the key stays server-side) ─
 async function callGemini(
   systemPrompt: string,
   history: Message[],
@@ -83,31 +80,25 @@ async function callGemini(
   signal: AbortSignal,
 ): Promise<string> {
   const contents = [
-    // Inject system context as first user turn + model ack
     { role: "user",  parts: [{ text: systemPrompt }] },
     { role: "model", parts: [{ text: "Understood. I have the stock data and am ready to answer questions." }] },
-    // Prior conversation
     ...history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
-    // New user message
     { role: "user", parts: [{ text: userText }] },
   ];
 
-  const res = await fetch(GEMINI_URL, {
+  const res = await fetch("/api/ai", {
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       contents,
-      generationConfig: {
-        temperature: 0.4,
-        maxOutputTokens: 1024,
-      },
+      generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
     }),
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Gemini error ${res.status}: ${err}`);
+    throw new Error(`AI error ${res.status}: ${err}`);
   }
 
   const data = await res.json() as {
