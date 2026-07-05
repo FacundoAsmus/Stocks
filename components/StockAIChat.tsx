@@ -105,7 +105,10 @@ async function callGemini(
     candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
   };
 
-  return data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "No response received.";
+  return data.candidates?.[0]?.content?.parts
+    ?.map(p => p.text ?? "")
+    .join("")
+    .trim() ?? "No response received.";
 }
 
 // ─── Chat panel ───────────────────────────────────────────────────────────
