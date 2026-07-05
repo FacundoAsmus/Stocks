@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
+import { DesktopAIChatButton } from "@/components/DesktopAIChatButton";
 import { ErrorState } from "@/components/ErrorState";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
 import { MarketSentiment } from "@/components/MarketSentiment";
@@ -144,8 +145,14 @@ export default async function StockPage({ params }: StockPageProps) {
       <div className="relative space-y-6">
         <div className="relative z-10 space-y-6">
         <section className="relative p-5">
-          <div className="absolute right-5 top-5 z-10">
+          <div className="absolute right-5 top-5 z-10 flex flex-col items-center gap-2">
             <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
+            <DesktopAIChatButton
+              stock={stock}
+              currentPrice={currentPrice}
+              sentiment={sentiment}
+              metrics={metrics}
+            />
           </div>
           {/* ── Logo + name row ── */}
           <div className="flex gap-4 items-start">

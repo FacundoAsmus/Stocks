@@ -185,16 +185,21 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
       />
 
       {/* Chat panel — fills the (visualViewport-anchored) overlay from near the
-          top down to the true bottom, so it can't drift or get cut off */}
+          top down to the true bottom. Centered with a max-width so it reads as
+          a floating card on wide desktop screens, while staying edge-to-edge
+          on narrow mobile viewports (100% width caps out at 480px). */}
       <div
         style={{
           position: "absolute",
-          left: 0, right: 0,
+          left: "50%",
+          width: "min(100%, 480px)",
           top: "max(3rem, calc(env(safe-area-inset-top) + 1rem))",
           bottom: 0,
           display: "flex",
           flexDirection: "column",
-          transform: visible ? "translateY(0)" : "translateY(100%)",
+          borderRadius: "20px 20px 0 0",
+          overflow: "hidden",
+          transform: visible ? "translate(-50%, 0)" : "translate(-50%, 100%)",
           transition: "transform 0.32s cubic-bezier(0.2,0,0,1)",
           zIndex: 1000,
         }}
@@ -285,7 +290,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
                 background: "transparent",
                 border: "none",
                 outline: "none",
-                fontSize: 14,
+                /* iOS Safari auto-zooms the page on focus for any input
+                   with font-size under 16px — 16px is the safe minimum. */
+                fontSize: 16,
                 caretColor: "#00c805",
               }}
             />
