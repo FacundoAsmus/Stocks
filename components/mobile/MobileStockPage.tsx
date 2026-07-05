@@ -57,11 +57,13 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   const router = useRouter();
   const pageRef = useRef<HTMLDivElement>(null);
   const [fromSearch, setFromSearch] = useState(false);
+  const [playingCloseAnim, setPlayingCloseAnim] = useState(false);
 
   useEffect(() => {
     const flag = sessionStorage.getItem("nav-from-search");
     if (flag) {
       setFromSearch(true);
+      setPlayingCloseAnim(true);
       sessionStorage.removeItem("nav-from-search");
     }
 
