@@ -111,14 +111,13 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
             Back
           </button>
 
-          {/* AI button — green Sparkles icon, right side */}
+          {/* AI button — icon only */}
           <button
             onClick={() => setChatOpen(true)}
-            className="flex items-center gap-1.5 border border-positive/60 text-positive text-sm font-semibold px-3 py-1.5 rounded-lg hover:bg-positive/10 transition"
+            className="flex items-center justify-center h-9 w-9 border border-positive/60 text-positive rounded-lg hover:bg-positive/10 transition"
             aria-label="Ask AI"
           >
-            <Sparkles className="h-4 w-4 text-positive" />
-            <span className="text-positive text-xs font-semibold">AI</span>
+            <Sparkles className="h-5 w-5 text-positive" />
           </button>
         </div>
 
