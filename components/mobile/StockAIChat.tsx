@@ -31,7 +31,7 @@ function buildStockContext(
   if (a) lines.push(`Analyst: Strong Buy ${a.strongBuy} | Buy ${a.buy} | Hold ${a.hold} | Sell ${a.sell} | Strong Sell ${a.strongSell}`);
   if (stock.priceTarget?.targetMean) lines.push(`Avg Price Target: $${stock.priceTarget.targetMean.toFixed(2)}`);
   if (stock.news?.length) {
-    const h = stock.news.slice(0, 5).map(n => `• ${n.headline} (${n.source})`).join("\n");
+    const h = stock.news.slice(0, 5).map(n => `• ${n.headline} (${n.source}) — ${n.url}`).join("\n");
     lines.push(`Recent News:\n${h}`);
   }
   return lines.join("\n");
@@ -50,10 +50,30 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [visible, setVisible]   = useState(false);
+  const [keyboardInset, setKeyboardInset] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLInputElement>(null);
   const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
   const stockContext = buildStockContext(stock, currentPrice, sentiment, metrics);
+
+  // Track iOS visual viewport so the panel stays truly pinned to the bottom
+  // of the visible screen — without this, the panel can drift/get cut off
+  // when the on-screen keyboard opens or Safari's chrome shows/hides.
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const inset = window.innerHeight - vv.height - vv.offsetTop;
+      setKeyboardInset(inset > 0 ? inset : 0);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   // Lock page scroll WITHOUT jumping to top — save & restore scroll position
   useEffect(() => {
@@ -145,16 +165,19 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
         onClick={handleDismiss}
       />
 
-      {/* Chat panel — fixed to BOTTOM of viewport, slides up from there */}
+      {/* Chat panel — pinned to the true bottom of the visible screen (above any
+          keyboard), reaching almost to the top so messages have room to grow
+          without being cut off mid-screen */}
       <div
         style={{
           position: "fixed",
-          left: 0, right: 0, bottom: 0,
-          maxHeight: "70dvh",
+          left: 0, right: 0,
+          top: "max(3rem, calc(env(safe-area-inset-top) + 1rem))",
+          bottom: keyboardInset,
           display: "flex",
           flexDirection: "column",
           transform: visible ? "translateY(0)" : "translateY(100%)",
-          transition: "transform 0.32s cubic-bezier(0.2,0,0,1)",
+          transition: "transform 0.32s cubic-bezier(0.2,0,0,1), bottom 0.15s ease",
           zIndex: 1000,
         }}
         onClick={e => e.stopPropagation()}
