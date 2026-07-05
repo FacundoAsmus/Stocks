@@ -56,15 +56,18 @@ function CollapsingSearchOverlay({ onDone }: { onDone: () => void }) {
 export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: MobileStockPageProps) {
   const router = useRouter();
   const pageRef = useRef<HTMLDivElement>(null);
-  const [fromSearch, setFromSearch] = useState(false);
+  const [fromSearch,       setFromSearch]       = useState(false);
+  const [searchOrigin,     setSearchOrigin]     = useState<string>("/");
   const [playingCloseAnim, setPlayingCloseAnim] = useState(false);
 
   useEffect(() => {
     const flag = sessionStorage.getItem("nav-from-search");
     if (flag) {
       setFromSearch(true);
-      setPlayingCloseAnim(true);
       sessionStorage.removeItem("nav-from-search");
+      // Read origin page (market "/" or watchlist "/watchlist")
+      const origin = sessionStorage.getItem("search-origin") ?? "/";
+      setSearchOrigin(origin);
     }
 
     const el = pageRef.current;
@@ -77,8 +80,10 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   function handleBack() {
     const el = pageRef.current;
     if (fromSearch) {
-      // Go back without any animation — search is gone, don't reopen it
-      router.back();
+      // Play the closing-search animation, then navigate directly to the origin page
+      // (never router.back() — that would land on the search overlay)
+      setPlayingCloseAnim(true);
+      router.push(searchOrigin as "/" | "/watchlist");
     } else if (el) {
       el.classList.add("page-exit-sink");
       setTimeout(() => router.back(), 380);

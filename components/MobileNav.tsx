@@ -116,14 +116,11 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
                 <span className="text-sm text-text-primary font-medium">Horizontal crosshair</span>
                 <span className="text-xs text-text-muted">Adds a horizontal line at the hovered price to identify floors and ceilings</span>
               </span>
-              <span className={cn(
-                "ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative",
-                proMode ? "border-positive bg-positive" : "border-border-subtle bg-panel-muted"
-              )}>
-                <span className={cn(
-                  "absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200",
-                  proMode ? "translate-x-5" : "translate-x-0.5"
-                )} />
+              <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative"
+                style={{ borderColor: proMode ? "var(--color-positive)" : "var(--color-border-subtle)",
+                         backgroundColor: proMode ? "var(--color-positive)" : "var(--color-panel-muted)" }}>
+                <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
+                  style={{ left: proMode ? "calc(100% - 1.125rem)" : "0.125rem" }} />
               </span>
             </button>
           </div>
@@ -224,6 +221,7 @@ function MobileSearchOverlay({ onClose, origin }: { onClose: () => void; origin:
               onClick={() => {
                 sessionStorage.setItem("nav-from-search", "1");
                 sessionStorage.setItem("search-origin", origin);
+                onClose();
                 router.push(`/stock/${r.symbol}`);
               }}
             >

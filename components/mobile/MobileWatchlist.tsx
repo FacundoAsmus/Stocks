@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { Star } from "lucide-react";
@@ -56,68 +56,11 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
   );
 }
 
-// ── Drag-to-reorder watchlist row ─────────────────────────────────────────
-interface DraggableRowProps {
-  stock: StockSummary;
-  index: number;
-  total: number;
-  onRemove: (s: string) => void;
-  isDragging: boolean;
-  isDropTarget: boolean;
-  onLongPress: (index: number, clientY: number) => void;
-  onDragMove: (clientY: number) => void;
-  onDragEnd: () => void;
-}
-
-function DraggableRow({
-  stock, index, onRemove, isDragging, isDropTarget, onLongPress, onDragMove, onDragEnd,
-}: DraggableRowProps) {
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: string) => void }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
-
-  function handleTouchStart(e: React.TouchEvent) {
-    const clientY = e.touches[0].clientY;
-    longPressTimer.current = setTimeout(() => {
-      onLongPress(index, clientY);
-    }, 400);
-  }
-
-  function handleTouchMove(e: React.TouchEvent) {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    if (isDragging) {
-      e.preventDefault();
-      onDragMove(e.touches[0].clientY);
-    }
-  }
-
-  function handleTouchEnd() {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-    if (isDragging) onDragEnd();
-  }
-
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 px-4 py-3 border-b border-border-subtle/70 last:border-0 transition-all duration-150 select-none",
-        isDragging && "opacity-40 scale-95",
-        isDropTarget && "ring-2 ring-positive ring-inset bg-positive/5",
-      )}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      style={{ touchAction: isDragging ? "none" : "auto" }}
-    >
-      <Link
-        href={isDragging ? "#" : `/stock/${stock.symbol}`}
-        className="flex items-center gap-3 flex-1 min-w-0"
-        onClick={isDragging ? (e) => e.preventDefault() : undefined}
-      >
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle/70 last:border-0">
+      <Link href={`/stock/${stock.symbol}`} className="flex items-center gap-3 flex-1 min-w-0">
         {stock.logo
           ? <img src={stock.logo} alt="" className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
           : <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
@@ -137,13 +80,9 @@ function DraggableRow({
           </span>
         </span>
       </Link>
-      {/* Drag handle hint when not dragging */}
-      <div className="flex flex-col gap-[3px] ml-1 shrink-0 opacity-20">
-        {[0,1,2].map(i => <span key={i} className="h-px w-4 bg-text-muted rounded" />)}
-      </div>
       <button
         onClick={() => onRemove(stock.symbol)}
-        className="ml-1 shrink-0 text-positive active:text-negative transition-colors p-1"
+        className="ml-2 shrink-0 text-positive active:text-negative transition-colors p-1"
         aria-label={`Remove ${stock.symbol}`}
       >
         <Star className="h-4 w-4 fill-current" />
@@ -153,19 +92,11 @@ function DraggableRow({
 }
 
 export function MobileWatchlist() {
-  const [symbols, setSymbols]   = useState<string[]>([]);
-  const [stocks, setStocks]     = useState<Map<string, StockSummary>>(new Map());
-  const [loading, setLoading]   = useState(true);
-  const fetchedRef              = useRef<Set<string>>(new Set());
+  const [symbols, setSymbols] = useState<string[]>([]);
+  const [stocks, setStocks]   = useState<Map<string, StockSummary>>(new Map());
+  const [loading, setLoading] = useState(true);
+  const fetchedRef            = useRef<Set<string>>(new Set());
 
-  // Drag state
-  const [dragIndex,   setDragIndex]   = useState<number | null>(null);
-  const [dropIndex,   setDropIndex]   = useState<number | null>(null);
-  const rowHeightRef                  = useRef(64); // estimated row height in px
-  const dragStartYRef                 = useRef(0);
-  const listRef                       = useRef<HTMLDivElement>(null);
-
-  // Sync watchlist from localStorage
   useEffect(() => {
     function sync() { setSymbols(readWatchlist()); }
     sync();
@@ -177,7 +108,6 @@ export function MobileWatchlist() {
     };
   }, []);
 
-  // Fetch missing stock data
   useEffect(() => {
     const missing = symbols.filter(s => !fetchedRef.current.has(s));
     if (!missing.length) { setLoading(false); return; }
@@ -205,46 +135,9 @@ export function MobileWatchlist() {
     writeWatchlist(updated);
   }
 
-  // ── Drag-to-reorder handlers ───────────────────────────────────────────
-  const handleLongPress = useCallback((index: number, clientY: number) => {
-    dragStartYRef.current = clientY;
-    // Estimate row height from list DOM
-    if (listRef.current) {
-      const rows = listRef.current.querySelectorAll("[data-row]");
-      if (rows.length > 0) {
-        rowHeightRef.current = rows[0].getBoundingClientRect().height || 64;
-      }
-    }
-    setDragIndex(index);
-    setDropIndex(index);
-    // Haptic feedback if available
-    if (navigator.vibrate) navigator.vibrate(30);
-  }, []);
-
-  const handleDragMove = useCallback((clientY: number) => {
-    if (dragIndex === null) return;
-    const delta = clientY - dragStartYRef.current;
-    const moved = Math.round(delta / rowHeightRef.current);
-    const newDrop = Math.max(0, Math.min(symbols.length - 1, dragIndex + moved));
-    setDropIndex(newDrop);
-  }, [dragIndex, symbols.length]);
-
-  const handleDragEnd = useCallback(() => {
-    if (dragIndex !== null && dropIndex !== null && dragIndex !== dropIndex) {
-      const reordered = [...symbols];
-      const [moved] = reordered.splice(dragIndex, 1);
-      reordered.splice(dropIndex, 0, moved);
-      setSymbols(reordered);
-      writeWatchlist(reordered);
-    }
-    setDragIndex(null);
-    setDropIndex(null);
-  }, [dragIndex, dropIndex, symbols]);
-
   const orderedStocks = symbols.map(s => stocks.get(s)).filter(Boolean) as StockSummary[];
-  const isLoading     = loading && !orderedStocks.length;
 
-  if (isLoading) return <LoadingScreen label="Loading your watchlist" />;
+  if (loading && !orderedStocks.length) return <LoadingScreen label="Loading your watchlist" />;
 
   return (
     <div className="pb-24">
@@ -259,20 +152,9 @@ export function MobileWatchlist() {
           <p className="text-sm text-text-muted">Search for stocks to add them.</p>
         </div>
       ) : (
-        <div ref={listRef} className="mx-4 rounded-xl bg-black overflow-hidden">
-          {orderedStocks.map((stock, index) => (
-            <DraggableRow
-              key={stock.symbol}
-              stock={stock}
-              index={index}
-              total={orderedStocks.length}
-              onRemove={handleRemove}
-              isDragging={dragIndex === index}
-              isDropTarget={dropIndex === index && dragIndex !== index}
-              onLongPress={handleLongPress}
-              onDragMove={handleDragMove}
-              onDragEnd={handleDragEnd}
-            />
+        <div className="mx-4 rounded-xl bg-black overflow-hidden">
+          {orderedStocks.map(stock => (
+            <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} />
           ))}
         </div>
       )}

@@ -57,6 +57,14 @@ html.light-mode [class*="bg-background/85"] {
   background-color: rgba(255,255,255,0.88) !important;
 }
 
+/* List row dividers and card borders: much lighter in light mode */
+html.light-mode .border-border-subtle {
+  border-color: #e5e5ea !important;
+}
+html.light-mode [class*="border-border-subtle\\/"] {
+  border-color: rgba(200,200,210,0.5) !important;
+}
+
 /* Chart vertical crosshair: darker in light mode so it's visible */
 html.light-mode .recharts-tooltip-cursor {
   stroke: rgba(0,0,0,0.25) !important;
