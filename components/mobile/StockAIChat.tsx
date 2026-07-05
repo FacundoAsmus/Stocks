@@ -9,7 +9,7 @@ interface Message { role: "user" | "model"; text: string; animating?: boolean }
 // Split AI text on [[+]]positive[[/+]] and [[-]]negative[[/-]] tags and render coloured spans
 function ColorizedText({ text }: { text: string }) {
   const parts: { str: string; type: "neutral" | "pos" | "neg" }[] = [];
-  const regex = /(\[\[\+\]\])(.*?)(\[\[\/\+\]\])|(\[\[-\]\])(.*?)(\[\[\/-\]\])/gs;
+  const regex = /(\[\[\+\]\])([\s\S]*?)(\[\[\/\+\]\])|(\[\[-\]\])(.*?)(\[\[\/-\]\])/g;
   let last = 0, m: RegExpExecArray | null;
   while ((m = regex.exec(text)) !== null) {
     if (m.index > last) parts.push({ str: text.slice(last, m.index), type: "neutral" });
