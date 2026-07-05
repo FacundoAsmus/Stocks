@@ -177,15 +177,15 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
           {messages.map((msg, i) => (
             <div key={i} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
               <div
+                className={cn(
+                  msg.role === "user" ? "bg-positive text-black" : "bg-black/95 border border-white/10 text-text-primary"
+                )}
                 style={{
                   maxWidth: "85%",
                   wordBreak: "break-word",
                   whiteSpace: "pre-wrap",
                   padding: "10px 16px",
                   borderRadius: msg.role === "user" ? "18px 18px 4px 18px" : "18px 18px 18px 4px",
-                  backgroundColor: msg.role === "user" ? "#00c805" : "rgba(0,0,0,0.92)",
-                  border: msg.role === "model" ? "1px solid rgba(255,255,255,0.12)" : "none",
-                  color: msg.role === "user" ? "#000" : "#fff",
                   fontSize: "14px",
                   lineHeight: "1.5",
                 }}
@@ -197,17 +197,18 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
 
           {loading && (
             <div className="flex justify-start">
-              <div style={{
-                padding: "12px 16px",
-                borderRadius: "18px 18px 18px 4px",
-                backgroundColor: "rgba(0,0,0,0.92)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                display: "flex", gap: "6px", alignItems: "center"
-              }}>
+              <div
+                className="bg-black/95 border border-white/10"
+                style={{
+                  padding: "12px 16px",
+                  borderRadius: "18px 18px 18px 4px",
+                  display: "flex", gap: "6px", alignItems: "center"
+                }}
+              >
                 {[0,1,2].map(i => (
-                  <span key={i} style={{
+                  <span key={i} className="bg-positive" style={{
                     display: "block", height: 6, width: 6,
-                    borderRadius: "50%", backgroundColor: "#00c805",
+                    borderRadius: "50%",
                     animation: `aiDot 1.2s ${i * 0.2}s ease-in-out infinite`
                   }} />
                 ))}
@@ -221,27 +222,28 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
           className="shrink-0 px-3 pt-2"
           style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
         >
-          <div style={{
-            display: "flex", alignItems: "center", gap: 8,
-            backgroundColor: "#000",
-            border: "1px solid rgba(255,255,255,0.18)",
-            borderRadius: 999,
-            padding: "10px 12px 10px 18px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
-          }}>
+          <div
+            className="bg-black border border-white/20"
+            style={{
+              display: "flex", alignItems: "center", gap: 8,
+              borderRadius: 999,
+              padding: "10px 12px 10px 18px",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.6)",
+            }}
+          >
             <input
               ref={inputRef}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               placeholder={`Ask about ${stock.symbol}…`}
+              className="text-text-primary placeholder:text-text-muted"
               style={{
                 flex: 1,
                 background: "transparent",
                 border: "none",
                 outline: "none",
                 fontSize: 14,
-                color: "#ffffff",          /* explicit white — never invisible */
                 caretColor: "#00c805",
               }}
             />

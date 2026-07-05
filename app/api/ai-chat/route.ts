@@ -3,7 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 // API key lives only in the server environment — never sent to the client
 // Set GEMINI_API_KEY in your Vercel dashboard or .env.local
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent";
+// "gemini-pro" was retired long ago — it now 404s on every API version.
+// gemini-2.5-flash is the current free-tier-eligible model (fast + good quality).
+// If it ever gets deprecated too, gemini-2.5-flash-lite is the fallback below.
+const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_FALLBACK_MODEL = "gemini-2.5-flash-lite";
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const GEMINI_FALLBACK_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_FALLBACK_MODEL}:generateContent`;
 
 export async function POST(req: NextRequest) {
   if (!GEMINI_API_KEY) {
@@ -44,19 +50,31 @@ Guidelines:
     })),
   ];
 
-  try {
-    const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+  const requestBody = JSON.stringify({
+    contents,
+    generationConfig: {
+      temperature: 0.4,
+      maxOutputTokens: 512,
+    },
+  });
+
+  async function callGemini(url: string) {
+    return fetch(`${url}?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents,
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 512,
-        },
-      }),
+      body: requestBody,
       signal: AbortSignal.timeout(30000),
     });
+  }
+
+  try {
+    let res = await callGemini(GEMINI_URL);
+
+    // If the primary model isn't available (e.g. deprecated/renamed again),
+    // automatically retry once against the fallback model instead of erroring out.
+    if (res.status === 404) {
+      res = await callGemini(GEMINI_FALLBACK_URL);
+    }
 
     if (!res.ok) {
       const err = await res.text();
