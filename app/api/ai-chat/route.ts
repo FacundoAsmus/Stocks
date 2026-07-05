@@ -46,37 +46,29 @@ Guidelines:
     })),
   ];
 
-  // 1. ADDED: Define the Google Search tool configuration
-  const requestPayload = {
+  const requestBody = JSON.stringify({
     contents,
-    tools: [
-      {
-        google_search: {} // Enabler for live Google Search grounding
-      }
-    ],
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 512,
     },
-  };
+  });
 
-  // 2. UPDATED: Passed payload dynamically to support custom bodies if needed
-  async function callGemini(url: string, payload: object) {
+  async function callGemini(url: string) {
     return fetch(`${url}?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: requestBody,
       signal: AbortSignal.timeout(30000),
     });
   }
 
   try {
-    // Railway track execution: Try primary model first
-    let res = await callGemini(GEMINI_URL, requestPayload);
+    let res = await callGemini(GEMINI_URL);
 
-    // Fallback track: If primary is unavailable or rate-limited
+    // Retry with fallback model if primary is unavailable or rate-limited
     if (res.status === 404 || res.status === 429) {
-      res = await callGemini(GEMINI_FALLBACK_URL, requestPayload);
+      res = await callGemini(GEMINI_FALLBACK_URL);
     }
 
     if (!res.ok) {
@@ -86,10 +78,7 @@ Guidelines:
     }
 
     const data = await res.json() as {
-      candidates?: { 
-        content?: { parts?: { text?: string }[] };
-        groundingMetadata?: object; // Contains citations if you want to extract them later
-      }[];
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
     };
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
