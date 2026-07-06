@@ -85,7 +85,13 @@ Guidelines:
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     return NextResponse.json({ text });
   } catch (e) {
-    console.error("AI chat error:", e);
-    return NextResponse.json({ error: "Request failed" }, { status: 500 });
-  }
+  console.error("AI chat error:", e);
+  return NextResponse.json(
+    { 
+      error: "Request failed", 
+      details: e instanceof Error ? e.message : String(e) 
+    }, 
+    { status: 500 }
+  );
+}
 }
