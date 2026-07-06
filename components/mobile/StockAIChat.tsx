@@ -3,9 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Send, Sparkles } from "lucide-react";
+import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
+import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import type { StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
+
+// Context bundle the data-pill / graph widgets are computed from.
+interface GraphCtx {
+  stock: StockDetail;
+  currentPrice: number;
+  sentiment: { score: number; drivers: string[] };
+  metrics: Record<string, number | string | null> | undefined;
+}
 
 // Split AI text on [[+]]positive[[/+]] and [[-]]negative[[/-]] tags and render coloured spans
 function ColorizedText({ text }: { text: string }) {
@@ -31,6 +41,418 @@ function ColorizedText({ text }: { text: string }) {
         )
       )}
     </>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Inline data pills & graphs — the AI calls these out with [[data:KEY]] and
+// [[graph:TYPE]] tags in its response text, the same way it wraps numbers in
+// [[+]]/[[-]] for coloring. Each tag becomes its own block in the message:
+// text before it stays above, text after it flows below.
+// ─────────────────────────────────────────────────────────────────────────
+
+const DATA_KEYS = [
+  "marketCap", "peRatio", "forwardPe", "eps",
+  "dividendYield", "beta", "high52", "low52", "avgVolume", "priceTarget",
+] as const;
+type DataKey = typeof DATA_KEYS[number];
+
+const GRAPH_TYPES = ["price", "analyst", "sentiment", "targets"] as const;
+type GraphType = typeof GRAPH_TYPES[number];
+
+type Segment =
+  | { kind: "text"; value: string }
+  | { kind: "pill"; key: DataKey }
+  | { kind: "graph"; graphType: GraphType };
+
+const TAG_RE = /\[\[data:([a-zA-Z0-9_]+)\]\]|\[\[graph:([a-zA-Z0-9_]+)\]\]/g;
+
+// Parses AI text into an ordered list of text runs + widget calls. Enforces
+// "one of a kind per message" — a repeated tag for the same key/type is
+// silently dropped (the first call wins).
+function parseSegments(text: string): Segment[] {
+  const segments: Segment[] = [];
+  const seenPills = new Set<string>();
+  const seenGraphs = new Set<string>();
+  let last = 0;
+  let m: RegExpExecArray | null;
+  TAG_RE.lastIndex = 0;
+  while ((m = TAG_RE.exec(text)) !== null) {
+    if (m.index > last) segments.push({ kind: "text", value: text.slice(last, m.index) });
+    if (m[1] && DATA_KEYS.includes(m[1] as DataKey) && !seenPills.has(m[1])) {
+      segments.push({ kind: "pill", key: m[1] as DataKey });
+      seenPills.add(m[1]);
+    } else if (m[2] && GRAPH_TYPES.includes(m[2] as GraphType) && !seenGraphs.has(m[2])) {
+      segments.push({ kind: "graph", graphType: m[2] as GraphType });
+      seenGraphs.add(m[2]);
+    }
+    last = TAG_RE.lastIndex;
+  }
+  if (last < text.length) segments.push({ kind: "text", value: text.slice(last) });
+  return segments;
+}
+
+function toNum(v: number | string | null | undefined): number | null {
+  if (typeof v === "number") return v;
+  if (typeof v === "string") { const n = Number(v); return Number.isNaN(n) ? null : n; }
+  return null;
+}
+
+function computeDataPoint(key: DataKey, ctx: GraphCtx): { label: string; value: string; tone: "positive" | "negative" | "neutral" } {
+  const m = ctx.metrics;
+  switch (key) {
+    case "marketCap": {
+      const mc = ctx.stock.profile.marketCapitalization;
+      return { label: "Market Cap", value: formatCompact((mc ?? 0) * 1_000_000), tone: "neutral" };
+    }
+    case "peRatio": {
+      const pe = toNum(m?.peTTM ?? m?.peNormalizedAnnual);
+      return { label: "P/E Ratio", value: pe !== null ? formatNumber(pe) : "N/A", tone: pe === null ? "neutral" : pe <= 15 ? "positive" : pe >= 30 ? "negative" : "neutral" };
+    }
+    case "forwardPe": {
+      const fpe = toNum(m?.forwardPE);
+      return { label: "Forward P/E", value: fpe !== null ? formatNumber(fpe) : "N/A", tone: fpe === null ? "neutral" : fpe <= 15 ? "positive" : fpe >= 28 ? "negative" : "neutral" };
+    }
+    case "eps": {
+      const eps = toNum(m?.epsNormalizedAnnual ?? m?.epsTTM);
+      return { label: "EPS", value: formatCurrency(eps), tone: eps === null ? "neutral" : eps > 0 ? "positive" : "negative" };
+    }
+    case "dividendYield": {
+      const dy = toNum(m?.dividendYieldIndicatedAnnual);
+      return { label: "Dividend Yield", value: formatPercent(dy), tone: dy !== null && dy >= 3 ? "positive" : "neutral" };
+    }
+    case "beta": {
+      const b = toNum(m?.beta);
+      return { label: "Beta", value: formatNumber(b), tone: b === null ? "neutral" : b < 0.8 ? "positive" : b > 1.4 ? "negative" : "neutral" };
+    }
+    case "high52": {
+      const h = toNum(m?.["52WeekHigh"]);
+      return { label: "52W High", value: formatCurrency(h), tone: "neutral" };
+    }
+    case "low52": {
+      const l = toNum(m?.["52WeekLow"]);
+      return { label: "52W Low", value: formatCurrency(l), tone: "neutral" };
+    }
+    case "avgVolume": {
+      const v = toNum(m?.["10DayAverageTradingVolume"]);
+      return { label: "Avg Volume", value: formatCompact(v ? v * 1_000_000 : null), tone: "neutral" };
+    }
+    case "priceTarget": {
+      const t = ctx.stock.priceTarget?.targetMean;
+      const tone: "positive" | "negative" | "neutral" = t && ctx.currentPrice
+        ? (t > ctx.currentPrice ? "positive" : t < ctx.currentPrice ? "negative" : "neutral")
+        : "neutral";
+      return { label: "Avg Price Target", value: t ? formatCurrency(t) : "N/A", tone };
+    }
+  }
+}
+
+// A small pill — fits inline content width only, so it can never push past
+// the chat bubble's own max-width. Fades/rises in on mount.
+function DataPill({ dataKey, ctx }: { dataKey: DataKey; ctx: GraphCtx }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+  const point = computeDataPoint(dataKey, ctx);
+  const color = point.tone === "positive" ? "#00c805" : point.tone === "negative" ? "#ff3003" : "#9a9aa2";
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center", gap: 8,
+      maxWidth: "100%",
+      padding: "8px 14px",
+      borderRadius: 999,
+      border: `1px solid ${color}55`,
+      backgroundColor: `${color}14`,
+      opacity: mounted ? 1 : 0,
+      transform: mounted ? "translateY(0) scale(1)" : "translateY(4px) scale(0.96)",
+      transition: "opacity 0.22s ease, transform 0.22s ease",
+    }}>
+      <span style={{ height: 7, width: 7, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
+      <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9a9aa2", whiteSpace: "nowrap" }}>
+        {point.label}
+      </span>
+      <span style={{ fontSize: 15, fontWeight: 700, color, whiteSpace: "nowrap" }}>{point.value}</span>
+    </div>
+  );
+}
+
+// Sweeping shimmer shown while a graph is "generating".
+function GraphShimmer() {
+  return (
+    <div style={{ position: "absolute", inset: 0, borderRadius: 8, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.05)" }}>
+      <div style={{
+        position: "absolute", inset: 0, width: "60%",
+        background: "linear-gradient(90deg, transparent, rgba(0,200,5,0.22), transparent)",
+        animation: "graphShimmer 1.1s ease-in-out infinite",
+      }} />
+    </div>
+  );
+}
+
+// Shared frame every graph renders inside — bounded so its width/height can
+// never exceed the message bubble that contains it.
+function GraphFrame({ title, ready, children }: { title: string; ready: boolean; children: React.ReactNode }) {
+  return (
+    <div style={{
+      width: "100%",
+      maxWidth: "100%",
+      boxSizing: "border-box",
+      borderRadius: 14,
+      border: "1px solid rgba(255,255,255,0.10)",
+      backgroundColor: "rgba(255,255,255,0.03)",
+      padding: "12px 14px 14px",
+      overflow: "hidden",
+    }}>
+      <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#00c805", marginBottom: 8 }}>
+        {title}
+      </p>
+      <div style={{ position: "relative", height: 108, width: "100%" }}>
+        {!ready && <GraphShimmer />}
+        <div style={{ height: "100%", width: "100%", opacity: ready ? 1 : 0, transition: "opacity 0.25s ease" }}>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function sentimentColor(score: number) {
+  if (score <= 20) return "#dc2626";
+  if (score <= 40) return "#f97316";
+  if (score <= 60) return "#facc15";
+  if (score <= 80) return "#a3e635";
+  return "#34d399";
+}
+
+function GraphSentiment({ ctx }: { ctx: GraphCtx }) {
+  const [ready, setReady] = useState(false);
+  const [pct, setPct] = useState(0);
+  const score = ctx.sentiment.score;
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setReady(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setPct(score)));
+    }, 550);
+    return () => clearTimeout(t);
+  }, [score]);
+  const color = sentimentColor(score);
+  return (
+    <GraphFrame title="Sentiment Score" ready={ready}>
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+          <span style={{ fontSize: 28, fontWeight: 700, color }}>{score}</span>
+          <span style={{ fontSize: 13, color: "#9a9aa2" }}>/ 100</span>
+        </div>
+        <div style={{ height: 8, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${pct}%`, backgroundColor: color, transition: "width 0.8s cubic-bezier(0.22,1,0.36,1)", borderRadius: 999 }} />
+        </div>
+      </div>
+    </GraphFrame>
+  );
+}
+
+function GraphAnalyst({ ctx }: { ctx: GraphCtx }) {
+  const [ready, setReady] = useState(false);
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setReady(true);
+      requestAnimationFrame(() => requestAnimationFrame(() => setProgress(1)));
+    }, 550);
+    return () => clearTimeout(t);
+  }, []);
+  const latest = ctx.stock.recommendations?.[0];
+  const total = latest ? latest.strongBuy + latest.buy + latest.hold + latest.sell + latest.strongSell : 0;
+  const rows: [string, number, string][] = latest ? [
+    ["Strong Buy", latest.strongBuy, "#34d399"],
+    ["Buy", latest.buy, "#a3e635"],
+    ["Hold", latest.hold, "#facc15"],
+    ["Sell", latest.sell, "#f97316"],
+    ["Strong Sell", latest.strongSell, "#dc2626"],
+  ] : [];
+  return (
+    <GraphFrame title="Analyst Recommendations" ready={ready}>
+      {total === 0 ? (
+        <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
+          No analyst coverage available.
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 6, height: "100%" }}>
+          {rows.map(([label, count, color]) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 10, width: 62, color: "#9a9aa2", flexShrink: 0 }}>{label}</span>
+              <div style={{ flex: 1, height: 6, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+                <div style={{
+                  height: "100%",
+                  width: `${progress * Math.max((count / total) * 100, count ? 4 : 0)}%`,
+                  backgroundColor: color,
+                  transition: "width 0.8s cubic-bezier(0.22,1,0.36,1)",
+                  borderRadius: 999,
+                }} />
+              </div>
+              <span style={{ fontSize: 11, width: 16, textAlign: "right", color: "#f0f0f2", flexShrink: 0 }}>{count}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </GraphFrame>
+  );
+}
+
+function GraphTargets({ ctx }: { ctx: GraphCtx }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setReady(true), 550);
+    return () => clearTimeout(t);
+  }, []);
+  const pt = ctx.stock.priceTarget;
+  const hasData = pt?.targetLow != null && pt?.targetHigh != null && pt.targetHigh > pt.targetLow;
+  return (
+    <GraphFrame title="Analyst Price Targets" ready={ready}>
+      {!hasData ? (
+        <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
+          No price target data available.
+        </div>
+      ) : (() => {
+        const low = pt.targetLow as number;
+        const high = pt.targetHigh as number;
+        const mean = pt.targetMean ?? (low + high) / 2;
+        const span = Math.max(high - low, 0.01);
+        const pct = (v: number) => Math.min(100, Math.max(0, ((v - low) / span) * 100));
+        return (
+          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 18, height: "100%" }}>
+            <div style={{ position: "relative", height: 6, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)" }}>
+              <div style={{ position: "absolute", left: `${pct(mean)}%`, top: -4, width: 2, height: 14, backgroundColor: "#9a9aa2", transform: "translateX(-50%)" }} />
+              <div style={{
+                position: "absolute", left: `${pct(ctx.currentPrice)}%`, top: -6, width: 12, height: 12,
+                borderRadius: "50%", backgroundColor: "#00c805", border: "2px solid #000", transform: "translateX(-50%)",
+              }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#9a9aa2" }}>
+              <span>Low {formatCurrency(low)}</span>
+              <span>Mean {formatCurrency(mean)}</span>
+              <span>High {formatCurrency(high)}</span>
+            </div>
+          </div>
+        );
+      })()}
+    </GraphFrame>
+  );
+}
+
+function GraphPrice({ ctx }: { ctx: GraphCtx }) {
+  const [ready, setReady] = useState(false);
+  const [points, setPoints] = useState<{ close: number }[] | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    const minDelay = new Promise(resolve => setTimeout(resolve, 550));
+    (async () => {
+      try {
+        const res = await fetch(`/api/candles?symbol=${encodeURIComponent(ctx.stock.symbol)}&period=1M`);
+        const data = await res.json() as { candles?: { close: number }[]; error?: string };
+        await minDelay;
+        if (cancelled) return;
+        if (data.candles?.length) setPoints(data.candles);
+        else setFailed(true);
+      } catch {
+        await minDelay;
+        if (!cancelled) setFailed(true);
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [ctx.stock.symbol]);
+
+  const positive = !points || points.length < 2 ? true : points[points.length - 1].close >= points[0].close;
+  const lineColor = positive ? "#00c805" : "#ff3003";
+
+  return (
+    <GraphFrame title="Price — Last Month" ready={ready}>
+      {failed || !points?.length ? (
+        <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
+          Price history unavailable.
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={points} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+            <defs>
+              <linearGradient id="miniAiChartFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={lineColor} stopOpacity={0.22} />
+                <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <YAxis domain={["dataMin", "dataMax"]} hide />
+            <Area type="monotone" dataKey="close" stroke={lineColor} fill="url(#miniAiChartFill)" strokeWidth={2} dot={false} isAnimationActive={false} />
+          </AreaChart>
+        </ResponsiveContainer>
+      )}
+    </GraphFrame>
+  );
+}
+
+function GraphWidget({ graphType, ctx }: { graphType: GraphType; ctx: GraphCtx }) {
+  switch (graphType) {
+    case "price":     return <GraphPrice ctx={ctx} />;
+    case "analyst":   return <GraphAnalyst ctx={ctx} />;
+    case "sentiment": return <GraphSentiment ctx={ctx} />;
+    case "targets":   return <GraphTargets ctx={ctx} />;
+  }
+}
+
+function Cursor() {
+  return (
+    <span style={{
+      display: "inline-block",
+      width: "2px",
+      height: "1em",
+      marginLeft: "2px",
+      verticalAlign: "text-bottom",
+      backgroundColor: "#00c805",
+      borderRadius: "1px",
+      boxShadow: "0 0 6px 2px rgba(0,200,5,0.7)",
+      animation: "aiCursor 0.7s ease-in-out infinite",
+    }} />
+  );
+}
+
+// Renders a parsed message: text runs flow normally, pills/graphs each get
+// their own block so any text written after them appears underneath.
+function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[]; ctx: GraphCtx; trailingCursor: boolean }) {
+  const cleaned = segments.filter(s => s.kind !== "text" || s.value.length > 0);
+  if (cleaned.length === 0) return trailingCursor ? <Cursor /> : null;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {cleaned.map((seg, i) => {
+        const isLast = i === cleaned.length - 1;
+        if (seg.kind === "text") {
+          return (
+            <span key={i}>
+              <ColorizedText text={seg.value} />
+              {isLast && trailingCursor && <Cursor />}
+            </span>
+          );
+        }
+        if (seg.kind === "pill") {
+          return (
+            <div key={i}>
+              <DataPill dataKey={seg.key} ctx={ctx} />
+              {isLast && trailingCursor && <Cursor />}
+            </div>
+          );
+        }
+        return (
+          <div key={i}>
+            <GraphWidget graphType={seg.graphType} ctx={ctx} />
+            {isLast && trailingCursor && <Cursor />}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -64,8 +486,10 @@ function buildStockContext(
   return lines.join("\n");
 }
 
-// Streams AI text character by character with a green glow on the last char
-function AnimatedText({ text, onDone }: { text: string; onDone: () => void }) {
+// Streams AI text character by character with a green glow on the last char.
+// Widget tags ([[data:...]] / [[graph:...]]) only render once they've fully
+// streamed in, then hold steady while the rest of the message keeps typing.
+function AnimatedMessageBody({ text, ctx, onDone }: { text: string; ctx: GraphCtx; onDone: () => void }) {
   const [count, setCount] = useState(0);
   const isDone = count >= text.length;
 
@@ -82,25 +506,14 @@ function AnimatedText({ text, onDone }: { text: string; onDone: () => void }) {
   }, [text]);
 
   const slice = text.slice(0, count);
+  const segments = parseSegments(slice);
 
-  return (
-    <>
-      <ColorizedText text={slice} />
-      {!isDone && (
-        <span style={{
-          display: "inline-block",
-          width: "2px",
-          height: "1em",
-          marginLeft: "2px",
-          verticalAlign: "text-bottom",
-          backgroundColor: "#00c805",
-          borderRadius: "1px",
-          boxShadow: "0 0 6px 2px rgba(0,200,5,0.7)",
-          animation: "aiCursor 0.7s ease-in-out infinite",
-        }} />
-      )}
-    </>
-  );
+  return <MessageSegments segments={segments} ctx={ctx} trailingCursor={!isDone} />;
+}
+
+function StaticMessageBody({ text, ctx }: { text: string; ctx: GraphCtx }) {
+  const segments = parseSegments(text);
+  return <MessageSegments segments={segments} ctx={ctx} trailingCursor={false} />;
 }
 
 interface Props {
@@ -132,6 +545,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
   const inputRef    = useRef<HTMLInputElement>(null);
   const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
   const stockContext = buildStockContext(stock, currentPrice, sentiment, metrics);
+  const graphCtx: GraphCtx = { stock, currentPrice, sentiment, metrics };
 
   // Render via a portal straight into <body> — bypasses ancestor elements
   // (like <main>) that can pick up a transient CSS `transform` from page
@@ -310,9 +724,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 fontWeight: msg.role === "user" ? 500 : 400,
               }}>
                 {msg.role === "model" && msg.animating
-                  ? <AnimatedText text={msg.text} onDone={() => markDone(i)} />
+                  ? <AnimatedMessageBody text={msg.text} ctx={graphCtx} onDone={() => markDone(i)} />
                   : msg.role === "model"
-                    ? <ColorizedText text={msg.text} />
+                    ? <StaticMessageBody text={msg.text} ctx={graphCtx} />
                     : msg.text}
               </div>
             </div>
@@ -472,6 +886,10 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
         @keyframes aiCursor {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0; }
+        }
+        @keyframes graphShimmer {
+          0%   { transform: translateX(-120%); }
+          100% { transform: translateX(220%); }
         }
       `}</style>
     </>,
