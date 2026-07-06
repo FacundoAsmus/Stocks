@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, Send, Sparkles } from "lucide-react";
+import { Send, Sparkles } from "lucide-react";
 import type { StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
@@ -57,7 +57,7 @@ function buildStockContext(
   if (a) lines.push(`Analyst: Strong Buy ${a.strongBuy} | Buy ${a.buy} | Hold ${a.hold} | Sell ${a.sell} | Strong Sell ${a.strongSell}`);
   if (stock.priceTarget?.targetMean) lines.push(`Avg Price Target: $${stock.priceTarget.targetMean.toFixed(2)}`);
   if (stock.news?.length) {
-    const h = stock.news.slice(0, 5).map(n => `• ${n.headline} (${n.source})`).join("\n");
+    const h = stock.news.slice(0, 5).map(n => `• ${n.headline} (${n.source}) — ${n.url}`).join("\n");
     lines.push(`Recent News:\n${h}`);
   }
   return lines.join("\n");
@@ -80,8 +80,6 @@ function AnimatedText({ text, onDone }: { text: string; onDone: () => void }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
 
-  // Slice at count but avoid cutting inside a tag so we don't show partial markup
-  // We advance past any incomplete tag at the cut point
   const slice = text.slice(0, count);
 
   return (
@@ -109,17 +107,28 @@ interface Props {
   currentPrice: number;
   sentiment: { score: number; drivers: string[] };
   metrics: Record<string, number | string | null> | undefined;
-  onDismiss: () => void;
+  /** If provided, open state is controlled externally (e.g. desktop's own button) instead of the built-in floating pill. */
+  externalOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Hide the built-in floating pill trigger — used when an external button opens the chat instead. */
+  hideTrigger?: boolean;
 }
 
-export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss }: Props) {
+export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalOpen, onOpenChange, hideTrigger }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = externalOpen !== undefined;
+  const open = isControlled ? externalOpen : internalOpen;
+  function setOpen(v: boolean) {
+    if (isControlled) onOpenChange?.(v);
+    else setInternalOpen(v);
+  }
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
-  const [visible, setVisible]   = useState(false);
   const [vp, setVp] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const scrollRef   = useRef<HTMLDivElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
+  const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
   const stockContext = buildStockContext(stock, currentPrice, sentiment, metrics);
 
   // Track visual viewport (handles iOS keyboard shrinking the screen)
@@ -142,8 +151,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
     };
   }, []);
 
-  // Lock body scroll without jumping to top
+  // Lock body scroll (without jumping to top) only while chat is open
   useEffect(() => {
+    if (!open) return;
     const scrollY = window.scrollY;
     const b = document.body;
     b.style.overflow = "hidden";
@@ -151,24 +161,21 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
     b.style.top      = `-${scrollY}px`;
     b.style.left     = "0";
     b.style.right    = "0";
-    requestAnimationFrame(() => {
-      setVisible(true);
-      setTimeout(() => inputRef.current?.focus(), 320);
-    });
+    const t = setTimeout(() => inputRef.current?.focus(), 340);
     return () => {
+      clearTimeout(t);
       b.style.overflow = b.style.position = b.style.top = b.style.left = b.style.right = "";
       window.scrollTo(0, scrollY);
     };
-  }, []);
+  }, [open]);
 
   useEffect(() => {
     if (scrollRef.current)
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, loading]);
+  }, [messages, loading, open]);
 
   function handleDismiss() {
-    setVisible(false);
-    setTimeout(onDismiss, 260);
+    setOpen(false);
   }
 
   async function sendMessage() {
@@ -197,69 +204,72 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
     setMessages(prev => prev.map((m, idx) => idx === i ? { ...m, animating: false } : m));
   }
 
+  // Tap-to-dismiss on empty space: a quick tap (not a scroll/drag) that lands
+  // directly on the blank scroll area — not on a message bubble — closes the
+  // chat, same as tapping the backdrop above it.
+  function onEmptyAreaTouchStart(e: React.TouchEvent) {
+    if (e.target !== e.currentTarget) { touchStart.current = null; return; }
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
+  }
+  function onEmptyAreaTouchEnd(e: React.TouchEvent) {
+    if (!touchStart.current) return;
+    const dx = Math.abs(e.changedTouches[0].clientX - touchStart.current.x);
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStart.current.y);
+    const dt = Date.now() - touchStart.current.time;
+    if (dx < 8 && dy < 8 && dt < 300) handleDismiss();
+    touchStart.current = null;
+  }
+  function onEmptyAreaClick(e: React.MouseEvent) {
+    if (e.target === e.currentTarget) handleDismiss();
+  }
+
   const isLightMode = typeof document !== "undefined" && document.documentElement.classList.contains("light-mode");
+  const bgBubbleAI    = isLightMode ? "rgba(240,240,245,1)" : "rgba(22,22,28,1)";
+  const bubbleBorder  = isLightMode ? "rgba(0,0,0,0.10)"    : "rgba(255,255,255,0.10)";
+  const textColor     = isLightMode ? "#1a1a1e"             : "#f0f0f2";
 
-  // Colors that respect light/dark mode
-  const bgPanel   = isLightMode ? "rgba(255,255,255,0.98)"  : "rgba(10,10,14,0.98)";
-  const bgBubbleAI = isLightMode ? "rgba(240,240,245,1)"    : "rgba(22,22,28,1)";
-  const bubbleBorder = isLightMode ? "rgba(0,0,0,0.10)"     : "rgba(255,255,255,0.10)";
-  const inputBg   = isLightMode ? "rgba(235,235,240,1)"     : "rgba(28,28,34,1)";
-  const inputBorder = isLightMode ? "rgba(0,0,0,0.15)"      : "rgba(255,255,255,0.15)";
-  const textColor = isLightMode ? "#1a1a1e"                  : "#f0f0f2";
-  const placeholderStyle = isLightMode ? "#999" : "#555";
+  const vpW = vp.width  || (typeof window !== "undefined" ? window.innerWidth  : 0);
+  const vpH = vp.height || (typeof window !== "undefined" ? window.innerHeight : 0);
 
-  const vpW = vp.width  || window.innerWidth;
-  const vpH = vp.height || window.innerHeight;
+  // How much the keyboard (or Safari's chrome) is eating into the screen —
+  // used to keep the pill glued just above it instead of drifting/getting covered.
+  const winH = typeof window !== "undefined" ? window.innerHeight : 0;
+  const keyboardInset = Math.max(0, winH - vpH - vp.top);
+  const pillBottom = open && keyboardInset > 8
+    ? `${keyboardInset + 12}px`
+    : "calc(1.25rem + env(safe-area-inset-bottom))";
 
   return (
-    <div style={{
-      // Pinned to the EXACT visual viewport rectangle — no drift on iOS Safari
-      position: "fixed",
-      top: vp.top,
-      left: vp.left,
-      width: vpW,
-      height: vpH,
-      zIndex: 9999,
-      display: "flex",
-      flexDirection: "column",
-      pointerEvents: "auto",
-    }}>
-      {/* Frosted backdrop */}
+    <>
+      {/* Backdrop + messages — pinned to the exact visual viewport rectangle */}
       <div
         style={{
-          position: "absolute", inset: 0,
-          backdropFilter:       visible ? "blur(8px) brightness(0.65)" : "none",
-          WebkitBackdropFilter: visible ? "blur(8px) brightness(0.65)" : "none",
-          transition: "backdrop-filter 0.25s ease, -webkit-backdrop-filter 0.25s ease",
+          position: "fixed",
+          top: vp.top, left: vp.left, width: vpW, height: vpH,
+          zIndex: 1000,
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? "auto" : "none",
+          transition: "opacity 0.28s ease",
         }}
-        onClick={handleDismiss}
-      />
-
-      {/* ── Chat panel — full viewport height, transparent so blurred page shows through ── */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          bottom: 0,
-          left: 0,
-          right: 0,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          transform: visible ? "translateY(0)" : "translateY(100%)",
-          transition: "transform 0.30s cubic-bezier(0.2,0,0,1)",
-          zIndex: 10000,
-          // NO backgroundColor here — the backdrop blur handles the visual
-        }}
-        onClick={e => e.stopPropagation()}
-        onTouchStart={e => e.stopPropagation()}
-        onTouchEnd={e => e.stopPropagation()}
       >
-        {/* ── Messages — flex-1 so they push down to the controls ── */}
+        <div
+          style={{
+            position: "absolute", inset: 0,
+            backdropFilter:       open ? "blur(8px) brightness(0.65)" : "none",
+            WebkitBackdropFilter: open ? "blur(8px) brightness(0.65)" : "none",
+            transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
+          }}
+          onClick={handleDismiss}
+        />
+
+        {/* Messages — scrollable, tapping blank space (not a bubble) dismisses */}
         <div
           ref={scrollRef}
           style={{
-            flex: 1,
+            position: "absolute",
+            left: 0, right: 0,
+            top: "max(3rem, calc(env(safe-area-inset-top) + 1rem))",
+            bottom: `calc(${pillBottom} + 4.5rem)`,
             overflowY: "auto",
             overscrollBehavior: "contain",
             display: "flex",
@@ -267,15 +277,11 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
             justifyContent: "flex-end",
             gap: 12,
             padding: "16px 14px 8px",
-            minHeight: 0,
           }}
+          onClick={onEmptyAreaClick}
+          onTouchStart={onEmptyAreaTouchStart}
+          onTouchEnd={onEmptyAreaTouchEnd}
         >
-          {messages.length === 0 && (
-            <div style={{ textAlign: "center", padding: "32px 0", color: "#00c80580", fontSize: 15 }}>
-              Ask me anything about {stock.symbol}
-            </div>
-          )}
-
           {messages.map((msg, i) => (
             <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
               <div style={{
@@ -320,46 +326,103 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
             </div>
           )}
         </div>
+      </div>
 
-        {/* ── Bottom controls: Back + title row, then input pill ── */}
-        <div style={{
-          flexShrink: 0,
-          padding: `8px 12px calc(12px + env(safe-area-inset-bottom, 0px))`,
-          backgroundColor: bgPanel,
-          borderRadius: "20px 20px 0 0",
-          boxShadow: "0 -8px 32px rgba(0,0,0,0.35)",
-        }}>
-          {/* Back + title row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-            <button
-              onClick={handleDismiss}
-              style={{
-                display: "flex", alignItems: "center", gap: 5,
-                backgroundColor: "#00c805", color: "#000",
-                fontSize: 13, fontWeight: 600,
-                padding: "5px 11px",
-                borderRadius: 8,
-                border: "none", cursor: "pointer",
-              }}
-            >
-              <ChevronLeft style={{ height: 14, width: 14 }} />
-              Back
-            </button>
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <Sparkles style={{ height: 14, width: 14, color: "#00c805" }} />
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#00c805" }}>
-                AI — {stock.symbol}
-              </span>
-            </div>
-          </div>
+      {/* The pill — always mounted, same element morphs from a small circle
+          (matching the search button exactly) into the full input bar. No
+          separate bar/card behind it — this IS the input, elongated. */}
+      {!hideTrigger && (
+      <div
+        className="fixed rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-positive overflow-hidden"
+        style={{
+          zIndex: 1002,
+          bottom: pillBottom,
+          right: open ? "1rem" : "1.25rem",
+          width: open ? "calc(100vw - 2rem)" : "3.5rem",
+          height: "3.5rem",
+          transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
+        }}
+      >
+        {/* Closed state: the trigger icon */}
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Ask AI"
+          style={{
+            position: "absolute", inset: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            opacity: open ? 0 : 1,
+            pointerEvents: open ? "none" : "auto",
+            transition: "opacity 0.16s ease",
+          }}
+        >
+          <Sparkles className="h-7 w-7" />
+        </button>
 
-          {/* Input pill */}
-          <div style={{
+        {/* Open state: the actual input row */}
+        <div
+          style={{
+            position: "absolute", inset: 0,
             display: "flex", alignItems: "center", gap: 8,
-            backgroundColor: inputBg,
-            border: `1px solid ${inputBorder}`,
-            borderRadius: 999,
-            padding: "10px 12px 10px 20px",
+            padding: "0 8px 0 20px",
+            opacity: open ? 1 : 0,
+            pointerEvents: open ? "auto" : "none",
+            transition: "opacity 0.22s ease",
+            transitionDelay: open ? "0.14s" : "0s",
+          }}
+        >
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+            placeholder={`Ask about ${stock.symbol}…`}
+            className="text-text-primary placeholder:text-text-muted"
+            style={{
+              flex: 1,
+              background: "transparent",
+              border: "none",
+              outline: "none",
+              fontSize: 16,
+              caretColor: "#00c805",
+            }}
+          />
+          <button
+            onClick={sendMessage}
+            disabled={!input.trim() || loading}
+            style={{
+              flexShrink: 0, height: 38, width: 38,
+              borderRadius: "50%",
+              backgroundColor: input.trim() && !loading ? "#00c805" : "rgba(0,200,5,0.18)",
+              color: input.trim() && !loading ? "#000" : "rgba(0,200,5,0.35)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              border: "none",
+              cursor: input.trim() && !loading ? "pointer" : "default",
+              transition: "background-color 0.18s, color 0.18s",
+            }}
+          >
+            <Send style={{ height: 15, width: 15 }} />
+          </button>
+        </div>
+      </div>
+      )}
+
+      {/* Controlled mode (e.g. desktop): render just the input row inline where hideTrigger is set and open is true, anchored bottom same as mobile pill would be, so typing still works without the floating circle. */}
+      {hideTrigger && open && (
+        <div
+          className="fixed rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-positive overflow-hidden"
+          style={{
+            zIndex: 1002,
+            bottom: pillBottom,
+            right: "1rem",
+            width: "calc(100vw - 2rem)",
+            maxWidth: "480px",
+            height: "3.5rem",
+          }}
+        >
+          <div style={{
+            position: "absolute", inset: 0,
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "0 8px 0 20px",
           }}>
             <input
               ref={inputRef}
@@ -367,33 +430,27 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               placeholder={`Ask about ${stock.symbol}…`}
-              style={{
-                flex: 1, background: "transparent",
-                border: "none", outline: "none",
-                fontSize: 17,
-                color: textColor,
-                caretColor: "#00c805",
-              }}
+              className="text-text-primary placeholder:text-text-muted"
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "#00c805" }}
             />
             <button
               onClick={sendMessage}
               disabled={!input.trim() || loading}
               style={{
-                flexShrink: 0, height: 36, width: 36,
+                flexShrink: 0, height: 38, width: 38,
                 borderRadius: "50%",
                 backgroundColor: input.trim() && !loading ? "#00c805" : "rgba(0,200,5,0.18)",
                 color: input.trim() && !loading ? "#000" : "rgba(0,200,5,0.35)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 border: "none",
                 cursor: input.trim() && !loading ? "pointer" : "default",
-                transition: "background-color 0.18s, color 0.18s",
               }}
             >
               <Send style={{ height: 15, width: 15 }} />
             </button>
           </div>
         </div>
-      </div>
+      )}
 
       <style>{`
         @keyframes aiDot {
@@ -405,6 +462,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, onDismiss
           50%       { opacity: 0; }
         }
       `}</style>
-    </div>
+    </>
   );
 }

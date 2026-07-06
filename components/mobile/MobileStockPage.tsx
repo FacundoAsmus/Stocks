@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, Sparkles } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
@@ -54,7 +54,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   const [fromSearch,       setFromSearch]       = useState(false);
   const [searchOrigin,     setSearchOrigin]     = useState<string>("/");
   const [playingCloseAnim, setPlayingCloseAnim] = useState(false);
-  const [chatOpen,         setChatOpen]         = useState(false);
 
   useEffect(() => {
     const flag = sessionStorage.getItem("nav-from-search");
@@ -89,19 +88,16 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         <CollapsingSearchOverlay onDone={() => setPlayingCloseAnim(false)} />
       )}
 
-      {/* AI Chat overlay — rendered on top of everything, background stationary */}
-      {chatOpen && (
-        <StockAIChat
-          stock={stock}
-          currentPrice={currentPrice}
-          sentiment={sentiment}
-          metrics={metrics}
-          onDismiss={() => setChatOpen(false)}
-        />
-      )}
+      {/* AI Chat — self-contained floating pill + overlay, mounted always */}
+      <StockAIChat
+        stock={stock}
+        currentPrice={currentPrice}
+        sentiment={sentiment}
+        metrics={metrics}
+      />
 
       <div ref={pageRef} className="pb-24" style={{ opacity: 1 }} data-stock-page="">
-        {/* Top bar: Back ←  →  AI */}
+        {/* Top bar: Back */}
         <div className="sticky top-0 z-30 flex items-center justify-between gap-2 bg-background/85 backdrop-blur-xl px-4 py-3">
           <button
             onClick={handleBack}
@@ -109,15 +105,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
           >
             <ChevronLeft className="h-4 w-4" />
             Back
-          </button>
-
-          {/* AI button — icon only */}
-          <button
-            onClick={() => setChatOpen(true)}
-            className="flex items-center justify-center h-9 w-9 border border-positive/60 text-positive rounded-lg hover:bg-positive/10 transition"
-            aria-label="Ask AI"
-          >
-            <Sparkles className="h-5 w-5 text-positive" />
           </button>
         </div>
 

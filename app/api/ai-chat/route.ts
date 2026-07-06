@@ -68,7 +68,7 @@ Guidelines:
     let res = await callGemini(GEMINI_URL);
 
     // Retry with fallback model if primary is unavailable or rate-limited
-    if (res.status === 404 || res.status === 429 || res.status === 503) {
+    if (res.status === 404 || res.status === 429) {
       res = await callGemini(GEMINI_FALLBACK_URL);
     }
 
@@ -85,13 +85,7 @@ Guidelines:
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     return NextResponse.json({ text });
   } catch (e) {
-  console.error("AI chat error:", e);
-  return NextResponse.json(
-    { 
-      error: "Request failed", 
-      details: e instanceof Error ? e.message : String(e) 
-    }, 
-    { status: 500 }
-  );
-}
+    console.error("AI chat error:", e);
+    return NextResponse.json({ error: "Request failed" }, { status: 500 });
+  }
 }

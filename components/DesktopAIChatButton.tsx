@@ -27,15 +27,15 @@ export function DesktopAIChatButton({ stock, currentPrice, sentiment, metrics }:
         <Sparkles className="h-4 w-4" />
       </button>
 
-      {chatOpen && (
-        <StockAIChat
-          stock={stock}
-          currentPrice={currentPrice}
-          sentiment={sentiment}
-          metrics={metrics}
-          onDismiss={() => setChatOpen(false)}
-        />
-      )}
+      <StockAIChat
+        stock={stock}
+        currentPrice={currentPrice}
+        sentiment={sentiment}
+        metrics={metrics}
+        externalOpen={chatOpen}
+        onOpenChange={setChatOpen}
+        hideTrigger
+      />
     </>
   );
 }
