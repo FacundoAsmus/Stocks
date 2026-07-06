@@ -445,7 +445,7 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
   const cleaned = segments.filter(s => s.kind !== "text" || s.value.length > 0);
   if (cleaned.length === 0) return trailingCursor ? <Cursor /> : null;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {cleaned.map((seg, i) => {
         const isLast = i === cleaned.length - 1;
         if (seg.kind === "text") {
@@ -519,7 +519,7 @@ function AnimatedMessageBody({ text, ctx, onDone }: { text: string; ctx: GraphCt
         if (c >= text.length) { clearInterval(iv); onDone(); return c; }
         return c + 1;
       });
-    }, 13);
+    }, 6);
     return () => clearInterval(iv);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
@@ -667,7 +667,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
     if (e.target === e.currentTarget) handleDismiss();
   }
 
-  const bgBubbleAI    = isLightMode ? "rgba(240,240,245,1)" : "rgba(22,22,28,1)";
+  const bgBubbleAI    = isLightMode ? "#ffffff" : "#000000";
   const bubbleBorder  = isLightMode ? "rgba(0,0,0,0.10)"    : "rgba(255,255,255,0.10)";
   const textColor     = isLightMode ? "#1a1a1e"             : "#f0f0f2";
 
