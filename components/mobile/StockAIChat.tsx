@@ -15,6 +15,7 @@ interface GraphCtx {
   currentPrice: number;
   sentiment: { score: number; drivers: string[] };
   metrics: Record<string, number | string | null> | undefined;
+  isLightMode: boolean;
 }
 
 // Split AI text on [[+]]positive[[/+]] and [[-]]negative[[/-]] tags and render coloured spans
@@ -57,7 +58,9 @@ const DATA_KEYS = [
 ] as const;
 type DataKey = typeof DATA_KEYS[number];
 
-const GRAPH_TYPES = ["price", "analyst", "sentiment", "targets"] as const;
+const PERIODS = ["1D","1W","1M","3M","6M","1Y","2Y","5Y","ALL"] as const;
+type Period = typeof PERIODS[number];
+const GRAPH_TYPES = ["price:1D","price:1W","price:1M","price:3M","price:6M","price:1Y","price:2Y","price:5Y","price:ALL","analyst","sentiment","targets"] as const;
 type GraphType = typeof GRAPH_TYPES[number];
 
 type Segment =
@@ -65,7 +68,7 @@ type Segment =
   | { kind: "pill"; key: DataKey }
   | { kind: "graph"; graphType: GraphType };
 
-const TAG_RE = /\[\[data:([a-zA-Z0-9_]+)\]\]|\[\[graph:([a-zA-Z0-9_]+)\]\]/g;
+const TAG_RE = /\[\[data:([a-zA-Z0-9_]+)\]\]|\[\[graph:([a-zA-Z0-9_:]+)\]\]/g;
 
 // Parses AI text into an ordered list of text runs + widget calls. Enforces
 // "one of a kind per message" — a repeated tag for the same key/type is
@@ -157,6 +160,7 @@ function DataPill({ dataKey, ctx }: { dataKey: DataKey; ctx: GraphCtx }) {
   }, []);
   const point = computeDataPoint(dataKey, ctx);
   const color = point.tone === "positive" ? "#00c805" : point.tone === "negative" ? "#ff3003" : "#9a9aa2";
+  const pillBg = ctx.isLightMode ? "#ffffff" : "#000000";
   return (
     <div style={{
       display: "inline-flex", alignItems: "center", gap: 8,
@@ -164,7 +168,7 @@ function DataPill({ dataKey, ctx }: { dataKey: DataKey; ctx: GraphCtx }) {
       padding: "8px 14px",
       borderRadius: 999,
       border: `1px solid ${color}55`,
-      backgroundColor: `${color}14`,
+      backgroundColor: pillBg,
       opacity: mounted ? 1 : 0,
       transform: mounted ? "translateY(0) scale(1)" : "translateY(4px) scale(0.96)",
       transition: "opacity 0.22s ease, transform 0.22s ease",
@@ -193,15 +197,17 @@ function GraphShimmer() {
 
 // Shared frame every graph renders inside — bounded so its width/height can
 // never exceed the message bubble that contains it.
-function GraphFrame({ title, ready, children }: { title: string; ready: boolean; children: React.ReactNode }) {
+function GraphFrame({ title, ready, children, isLightMode }: { title: string; ready: boolean; children: React.ReactNode; isLightMode?: boolean }) {
+  const frameBg = isLightMode ? "#ffffff" : "#000000";
+  const frameBorder = isLightMode ? "rgba(0,0,0,0.10)" : "rgba(255,255,255,0.10)";
   return (
     <div style={{
       width: "100%",
       maxWidth: "100%",
       boxSizing: "border-box",
       borderRadius: 14,
-      border: "1px solid rgba(255,255,255,0.10)",
-      backgroundColor: "rgba(255,255,255,0.03)",
+      border: `1px solid ${frameBorder}`,
+      backgroundColor: frameBg,
       padding: "12px 14px 14px",
       overflow: "hidden",
     }}>
@@ -227,6 +233,7 @@ function sentimentColor(score: number) {
 }
 
 function GraphSentiment({ ctx }: { ctx: GraphCtx }) {
+  const { isLightMode } = ctx;
   const [ready, setReady] = useState(false);
   const [pct, setPct] = useState(0);
   const score = ctx.sentiment.score;
@@ -239,7 +246,7 @@ function GraphSentiment({ ctx }: { ctx: GraphCtx }) {
   }, [score]);
   const color = sentimentColor(score);
   return (
-    <GraphFrame title="Sentiment Score" ready={ready}>
+    <GraphFrame title="Sentiment Score" ready={ready} isLightMode={isLightMode}>
       <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", gap: 10 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
           <span style={{ fontSize: 28, fontWeight: 700, color }}>{score}</span>
@@ -254,6 +261,7 @@ function GraphSentiment({ ctx }: { ctx: GraphCtx }) {
 }
 
 function GraphAnalyst({ ctx }: { ctx: GraphCtx }) {
+  const { isLightMode } = ctx;
   const [ready, setReady] = useState(false);
   const [progress, setProgress] = useState(0);
   useEffect(() => {
@@ -273,7 +281,7 @@ function GraphAnalyst({ ctx }: { ctx: GraphCtx }) {
     ["Strong Sell", latest.strongSell, "#dc2626"],
   ] : [];
   return (
-    <GraphFrame title="Analyst Recommendations" ready={ready}>
+    <GraphFrame title="Analyst Recommendations" ready={ready} isLightMode={isLightMode}>
       {total === 0 ? (
         <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
           No analyst coverage available.
@@ -302,6 +310,7 @@ function GraphAnalyst({ ctx }: { ctx: GraphCtx }) {
 }
 
 function GraphTargets({ ctx }: { ctx: GraphCtx }) {
+  const { isLightMode } = ctx;
   const [ready, setReady] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 550);
@@ -310,7 +319,7 @@ function GraphTargets({ ctx }: { ctx: GraphCtx }) {
   const pt = ctx.stock.priceTarget;
   const hasData = pt?.targetLow != null && pt?.targetHigh != null && pt.targetHigh > pt.targetLow;
   return (
-    <GraphFrame title="Analyst Price Targets" ready={ready}>
+    <GraphFrame title="Analyst Price Targets" ready={ready} isLightMode={isLightMode}>
       {!hasData ? (
         <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
           No price target data available.
@@ -342,17 +351,23 @@ function GraphTargets({ ctx }: { ctx: GraphCtx }) {
   );
 }
 
-function GraphPrice({ ctx }: { ctx: GraphCtx }) {
+function GraphPrice({ ctx, period = "1M" }: { ctx: GraphCtx; period?: string }) {
   const [ready, setReady] = useState(false);
   const [points, setPoints] = useState<{ close: number }[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const { isLightMode } = ctx;
+
+  const periodLabel: Record<string, string> = {
+    "1D":"Today","1W":"1 Week","1M":"1 Month","3M":"3 Months",
+    "6M":"6 Months","1Y":"1 Year","2Y":"2 Years","5Y":"5 Years","ALL":"All Time",
+  };
 
   useEffect(() => {
     let cancelled = false;
     const minDelay = new Promise(resolve => setTimeout(resolve, 550));
     (async () => {
       try {
-        const res = await fetch(`/api/candles?symbol=${encodeURIComponent(ctx.stock.symbol)}&period=1M`);
+        const res = await fetch(`/api/candles?symbol=${encodeURIComponent(ctx.stock.symbol)}&period=${period}`);
         const data = await res.json() as { candles?: { close: number }[]; error?: string };
         await minDelay;
         if (cancelled) return;
@@ -366,13 +381,13 @@ function GraphPrice({ ctx }: { ctx: GraphCtx }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [ctx.stock.symbol]);
+  }, [ctx.stock.symbol, period]);
 
   const positive = !points || points.length < 2 ? true : points[points.length - 1].close >= points[0].close;
   const lineColor = positive ? "#00c805" : "#ff3003";
 
   return (
-    <GraphFrame title="Price — Last Month" ready={ready}>
+    <GraphFrame title={`Price — ${periodLabel[period] ?? period}`} ready={ready} isLightMode={isLightMode}>
       {failed || !points?.length ? (
         <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
           Price history unavailable.
@@ -396,11 +411,15 @@ function GraphPrice({ ctx }: { ctx: GraphCtx }) {
 }
 
 function GraphWidget({ graphType, ctx }: { graphType: GraphType; ctx: GraphCtx }) {
+  if (graphType.startsWith("price")) {
+    const period = graphType.includes(":") ? graphType.split(":")[1] : "1M";
+    return <GraphPrice ctx={ctx} period={period} />;
+  }
   switch (graphType) {
-    case "price":     return <GraphPrice ctx={ctx} />;
     case "analyst":   return <GraphAnalyst ctx={ctx} />;
     case "sentiment": return <GraphSentiment ctx={ctx} />;
     case "targets":   return <GraphTargets ctx={ctx} />;
+    default:          return null;
   }
 }
 
@@ -545,7 +564,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
   const inputRef    = useRef<HTMLInputElement>(null);
   const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
   const stockContext = buildStockContext(stock, currentPrice, sentiment, metrics);
-  const graphCtx: GraphCtx = { stock, currentPrice, sentiment, metrics };
+  const isLightMode = typeof document !== "undefined" && document.documentElement.classList.contains("light-mode");
+  const graphCtx: GraphCtx = { stock, currentPrice, sentiment, metrics, isLightMode };
 
   // Render via a portal straight into <body> — bypasses ancestor elements
   // (like <main>) that can pick up a transient CSS `transform` from page
@@ -647,7 +667,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
     if (e.target === e.currentTarget) handleDismiss();
   }
 
-  const isLightMode = typeof document !== "undefined" && document.documentElement.classList.contains("light-mode");
   const bgBubbleAI    = isLightMode ? "rgba(240,240,245,1)" : "rgba(22,22,28,1)";
   const bubbleBorder  = isLightMode ? "rgba(0,0,0,0.10)"    : "rgba(255,255,255,0.10)";
   const textColor     = isLightMode ? "#1a1a1e"             : "#f0f0f2";
