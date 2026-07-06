@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Send, Sparkles } from "lucide-react";
 import type { StockDetail } from "@/types/stock";
 
@@ -115,6 +116,7 @@ interface Props {
 }
 
 export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalOpen, onOpenChange, hideTrigger }: Props) {
+  const [mounted, setMounted] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = externalOpen !== undefined;
   const open = isControlled ? externalOpen : internalOpen;
@@ -130,6 +132,14 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
   const inputRef    = useRef<HTMLInputElement>(null);
   const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
   const stockContext = buildStockContext(stock, currentPrice, sentiment, metrics);
+
+  // Render via a portal straight into <body> — bypasses ancestor elements
+  // (like <main>) that can pick up a transient CSS `transform` from page
+  // transition animations. A transformed ancestor becomes a new containing
+  // block for any `position: fixed` descendant, which silently breaks fixed
+  // positioning. Portaling to <body> guarantees this can never happen, the
+  // same way the always-reliable search button lives outside <main> too.
+  useEffect(() => setMounted(true), []);
 
   // Track visual viewport (handles iOS keyboard shrinking the screen)
   useEffect(() => {
@@ -239,7 +249,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
     ? `${keyboardInset + 12}px`
     : "calc(1.25rem + env(safe-area-inset-bottom))";
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <>
       {/* Backdrop + messages — pinned to the exact visual viewport rectangle */}
       <div
@@ -462,6 +474,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
           50%       { opacity: 0; }
         }
       `}</style>
-    </>
+    </>,
+    document.body
   );
 }
