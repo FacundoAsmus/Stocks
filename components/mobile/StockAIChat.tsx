@@ -820,7 +820,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
     if (e.target === e.currentTarget) handleDismiss();
   }
 
-  const bgBubbleAI    = isLightMode ? "#ffffff" : "#000000";
+  const bgBubbleAI    = isLightMode ? "rgba(255,255,255,0.72)" : "rgba(0,0,0,0.72)";
   const bubbleBorder  = isLightMode ? "rgba(0,0,0,0.10)"    : "rgba(255,255,255,0.10)";
   const textColor     = isLightMode ? "#1a1a1e"             : "#f0f0f2";
 
@@ -888,7 +888,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 whiteSpace: "pre-wrap",
                 padding: "12px 18px",
                 borderRadius: msg.role === "user" ? "20px 20px 5px 20px" : "20px 20px 20px 5px",
-                backgroundColor: msg.role === "user" ? "#00c805" : bgBubbleAI,
+                backgroundColor: msg.role === "user" ? "rgba(0,200,5,0.75)" : bgBubbleAI,
                 border: msg.role === "model" ? `1px solid ${bubbleBorder}` : "none",
                 color: msg.role === "user" ? "#000" : textColor,
                 fontSize: 17,
