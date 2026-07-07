@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Send, Sparkles } from "lucide-react";
-import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
+import { Area, AreaChart, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
-import type { StockDetail } from "@/types/stock";
+import type { CandlePoint, StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
 
@@ -63,31 +63,114 @@ type Period = typeof PERIODS[number];
 const GRAPH_TYPES = ["price:1D","price:1W","price:1M","price:3M","price:5M","price:6M","price:1Y","price:2Y","price:5Y","price:ALL","analyst","sentiment","targets"] as const;
 type GraphType = typeof GRAPH_TYPES[number];
 
+// ─────────────────────────────────────────────────────────────────────────
+// Chart annotations — the AI marks up a price graph with pure financial
+// meaning (a date, a price, a label) and NEVER coordinates. The frontend
+// (GraphPrice, via recharts' Reference* components) converts date/price
+// into actual x/y pixel positions. Three kinds, capped per response:
+//   [[mark:...]]   up to 3  — one point-in-time event (dot + vertical line)
+//   [[level:...]]  up to 2  — a horizontal support/resistance/level line
+//   [[region:...]] up to 1  — a shaded date-range band
+// ─────────────────────────────────────────────────────────────────────────
+
+interface MarkAnnotation   { type: "mark";   date: string; price: number; label: string; color: "positive" | "negative" | "neutral" }
+interface LevelAnnotation  { type: "level";  price: number; label: string; levelType: "support" | "resistance" | "level" }
+interface RegionAnnotation { type: "region"; start: string; end: string; label: string; tone: "positive" | "negative" | "neutral" }
+type Annotation = MarkAnnotation | LevelAnnotation | RegionAnnotation;
+
+const MARK_LIMIT = 3;
+const LEVEL_LIMIT = 2;
+const REGION_LIMIT = 1;
+
+const MARK_TAG_RE   = /\[\[mark:([\s\S]*?)\]\]/g;
+const LEVEL_TAG_RE  = /\[\[level:([\s\S]*?)\]\]/g;
+const REGION_TAG_RE = /\[\[region:([\s\S]*?)\]\]/g;
+
+// "graph=1M; date=2025-07-03; price=183.42; label=Q2 Earnings; color=neutral"
+// → { graph: "1M", date: "2025-07-03", price: "183.42", label: "Q2 Earnings", color: "neutral" }
+function parseAnnotationFields(raw: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const chunk of raw.split(";")) {
+    const eq = chunk.indexOf("=");
+    if (eq === -1) continue;
+    const key = chunk.slice(0, eq).trim();
+    const val = chunk.slice(eq + 1).trim();
+    if (key && val) out[key] = val;
+  }
+  return out;
+}
+
+const TONE_VALUES = ["positive", "negative", "neutral"] as const;
+function asTone(v: string | undefined): "positive" | "negative" | "neutral" {
+  return (TONE_VALUES as readonly string[]).includes(v ?? "") ? (v as "positive" | "negative" | "neutral") : "neutral";
+}
+
+// Strips every annotation tag out of the raw text (they never render as
+// their own text/block — they only ever attach to the one price graph in
+// the message) and returns what's left to parse normally, plus the parsed
+// annotation list (capped per-kind, first calls win).
+function extractAnnotations(text: string): { cleaned: string; annotations: Annotation[] } {
+  const annotations: Annotation[] = [];
+
+  let cleaned = text.replace(MARK_TAG_RE, (_, raw: string) => {
+    if (annotations.filter(a => a.type === "mark").length >= MARK_LIMIT) return "";
+    const f = parseAnnotationFields(raw);
+    const price = Number(f.price);
+    if (!f.date || !f.label || Number.isNaN(price)) return "";
+    annotations.push({ type: "mark", date: f.date, price, label: f.label, color: asTone(f.color) });
+    return "";
+  });
+
+  cleaned = cleaned.replace(LEVEL_TAG_RE, (_, raw: string) => {
+    if (annotations.filter(a => a.type === "level").length >= LEVEL_LIMIT) return "";
+    const f = parseAnnotationFields(raw);
+    const price = Number(f.price);
+    if (!f.label || Number.isNaN(price)) return "";
+    const levelType = f.type === "support" || f.type === "resistance" ? f.type : "level";
+    annotations.push({ type: "level", price, label: f.label, levelType });
+    return "";
+  });
+
+  cleaned = cleaned.replace(REGION_TAG_RE, (_, raw: string) => {
+    if (annotations.filter(a => a.type === "region").length >= REGION_LIMIT) return "";
+    const f = parseAnnotationFields(raw);
+    if (!f.start || !f.end || !f.label) return "";
+    annotations.push({ type: "region", start: f.start, end: f.end, label: f.label, tone: asTone(f.tone) });
+    return "";
+  });
+
+  return { cleaned, annotations };
+}
+
 type Segment =
   | { kind: "text"; value: string }
   | { kind: "pill"; key: DataKey }
-  | { kind: "graph"; graphType: GraphType }
+  | { kind: "graph"; graphType: GraphType; annotations?: Annotation[] }
   | { kind: "news"; index: number };
 
 const TAG_RE = /\[\[data:([a-zA-Z0-9_]+)\]\]|\[\[graph:([a-zA-Z0-9_:]+)\]\]|\[\[news:(\d+)\]\]/g;
 
 // Parses AI text into an ordered list of text runs + widget calls. Enforces
 // "one of a kind per message" — a repeated tag for the same key/type is
-// silently dropped (the first call wins).
+// silently dropped (the first call wins). Chart annotations are stripped
+// out first and (if a price graph is present) attached to it directly.
 function parseSegments(text: string): Segment[] {
+  const { cleaned, annotations } = extractAnnotations(text);
   const segments: Segment[] = [];
   const seenPills = new Set<string>();
   const seenGraphs = new Set<string>();
   let last = 0;
   let m: RegExpExecArray | null;
   TAG_RE.lastIndex = 0;
-  while ((m = TAG_RE.exec(text)) !== null) {
-    if (m.index > last) segments.push({ kind: "text", value: text.slice(last, m.index) });
+  while ((m = TAG_RE.exec(cleaned)) !== null) {
+    if (m.index > last) segments.push({ kind: "text", value: cleaned.slice(last, m.index) });
     if (m[1] && DATA_KEYS.includes(m[1] as DataKey) && !seenPills.has(m[1])) {
       segments.push({ kind: "pill", key: m[1] as DataKey });
       seenPills.add(m[1]);
     } else if (m[2] && GRAPH_TYPES.includes(m[2] as GraphType) && !seenGraphs.has(m[2])) {
-      segments.push({ kind: "graph", graphType: m[2] as GraphType });
+      const seg: Segment = { kind: "graph", graphType: m[2] as GraphType };
+      if (m[2].startsWith("price") && annotations.length) seg.annotations = annotations;
+      segments.push(seg);
       seenGraphs.add(m[2]);
     } else if (m[3] !== undefined) {
       const idx = parseInt(m[3]);
@@ -95,7 +178,7 @@ function parseSegments(text: string): Segment[] {
     }
     last = TAG_RE.lastIndex;
   }
-  if (last < text.length) segments.push({ kind: "text", value: text.slice(last) });
+  if (last < cleaned.length) segments.push({ kind: "text", value: cleaned.slice(last) });
   return segments;
 }
 
@@ -201,7 +284,7 @@ function GraphShimmer() {
 
 // Shared frame every graph renders inside — bounded so its width/height can
 // never exceed the message bubble that contains it.
-function GraphFrame({ title, ready, children }: { title: string; ready: boolean; children: React.ReactNode; isLightMode?: boolean }) {
+function GraphFrame({ title, ready, tall, children }: { title: string; ready: boolean; children: React.ReactNode; isLightMode?: boolean; tall?: boolean }) {
   return (
     <div style={{
       width: "100%",
@@ -213,7 +296,7 @@ function GraphFrame({ title, ready, children }: { title: string; ready: boolean;
       <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#00c805", marginBottom: 8 }}>
         {title}
       </p>
-      <div style={{ position: "relative", height: 108, width: "100%" }}>
+      <div style={{ position: "relative", height: tall ? 150 : 108, width: "100%" }}>
         {!ready && <GraphShimmer />}
         <div style={{ height: "100%", width: "100%", opacity: ready ? 1 : 0, transition: "opacity 0.25s ease" }}>
           {children}
@@ -350,9 +433,30 @@ function GraphTargets({ ctx }: { ctx: GraphCtx }) {
   );
 }
 
-function GraphPrice({ ctx, period = "1M" }: { ctx: GraphCtx; period?: string }) {
+// Finds the candle whose date is closest to a target date string — this is
+// the ONLY thing that turns an AI-given date into a chart position; the AI
+// itself never sees or picks pixel/x coordinates.
+function nearestCandleDate(points: CandlePoint[], targetDate: string): string | null {
+  const target = new Date(targetDate).getTime();
+  if (Number.isNaN(target)) return null;
+  let best: CandlePoint | null = null;
+  let bestDiff = Infinity;
+  for (const p of points) {
+    const diff = Math.abs(new Date(p.date).getTime() - target);
+    if (diff < bestDiff) { bestDiff = diff; best = p; }
+  }
+  return best?.date ?? null;
+}
+
+const ANNOTATION_COLOR: Record<"positive" | "negative" | "neutral", string> = {
+  positive: "#00c805",
+  negative: "#ff3003",
+  neutral:  "#9a9aa2",
+};
+
+function GraphPrice({ ctx, period = "1M", annotations }: { ctx: GraphCtx; period?: string; annotations?: Annotation[] }) {
   const [ready, setReady] = useState(false);
-  const [points, setPoints] = useState<{ close: number }[] | null>(null);
+  const [points, setPoints] = useState<CandlePoint[] | null>(null);
   const [failed, setFailed] = useState(false);
   const { isLightMode } = ctx;
 
@@ -367,13 +471,13 @@ function GraphPrice({ ctx, period = "1M" }: { ctx: GraphCtx; period?: string }) 
     (async () => {
       try {
         const res = await fetch(`/api/candles?symbol=${encodeURIComponent(ctx.stock.symbol)}&period=${period}`);
-        const data = await res.json() as { candles?: { close: number }[]; error?: string };
+        const data = await res.json() as { candles?: CandlePoint[]; error?: string };
         await minDelay;
         if (cancelled) return;
         if (data.candles?.length) {
           // For 1D: prepend previous day's close as the first point (same as PriceChart + watchlist)
           if (period === "1D" && ctx.stock.quote.pc && ctx.stock.quote.pc > 0) {
-            const prevPoint = { close: ctx.stock.quote.pc };
+            const prevPoint: CandlePoint = { close: ctx.stock.quote.pc, date: data.candles[0].date, time: data.candles[0].time - 1 };
             setPoints([prevPoint, ...data.candles]);
           } else {
             setPoints(data.candles);
@@ -391,24 +495,92 @@ function GraphPrice({ ctx, period = "1M" }: { ctx: GraphCtx; period?: string }) 
 
   const positive = !points || points.length < 2 ? true : points[points.length - 1].close >= points[0].close;
   const lineColor = positive ? "#00c805" : "#ff3003";
+  const hasAnnotations = !!annotations?.length;
 
   return (
-    <GraphFrame title={`Price — ${periodLabel[period] ?? period}`} ready={ready} isLightMode={isLightMode}>
+    <GraphFrame title={`Price — ${periodLabel[period] ?? period}`} ready={ready} isLightMode={isLightMode} tall={hasAnnotations}>
       {failed || !points?.length ? (
         <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
           Price history unavailable.
         </div>
       ) : (
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={points} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+          <AreaChart data={points} margin={{ top: hasAnnotations ? 14 : 4, right: 4, bottom: 0, left: 4 }}>
             <defs>
               <linearGradient id="miniAiChartFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={lineColor} stopOpacity={0.22} />
                 <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
               </linearGradient>
             </defs>
+            <XAxis dataKey="date" hide />
             <YAxis domain={["dataMin", "dataMax"]} hide />
             <Area type="monotone" dataKey="close" stroke={lineColor} fill="url(#miniAiChartFill)" strokeWidth={2} dot={false} isAnimationActive={false} />
+
+            {annotations?.filter((a): a is RegionAnnotation => a.type === "region").map((a, i) => {
+              const x1 = nearestCandleDate(points, a.start);
+              const x2 = nearestCandleDate(points, a.end);
+              if (!x1 || !x2) return null;
+              const color = ANNOTATION_COLOR[a.tone];
+              return (
+                <ReferenceArea
+                  key={`region-${i}`}
+                  x1={x1} x2={x2}
+                  fill={color} fillOpacity={0.12}
+                  stroke={color} strokeOpacity={0.3}
+                  label={{ value: a.label, position: "insideTop", fontSize: 9, fontWeight: 600, fill: color }}
+                  ifOverflow="extendDomain"
+                />
+              );
+            })}
+
+            {annotations?.filter((a): a is LevelAnnotation => a.type === "level").map((a, i) => {
+              const color = a.levelType === "support" ? "#00c805" : a.levelType === "resistance" ? "#ff3003" : "#9a9aa2";
+              return (
+                <ReferenceLine
+                  key={`level-${i}`}
+                  y={a.price}
+                  stroke={color}
+                  strokeDasharray="4 3"
+                  strokeWidth={1.25}
+                  ifOverflow="extendDomain"
+                  label={{ value: a.label, position: "insideBottomRight", fontSize: 9, fontWeight: 600, fill: color }}
+                />
+              );
+            })}
+
+            {annotations?.filter((a): a is MarkAnnotation => a.type === "mark").map((a, i) => {
+              const x = nearestCandleDate(points, a.date);
+              if (!x) return null;
+              const color = ANNOTATION_COLOR[a.color];
+              const idx = points.findIndex(p => p.date === x);
+              const labelPos = idx > points.length / 2 ? "insideTopLeft" : "insideTopRight";
+              return (
+                <ReferenceLine
+                  key={`mark-line-${i}`}
+                  x={x}
+                  stroke={color}
+                  strokeDasharray="2 3"
+                  strokeWidth={1}
+                  ifOverflow="extendDomain"
+                  label={{ value: a.label, position: labelPos, fontSize: 9, fontWeight: 600, fill: color, offset: 6 }}
+                />
+              );
+            })}
+            {annotations?.filter((a): a is MarkAnnotation => a.type === "mark").map((a, i) => {
+              const x = nearestCandleDate(points, a.date);
+              if (!x) return null;
+              return (
+                <ReferenceDot
+                  key={`mark-dot-${i}`}
+                  x={x} y={a.price}
+                  r={3.5}
+                  fill={ANNOTATION_COLOR[a.color]}
+                  stroke={isLightMode ? "#fff" : "#000"}
+                  strokeWidth={1.5}
+                  ifOverflow="extendDomain"
+                />
+              );
+            })}
           </AreaChart>
         </ResponsiveContainer>
       )}
@@ -457,10 +629,10 @@ function NewsCard({ index, ctx }: { index: number; ctx: GraphCtx }) {
   );
 }
 
-function GraphWidget({ graphType, ctx }: { graphType: GraphType; ctx: GraphCtx }) {
+function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; annotations?: Annotation[]; ctx: GraphCtx }) {
   if (graphType.startsWith("price")) {
     const period = graphType.includes(":") ? graphType.split(":")[1] : "1M";
-    return <GraphPrice ctx={ctx} period={period} />;
+    return <GraphPrice ctx={ctx} period={period} annotations={annotations} />;
   }
   switch (graphType) {
     case "analyst":   return <GraphAnalyst ctx={ctx} />;
@@ -521,7 +693,7 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
         }
         return (
           <div key={i}>
-            <GraphWidget graphType={seg.graphType} ctx={ctx} />
+            <GraphWidget graphType={seg.graphType} annotations={seg.annotations} ctx={ctx} />
             {isLast && trailingCursor && <Cursor />}
           </div>
         );
@@ -561,6 +733,87 @@ function getMarketInfo(): { isOpen: boolean; status: string; timeToEvent: string
   return { isOpen, status: isOpen ? "Open" : "Closed", timeToEvent };
 }
 
+// Deterministic market statistics computed straight from candle data — the
+// AI explains these, it never calculates them itself. Also gives the AI
+// grounded, exact dates it can safely reference in [[mark:...]] tags.
+function computeMarketStats(candles: CandlePoint[]): string | null {
+  if (!candles || candles.length < 5) return null;
+
+  const closes  = candles.map(c => c.close);
+  const dates   = candles.map(c => c.date.slice(0, 10));
+  const volumes = candles.map(c => c.volume ?? 0);
+  const fmtPct  = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
+
+  let largestGain = { pct: -Infinity, date: "" };
+  let largestLoss = { pct: Infinity, date: "" };
+  for (let i = 1; i < closes.length; i++) {
+    const pct = (closes[i] - closes[i - 1]) / closes[i - 1] * 100;
+    if (pct > largestGain.pct) largestGain = { pct, date: dates[i] };
+    if (pct < largestLoss.pct) largestLoss = { pct, date: dates[i] };
+  }
+
+  let highestClose = { price: -Infinity, date: "" };
+  let lowestClose   = { price: Infinity, date: "" };
+  closes.forEach((c, i) => {
+    if (c > highestClose.price) highestClose = { price: c, date: dates[i] };
+    if (c < lowestClose.price)  lowestClose   = { price: c, date: dates[i] };
+  });
+
+  let highestVolume = { volume: -Infinity, date: "" };
+  volumes.forEach((v, i) => { if (v > highestVolume.volume) highestVolume = { volume: v, date: dates[i] }; });
+  const avgVolume = volumes.reduce((a, b) => a + b, 0) / volumes.length;
+
+  const movingAvg = (n: number) => closes.length < n ? null : closes.slice(-n).reduce((a, b) => a + b, 0) / n;
+  const ma20 = movingAvg(20);
+  const ma50 = movingAvg(50);
+
+  let peak = closes[0], maxDrawdown = 0;
+  for (const c of closes) {
+    if (c > peak) peak = c;
+    maxDrawdown = Math.min(maxDrawdown, (c - peak) / peak * 100);
+  }
+
+  const percentReturn = (closes[closes.length - 1] - closes[0]) / closes[0] * 100;
+
+  let trend: "Uptrend" | "Downtrend" | "Sideways" = "Sideways";
+  if (ma20 !== null && ma50 !== null) {
+    if (ma20 > ma50 * 1.01) trend = "Uptrend";
+    else if (ma20 < ma50 * 0.99) trend = "Downtrend";
+  }
+
+  const periodHigh = Math.max(...closes);
+  const periodLow  = Math.min(...closes);
+  const lastClose  = closes[closes.length - 1];
+  const distFromHigh = (lastClose - periodHigh) / periodHigh * 100;
+  const distFromLow  = (lastClose - periodLow)  / periodLow  * 100;
+
+  const tail = closes.slice(-21);
+  const recentReturns: number[] = [];
+  for (let i = 1; i < tail.length; i++) recentReturns.push((tail[i] - tail[i - 1]) / tail[i - 1] * 100);
+  const meanRet = recentReturns.reduce((a, b) => a + b, 0) / (recentReturns.length || 1);
+  const variance = recentReturns.reduce((a, b) => a + (b - meanRet) ** 2, 0) / (recentReturns.length || 1);
+  const stdev = Math.sqrt(variance);
+
+  const lines = [
+    `Largest Daily Gain: ${fmtPct(largestGain.pct)} on ${largestGain.date}`,
+    `Largest Daily Loss: ${fmtPct(largestLoss.pct)} on ${largestLoss.date}`,
+    `Highest Close: $${highestClose.price.toFixed(2)} on ${highestClose.date}`,
+    `Lowest Close: $${lowestClose.price.toFixed(2)} on ${lowestClose.date}`,
+    highestVolume.volume > 0 ? `Highest Volume Day: ${(highestVolume.volume / 1_000_000).toFixed(1)}M shares on ${highestVolume.date}` : null,
+    avgVolume > 0 ? `Average Volume: ${(avgVolume / 1_000_000).toFixed(1)}M shares/day` : null,
+    ma20 !== null ? `20-Day Moving Average: $${ma20.toFixed(2)}` : null,
+    ma50 !== null ? `50-Day Moving Average: $${ma50.toFixed(2)}` : null,
+    `Max Drawdown: ${maxDrawdown.toFixed(2)}%`,
+    `Current Trend: ${trend}`,
+    `Percentage Return (over fetched period): ${fmtPct(percentReturn)}`,
+    `Distance from Period High: ${fmtPct(distFromHigh)}`,
+    `Distance from Period Low: ${fmtPct(distFromLow)}`,
+    `Recent Volatility (20-day stdev of daily returns): ${stdev.toFixed(2)}%`,
+  ].filter((l): l is string => l !== null);
+
+  return lines.join("\n");
+}
+
 // Fetch key candle stats for a period (async, called server-side in context builder)
 async function fetchPeriodStats(symbol: string, period: string): Promise<string | null> {
   try {
@@ -574,6 +827,18 @@ async function fetchPeriodStats(symbol: string, period: string): Promise<string 
     const chg = ((last - first) / first * 100).toFixed(2);
     const sign = parseFloat(chg) >= 0 ? "+" : "";
     return `${period}: ${sign}${chg}% | High $${high.toFixed(2)} | Low $${low.toFixed(2)} | Start $${first.toFixed(2)} | End $${last.toFixed(2)}`;
+  } catch {
+    return null;
+  }
+}
+
+// Fetches a full year of daily candles so computeMarketStats has enough
+// history for 50-day moving averages, drawdown, and 52-week distances.
+async function fetchCandlesForStats(symbol: string): Promise<CandlePoint[] | null> {
+  try {
+    const res = await fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}&period=1Y`, { cache: "no-store" });
+    const data = await res.json() as { candles?: CandlePoint[] };
+    return data.candles?.length ? data.candles : null;
   } catch {
     return null;
   }
@@ -610,11 +875,22 @@ export async function buildStockContextAsync(
   if (a) lines.push(`Analyst: Strong Buy ${a.strongBuy} | Buy ${a.buy} | Hold ${a.hold} | Sell ${a.sell} | Strong Sell ${a.strongSell}`);
   if (stock.priceTarget?.targetMean) lines.push(`Avg Price Target: $${stock.priceTarget.targetMean.toFixed(2)}`);
 
-  // Fetch graph stats for key periods in parallel
+  // Fetch graph stats for key periods, plus a year of daily candles for
+  // deterministic market statistics, all in parallel.
   const periods = ["1D","1W","1M","3M","5M","6M","1Y","2Y","5Y","ALL"];
-  const stats = await Promise.all(periods.map(p => fetchPeriodStats(stock.symbol, p)));
+  const [stats, statsCandles] = await Promise.all([
+    Promise.all(periods.map(p => fetchPeriodStats(stock.symbol, p))),
+    fetchCandlesForStats(stock.symbol),
+  ]);
   const validStats = stats.filter(Boolean);
   if (validStats.length) lines.push(`Graph Data:\n${validStats.join("\n")}`);
+
+  if (statsCandles) {
+    const marketStats = computeMarketStats(statsCandles);
+    if (marketStats) {
+      lines.push(`Market Statistics (already computed — cite these directly, do not recalculate; use these exact dates/prices for [[mark:...]] annotations):\n${marketStats}`);
+    }
+  }
 
   if (stock.news?.length) {
     const h = stock.news.slice(0, 8).map((n, i) => `[${i}] ${n.headline} (${n.source})`).join("\n");
