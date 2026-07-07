@@ -4,9 +4,25 @@ import { useEffect, useRef, useState } from "react";
 import { Send, Sparkles, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { StockDetail } from "@/types/stock";
-import { buildStockContextAsync, ColorizedText, AnimatedText } from "@/components/mobile/StockAIChat";
+import { buildStockContextAsync, ColorizedText } from "@/components/mobile/StockAIChat";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
+
+function StreamingText({ text, onDone }: { text: string; onDone: () => void }) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    setCount(0);
+    const iv = setInterval(() => {
+      setCount(c => {
+        if (c >= text.length) { clearInterval(iv); onDone(); return c; }
+        return c + 1;
+      });
+    }, 6);
+    return () => clearInterval(iv);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text]);
+  return <ColorizedText text={text.slice(0, count)} />;
+}
 
 interface Props {
   stock: StockDetail;
@@ -144,7 +160,7 @@ export function DesktopAIChatButton({ stock, currentPrice, sentiment, metrics }:
                     style={{ wordBreak: "break-word", whiteSpace: "pre-wrap" }}
                   >
                     {msg.role === "model" && msg.animating
-                      ? <AnimatedText text={msg.text} onDone={() => markDone(i)} />
+                      ? <StreamingText text={msg.text} onDone={() => markDone(i)} />
                       : msg.role === "model"
                         ? <ColorizedText text={msg.text} />
                         : msg.text}
