@@ -370,8 +370,15 @@ function GraphPrice({ ctx, period = "1M" }: { ctx: GraphCtx; period?: string }) 
         const data = await res.json() as { candles?: { close: number }[]; error?: string };
         await minDelay;
         if (cancelled) return;
-        if (data.candles?.length) setPoints(data.candles);
-        else setFailed(true);
+        if (data.candles?.length) {
+          // For 1D: prepend previous day's close as the first point (same as PriceChart + watchlist)
+          if (period === "1D" && ctx.stock.quote.pc && ctx.stock.quote.pc > 0) {
+            const prevPoint = { close: ctx.stock.quote.pc };
+            setPoints([prevPoint, ...data.candles]);
+          } else {
+            setPoints(data.candles);
+          }
+        } else setFailed(true);
       } catch {
         await minDelay;
         if (!cancelled) setFailed(true);
@@ -865,8 +872,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
         <div
           style={{
             position: "absolute", inset: 0,
-            backdropFilter:       open ? "blur(8px) brightness(0.65)" : "none",
-            WebkitBackdropFilter: open ? "blur(8px) brightness(0.65)" : "none",
+            backdropFilter:       open ? "blur(1px) brightness(0.88)" : "none",
+            WebkitBackdropFilter: open ? "blur(1px) brightness(0.88)" : "none",
             transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
           }}
           onClick={handleDismiss}
