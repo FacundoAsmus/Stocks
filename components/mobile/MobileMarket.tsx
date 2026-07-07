@@ -7,7 +7,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { MarketFearGreed } from "@/components/market/MarketFearGreed";
 import { EtfMobileList } from "@/components/market/EtfList";
-import { formatCurrency, formatDateTime, formatPercent } from "@/lib/format";
+import { formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MarketNewsArticle, StockSummary } from "@/types/stock";
 

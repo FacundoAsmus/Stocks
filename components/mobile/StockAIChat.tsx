@@ -58,8 +58,6 @@ const DATA_KEYS = [
 ] as const;
 type DataKey = typeof DATA_KEYS[number];
 
-const PERIODS = ["1D","1W","1M","3M","6M","1Y","2Y","5Y","ALL"] as const;
-type Period = typeof PERIODS[number];
 const GRAPH_TYPES = ["price:1D","price:1W","price:1M","price:3M","price:5M","price:6M","price:1Y","price:2Y","price:5Y","price:ALL","analyst","sentiment","targets"] as const;
 type GraphType = typeof GRAPH_TYPES[number];
 
@@ -463,7 +461,7 @@ const MARK_COLOR = "#9a9aa2";
 // letting us offset the label text away from the marker without ever
 // touching data/pixel coordinates ourselves in the annotation language.
 function markLabelRenderer(text: string, xSide: "left" | "right", ySide: "above" | "below") {
-  return (props: { viewBox?: { x?: number; y?: number; width?: number; height?: number } }) => {
+  function MarkLabel(props: { viewBox?: { x?: number; y?: number; width?: number; height?: number } }) {
     const vb = props.viewBox;
     if (!vb || vb.x == null || vb.y == null) return <g />;
     const cx = vb.x + (vb.width ?? 0) / 2;
@@ -482,7 +480,8 @@ function markLabelRenderer(text: string, xSide: "left" | "right", ySide: "above"
         {text}
       </text>
     );
-  };
+  }
+  return MarkLabel;
 }
 
 function GraphPrice({ ctx, period = "1M", annotations }: { ctx: GraphCtx; period?: string; annotations?: Annotation[] }) {
@@ -522,7 +521,7 @@ function GraphPrice({ ctx, period = "1M", annotations }: { ctx: GraphCtx; period
       }
     })();
     return () => { cancelled = true; };
-  }, [ctx.stock.symbol, period]);
+  }, [ctx.stock.symbol, period, ctx.stock.quote.pc]);
 
   const positive = !points || points.length < 2 ? true : points[points.length - 1].close >= points[0].close;
   const lineColor = positive ? "#00c805" : "#ff3003";

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
-import { CandleLoader, LoadingScreen } from "@/components/EmptyWatchlist";
+import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { ErrorState } from "@/components/ErrorState";
 import { MarketFearGreed } from "@/components/market/MarketFearGreed";
 import { EtfRow } from "@/components/market/EtfList";
