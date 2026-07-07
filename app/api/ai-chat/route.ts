@@ -75,7 +75,7 @@ Guidelines:
     let res = await callGemini(GEMINI_URL);
 
     // Retry with fallback model if primary is unavailable or rate-limited
-    if (res.status === 404 || res.status === 429) {
+    if (res.status === 404 || res.status === 429 || res.status === 503) {
       res = await callGemini(GEMINI_FALLBACK_URL);
     }
 
