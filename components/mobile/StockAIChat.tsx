@@ -19,7 +19,7 @@ interface GraphCtx {
 }
 
 // Split AI text on [[+]]positive[[/+]] and [[-]]negative[[/-]] tags and render coloured spans
-function ColorizedText({ text }: { text: string }) {
+export function ColorizedText({ text }: { text: string }) {
   const parts: { str: string; type: "neutral" | "pos" | "neg" }[] = [];
   const regex = /(\[\[\+\]\])([\s\S]*?)(\[\[\/\+\]\])|(\[\[-\]\])(.*?)(\[\[\/-\]\])/g;
   let last = 0, m: RegExpExecArray | null;
@@ -931,7 +931,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
           separate bar/card behind it — this IS the input, elongated. */}
       {!hideTrigger && (
       <div
-        className="fixed rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-positive overflow-hidden"
+        className="fixed rounded-full bg-black/40 backdrop-blur-md border border-white/20 lg:hidden text-positive overflow-hidden"
         style={{
           zIndex: 1002,
           bottom: pillBottom,
