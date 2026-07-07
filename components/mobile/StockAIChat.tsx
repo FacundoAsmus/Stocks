@@ -860,8 +860,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
           opacity: open ? 1 : 0,
           pointerEvents: open ? "auto" : "none",
           transition: "opacity 0.25s ease",
-          willChange: "opacity",
-          transform: "translateZ(0)",  // force GPU layer
         }}
       >
         <div
