@@ -454,6 +454,37 @@ const ANNOTATION_COLOR: Record<"positive" | "negative" | "neutral", string> = {
   neutral:  "#9a9aa2",
 };
 
+// Point annotations are always neutral grey — never colored red/green, even
+// though the tag itself still accepts a color field for backwards
+// compatibility. Only levels (support/resistance) and regions use tone color.
+const MARK_COLOR = "#9a9aa2";
+
+// Recharts' label prop receives the dot's own pixel box for a ReferenceDot,
+// letting us offset the label text away from the marker without ever
+// touching data/pixel coordinates ourselves in the annotation language.
+function markLabelRenderer(text: string, xSide: "left" | "right", ySide: "above" | "below") {
+  return (props: { viewBox?: { x?: number; y?: number; width?: number; height?: number } }) => {
+    const vb = props.viewBox;
+    if (!vb || vb.x == null || vb.y == null) return <g />;
+    const cx = vb.x + (vb.width ?? 0) / 2;
+    const cy = vb.y + (vb.height ?? 0) / 2;
+    const dx = xSide === "left" ? -7 : 7;
+    const dy = ySide === "above" ? -8 : 15;
+    return (
+      <text
+        x={cx + dx}
+        y={cy + dy}
+        textAnchor={xSide === "left" ? "end" : "start"}
+        fontSize={9}
+        fontWeight={600}
+        fill={MARK_COLOR}
+      >
+        {text}
+      </text>
+    );
+  };
+}
+
 function GraphPrice({ ctx, period = "1M", annotations }: { ctx: GraphCtx; period?: string; annotations?: Annotation[] }) {
   const [ready, setReady] = useState(false);
   const [points, setPoints] = useState<CandlePoint[] | null>(null);
@@ -497,6 +528,21 @@ function GraphPrice({ ctx, period = "1M", annotations }: { ctx: GraphCtx; period
   const lineColor = positive ? "#00c805" : "#ff3003";
   const hasAnnotations = !!annotations?.length;
 
+  // Shared domain used to decide "near the top/bottom edge" for label
+  // placement — mirrors what ifOverflow="extendDomain" would settle on.
+  let priceDomainMin = 0, priceDomainMax = 0;
+  if (points?.length) {
+    const values = points.map(p => p.close);
+    if (annotations) {
+      for (const a of annotations) {
+        if (a.type === "mark" || a.type === "level") values.push(a.price);
+      }
+    }
+    priceDomainMin = Math.min(...values);
+    priceDomainMax = Math.max(...values);
+  }
+  const priceSpan = Math.max(priceDomainMax - priceDomainMin, 0.0001);
+
   return (
     <GraphFrame title={`Price — ${periodLabel[period] ?? period}`} ready={ready} isLightMode={isLightMode} tall={hasAnnotations}>
       {failed || !points?.length ? (
@@ -535,6 +581,10 @@ function GraphPrice({ ctx, period = "1M", annotations }: { ctx: GraphCtx; period
 
             {annotations?.filter((a): a is LevelAnnotation => a.type === "level").map((a, i) => {
               const color = a.levelType === "support" ? "#00c805" : a.levelType === "resistance" ? "#ff3003" : "#9a9aa2";
+              // Keep the label off the chart edge the same way marks do —
+              // if the level sits near the top/bottom, hug the opposite side.
+              const yProp = (a.price - priceDomainMin) / priceSpan;
+              const position = yProp >= 0.8 ? "insideBottomRight" : yProp <= 0.2 ? "insideTopRight" : "insideBottomRight";
               return (
                 <ReferenceLine
                   key={`level-${i}`}
@@ -543,41 +593,54 @@ function GraphPrice({ ctx, period = "1M", annotations }: { ctx: GraphCtx; period
                   strokeDasharray="4 3"
                   strokeWidth={1.25}
                   ifOverflow="extendDomain"
-                  label={{ value: a.label, position: "insideBottomRight", fontSize: 9, fontWeight: 600, fill: color }}
+                  label={{ value: a.label, position, fontSize: 9, fontWeight: 600, fill: color }}
                 />
               );
             })}
 
+            {/* Point annotations — always neutral grey. Vertical line has no
+                label of its own; the dot carries a custom-positioned label
+                chosen to avoid the chart edges and the price line itself. */}
             {annotations?.filter((a): a is MarkAnnotation => a.type === "mark").map((a, i) => {
               const x = nearestCandleDate(points, a.date);
               if (!x) return null;
-              const color = ANNOTATION_COLOR[a.color];
-              const idx = points.findIndex(p => p.date === x);
-              const labelPos = idx > points.length / 2 ? "insideTopLeft" : "insideTopRight";
               return (
                 <ReferenceLine
                   key={`mark-line-${i}`}
                   x={x}
-                  stroke={color}
+                  stroke={MARK_COLOR}
                   strokeDasharray="2 3"
                   strokeWidth={1}
                   ifOverflow="extendDomain"
-                  label={{ value: a.label, position: labelPos, fontSize: 9, fontWeight: 600, fill: color, offset: 6 }}
                 />
               );
             })}
             {annotations?.filter((a): a is MarkAnnotation => a.type === "mark").map((a, i) => {
               const x = nearestCandleDate(points, a.date);
               if (!x) return null;
+
+              // Horizontal: hug whichever side has room — near the right
+              // edge, the label goes left of the line, and vice versa.
+              const idx = points.findIndex(p => p.date === x);
+              const xProp = points.length > 1 ? idx / (points.length - 1) : 0.5;
+              const xSide: "left" | "right" = xProp >= 0.72 ? "left" : "right";
+
+              // Vertical: keep the label off the price line — if the point
+              // sits high on the chart, drop the label below it, and if it
+              // sits low, lift the label above it.
+              const yProp = (a.price - priceDomainMin) / priceSpan;
+              const ySide: "above" | "below" = yProp >= 0.7 ? "below" : "above";
+
               return (
                 <ReferenceDot
                   key={`mark-dot-${i}`}
                   x={x} y={a.price}
                   r={3.5}
-                  fill={ANNOTATION_COLOR[a.color]}
+                  fill={MARK_COLOR}
                   stroke={isLightMode ? "#fff" : "#000"}
                   strokeWidth={1.5}
                   ifOverflow="extendDomain"
+                  label={markLabelRenderer(a.label, xSide, ySide)}
                 />
               );
             })}
@@ -822,11 +885,19 @@ async function fetchPeriodStats(symbol: string, period: string): Promise<string 
     const candles = data.candles;
     if (!candles || candles.length < 2) return null;
     const closes = candles.map(c => c.close);
+    const dates = candles.map(c => c.date.slice(0, 10));
     const first = closes[0], last = closes[closes.length - 1];
-    const high = Math.max(...closes), low = Math.min(...closes);
+    // Find the exact date of this period's high/low directly from its own
+    // candle set — never borrow a date computed over a different period.
+    let highIdx = 0, lowIdx = 0;
+    closes.forEach((c, i) => {
+      if (c > closes[highIdx]) highIdx = i;
+      if (c < closes[lowIdx]) lowIdx = i;
+    });
+    const high = closes[highIdx], low = closes[lowIdx];
     const chg = ((last - first) / first * 100).toFixed(2);
     const sign = parseFloat(chg) >= 0 ? "+" : "";
-    return `${period}: ${sign}${chg}% | High $${high.toFixed(2)} | Low $${low.toFixed(2)} | Start $${first.toFixed(2)} | End $${last.toFixed(2)}`;
+    return `${period}: ${sign}${chg}% | High $${high.toFixed(2)} on ${dates[highIdx]} | Low $${low.toFixed(2)} on ${dates[lowIdx]} | Start $${first.toFixed(2)} | End $${last.toFixed(2)}`;
   } catch {
     return null;
   }
@@ -888,7 +959,7 @@ export async function buildStockContextAsync(
   if (statsCandles) {
     const marketStats = computeMarketStats(statsCandles);
     if (marketStats) {
-      lines.push(`Market Statistics (already computed — cite these directly, do not recalculate; use these exact dates/prices for [[mark:...]] annotations):\n${marketStats}`);
+      lines.push(`Market Statistics — trailing 1 year only (already computed — cite these directly, do not recalculate; use these exact dates/prices for [[mark:...]] annotations). For questions scoped to a specific period (e.g. "last 5 months"), use that period's own line under Graph Data instead — it has the exact high/low dates for that exact window:\n${marketStats}`);
     }
   }
 
@@ -1148,8 +1219,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
         <div
           style={{
             position: "absolute", inset: 0,
-            backdropFilter:       open ? "blur(1px) brightness(0.88)" : "none",
-            WebkitBackdropFilter: open ? "blur(1px) brightness(0.88)" : "none",
+            backdropFilter:       open ? "blur(20px) brightness(0.88)" : "none",
+            WebkitBackdropFilter: open ? "blur(20px) brightness(0.88)" : "none",
             transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
           }}
           onClick={handleDismiss}
