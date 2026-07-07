@@ -15,11 +15,10 @@ interface GraphCtx {
   currentPrice: number;
   sentiment: { score: number; drivers: string[] };
   metrics: Record<string, number | string | null> | undefined;
-  isLightMode: boolean;
 }
 
 // Split AI text on [[+]]positive[[/+]] and [[-]]negative[[/-]] tags and render coloured spans
-export function ColorizedText({ text }: { text: string }) {
+function ColorizedText({ text }: { text: string }) {
   const parts: { str: string; type: "neutral" | "pos" | "neg" }[] = [];
   const regex = /(\[\[\+\]\])([\s\S]*?)(\[\[\/\+\]\])|(\[\[-\]\])(.*?)(\[\[\/-\]\])/g;
   let last = 0, m: RegExpExecArray | null;
@@ -58,18 +57,15 @@ const DATA_KEYS = [
 ] as const;
 type DataKey = typeof DATA_KEYS[number];
 
-const PERIODS = ["1D","1W","1M","3M","6M","1Y","2Y","5Y","ALL"] as const;
-type Period = typeof PERIODS[number];
-const GRAPH_TYPES = ["price:1D","price:1W","price:1M","price:3M","price:6M","price:1Y","price:2Y","price:5Y","price:ALL","analyst","sentiment","targets"] as const;
+const GRAPH_TYPES = ["price", "analyst", "sentiment", "targets"] as const;
 type GraphType = typeof GRAPH_TYPES[number];
 
 type Segment =
   | { kind: "text"; value: string }
   | { kind: "pill"; key: DataKey }
-  | { kind: "graph"; graphType: GraphType }
-  | { kind: "news"; index: number };
+  | { kind: "graph"; graphType: GraphType };
 
-const TAG_RE = /\[\[data:([a-zA-Z0-9_]+)\]\]|\[\[graph:([a-zA-Z0-9_:]+)\]\]|\[\[news:(\d+)\]\]/g;
+const TAG_RE = /\[\[data:([a-zA-Z0-9_]+)\]\]|\[\[graph:([a-zA-Z0-9_]+)\]\]/g;
 
 // Parses AI text into an ordered list of text runs + widget calls. Enforces
 // "one of a kind per message" — a repeated tag for the same key/type is
@@ -89,9 +85,6 @@ function parseSegments(text: string): Segment[] {
     } else if (m[2] && GRAPH_TYPES.includes(m[2] as GraphType) && !seenGraphs.has(m[2])) {
       segments.push({ kind: "graph", graphType: m[2] as GraphType });
       seenGraphs.add(m[2]);
-    } else if (m[3] !== undefined) {
-      const idx = parseInt(m[3]);
-      segments.push({ kind: "news", index: idx });
     }
     last = TAG_RE.lastIndex;
   }
@@ -164,7 +157,6 @@ function DataPill({ dataKey, ctx }: { dataKey: DataKey; ctx: GraphCtx }) {
   }, []);
   const point = computeDataPoint(dataKey, ctx);
   const color = point.tone === "positive" ? "#00c805" : point.tone === "negative" ? "#ff3003" : "#9a9aa2";
-  const pillBg = ctx.isLightMode ? "#ffffff" : "#000000";
   return (
     <div style={{
       display: "inline-flex", alignItems: "center", gap: 8,
@@ -172,7 +164,7 @@ function DataPill({ dataKey, ctx }: { dataKey: DataKey; ctx: GraphCtx }) {
       padding: "8px 14px",
       borderRadius: 999,
       border: `1px solid ${color}55`,
-      backgroundColor: pillBg,
+      backgroundColor: `${color}14`,
       opacity: mounted ? 1 : 0,
       transform: mounted ? "translateY(0) scale(1)" : "translateY(4px) scale(0.96)",
       transition: "opacity 0.22s ease, transform 0.22s ease",
@@ -189,7 +181,7 @@ function DataPill({ dataKey, ctx }: { dataKey: DataKey; ctx: GraphCtx }) {
 // Sweeping shimmer shown while a graph is "generating".
 function GraphShimmer() {
   return (
-    <div style={{ position: "absolute", inset: 0, borderRadius: 8, overflow: "hidden", backgroundColor: "transparent" }}>
+    <div style={{ position: "absolute", inset: 0, borderRadius: 8, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.05)" }}>
       <div style={{
         position: "absolute", inset: 0, width: "60%",
         background: "linear-gradient(90deg, transparent, rgba(0,200,5,0.22), transparent)",
@@ -201,13 +193,16 @@ function GraphShimmer() {
 
 // Shared frame every graph renders inside — bounded so its width/height can
 // never exceed the message bubble that contains it.
-function GraphFrame({ title, ready, children }: { title: string; ready: boolean; children: React.ReactNode; isLightMode?: boolean }) {
+function GraphFrame({ title, ready, children }: { title: string; ready: boolean; children: React.ReactNode }) {
   return (
     <div style={{
       width: "100%",
       maxWidth: "100%",
       boxSizing: "border-box",
-      padding: "4px 0 8px",
+      borderRadius: 14,
+      border: "1px solid rgba(255,255,255,0.10)",
+      backgroundColor: "rgba(255,255,255,0.03)",
+      padding: "12px 14px 14px",
       overflow: "hidden",
     }}>
       <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#00c805", marginBottom: 8 }}>
@@ -232,7 +227,6 @@ function sentimentColor(score: number) {
 }
 
 function GraphSentiment({ ctx }: { ctx: GraphCtx }) {
-  const { isLightMode } = ctx;
   const [ready, setReady] = useState(false);
   const [pct, setPct] = useState(0);
   const score = ctx.sentiment.score;
@@ -245,7 +239,7 @@ function GraphSentiment({ ctx }: { ctx: GraphCtx }) {
   }, [score]);
   const color = sentimentColor(score);
   return (
-    <GraphFrame title="Sentiment Score" ready={ready} isLightMode={isLightMode}>
+    <GraphFrame title="Sentiment Score" ready={ready}>
       <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", gap: 10 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
           <span style={{ fontSize: 28, fontWeight: 700, color }}>{score}</span>
@@ -260,7 +254,6 @@ function GraphSentiment({ ctx }: { ctx: GraphCtx }) {
 }
 
 function GraphAnalyst({ ctx }: { ctx: GraphCtx }) {
-  const { isLightMode } = ctx;
   const [ready, setReady] = useState(false);
   const [progress, setProgress] = useState(0);
   useEffect(() => {
@@ -280,7 +273,7 @@ function GraphAnalyst({ ctx }: { ctx: GraphCtx }) {
     ["Strong Sell", latest.strongSell, "#dc2626"],
   ] : [];
   return (
-    <GraphFrame title="Analyst Recommendations" ready={ready} isLightMode={isLightMode}>
+    <GraphFrame title="Analyst Recommendations" ready={ready}>
       {total === 0 ? (
         <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
           No analyst coverage available.
@@ -309,7 +302,6 @@ function GraphAnalyst({ ctx }: { ctx: GraphCtx }) {
 }
 
 function GraphTargets({ ctx }: { ctx: GraphCtx }) {
-  const { isLightMode } = ctx;
   const [ready, setReady] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 550);
@@ -318,7 +310,7 @@ function GraphTargets({ ctx }: { ctx: GraphCtx }) {
   const pt = ctx.stock.priceTarget;
   const hasData = pt?.targetLow != null && pt?.targetHigh != null && pt.targetHigh > pt.targetLow;
   return (
-    <GraphFrame title="Analyst Price Targets" ready={ready} isLightMode={isLightMode}>
+    <GraphFrame title="Analyst Price Targets" ready={ready}>
       {!hasData ? (
         <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
           No price target data available.
@@ -331,7 +323,7 @@ function GraphTargets({ ctx }: { ctx: GraphCtx }) {
         const pct = (v: number) => Math.min(100, Math.max(0, ((v - low) / span) * 100));
         return (
           <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 18, height: "100%" }}>
-            <div style={{ position: "relative", height: 6, borderRadius: 999, backgroundColor: "rgba(128,128,128,0.18)" }}>
+            <div style={{ position: "relative", height: 6, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)" }}>
               <div style={{ position: "absolute", left: `${pct(mean)}%`, top: -4, width: 2, height: 14, backgroundColor: "#9a9aa2", transform: "translateX(-50%)" }} />
               <div style={{
                 position: "absolute", left: `${pct(ctx.currentPrice)}%`, top: -6, width: 12, height: 12,
@@ -350,23 +342,17 @@ function GraphTargets({ ctx }: { ctx: GraphCtx }) {
   );
 }
 
-function GraphPrice({ ctx, period = "1M" }: { ctx: GraphCtx; period?: string }) {
+function GraphPrice({ ctx }: { ctx: GraphCtx }) {
   const [ready, setReady] = useState(false);
   const [points, setPoints] = useState<{ close: number }[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const { isLightMode } = ctx;
-
-  const periodLabel: Record<string, string> = {
-    "1D":"Today","1W":"1 Week","1M":"1 Month","3M":"3 Months",
-    "6M":"6 Months","1Y":"1 Year","2Y":"2 Years","5Y":"5 Years","ALL":"All Time",
-  };
 
   useEffect(() => {
     let cancelled = false;
     const minDelay = new Promise(resolve => setTimeout(resolve, 550));
     (async () => {
       try {
-        const res = await fetch(`/api/candles?symbol=${encodeURIComponent(ctx.stock.symbol)}&period=${period}`);
+        const res = await fetch(`/api/candles?symbol=${encodeURIComponent(ctx.stock.symbol)}&period=1M`);
         const data = await res.json() as { candles?: { close: number }[]; error?: string };
         await minDelay;
         if (cancelled) return;
@@ -380,13 +366,13 @@ function GraphPrice({ ctx, period = "1M" }: { ctx: GraphCtx; period?: string }) 
       }
     })();
     return () => { cancelled = true; };
-  }, [ctx.stock.symbol, period]);
+  }, [ctx.stock.symbol]);
 
   const positive = !points || points.length < 2 ? true : points[points.length - 1].close >= points[0].close;
   const lineColor = positive ? "#00c805" : "#ff3003";
 
   return (
-    <GraphFrame title={`Price — ${periodLabel[period] ?? period}`} ready={ready} isLightMode={isLightMode}>
+    <GraphFrame title="Price — Last Month" ready={ready}>
       {failed || !points?.length ? (
         <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
           Price history unavailable.
@@ -409,57 +395,12 @@ function GraphPrice({ ctx, period = "1M" }: { ctx: GraphCtx; period?: string }) 
   );
 }
 
-function NewsCard({ index, ctx }: { index: number; ctx: GraphCtx }) {
-  const article = ctx.stock.news?.[index];
-  if (!article) return null;
-  const isLightMode = ctx.isLightMode;
-  const bg = isLightMode ? "#ffffff" : "#000000";
-  const border = isLightMode ? "rgba(0,0,0,0.10)" : "rgba(255,255,255,0.10)";
-  const text = isLightMode ? "#1a1a1e" : "#f0f0f2";
-  const muted = isLightMode ? "#6e6e80" : "#9a9aa2";
-  return (
-    <a
-      href={article.url}
-      target="_blank"
-      rel="noreferrer"
-      style={{
-        display: "flex", gap: 10, alignItems: "flex-start",
-        padding: "10px 12px",
-        borderRadius: 12,
-        border: `1px solid ${border}`,
-        backgroundColor: bg,
-        textDecoration: "none",
-        cursor: "pointer",
-      }}
-      onClick={e => e.stopPropagation()}
-    >
-      {article.image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={article.image} alt="" style={{ width: 52, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
-      ) : (
-        <div style={{ width: 52, height: 40, borderRadius: 6, backgroundColor: "rgba(128,128,128,0.15)", flexShrink: 0 }} />
-      )}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: text, lineHeight: 1.4,
-          overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-          {article.headline}
-        </p>
-        <p style={{ margin: "4px 0 0", fontSize: 11, color: muted }}>{article.source}</p>
-      </div>
-    </a>
-  );
-}
-
 function GraphWidget({ graphType, ctx }: { graphType: GraphType; ctx: GraphCtx }) {
-  if (graphType.startsWith("price")) {
-    const period = graphType.includes(":") ? graphType.split(":")[1] : "1M";
-    return <GraphPrice ctx={ctx} period={period} />;
-  }
   switch (graphType) {
+    case "price":     return <GraphPrice ctx={ctx} />;
     case "analyst":   return <GraphAnalyst ctx={ctx} />;
     case "sentiment": return <GraphSentiment ctx={ctx} />;
     case "targets":   return <GraphTargets ctx={ctx} />;
-    default:          return null;
   }
 }
 
@@ -485,7 +426,7 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
   const cleaned = segments.filter(s => s.kind !== "text" || s.value.length > 0);
   if (cleaned.length === 0) return trailingCursor ? <Cursor /> : null;
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {cleaned.map((seg, i) => {
         const isLast = i === cleaned.length - 1;
         if (seg.kind === "text") {
@@ -504,14 +445,6 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
             </div>
           );
         }
-        if (seg.kind === "news") {
-          return (
-            <div key={i}>
-              <NewsCard index={seg.index} ctx={ctx} />
-              {isLast && trailingCursor && <Cursor />}
-            </div>
-          );
-        }
         return (
           <div key={i}>
             <GraphWidget graphType={seg.graphType} ctx={ctx} />
@@ -523,111 +456,13 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
   );
 }
 
-// Market hours helper (ET)
-function getMarketInfo(): { isOpen: boolean; status: string; timeToEvent: string } {
-  const now = new Date();
-  const et = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-  const day = et.getDay(); // 0=Sun,6=Sat
-  const h = et.getHours(), m = et.getMinutes();
-  const minOfDay = h * 60 + m;
-  const openMin = 9 * 60 + 30;   // 9:30 AM ET
-  const closeMin = 16 * 60;       // 4:00 PM ET
-  const isWeekday = day >= 1 && day <= 5;
-  const isOpen = isWeekday && minOfDay >= openMin && minOfDay < closeMin;
-
-  function minsToHHMM(mins: number) {
-    const hh = Math.floor(mins / 60), mm = mins % 60;
-    return hh > 0 ? `${hh}h ${mm}m` : `${mm}m`;
-  }
-
-  let timeToEvent = "";
-  if (isOpen) {
-    timeToEvent = `closes in ${minsToHHMM(closeMin - minOfDay)}`;
-  } else if (isWeekday && minOfDay < openMin) {
-    timeToEvent = `opens in ${minsToHHMM(openMin - minOfDay)}`;
-  } else {
-    // Find next Monday (or next day) open
-    const daysUntilMon = ((8 - day) % 7) || 7;
-    const nextOpen = day === 6 ? 2 : day === 0 ? 1 : daysUntilMon;
-    timeToEvent = `opens in ~${nextOpen} day${nextOpen > 1 ? "s" : ""}`;
-  }
-  return { isOpen, status: isOpen ? "Open" : "Closed", timeToEvent };
-}
-
-// Fetch key candle stats for a period (async, called server-side in context builder)
-async function fetchPeriodStats(symbol: string, period: string): Promise<string | null> {
-  try {
-    const res = await fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}&period=${period}`, { cache: "no-store" });
-    const data = await res.json() as { candles?: { close: number; date: string }[] };
-    const candles = data.candles;
-    if (!candles || candles.length < 2) return null;
-    const closes = candles.map(c => c.close);
-    const first = closes[0], last = closes[closes.length - 1];
-    const high = Math.max(...closes), low = Math.min(...closes);
-    const chg = ((last - first) / first * 100).toFixed(2);
-    const sign = parseFloat(chg) >= 0 ? "+" : "";
-    return `${period}: ${sign}${chg}% | High $${high.toFixed(2)} | Low $${low.toFixed(2)} | Start $${first.toFixed(2)} | End $${last.toFixed(2)}`;
-  } catch {
-    return null;
-  }
-}
-
-// buildStockContext now async so it can prefetch graph data
-export async function buildStockContextAsync(
-  stock: StockDetail,
-  currentPrice: number,
-  sentiment: { score: number; drivers: string[] },
-  metrics: Record<string, number | string | null> | undefined
-): Promise<string> {
-  const market = getMarketInfo();
-  const now = new Date();
-
-  const lines: string[] = [
-    `Date/Time: ${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" })} ET`,
-    `Market: ${market.status} (${market.timeToEvent})`,
-    `Stock: ${stock.profile.name ?? stock.symbol} (${stock.symbol})`,
-    `Exchange: ${stock.profile.exchange ?? "N/A"}`,
-    `Industry: ${stock.profile.finnhubIndustry ?? "N/A"}`,
-    `Current Price: $${currentPrice.toFixed(2)}`,
-    `Day Change: ${stock.quote.dp?.toFixed(2) ?? "N/A"}%`,
-    `Previous Close: $${stock.quote.pc?.toFixed(2) ?? "N/A"}`,
-    `52W High: $${stock.quote.h?.toFixed(2) ?? "N/A"} | 52W Low: $${stock.quote.l?.toFixed(2) ?? "N/A"}`,
-    `Sentiment Score: ${sentiment.score}/100 (${sentiment.drivers.join(", ")})`,
-  ];
-
-  if (metrics) {
-    const ml = Object.entries(metrics).filter(([, v]) => v !== null).map(([k, v]) => `${k}: ${v}`);
-    if (ml.length) lines.push(`Fundamentals: ${ml.join(" | ")}`);
-  }
-  const a = stock.recommendations?.[0];
-  if (a) lines.push(`Analyst: Strong Buy ${a.strongBuy} | Buy ${a.buy} | Hold ${a.hold} | Sell ${a.sell} | Strong Sell ${a.strongSell}`);
-  if (stock.priceTarget?.targetMean) lines.push(`Avg Price Target: $${stock.priceTarget.targetMean.toFixed(2)}`);
-
-  // Fetch graph stats for key periods in parallel
-  const periods = ["1D","1W","1M","3M","6M","1Y","2Y","5Y","ALL"];
-  const stats = await Promise.all(periods.map(p => fetchPeriodStats(stock.symbol, p)));
-  const validStats = stats.filter(Boolean);
-  if (validStats.length) lines.push(`Graph Data:\n${validStats.join("\n")}`);
-
-  if (stock.news?.length) {
-    const h = stock.news.slice(0, 8).map((n, i) => `[${i}] ${n.headline} (${n.source})`).join("\n");
-    lines.push(`Recent News (use [[news:INDEX]] to show one):\n${h}`);
-  }
-  return lines.join("\n");
-}
-
 function buildStockContext(
   stock: StockDetail,
   currentPrice: number,
   sentiment: { score: number; drivers: string[] },
   metrics: Record<string, number | string | null> | undefined
 ): string {
-  // Sync fallback used on first render — async version is fetched on open
-  const market = getMarketInfo();
-  const now = new Date();
   const lines: string[] = [
-    `Date/Time: ${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" })} ET`,
-    `Market: ${market.status} (${market.timeToEvent})`,
     `Stock: ${stock.profile.name ?? stock.symbol} (${stock.symbol})`,
     `Exchange: ${stock.profile.exchange ?? "N/A"}`,
     `Industry: ${stock.profile.finnhubIndustry ?? "N/A"}`,
@@ -645,8 +480,8 @@ function buildStockContext(
   if (a) lines.push(`Analyst: Strong Buy ${a.strongBuy} | Buy ${a.buy} | Hold ${a.hold} | Sell ${a.sell} | Strong Sell ${a.strongSell}`);
   if (stock.priceTarget?.targetMean) lines.push(`Avg Price Target: $${stock.priceTarget.targetMean.toFixed(2)}`);
   if (stock.news?.length) {
-    const h = stock.news.slice(0, 8).map((n, i) => `[${i}] ${n.headline} (${n.source})`).join("\n");
-    lines.push(`Recent News (use [[news:INDEX]] to show one):\n${h}`);
+    const h = stock.news.slice(0, 5).map(n => `• ${n.headline} (${n.source}) — ${n.url}`).join("\n");
+    lines.push(`Recent News:\n${h}`);
   }
   return lines.join("\n");
 }
@@ -665,7 +500,7 @@ function AnimatedMessageBody({ text, ctx, onDone }: { text: string; ctx: GraphCt
         if (c >= text.length) { clearInterval(iv); onDone(); return c; }
         return c + 1;
       });
-    }, 6);
+    }, 13);
     return () => clearInterval(iv);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text]);
@@ -709,16 +544,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
   const scrollRef   = useRef<HTMLDivElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
   const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
-  const [stockContext, setStockContext] = useState(() => buildStockContext(stock, currentPrice, sentiment, metrics));
-
-  // On first open, fetch full context with graph data (async)
-  useEffect(() => {
-    if (!open) return;
-    buildStockContextAsync(stock, currentPrice, sentiment, metrics).then(ctx => setStockContext(ctx));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
-  const isLightMode = typeof document !== "undefined" && document.documentElement.classList.contains("light-mode");
-  const graphCtx: GraphCtx = { stock, currentPrice, sentiment, metrics, isLightMode };
+  const stockContext = buildStockContext(stock, currentPrice, sentiment, metrics);
+  const graphCtx: GraphCtx = { stock, currentPrice, sentiment, metrics };
 
   // Render via a portal straight into <body> — bypasses ancestor elements
   // (like <main>) that can pick up a transient CSS `transform` from page
@@ -820,7 +647,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
     if (e.target === e.currentTarget) handleDismiss();
   }
 
-  const bgBubbleAI    = isLightMode ? "rgba(255,255,255,0.72)" : "rgba(0,0,0,0.72)";
+  const isLightMode = typeof document !== "undefined" && document.documentElement.classList.contains("light-mode");
+  const bgBubbleAI    = isLightMode ? "rgba(240,240,245,1)" : "rgba(22,22,28,1)";
   const bubbleBorder  = isLightMode ? "rgba(0,0,0,0.10)"    : "rgba(255,255,255,0.10)";
   const textColor     = isLightMode ? "#1a1a1e"             : "#f0f0f2";
 
@@ -888,7 +716,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 whiteSpace: "pre-wrap",
                 padding: "12px 18px",
                 borderRadius: msg.role === "user" ? "20px 20px 5px 20px" : "20px 20px 20px 5px",
-                backgroundColor: msg.role === "user" ? "rgba(0,200,5,0.75)" : bgBubbleAI,
+                backgroundColor: msg.role === "user" ? "#00c805" : bgBubbleAI,
                 border: msg.role === "model" ? `1px solid ${bubbleBorder}` : "none",
                 color: msg.role === "user" ? "#000" : textColor,
                 fontSize: 17,
@@ -931,7 +759,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
           separate bar/card behind it — this IS the input, elongated. */}
       {!hideTrigger && (
       <div
-        className="fixed rounded-full bg-black/40 backdrop-blur-md border border-white/20 lg:hidden text-positive overflow-hidden"
+        className="fixed rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-positive overflow-hidden"
         style={{
           zIndex: 1002,
           bottom: pillBottom,
