@@ -963,7 +963,9 @@ export async function buildStockContextAsync(
   }
 
   if (stock.news?.length) {
-    const h = stock.news.slice(0, 8).map((n, i) => `[${i}] ${n.headline} (${n.source})`).join("\n");
+    const h = stock.news.slice(0, 8).map((n, i) =>
+      `[${i}] ${n.headline} (${n.source})${n.summary ? `\n    Summary: ${n.summary}` : ""}`
+    ).join("\n");
     lines.push(`Recent News (use [[news:INDEX]] to show one):\n${h}`);
   }
   return lines.join("\n");
@@ -998,7 +1000,9 @@ function buildStockContext(
   if (a) lines.push(`Analyst: Strong Buy ${a.strongBuy} | Buy ${a.buy} | Hold ${a.hold} | Sell ${a.sell} | Strong Sell ${a.strongSell}`);
   if (stock.priceTarget?.targetMean) lines.push(`Avg Price Target: $${stock.priceTarget.targetMean.toFixed(2)}`);
   if (stock.news?.length) {
-    const h = stock.news.slice(0, 8).map((n, i) => `[${i}] ${n.headline} (${n.source})`).join("\n");
+    const h = stock.news.slice(0, 8).map((n, i) =>
+      `[${i}] ${n.headline} (${n.source})${n.summary ? `\n    Summary: ${n.summary}` : ""}`
+    ).join("\n");
     lines.push(`Recent News (use [[news:INDEX]] to show one):\n${h}`);
   }
   return lines.join("\n");
