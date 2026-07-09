@@ -20,33 +20,47 @@ export function EmptyWatchlist({ isLoading = false }: { isLoading?: boolean }) {
   );
 }
 
-// ─── Sine-wave cascade loading animation ────────────────────────────────────
+// ─── Wave-field loading animation ───────────────────────────────────────────
 //
-// 10 horizontal sine waves share identical amplitude (A), wavelength (k),
-// and angular velocity (ω).  The only differences are:
-//   • A constant vertical offset  →  y_i = i * spacing
-//   • A constant phase offset     →  φ_i = i * Δφ
+// All lines sample the SAME underlying field:
+//   displacement(x, i) = A · sin(k·x  −  ω·t  +  i·Δφ)
 //
-// So line i traces:   y(x,t) = A·sin(k·x + ω·t + i·Δφ) + i·spacing
+// where i is the line index (0 = top).  The phase term i·Δφ is small
+// (~0.18 rad) so adjacent lines are barely out of phase — they read as one
+// continuous fabric rather than independent oscillators.
 //
-// Entrance: lines reveal top-to-bottom.  Line i starts drawing from x=0
-// after a stagger delay of i * LINE_STAGGER_MS, sweeping rightward.
-// Because each line already carries a phase offset, the reveal naturally
-// looks like the wave is propagating downward.
+// Lines are spaced ~14 px apart so ~50 of them fill a 720 px screen,
+// giving the dense striped surface in the reference image.
+//
+// Color: each line's hue is derived from its current vertical centre,
+// smoothly interpolating #c5f446 → #ff3003 top-to-bottom with a slow
+// oscillating phase so the gradient breathes over time.
+//
+// Entrance: lines cascade in top-to-bottom.  Line i starts revealing
+// from x=0 after i·STAGGER_MS delay, sweeping right with easeOutCubic.
+// Because Δφ is already embedded in the wave, the cascading entrance
+// naturally continues the diagonal flow.
 
-const NUM_LINES         = 10;
-const AMPLITUDE         = 18;        // px – same for every line
-const WAVELENGTH        = 260;       // px – spatial period
-const WAVE_SPEED        = 1.1;       // cycles/sec  (ω = 2π · WAVE_SPEED)
-const PHASE_DELTA       = 0.3;       // Δφ radians between adjacent lines
-const LINE_STAGGER_MS   = 90;        // cascade delay between lines appearing
-const REVEAL_DURATION_MS = 520;      // time for one line to sweep in fully
-const LINE_COLOR        = "#00c805"; // system positive green
-const LINE_WIDTH        = 1.8;
+const LINE_SPACING_PX    = 14;    // px between line centres
+const AMPLITUDE          = 22;    // px  — vertical swing
+const WAVELENGTH         = 480;   // px  — spatial period (long → fabric feel)
+const WAVE_SPEED         = 0.28;  // cycles/sec  (slow, cloth-like drift)
+const PHASE_DELTA        = 0.18;  // Δφ radians between adjacent lines (small!)
+const STAGGER_MS         = 28;    // cascade delay per line (fast waterfall)
+const REVEAL_MS          = 480;   // sweep-in duration per line
+const LINE_WIDTH         = 1.1;
 
-function easeOutCubic(t: number) {
-  return 1 - Math.pow(1 - t, 3);
+// Color stops — yellow-green to red-orange
+const C_TOP:  [number,number,number] = [0xc5, 0xf4, 0x46];
+const C_BOT:  [number,number,number] = [0xff, 0x30, 0x03];
+
+function lerpColor(a: [number,number,number], b: [number,number,number], t: number): string {
+  const r = Math.round(a[0] + (b[0]-a[0])*t);
+  const g = Math.round(a[1] + (b[1]-a[1])*t);
+  const bv= Math.round(a[2] + (b[2]-a[2])*t);
+  return `rgb(${r},${g},${bv})`;
 }
+function easeOutCubic(t: number) { return 1 - Math.pow(1-t, 3); }
 
 export function LoadingScreen({ label = "Loading" }: { label?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -60,7 +74,7 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
     let W = 0, H = 0;
 
     function resize() {
-      const dpr  = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       W = canvas!.clientWidth;
       H = canvas!.clientHeight;
       canvas!.width  = Math.round(W * dpr);
@@ -70,51 +84,63 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
     resize();
     window.addEventListener("resize", resize);
 
+    const k = (2 * Math.PI) / WAVELENGTH;
+    const ω = 2 * Math.PI * WAVE_SPEED;
     const startTime = performance.now();
-    const k  = (2 * Math.PI) / WAVELENGTH;   // spatial frequency
-    const ω  = 2 * Math.PI * WAVE_SPEED;      // angular velocity
 
     function frame(now: number) {
       const elapsed = now - startTime;
-      const t       = elapsed / 1000;          // seconds
+      const t = elapsed / 1000;
 
       ctx!.fillStyle = "#000";
       ctx!.fillRect(0, 0, W, H);
 
-      // Evenly distribute lines across the vertical space
-      const spacing = H / (NUM_LINES + 1);
+      // How many lines fill the screen (plus a small margin top and bottom)
+      const numLines = Math.ceil(H / LINE_SPACING_PX) + 2;
+      // Vertical origin of the whole field — centre the block on screen
+      const fieldTop = (H - (numLines - 1) * LINE_SPACING_PX) / 2;
 
-      ctx!.lineWidth   = LINE_WIDTH;
-      ctx!.lineJoin    = "round";
-      ctx!.lineCap     = "round";
-      ctx!.strokeStyle = LINE_COLOR;
+      ctx!.lineWidth = LINE_WIDTH;
+      ctx!.lineJoin  = "round";
+      ctx!.lineCap   = "round";
 
-      for (let i = 0; i < NUM_LINES; i++) {
-        const lineElapsed = elapsed - i * LINE_STAGGER_MS;
-        if (lineElapsed <= 0) continue;                        // not yet started
+      const STEP = 6; // px between sample points along x
 
-        const revealT  = Math.min(1, lineElapsed / REVEAL_DURATION_MS);
-        const revealX  = W * easeOutCubic(revealT);           // how far line has drawn
+      for (let i = 0; i < numLines; i++) {
+        // Cascade reveal
+        const lineElapsed = elapsed - i * STAGGER_MS;
+        if (lineElapsed <= 0) continue;
+
+        const revealT = Math.min(1, lineElapsed / REVEAL_MS);
+        const revealX = W * easeOutCubic(revealT);
         if (revealX < 1) continue;
 
-        const baseY  = spacing * (i + 1);                     // vertical centre
-        const phase  = i * PHASE_DELTA;                       // φ_i = i · Δφ
+        // Vertical centre of this line (rest position)
+        const baseY = fieldTop + i * LINE_SPACING_PX;
 
-        // Sample y at position x:
-        //   y(x) = baseY + A · sin(k·x + ω·t + φ_i)
+        // Color: map line index to 0–1 across the palette, with a slow
+        // breathing oscillation so the gradient is never static
+        const colorT = (i / (numLines - 1) + 0.15 * Math.sin(t * 0.4)) % 1;
+        const clampedT = Math.max(0, Math.min(1, colorT));
+        ctx!.strokeStyle = lerpColor(C_TOP, C_BOT, clampedT);
+
+        // Phase for this line: i·Δφ makes each line a tiny slice behind
+        // the one above, so the whole stack reads as one tilted wavefront.
+        const phase = i * PHASE_DELTA;
+
+        // sample(x) = baseY + A · sin(k·x − ω·t + phase)
         const sample = (x: number) =>
           baseY + AMPLITUDE * Math.sin(k * x - ω * t + phase);
 
-        // Draw smooth curve using midpoint quadratic bezier segments
-        const STEP = 8; // px between sample points
+        // Smooth quadratic bezier path
         ctx!.beginPath();
         ctx!.moveTo(0, sample(0));
-        for (let x = STEP; x < revealX; x += STEP) {
-          const prevX = x - STEP;
-          const mx    = (prevX + x) / 2;
-          ctx!.quadraticCurveTo(prevX, sample(prevX), mx, sample(mx));
+
+        for (let x = STEP; x <= revealX; x += STEP) {
+          const px = x - STEP;
+          const mx = (px + x) / 2;
+          ctx!.quadraticCurveTo(px, sample(px), mx, sample(mx));
         }
-        // Final segment to the reveal frontier
         ctx!.lineTo(revealX, sample(revealX));
         ctx!.stroke();
       }
