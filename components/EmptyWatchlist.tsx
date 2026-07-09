@@ -41,13 +41,14 @@ export function EmptyWatchlist({ isLoading = false }: { isLoading?: boolean }) {
 // Because Δφ is already embedded in the wave, the cascading entrance
 // naturally continues the diagonal flow.
 
-const LINE_SPACING_PX    = 14;    // px between line centres
+const LINE_SPACING_PX    = 14;    // px between line centres — unchanged
+const NUM_LINES          = 30;    // fixed count, centered on screen (not screen-filling)
 const AMPLITUDE          = 22;    // px  — vertical swing
 const WAVELENGTH         = 480;   // px  — spatial period (long → fabric feel)
-const WAVE_SPEED         = 0.28;  // cycles/sec  (slow, cloth-like drift)
-const PHASE_DELTA        = 0.18;  // Δφ radians between adjacent lines (small!)
-const STAGGER_MS         = 28;    // cascade delay per line (fast waterfall)
-const REVEAL_MS          = 480;   // sweep-in duration per line
+const WAVE_SPEED         = 0.75;  // cycles/sec  — 2.5× faster than before
+const PHASE_DELTA        = 0.18;  // Δφ radians between adjacent lines — unchanged
+const STAGGER_MS         = 28;    // cascade delay per line — unchanged
+const REVEAL_MS          = 480;   // sweep-in duration per line — unchanged
 const LINE_WIDTH         = 1.1;
 
 // Color stops — yellow-green to red-orange
@@ -95,9 +96,8 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
       ctx!.fillStyle = "#000";
       ctx!.fillRect(0, 0, W, H);
 
-      // How many lines fill the screen (plus a small margin top and bottom)
-      const numLines = Math.ceil(H / LINE_SPACING_PX) + 2;
-      // Vertical origin of the whole field — centre the block on screen
+      // Fixed number of lines, centered vertically on screen
+      const numLines = NUM_LINES;
       const fieldTop = (H - (numLines - 1) * LINE_SPACING_PX) / 2;
 
       ctx!.lineWidth = LINE_WIDTH;

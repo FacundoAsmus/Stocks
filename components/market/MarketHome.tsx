@@ -396,6 +396,7 @@ export function MarketHome() {
   }, [watchlistQuery]);
 
   if (error) return <ErrorState title="Market unavailable" message={error} />;
+  if (isLoading) return <LoadingScreen label="Loading market data" />;
 
   return (
     <div className="relative min-h-dvh">
@@ -409,10 +410,7 @@ export function MarketHome() {
       <div className="relative z-10">
         <TickerBar stocks={data.tickerStocks ?? []} />
 
-        {isLoading ? (
-          <LoadingScreen label="Loading market data" />
-        ) : (
-          <>
+        <>
             {/* ── Full page: 70% left | 30% right ── */}
             <div className="grid gap-8 px-5 pt-12 pb-8 lg:grid-cols-[minmax(0,2.33fr)_minmax(0,1fr)] lg:px-8 lg:items-start">
 
@@ -438,7 +436,6 @@ export function MarketHome() {
               <NewsPanel articles={data.news ?? []} />
             </div>
           </>
-        )}
       </div>
     </div>
   );
