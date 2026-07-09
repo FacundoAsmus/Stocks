@@ -914,6 +914,38 @@ async function fetchCandlesForStats(symbol: string): Promise<CandlePoint[] | nul
   }
 }
 
+const ARTICLE_EXTRACT_TIMEOUT_MS = 7000;
+// How many of the most recent news items we bother fully fetching + reading
+// (rather than just listing the headline/summary). Kept small since most
+// financial news sites paywall or block scraping, and each attempt costs a
+// full page fetch — cap the blast radius and let the rest fall back to the
+// existing blurb.
+const ARTICLES_TO_READ = 3;
+
+// Server-side fetch + Readability extraction of one article's full text.
+// Returns null on any failure (paywall, timeout, blocked, non-HTML, etc.)
+// so the caller can silently fall back to the headline/summary blurb.
+async function fetchArticleExtract(url: string): Promise<{ title: string | null; text: string } | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), ARTICLE_EXTRACT_TIMEOUT_MS);
+    try {
+      const res = await fetch(`/api/article-extract?url=${encodeURIComponent(url)}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (!res.ok) return null;
+      const data = await res.json() as { title?: string | null; text?: string; error?: string };
+      if (!data.text) return null;
+      return { title: data.title ?? null, text: data.text };
+    } finally {
+      clearTimeout(timeout);
+    }
+  } catch {
+    return null;
+  }
+}
+
 // buildStockContext now async so it can prefetch graph data
 export async function buildStockContextAsync(
   stock: StockDetail,
@@ -945,12 +977,16 @@ export async function buildStockContextAsync(
   if (a) lines.push(`Analyst: Strong Buy ${a.strongBuy} | Buy ${a.buy} | Hold ${a.hold} | Sell ${a.sell} | Strong Sell ${a.strongSell}`);
   if (stock.priceTarget?.targetMean) lines.push(`Avg Price Target: $${stock.priceTarget.targetMean.toFixed(2)}`);
 
-  // Fetch graph stats for key periods, plus a year of daily candles for
-  // deterministic market statistics, all in parallel.
+  // Fetch graph stats for key periods, a year of daily candles for
+  // deterministic market statistics, and full article text for the most
+  // recent news items — all in parallel so total wait time is bounded by
+  // the slowest single fetch, not their sum.
   const periods = ["1D","1W","1M","3M","5M","6M","1Y","2Y","5Y","ALL"];
-  const [stats, statsCandles] = await Promise.all([
+  const newsItems = stock.news?.slice(0, 8) ?? [];
+  const [stats, statsCandles, articleExtracts] = await Promise.all([
     Promise.all(periods.map(p => fetchPeriodStats(stock.symbol, p))),
     fetchCandlesForStats(stock.symbol),
+    Promise.all(newsItems.slice(0, ARTICLES_TO_READ).map(n => n.url ? fetchArticleExtract(n.url) : null)),
   ]);
   const validStats = stats.filter(Boolean);
   if (validStats.length) lines.push(`Graph Data:\n${validStats.join("\n")}`);
@@ -962,10 +998,14 @@ export async function buildStockContextAsync(
     }
   }
 
-  if (stock.news?.length) {
-    const h = stock.news.slice(0, 8).map((n, i) =>
-      `[${i}] ${n.headline} (${n.source})${n.summary ? `\n    Summary: ${n.summary}` : ""}`
-    ).join("\n");
+  if (newsItems.length) {
+    const h = newsItems.map((n, i) => {
+      const extract = articleExtracts[i];
+      if (extract?.text) {
+        return `[${i}] ${n.headline} (${n.source})\n    Full Article Text (extracted from the source page — you have actually read this one): ${extract.text}`;
+      }
+      return `[${i}] ${n.headline} (${n.source})${n.summary ? `\n    Summary only (full article was not readable — treat as a brief blurb, do not claim to have read the full piece): ${n.summary}` : ""}`;
+    }).join("\n");
     lines.push(`Recent News (use [[news:INDEX]] to show one):\n${h}`);
   }
   return lines.join("\n");
