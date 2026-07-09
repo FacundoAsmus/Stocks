@@ -10,7 +10,7 @@ import { ToastProvider } from "@/components/ToastProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Market Lens",
+  title: "Wave form",
   description: "A stock news, watchlist, fundamentals, and analyst research starter app.",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
 };

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Send, Sparkles } from "lucide-react";
+import { Send, Sparkles, X } from "lucide-react";
 import { Area, AreaChart, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import type { CandlePoint, StockDetail } from "@/types/stock";
@@ -1393,22 +1393,41 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
               caretColor: "#00c805",
             }}
           />
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim() || loading}
-            style={{
-              flexShrink: 0, height: 38, width: 38,
-              borderRadius: "50%",
-              backgroundColor: input.trim() && !loading ? "#00c805" : "rgba(0,200,5,0.18)",
-              color: input.trim() && !loading ? "#000" : "rgba(0,200,5,0.35)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              border: "none",
-              cursor: input.trim() && !loading ? "pointer" : "default",
-              transition: "background-color 0.18s, color 0.18s",
-            }}
-          >
-            <Send style={{ height: 15, width: 15 }} />
-          </button>
+          {input.trim() ? (
+            <button
+              onClick={sendMessage}
+              disabled={loading}
+              style={{
+                flexShrink: 0, height: 38, width: 38,
+                borderRadius: "50%",
+                backgroundColor: !loading ? "#00c805" : "rgba(0,200,5,0.18)",
+                color: !loading ? "#000" : "rgba(0,200,5,0.35)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                border: "none",
+                cursor: !loading ? "pointer" : "default",
+                transition: "background-color 0.18s, color 0.18s",
+              }}
+            >
+              <Send style={{ height: 15, width: 15 }} />
+            </button>
+          ) : (
+            <button
+              onClick={handleDismiss}
+              aria-label="Close chat"
+              style={{
+                flexShrink: 0, height: 38, width: 38,
+                borderRadius: "50%",
+                backgroundColor: "rgba(0,200,5,0.18)",
+                color: "#00c805",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                border: "none",
+                cursor: "pointer",
+                transition: "background-color 0.18s, color 0.18s",
+              }}
+            >
+              <X style={{ height: 16, width: 16 }} />
+            </button>
+          )}
         </div>
       </div>
       )}
@@ -1440,21 +1459,39 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
               className="text-text-primary placeholder:text-text-muted"
               style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "#00c805" }}
             />
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim() || loading}
-              style={{
-                flexShrink: 0, height: 38, width: 38,
-                borderRadius: "50%",
-                backgroundColor: input.trim() && !loading ? "#00c805" : "rgba(0,200,5,0.18)",
-                color: input.trim() && !loading ? "#000" : "rgba(0,200,5,0.35)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                border: "none",
-                cursor: input.trim() && !loading ? "pointer" : "default",
-              }}
-            >
-              <Send style={{ height: 15, width: 15 }} />
-            </button>
+            {input.trim() ? (
+              <button
+                onClick={sendMessage}
+                disabled={loading}
+                style={{
+                  flexShrink: 0, height: 38, width: 38,
+                  borderRadius: "50%",
+                  backgroundColor: !loading ? "#00c805" : "rgba(0,200,5,0.18)",
+                  color: !loading ? "#000" : "rgba(0,200,5,0.35)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "none",
+                  cursor: !loading ? "pointer" : "default",
+                }}
+              >
+                <Send style={{ height: 15, width: 15 }} />
+              </button>
+            ) : (
+              <button
+                onClick={handleDismiss}
+                aria-label="Close chat"
+                style={{
+                  flexShrink: 0, height: 38, width: 38,
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(0,200,5,0.18)",
+                  color: "#00c805",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                <X style={{ height: 16, width: 16 }} />
+              </button>
+            )}
           </div>
         </div>
       )}
