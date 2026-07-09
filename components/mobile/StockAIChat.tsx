@@ -1265,6 +1265,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
             backdropFilter:       open ? "blur(20px) brightness(0.88)" : "none",
             WebkitBackdropFilter: open ? "blur(20px) brightness(0.88)" : "none",
             transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
+            transform: "translateZ(0)",
+            WebkitTransform: "translateZ(0)",
+            willChange: "backdrop-filter",
           }}
           onClick={handleDismiss}
         />
