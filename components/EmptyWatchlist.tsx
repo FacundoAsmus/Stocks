@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+
 export function EmptyWatchlist({ isLoading = false }: { isLoading?: boolean }) {
   if (isLoading) return <LoadingScreen />;
 
@@ -16,106 +20,165 @@ export function EmptyWatchlist({ isLoading = false }: { isLoading?: boolean }) {
   );
 }
 
-export function LoadingScreen({ label = "Loading your watchlist" }: { label?: string }) {
+// ─── Flow-field loading animation ──────────────────────────────────────────
+// Many evenly-spaced horizontal lines, gently distorted by procedural noise
+// into a continuous flowing surface, drawn in from the left (cascading
+// top-to-bottom), tinted by a slow-scrolling left→right gradient.
+
+const COLOR_LEFT:  readonly [number, number, number] = [0xc5, 0xf4, 0x46];
+const COLOR_RIGHT: readonly [number, number, number] = [0xff, 0x30, 0x03];
+
+const NUM_LINES            = 40;
+const REVEAL_DURATION_MS   = 620;   // per-line sweep-in: fast start, eases out
+const LINE_STAGGER_MS      = 38;    // cascade delay between successive lines
+const DRIFT_SPEED          = 26;    // px/sec — ambient rightward flow after reveal
+const COLOR_SCROLL_SPEED   = 0.045; // cycles/sec of the gradient drift
+
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+function lerpColor(c1: readonly [number, number, number], c2: readonly [number, number, number], t: number) {
+  const r = Math.round(lerp(c1[0], c2[0], t));
+  const g = Math.round(lerp(c1[1], c2[1], t));
+  const b = Math.round(lerp(c1[2], c2[2], t));
+  return `rgb(${r},${g},${b})`;
+}
+// Smooth 0→1→0 triangle, avoids any hard cut when the gradient scrolls/loops
+function triangleWave(t: number) {
+  const f = t - Math.floor(t);
+  return f < 0.5 ? f * 2 : (1 - f) * 2;
+}
+function smoothstep(t: number) {
+  return t * t * (3 - 2 * t);
+}
+// Deterministic 2D value noise (no external deps) — gives an organic,
+// non-repeating undulation rather than synchronized sine waves.
+function hash2(x: number, y: number) {
+  const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
+  return s - Math.floor(s);
+}
+function noise2D(x: number, y: number) {
+  const xi = Math.floor(x), yi = Math.floor(y);
+  const xf = x - xi, yf = y - yi;
+  const u = smoothstep(xf), v = smoothstep(yf);
+  const a = hash2(xi, yi),     b = hash2(xi + 1, yi);
+  const c = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1);
+  return lerp(lerp(a, b, u), lerp(c, d, u), v);
+}
+function easeOutCubic(t: number) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+export function LoadingScreen({ label = "Loading" }: { label?: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    const driftSpeed  = reduceMotion ? DRIFT_SPEED * 0.15 : DRIFT_SPEED;
+    const colorSpeed  = reduceMotion ? COLOR_SCROLL_SPEED * 0.2 : COLOR_SCROLL_SPEED;
+
+    let raf = 0;
+    let width = 0, height = 0;
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width  = canvas!.clientWidth;
+      height = canvas!.clientHeight;
+      canvas!.width  = Math.round(width * dpr);
+      canvas!.height = Math.round(height * dpr);
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    const startTime = performance.now();
+    // Deterministic per-line phase offset (golden-ratio sequence) so lines
+    // never move in lockstep with each other.
+    const lineSeed = Array.from({ length: NUM_LINES }, (_, i) => (i * 0.6180339887) % 1);
+
+    function frame(now: number) {
+      const elapsed = now - startTime;
+      const t = elapsed / 1000;
+
+      ctx!.fillStyle = "#000";
+      ctx!.fillRect(0, 0, width, height);
+
+      const spacing = height / (NUM_LINES + 1);
+      const amp1 = spacing * 0.32;
+      const amp2 = spacing * 0.14;
+
+      // One scrolling gradient per frame, shared by every line (colour is a
+      // function of x only, identical for every row this frame).
+      const grad = ctx!.createLinearGradient(0, 0, width, 0);
+      const stops = 28;
+      for (let s = 0; s <= stops; s++) {
+        const frac = s / stops;
+        const tw = triangleWave(frac + t * colorSpeed);
+        grad.addColorStop(frac, lerpColor(COLOR_LEFT, COLOR_RIGHT, tw));
+      }
+
+      ctx!.lineWidth = 1.4;
+      ctx!.lineJoin = "round";
+      ctx!.lineCap = "round";
+      ctx!.strokeStyle = grad;
+
+      const step = 9;
+
+      for (let i = 0; i < NUM_LINES; i++) {
+        const y0 = spacing * (i + 1);
+        const localElapsed = elapsed - i * LINE_STAGGER_MS;
+        if (localElapsed <= 0) continue;
+
+        const revealT  = Math.min(1, localElapsed / REVEAL_DURATION_MS);
+        const eased    = easeOutCubic(revealT); // fast swipe in, settles smoothly
+        const revealX  = width * eased;
+        if (revealX <= 0) continue;
+
+        const seed = lineSeed[i] * 80;
+        const sampleY = (x: number) => {
+          const flowX = x - t * driftSpeed;
+          const nx = flowX * 0.006 + seed;
+          const ny = t * 0.14 + seed * 1.7;
+          const n1 = noise2D(nx, ny);
+          const n2 = noise2D(nx * 2.1 + 4.7, ny * 1.6 + 2.3);
+          return y0 + (n1 - 0.5) * 2 * amp1 + (n2 - 0.5) * 2 * amp2;
+        };
+
+        const pts: { x: number; y: number }[] = [];
+        for (let x = 0; x <= revealX; x += step) pts.push({ x, y: sampleY(x) });
+        if (!pts.length || pts[pts.length - 1].x < revealX) {
+          pts.push({ x: revealX, y: sampleY(revealX) });
+        }
+        if (pts.length < 2) continue;
+
+        ctx!.beginPath();
+        ctx!.moveTo(pts[0].x, pts[0].y);
+        for (let k = 1; k < pts.length - 1; k++) {
+          const mx = (pts[k].x + pts[k + 1].x) / 2;
+          const my = (pts[k].y + pts[k + 1].y) / 2;
+          ctx!.quadraticCurveTo(pts[k].x, pts[k].y, mx, my);
+        }
+        ctx!.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+        ctx!.stroke();
+      }
+
+      raf = requestAnimationFrame(frame);
+    }
+
+    raf = requestAnimationFrame(frame);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-8 overflow-hidden">
-      <style>{`
-        /* ── GRADIENT ─────────────────────────────────────────────────────────
-         * The trick: hue-rotate goes 0 → 230 → 460 (=0) in a single forward
-         * direction with LINEAR timing. No ease-in-out = no dwell at ends.
-         * The slide also runs linear so both loops are perfectly in sync
-         * and there is zero pause anywhere in the cycle.
-         * ──────────────────────────────────────────────────────────────────── */
-        .loading-bg {
-          position: fixed;
-          inset: 0;
-          pointer-events: none;
-          overflow: hidden;
-        }
-        .loading-bg::after {
-          content: '';
-          position: absolute;
-          bottom: 0;
-          left: -100%;
-          width: 300%;
-          height: 100%;
-          background: radial-gradient(
-            ellipse 55% 42% at 50% 100%,
-            rgba(255, 48, 3, 0.38) 0%,
-            transparent 70%
-          );
-          animation:
-            wave-slide 8s  linear infinite,
-            wave-color 8s  linear infinite;
-          will-change: transform, filter;
-        }
-
-        /* Smooth pendulum slide — pre-baked sine curve at 10% steps */
-        @keyframes wave-slide {
-          0%   { transform: translateX(0%);     }
-          10%  { transform: translateX(9.5%);   }
-          20%  { transform: translateX(17.6%);  }
-          30%  { transform: translateX(22.5%);  }
-          40%  { transform: translateX(23%);    }
-          50%  { transform: translateX(19%);    }
-          60%  { transform: translateX(11.5%);  }
-          70%  { transform: translateX(2%);     }
-          80%  { transform: translateX(-6.5%);  }
-          90%  { transform: translateX(-10.5%); }
-          100% { transform: translateX(0%);     }
-        }
-
-        /* One full hue revolution forward: red(0) → green(115) → red(230≈0+230)
-         * At 460 it wraps back to identical red so the loop is seamless.      */
-        @keyframes wave-color {
-          0%   { filter: hue-rotate(0deg)   brightness(1);    }
-          50%  { filter: hue-rotate(230deg) brightness(1.18); }
-          100% { filter: hue-rotate(460deg) brightness(1);    }
-        }
-
-        /* ── CANDLES ──────────────────────────────────────────────────────────
-         * Fix for start-jerk: negative delay puts each candle already
-         * mid-animation at its correct phase so there is NO jump on mount.
-         * Using a single shared keyframe with ease-in-out gives the natural
-         * breathe feel; the stagger is purely in the delay values.
-         * ──────────────────────────────────────────────────────────────────── */
-        @keyframes candle-breathe {
-          0%, 100% { transform: scaleY(0.68); }
-          50%       { transform: scaleY(1.32); }
-        }
-        @keyframes wick-breathe {
-          0%, 100% { opacity: 0.28; transform: scaleY(0.75); }
-          50%       { opacity: 1;   transform: scaleY(1.25); }
-        }
-
-        /* Negative delays = candles start already mid-cycle, never snap */
-        .c-candle-1 { animation: candle-breathe 1.8s ease-in-out infinite -1.8s;   transform-origin: bottom; }
-        .c-candle-2 { animation: candle-breathe 1.8s ease-in-out infinite -1.32s;  transform-origin: bottom; }
-        .c-candle-3 { animation: candle-breathe 1.8s ease-in-out infinite -0.84s;  transform-origin: bottom; }
-        .c-wick-1   { animation: wick-breathe   1.8s ease-in-out infinite -1.8s;   transform-origin: bottom; }
-        .c-wick-2   { animation: wick-breathe   1.8s ease-in-out infinite -1.32s;  transform-origin: bottom; }
-        .c-wick-3   { animation: wick-breathe   1.8s ease-in-out infinite -0.84s;  transform-origin: bottom; }
-      `}</style>
-
-      <div className="loading-bg" />
-
-      {/* Candles — ascending: shortest left, tallest right */}
-      <div className="relative flex items-end justify-center gap-[7px] h-20">
-        <div className="flex flex-col items-center gap-[3px]">
-          <div className="c-wick-1 w-[2px] h-2 rounded-full bg-positive/60" />
-          <div className="c-candle-1 w-5 h-6 rounded-sm bg-positive/60" />
-        </div>
-        <div className="flex flex-col items-center gap-[3px]">
-          <div className="c-wick-2 w-[2px] h-3 rounded-full bg-positive/80" />
-          <div className="c-candle-2 w-5 h-10 rounded-sm bg-positive/80" />
-        </div>
-        <div className="flex flex-col items-center gap-[3px]">
-          <div className="c-wick-3 w-[2px] h-4 rounded-full bg-positive" />
-          <div className="c-candle-3 w-5 h-14 rounded-sm bg-positive" />
-        </div>
-      </div>
-
-      <p className="relative text-lg font-semibold text-text-primary tracking-tight">{label}</p>
+    <div className="fixed inset-0 z-50 bg-black" role="status" aria-label={label}>
+      <canvas ref={canvasRef} className="block h-full w-full" />
     </div>
   );
 }
