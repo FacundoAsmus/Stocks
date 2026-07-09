@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { List, Search, Settings, X, ChevronLeft, Monitor, Sun, Moon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -137,109 +136,261 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
   );
 }
 
-// ─── Search overlay ───────────────────────────────────────────────────────
-function MobileSearchOverlay({ onClose, origin }: { onClose: () => void; origin: string }) {
+// ─── Search pill — mirrors the AI chat pill exactly: same size, position,
+// easing, and morph-from-circle-to-bar behaviour. Results appear in a
+// translucent rounded box that grows upward from the bar, closest match
+// nearest the bar. ──────────────────────────────────────────────────────
+function MobileSearchPill({ origin }: { origin: string }) {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const [open, setOpen]     = useState(false);
+  const [query, setQuery]   = useState("");
   const [results, setResults] = useState<Array<{ symbol: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [vp, setVp] = useState({ top: 0, left: 0, width: 0, height: 0 });
+  const inputRef   = useRef<HTMLInputElement>(null);
+  const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
 
+  // Track visual viewport (handles iOS keyboard shrinking the screen) — same
+  // pattern as the AI chat pill.
   useEffect(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        setExpanded(true);
-        setTimeout(() => inputRef.current?.focus(), 320);
-      });
-    });
+    function update() {
+      const vv = window.visualViewport;
+      setVp(vv
+        ? { top: vv.offsetTop, left: vv.offsetLeft, width: vv.width, height: vv.height }
+        : { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight }
+      );
+    }
+    update();
+    window.visualViewport?.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("scroll", update);
+    window.addEventListener("resize", update);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
   }, []);
 
-  function handleClose() {
-    setExpanded(false);
-    setTimeout(onClose, 300);
+  // Lock body scroll (without jumping to top) only while search is open
+  useEffect(() => {
+    if (!open) return;
+    const scrollY = window.scrollY;
+    const b = document.body;
+    b.style.overflow = "hidden";
+    b.style.position = "fixed";
+    b.style.top      = `-${scrollY}px`;
+    b.style.left     = "0";
+    b.style.right    = "0";
+    const t = setTimeout(() => inputRef.current?.focus(), 340);
+    return () => {
+      clearTimeout(t);
+      b.style.overflow = b.style.position = b.style.top = b.style.left = b.style.right = "";
+      window.scrollTo(0, scrollY);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!query.trim()) { setResults([]); setLoading(false); return; }
+    const controller = new AbortController();
+    setLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
+        const data = await res.json() as { results?: Array<{ symbol: string; description: string }> };
+        setResults((data.results ?? []).slice(0, 8).map(r => ({ symbol: r.symbol, name: r.description })));
+      } catch { if (!controller.signal.aborted) setResults([]); }
+      finally { if (!controller.signal.aborted) setLoading(false); }
+    }, 180);
+    return () => { controller.abort(); clearTimeout(t); };
+  }, [query]);
+
+  function handleDismiss() {
+    setOpen(false);
+    setQuery("");
+    setResults([]);
   }
 
-  async function search(q: string) {
-    setQuery(q);
-    if (!q.trim()) { setResults([]); return; }
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-      const data = await res.json() as { results?: Array<{ symbol: string; description: string }> };
-      setResults((data.results ?? []).slice(0, 8).map(r => ({ symbol: r.symbol, name: r.description })));
-    } catch { setResults([]); }
-    finally { setLoading(false); }
+  function goToSymbol(symbol: string) {
+    sessionStorage.setItem("nav-from-search", "1");
+    sessionStorage.setItem("search-origin", origin);
+    handleDismiss();
+    router.push(`/stock/${symbol}`);
   }
+
+  // Tap-to-dismiss on empty space, identical pattern to the AI chat's messages area
+  function onEmptyAreaTouchStart(e: React.TouchEvent) {
+    if (e.target !== e.currentTarget) { touchStart.current = null; return; }
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
+  }
+  function onEmptyAreaTouchEnd(e: React.TouchEvent) {
+    if (!touchStart.current) return;
+    const dx = Math.abs(e.changedTouches[0].clientX - touchStart.current.x);
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStart.current.y);
+    const dt = Date.now() - touchStart.current.time;
+    if (dx < 8 && dy < 8 && dt < 300) handleDismiss();
+    touchStart.current = null;
+  }
+  function onEmptyAreaClick(e: React.MouseEvent) {
+    if (e.target === e.currentTarget) handleDismiss();
+  }
+
+  const vpW = vp.width  || (typeof window !== "undefined" ? window.innerWidth  : 0);
+  const vpH = vp.height || (typeof window !== "undefined" ? window.innerHeight : 0);
+  const winH = typeof window !== "undefined" ? window.innerHeight : 0;
+  const keyboardInset = Math.max(0, winH - vpH - vp.top);
+  const pillBottom = open && keyboardInset > 8
+    ? `${keyboardInset + 12}px`
+    : "calc(1.25rem + env(safe-area-inset-bottom))";
+
+  const showDropdown = open && (loading || results.length > 0 || query.trim().length > 0);
 
   return (
-    <div
-      className="fixed z-50 overflow-hidden bg-black/96 backdrop-blur-xl"
-      style={{
-        bottom: "calc(1.25rem + env(safe-area-inset-bottom))",
-        right: "1rem",
-        width:  expanded ? "100vw"  : "3.25rem",
-        height: expanded ? "100dvh" : "3.25rem",
-        borderRadius: expanded ? "0px" : "50%",
-        transformOrigin: "bottom right",
-        transition: "width 300ms cubic-bezier(0.4, 0, 0.2, 1), height 300ms cubic-bezier(0.4, 0, 0.2, 1), border-radius 300ms cubic-bezier(0.4, 0, 0.2, 1)",
-        ...(expanded ? { bottom: 0, right: 0 } : {}),
-      }}
-    >
+    <>
+      {/* Backdrop — pinned to the exact visual viewport rectangle, tap dismisses */}
       <div
-        className="flex flex-col h-full"
+        className="lg:hidden"
         style={{
-          opacity: expanded ? 1 : 0,
-          transition: "opacity 150ms ease",
-          transitionDelay: expanded ? "160ms" : "0ms",
+          position: "fixed",
+          top: vp.top, left: vp.left, width: vpW, height: vpH,
+          zIndex: 1000,
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? "auto" : "none",
+          transition: "opacity 0.28s ease",
         }}
+        onClick={handleDismiss}
       >
-        <div className="flex items-center gap-3 border-b border-border-subtle px-4 pt-14 pb-4">
-          <Search className="h-5 w-5 text-text-muted shrink-0" />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={e => search(e.target.value)}
-            placeholder="Search stocks…"
-            className="flex-1 bg-transparent text-lg text-text-primary placeholder:text-text-muted outline-none"
-          />
-          {/* Close button: black X on green bg */}
-          <button
-            onClick={handleClose}
-            className="flex items-center justify-center h-8 w-8 rounded-lg bg-positive text-black active:opacity-80"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+        <div style={{
+          position: "absolute", inset: 0,
+          backdropFilter:       open ? "blur(8px) brightness(0.65)" : "none",
+          WebkitBackdropFilter: open ? "blur(8px) brightness(0.65)" : "none",
+          transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
+        }} />
+      </div>
 
-        <div className="flex-1 overflow-y-auto">
-          {loading && <p className="px-4 py-6 text-sm text-text-muted">Searching…</p>}
-          {results.map(r => (
+      {/* Results — translucent rounded box, grows upward from the bar. Item 0
+          (closest match) renders nearest the bar via column-reverse. */}
+      {showDropdown && (
+        <div
+          className="fixed lg:hidden rounded-2xl bg-black/40 backdrop-blur-md border border-white/20"
+          style={{
+            zIndex: 1001,
+            right: "1rem",
+            width: "calc(100vw - 2rem)",
+            bottom: `calc(${pillBottom} + 3.5rem + 0.75rem)`,
+            maxHeight: "55vh",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column-reverse",
+            opacity: open ? 1 : 0,
+            transform: open ? "translateY(0)" : "translateY(8px)",
+            transition: "opacity 0.22s ease, transform 0.22s ease",
+          }}
+          onClick={onEmptyAreaClick}
+          onTouchStart={onEmptyAreaTouchStart}
+          onTouchEnd={onEmptyAreaTouchEnd}
+        >
+          {loading && (
+            <p style={{ padding: "16px 18px", fontSize: 13, color: "#9a9aa2" }}>Searching…</p>
+          )}
+          {!loading && query.trim() && !results.length && (
+            <p style={{ padding: "16px 18px", fontSize: 13, color: "#9a9aa2" }}>No results for &ldquo;{query}&rdquo;</p>
+          )}
+          {!loading && results.map(r => (
             <button
               key={r.symbol}
-              className="w-full flex items-center gap-3 px-4 py-4 border-b border-border-subtle text-left active:bg-panel-muted"
-              onClick={() => {
-                sessionStorage.setItem("nav-from-search", "1");
-                sessionStorage.setItem("search-origin", origin);
-                onClose();
-                router.push(`/stock/${r.symbol}`);
+              onClick={() => goToSymbol(r.symbol)}
+              style={{
+                display: "flex", alignItems: "center", gap: 12,
+                padding: "12px 16px",
+                width: "100%",
+                textAlign: "left",
+                borderTop: "1px solid rgba(255,255,255,0.08)",
               }}
             >
-              <span className="flex h-10 w-10 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
+              <span style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                height: 40, width: 40, borderRadius: 10, flexShrink: 0,
+                border: "1px solid rgba(255,255,255,0.14)",
+                backgroundColor: "rgba(255,255,255,0.06)",
+                fontSize: 11, fontWeight: 700, color: "#f0f0f2",
+              }}>
                 {r.symbol.slice(0, 2)}
               </span>
-              <span>
-                <span className="block text-sm font-semibold text-text-primary">{r.symbol}</span>
-                <span className="block text-xs text-text-muted truncate">{r.name}</span>
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#f0f0f2" }}>{r.symbol}</span>
+                <span style={{ display: "block", fontSize: 12, color: "#9a9aa2", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
               </span>
             </button>
           ))}
-          {!loading && query && !results.length && (
-            <p className="px-4 py-6 text-sm text-text-muted">No results for &ldquo;{query}&rdquo;</p>
-          )}
+        </div>
+      )}
+
+      {/* The pill — same element morphs from a small circle into the search
+          bar, identical geometry/easing/timing to the AI chat pill. */}
+      <div
+        className="fixed lg:hidden rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-positive overflow-hidden"
+        style={{
+          zIndex: 1002,
+          bottom: pillBottom,
+          right: open ? "1rem" : "1.25rem",
+          width: open ? "calc(100vw - 2rem)" : "3.5rem",
+          height: "3.5rem",
+          transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
+        }}
+      >
+        {/* Closed state: search icon */}
+        <button
+          onClick={() => setOpen(true)}
+          aria-label="Search"
+          style={{
+            position: "absolute", inset: 0,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            opacity: open ? 0 : 1,
+            pointerEvents: open ? "none" : "auto",
+            transition: "opacity 0.16s ease",
+          }}
+        >
+          <Search className="h-7 w-7" />
+        </button>
+
+        {/* Open state: the actual search input row */}
+        <div
+          style={{
+            position: "absolute", inset: 0,
+            display: "flex", alignItems: "center", gap: 8,
+            padding: "0 8px 0 20px",
+            opacity: open ? 1 : 0,
+            pointerEvents: open ? "auto" : "none",
+            transition: "opacity 0.22s ease",
+            transitionDelay: open ? "0.14s" : "0s",
+          }}
+        >
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search stocks…"
+            className="text-text-primary placeholder:text-text-muted"
+            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "#00c805" }}
+          />
+          <button
+            onClick={handleDismiss}
+            aria-label="Close search"
+            style={{
+              flexShrink: 0, height: 38, width: 38,
+              borderRadius: "50%",
+              backgroundColor: "#00c805",
+              color: "#000",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            <X style={{ height: 16, width: 16 }} />
+          </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -265,7 +416,6 @@ function slideAndNavigate(
 export function MobileNav() {
   const pathname = usePathname();
   const router   = useRouter();
-  const [searchOpen,   setSearchOpen]   = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [activePill,   setActivePill]   = useState<"market" | "watchlist">(
     pathname === "/watchlist" ? "watchlist" : "market"
@@ -316,7 +466,6 @@ export function MobileNav() {
 
   return (
     <>
-      {searchOpen   && <MobileSearchOverlay onClose={() => setSearchOpen(false)}   origin={pathname} />}
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
 
       {/* Three pills: Market, Watchlist, Settings — left-grouped */}
@@ -337,18 +486,8 @@ export function MobileNav() {
         </button>
       </nav>
 
-      {/* Search — fixed to bottom-right corner, aligned with device radius */}
-      <button
-        className="fixed z-40 lg:hidden pointer-events-auto flex items-center justify-center h-14 w-14 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-positive transition-transform duration-200 active:scale-90"
-        style={{
-          bottom: "calc(1.25rem + env(safe-area-inset-bottom))",
-          right: "1.25rem",
-        }}
-        onClick={() => setSearchOpen(true)}
-        aria-label="Search"
-      >
-        <Search className="h-7 w-7" />
-      </button>
+      {/* Search — self-contained pill, same behaviour as the AI chat pill */}
+      <MobileSearchPill origin={pathname} />
     </>
   );
 }

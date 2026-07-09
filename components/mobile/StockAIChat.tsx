@@ -1417,8 +1417,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
               style={{
                 flexShrink: 0, height: 38, width: 38,
                 borderRadius: "50%",
-                backgroundColor: "rgba(0,200,5,0.18)",
-                color: "#00c805",
+                backgroundColor: "#00c805",
+                color: "#000",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 border: "none",
                 cursor: "pointer",
@@ -1482,8 +1482,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 style={{
                   flexShrink: 0, height: 38, width: 38,
                   borderRadius: "50%",
-                  backgroundColor: "rgba(0,200,5,0.18)",
-                  color: "#00c805",
+                  backgroundColor: "#00c805",
+                  color: "#000",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   border: "none",
                   cursor: "pointer",
