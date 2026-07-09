@@ -43,7 +43,7 @@ export function EmptyWatchlist({ isLoading = false }: { isLoading?: boolean }) {
 
 const LINE_SPACING_PX    = 14;    // px between line centres — unchanged
 const NUM_LINES          = 30;    // fixed count, centered on screen (not screen-filling)
-const AMPLITUDE          = 22;    // px  — vertical swing
+const AMPLITUDE          = 38;    // px  — increased for more prominent shape
 const WAVELENGTH         = 480;   // px  — spatial period (long → fabric feel)
 const WAVE_SPEED         = 0.75;  // cycles/sec  — 2.5× faster than before
 const PHASE_DELTA        = 0.18;  // Δφ radians between adjacent lines — unchanged

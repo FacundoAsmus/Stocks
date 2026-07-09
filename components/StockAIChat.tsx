@@ -216,7 +216,7 @@ export function StockAIChat(props: StockAIChatProps) {
           {/* ── Backdrop: blur + dim. Tap = dismiss, scroll = pass-through ── */}
           <div
             className="fixed inset-0 z-40"
-            style={{ backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", background: "rgba(0,0,0,0.35)" }}
+            style={{ backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)", background: "rgba(0,0,0,0.15)" }}
             onTouchStart={() => { backdropScrollRef.current = false; }}
             onTouchMove={() => { backdropScrollRef.current = true; }}
             onTouchEnd={() => {
