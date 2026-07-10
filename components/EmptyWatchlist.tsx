@@ -64,9 +64,11 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
     const ctx    = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
 
-    // Detect color scheme once on mount; re-runs if scheme changes
-    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const bgBase = isDark ? BG_DARK : BG_LIGHT;
+    // Use the app's actual resolved theme (set on <html> by the settings
+    // panel), not the OS preference — otherwise the background stays black
+    // even when the user has explicitly chosen light mode.
+    const isLight = document.documentElement.classList.contains("light-mode");
+    const bgBase = isLight ? BG_LIGHT : BG_DARK;
 
     let raf = 0;
     let W = 0, H = 0;

@@ -43,7 +43,7 @@ function MiniSparkline({ stock, height = 32 }: { stock: StockSummary; height?: n
     <div style={{ height, width: "100%" }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ left: 0, right: 0, top: 2, bottom: 2 }}>
-          <YAxis domain={["dataMin", "dataMax"]} hide />
+          <YAxis domain={["dataMin", "dataMax"]} hide width={0} />
           <Area
             type="monotone"
             dataKey="close"

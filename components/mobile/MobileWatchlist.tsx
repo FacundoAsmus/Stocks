@@ -45,7 +45,7 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
     <div className="h-10 w-20 shrink-0">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ left: 0, right: 0, top: 2, bottom: 2 }}>
-          <YAxis domain={["dataMin", "dataMax"]} hide />
+          <YAxis domain={["dataMin", "dataMax"]} hide width={0} />
           <Area type="monotone" dataKey="close"
             stroke={isPos ? "#00c805" : "#ff3003"}
             fill="transparent" strokeWidth={2}
@@ -56,11 +56,23 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
   );
 }
 
-const REVEAL_WIDTH = 76; // px width of the swipe-revealed star/remove action
+const REVEAL_WIDTH = 76; // px distance the row travels to fully reveal the star
+const OVERDRAG_MAX = 28; // px of soft resistance allowed past REVEAL_WIDTH
+
+// Soft rubber-band resistance once the drag passes the reveal point, so the
+// motion isn't a flat linear line — it eases off the further you pull.
+function withResistance(raw: number) {
+  if (raw >= -REVEAL_WIDTH) return raw;
+  const excess = -REVEAL_WIDTH - raw;
+  const damped = OVERDRAG_MAX * (1 - Math.exp(-excess / OVERDRAG_MAX));
+  return -REVEAL_WIDTH - damped;
+}
+
+const SETTLE_TRANSITION = "transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)"; // eases out, slows into place
 
 function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: string) => void }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
-  const [dragX, setDragX] = useState(0); // 0..-REVEAL_WIDTH
+  const [dragX, setDragX] = useState(0); // 0..-REVEAL_WIDTH (with a little overdrag give)
   const [dragging, setDragging] = useState(false);
   const revealedRef = useRef(false);
   const startRef = useRef<{ x: number; y: number; startDragX: number; horizontal: boolean } | null>(null);
@@ -85,7 +97,8 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
     }
 
     e.preventDefault();
-    const next = Math.min(0, Math.max(-REVEAL_WIDTH, start.startDragX + dx));
+    const raw = start.startDragX + dx;
+    const next = raw > 0 ? 0 : withResistance(raw);
     setDragX(next);
   }
 
@@ -104,6 +117,16 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
     revealedRef.current = false;
   }
 
+  // If the page gets scrolled (e.g. the user swiped and then dragged
+  // up/down to scroll the list) any revealed row snaps back closed.
+  useEffect(() => {
+    function onScroll() {
+      if (revealedRef.current) closeSwipe();
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   return (
     <div className="relative overflow-hidden border-b border-border-subtle/70 last:border-0">
       {/* Swipe-revealed remove action */}
@@ -114,9 +137,9 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
         <button
           onClick={() => onRemove(stock.symbol)}
           aria-label={`Remove ${stock.symbol}`}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-positive text-black active:scale-90 transition-transform"
+          className="flex items-center justify-center text-positive active:scale-90 transition-transform"
         >
-          <Star className="h-5 w-5 fill-current" />
+          <Star className="h-7 w-7 fill-current" />
         </button>
       </div>
 
@@ -129,7 +152,7 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
         className="flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted"
         style={{
           transform: `translateX(${dragX}px)`,
-          transition: dragging ? "none" : "transform 0.2s ease",
+          transition: dragging ? "none" : SETTLE_TRANSITION,
           touchAction: "pan-y",
         }}
       >

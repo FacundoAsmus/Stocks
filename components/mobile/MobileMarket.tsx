@@ -31,7 +31,7 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
     <div className="h-8 w-16 shrink-0">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ left: 0, right: 0, top: 2, bottom: 2 }}>
-          <YAxis domain={["dataMin", "dataMax"]} hide />
+          <YAxis domain={["dataMin", "dataMax"]} hide width={0} />
           <Area type="monotone" dataKey="close" stroke={isPos ? "#00c805" : "#ff3003"}
             fill="transparent" strokeWidth={1.5} strokeLinecap="round" dot={false} isAnimationActive={false} />
         </AreaChart>

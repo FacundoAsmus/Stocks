@@ -307,10 +307,10 @@ function MobileSearchPill({ origin }: { origin: string }) {
           onTouchEnd={onEmptyAreaTouchEnd}
         >
           {loading && (
-            <p style={{ padding: "16px 18px", fontSize: 13, color: "#9a9aa2" }}>Searching…</p>
+            <p style={{ padding: "16px 18px", fontSize: 13, color: "var(--color-text-muted)" }}>Searching…</p>
           )}
           {!loading && query.trim() && !results.length && (
-            <p style={{ padding: "16px 18px", fontSize: 13, color: "#9a9aa2" }}>No results for &ldquo;{query}&rdquo;</p>
+            <p style={{ padding: "16px 18px", fontSize: 13, color: "var(--color-text-muted)" }}>No results for &ldquo;{query}&rdquo;</p>
           )}
           {!loading && results.map(r => (
             <button
@@ -321,7 +321,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
                 padding: "12px 16px",
                 width: "100%",
                 textAlign: "left",
-                borderTop: "1px solid rgba(255,255,255,0.08)",
+                borderTop: "1px solid var(--color-border-subtle)",
               }}
             >
               {logos[r.symbol] ? (
@@ -330,8 +330,8 @@ function MobileSearchPill({ origin }: { origin: string }) {
                   alt=""
                   style={{
                     height: 40, width: 40, borderRadius: 10, flexShrink: 0,
-                    border: "1px solid rgba(255,255,255,0.14)",
-                    backgroundColor: "rgba(255,255,255,0.06)",
+                    border: "1px solid var(--color-border-subtle)",
+                    backgroundColor: "var(--color-panel-muted)",
                     objectFit: "contain",
                   }}
                 />
@@ -339,16 +339,16 @@ function MobileSearchPill({ origin }: { origin: string }) {
                 <span style={{
                   display: "flex", alignItems: "center", justifyContent: "center",
                   height: 40, width: 40, borderRadius: 10, flexShrink: 0,
-                  border: "1px solid rgba(255,255,255,0.14)",
-                  backgroundColor: "rgba(255,255,255,0.06)",
-                  fontSize: 11, fontWeight: 700, color: "#f0f0f2",
+                  border: "1px solid var(--color-border-subtle)",
+                  backgroundColor: "var(--color-panel-muted)",
+                  fontSize: 11, fontWeight: 700, color: "var(--color-text-primary)",
                 }}>
                   {r.symbol.replace("^", "").slice(0, 2)}
                 </span>
               )}
               <span style={{ minWidth: 0 }}>
-                <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#f0f0f2" }}>{r.symbol}</span>
-                <span style={{ display: "block", fontSize: 12, color: "#9a9aa2", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>{r.symbol}</span>
+                <span style={{ display: "block", fontSize: 12, color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
               </span>
             </button>
           ))}
