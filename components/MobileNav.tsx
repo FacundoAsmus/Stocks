@@ -145,6 +145,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
   const [open, setOpen]     = useState(false);
   const [query, setQuery]   = useState("");
   const [results, setResults] = useState<Array<{ symbol: string; name: string }>>([]);
+  const [logos, setLogos]   = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [vp, setVp] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const inputRef   = useRef<HTMLInputElement>(null);
@@ -190,14 +191,26 @@ function MobileSearchPill({ origin }: { origin: string }) {
   }, [open]);
 
   useEffect(() => {
-    if (!query.trim()) { setResults([]); setLoading(false); return; }
+    if (!query.trim()) { setResults([]); setLogos({}); setLoading(false); return; }
     const controller = new AbortController();
     setLoading(true);
     const t = setTimeout(async () => {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
         const data = await res.json() as { results?: Array<{ symbol: string; description: string }> };
-        setResults((data.results ?? []).slice(0, 8).map(r => ({ symbol: r.symbol, name: r.description })));
+        const newResults = (data.results ?? []).slice(0, 8).map(r => ({ symbol: r.symbol, name: r.description }));
+        setResults(newResults);
+        // Fetch logos in batch for the result symbols
+        if (newResults.length) {
+          const symbols = newResults.map(r => r.symbol).join(",");
+          const stockRes = await fetch(`/api/stocks?symbols=${encodeURIComponent(symbols)}`, { signal: controller.signal });
+          const stockData = await stockRes.json() as { stocks?: Array<{ symbol: string; logo?: string }> };
+          const logoMap: Record<string, string> = {};
+          for (const s of stockData.stocks ?? []) {
+            if (s.logo) logoMap[s.symbol] = s.logo;
+          }
+          if (!controller.signal.aborted) setLogos(logoMap);
+        }
       } catch { if (!controller.signal.aborted) setResults([]); }
       finally { if (!controller.signal.aborted) setLoading(false); }
     }, 180);
@@ -208,6 +221,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
     setOpen(false);
     setQuery("");
     setResults([]);
+    setLogos({});
   }
 
   function goToSymbol(symbol: string) {
@@ -310,15 +324,28 @@ function MobileSearchPill({ origin }: { origin: string }) {
                 borderTop: "1px solid rgba(255,255,255,0.08)",
               }}
             >
-              <span style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                height: 40, width: 40, borderRadius: 10, flexShrink: 0,
-                border: "1px solid rgba(255,255,255,0.14)",
-                backgroundColor: "rgba(255,255,255,0.06)",
-                fontSize: 11, fontWeight: 700, color: "#f0f0f2",
-              }}>
-                {r.symbol.slice(0, 2)}
-              </span>
+              {logos[r.symbol] ? (
+                <img
+                  src={logos[r.symbol]}
+                  alt=""
+                  style={{
+                    height: 40, width: 40, borderRadius: 10, flexShrink: 0,
+                    border: "1px solid rgba(255,255,255,0.14)",
+                    backgroundColor: "rgba(255,255,255,0.06)",
+                    objectFit: "contain",
+                  }}
+                />
+              ) : (
+                <span style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  height: 40, width: 40, borderRadius: 10, flexShrink: 0,
+                  border: "1px solid rgba(255,255,255,0.14)",
+                  backgroundColor: "rgba(255,255,255,0.06)",
+                  fontSize: 11, fontWeight: 700, color: "#f0f0f2",
+                }}>
+                  {r.symbol.replace("^", "").slice(0, 2)}
+                </span>
+              )}
               <span style={{ minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "#f0f0f2" }}>{r.symbol}</span>
                 <span style={{ display: "block", fontSize: 12, color: "#9a9aa2", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>

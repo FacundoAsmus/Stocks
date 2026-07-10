@@ -25,35 +25,28 @@ export function EmptyWatchlist({ isLoading = false }: { isLoading?: boolean }) {
 // All lines sample the SAME underlying field:
 //   displacement(x, i) = A · sin(k·x  −  ω·t  +  i·Δφ)
 //
-// where i is the line index (0 = top).  The phase term i·Δφ is small
-// (~0.18 rad) so adjacent lines are barely out of phase — they read as one
-// continuous fabric rather than independent oscillators.
+// Background: a slowly shifting radial gradient that cycles through the wave
+// colours, adapting its base tone to light vs dark mode.
 //
-// Lines are spaced ~14 px apart so ~50 of them fill a 720 px screen,
-// giving the dense striped surface in the reference image.
-//
-// Color: each line's hue is derived from its current vertical centre,
-// smoothly interpolating #c5f446 → #ff3003 top-to-bottom with a slow
-// oscillating phase so the gradient breathes over time.
-//
-// Entrance: lines cascade in top-to-bottom.  Line i starts revealing
-// from x=0 after i·STAGGER_MS delay, sweeping right with easeOutCubic.
-// Because Δφ is already embedded in the wave, the cascading entrance
-// naturally continues the diagonal flow.
+// Line colour: each line interpolates #c5f446 → #ff3003 top-to-bottom with
+// a slow breathing oscillation.
 
-const LINE_SPACING_PX    = 14;    // px between line centres — unchanged
-const NUM_LINES          = 30;    // fixed count, centered on screen (not screen-filling)
-const AMPLITUDE          = 38;    // px  — increased for more prominent shape
-const WAVELENGTH         = 480;   // px  — spatial period (long → fabric feel)
-const WAVE_SPEED         = 0.75;  // cycles/sec  — 2.5× faster than before
-const PHASE_DELTA        = 0.18;  // Δφ radians between adjacent lines — unchanged
-const STAGGER_MS         = 28;    // cascade delay per line — unchanged
-const REVEAL_MS          = 480;   // sweep-in duration per line — unchanged
+const NUM_LINES          = 30;
+const LINE_SPACING_PX    = 14;
+const AMPLITUDE          = 55;    // higher for prominent shape
+const WAVELENGTH         = 480;
+const WAVE_SPEED         = 0.75;
+const PHASE_DELTA        = 0.18;
+const STAGGER_MS         = 28;
+const REVEAL_MS          = 480;
 const LINE_WIDTH         = 1.1;
 
-// Color stops — yellow-green to red-orange
 const C_TOP:  [number,number,number] = [0xc5, 0xf4, 0x46];
 const C_BOT:  [number,number,number] = [0xff, 0x30, 0x03];
+
+// Background palette: dark-mode (black base) and light-mode (white base)
+const BG_DARK:  [number,number,number] = [0x00, 0x00, 0x00];
+const BG_LIGHT: [number,number,number] = [0xff, 0xff, 0xff];
 
 function lerpColor(a: [number,number,number], b: [number,number,number], t: number): string {
   const r = Math.round(a[0] + (b[0]-a[0])*t);
@@ -70,6 +63,10 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
     const canvas = canvasRef.current;
     const ctx    = canvas?.getContext("2d");
     if (!canvas || !ctx) return;
+
+    // Detect color scheme once on mount; re-runs if scheme changes
+    const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const bgBase = isDark ? BG_DARK : BG_LIGHT;
 
     let raf = 0;
     let W = 0, H = 0;
@@ -93,21 +90,43 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
       const elapsed = now - startTime;
       const t = elapsed / 1000;
 
-      ctx!.fillStyle = "#000";
+      // ── Background: radial gradient that slowly rotates through wave colours ──
+      // The accent colour pulses gently using a slow sine, then fades toward
+      // the base (black/white) at the edges so the waves always read clearly.
+      const bgAccentT = (Math.sin(t * 0.35) * 0.5 + 0.5);
+
+      // Radial: accent tinted centre (very subtle, ~12% mix), pure base at edges
+      const cx = W * (0.35 + 0.3 * Math.sin(t * 0.22));              // drifts L↔R
+      const cy = H * (0.35 + 0.25 * Math.sin(t * 0.17 + 1.0));       // drifts U↔D
+      const grad = ctx!.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.75);
+
+      // Build tinted-base colour (12% accent mixed into pure base)
+      const aR = Math.round(C_TOP[0] + (C_BOT[0]-C_TOP[0])*bgAccentT);
+      const aG = Math.round(C_TOP[1] + (C_BOT[1]-C_TOP[1])*bgAccentT);
+      const aB = Math.round(C_TOP[2] + (C_BOT[2]-C_TOP[2])*bgAccentT);
+      const centreR = Math.round(bgBase[0]*0.88 + aR*0.12);
+      const centreG = Math.round(bgBase[1]*0.88 + aG*0.12);
+      const centreB = Math.round(bgBase[2]*0.88 + aB*0.12);
+      const centreRgb = `rgb(${centreR},${centreG},${centreB})`;
+      const edgeRgb   = `rgb(${bgBase[0]},${bgBase[1]},${bgBase[2]})`;
+
+      grad.addColorStop(0,   centreRgb);
+      grad.addColorStop(0.6, edgeRgb);
+      grad.addColorStop(1,   edgeRgb);
+      ctx!.fillStyle = grad;
       ctx!.fillRect(0, 0, W, H);
 
-      // Fixed number of lines, centered vertically on screen
-      const numLines = NUM_LINES;
-      const fieldTop = (H - (numLines - 1) * LINE_SPACING_PX) / 2;
+      // ── Wave lines ──────────────────────────────────────────────────────────
+      const numLines  = NUM_LINES;
+      const fieldTop  = (H - (numLines - 1) * LINE_SPACING_PX) / 2;
 
       ctx!.lineWidth = LINE_WIDTH;
       ctx!.lineJoin  = "round";
       ctx!.lineCap   = "round";
 
-      const STEP = 6; // px between sample points along x
+      const STEP = 6;
 
       for (let i = 0; i < numLines; i++) {
-        // Cascade reveal
         const lineElapsed = elapsed - i * STAGGER_MS;
         if (lineElapsed <= 0) continue;
 
@@ -115,27 +134,18 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
         const revealX = W * easeOutCubic(revealT);
         if (revealX < 1) continue;
 
-        // Vertical centre of this line (rest position)
-        const baseY = fieldTop + i * LINE_SPACING_PX;
+        const baseY  = fieldTop + i * LINE_SPACING_PX;
+        const colorT = Math.max(0, Math.min(1,
+          (i / (numLines - 1) + 0.15 * Math.sin(t * 0.4)) % 1
+        ));
+        ctx!.strokeStyle = lerpColor(C_TOP, C_BOT, colorT);
 
-        // Color: map line index to 0–1 across the palette, with a slow
-        // breathing oscillation so the gradient is never static
-        const colorT = (i / (numLines - 1) + 0.15 * Math.sin(t * 0.4)) % 1;
-        const clampedT = Math.max(0, Math.min(1, colorT));
-        ctx!.strokeStyle = lerpColor(C_TOP, C_BOT, clampedT);
-
-        // Phase for this line: i·Δφ makes each line a tiny slice behind
-        // the one above, so the whole stack reads as one tilted wavefront.
-        const phase = i * PHASE_DELTA;
-
-        // sample(x) = baseY + A · sin(k·x − ω·t + phase)
+        const phase  = i * PHASE_DELTA;
         const sample = (x: number) =>
           baseY + AMPLITUDE * Math.sin(k * x - ω * t + phase);
 
-        // Smooth quadratic bezier path
         ctx!.beginPath();
         ctx!.moveTo(0, sample(0));
-
         for (let x = STEP; x <= revealX; x += STEP) {
           const px = x - STEP;
           const mx = (px + x) / 2;
@@ -156,7 +166,7 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black" role="status" aria-label={label}>
+    <div className="fixed inset-0 z-50" role="status" aria-label={label}>
       <canvas ref={canvasRef} className="block h-full w-full" />
     </div>
   );
