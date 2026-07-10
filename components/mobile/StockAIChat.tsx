@@ -1227,7 +1227,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
   }
 
   const bgBubbleAI    = isLightMode ? "rgba(255,255,255,0.72)" : "rgba(0,0,0,0.72)";
-  const bubbleBorder  = isLightMode ? "rgba(0,0,0,0.10)"    : "rgba(255,255,255,0.10)";
+  const bubbleBorder  = "rgba(0,200,5,0.45)";
   const textColor     = isLightMode ? "#1a1a1e"             : "#f0f0f2";
 
   const vpW = vp.width  || (typeof window !== "undefined" ? window.innerWidth  : 0);
@@ -1300,9 +1300,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 whiteSpace: "pre-wrap",
                 padding: "12px 18px",
                 borderRadius: msg.role === "user" ? "20px 20px 5px 20px" : "20px 20px 20px 5px",
-                backgroundColor: msg.role === "user" ? "rgba(0,200,5,0.75)" : bgBubbleAI,
+                backgroundColor: bgBubbleAI,
                 border: msg.role === "model" ? `1px solid ${bubbleBorder}` : "none",
-                color: msg.role === "user" ? "#000" : textColor,
+                color: textColor,
                 fontSize: 17,
                 lineHeight: 1.55,
                 fontWeight: msg.role === "user" ? 500 : 400,

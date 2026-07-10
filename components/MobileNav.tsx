@@ -275,8 +275,8 @@ function MobileSearchPill({ origin }: { origin: string }) {
       >
         <div style={{
           position: "absolute", inset: 0,
-          backdropFilter:       open ? "blur(8px) brightness(0.65)" : "none",
-          WebkitBackdropFilter: open ? "blur(8px) brightness(0.65)" : "none",
+          backdropFilter:       open ? "blur(3px) brightness(0.97)" : "none",
+          WebkitBackdropFilter: open ? "blur(3px) brightness(0.97)" : "none",
           transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
           transform: "translateZ(0)",
           WebkitTransform: "translateZ(0)",

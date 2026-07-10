@@ -122,7 +122,7 @@ export function EtfMobileList({ etfs }: { etfs: StockSummary[] }) {
             key={etf.symbol}
             href={`/stock/${etf.symbol}`}
             className={cn(
-              "flex items-center gap-3 px-4 py-3 active:bg-panel-muted",
+              "flex items-center gap-3 px-4 py-4 active:bg-panel-muted",
               i !== SECTOR_ETFS.length - 1 && "border-b border-border-subtle/40"
             )}
           >

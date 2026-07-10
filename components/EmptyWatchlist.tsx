@@ -41,7 +41,7 @@ const STAGGER_MS         = 28;
 const REVEAL_MS          = 480;
 const LINE_WIDTH         = 1.1;
 
-const C_TOP:  [number,number,number] = [0xc5, 0xf4, 0x46];
+const C_TOP:  [number,number,number] = [0x00, 0xc8, 0x05];
 const C_BOT:  [number,number,number] = [0xff, 0x30, 0x03];
 
 // Background palette: dark-mode (black base) and light-mode (white base)

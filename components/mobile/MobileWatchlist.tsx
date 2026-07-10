@@ -56,11 +56,83 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
   );
 }
 
+const REVEAL_WIDTH = 76; // px width of the swipe-revealed star/remove action
+
 function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: string) => void }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
+  const [dragX, setDragX] = useState(0); // 0..-REVEAL_WIDTH
+  const [dragging, setDragging] = useState(false);
+  const revealedRef = useRef(false);
+  const startRef = useRef<{ x: number; y: number; startDragX: number; horizontal: boolean } | null>(null);
+
+  function onTouchStart(e: React.TouchEvent) {
+    const t = e.touches[0];
+    startRef.current = { x: t.clientX, y: t.clientY, startDragX: dragX, horizontal: false };
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    const start = startRef.current;
+    if (!start) return;
+    const t = e.touches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+
+    if (!start.horizontal) {
+      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+      if (Math.abs(dy) >= Math.abs(dx)) { startRef.current = null; return; } // vertical scroll — let it pass
+      start.horizontal = true;
+      setDragging(true);
+    }
+
+    e.preventDefault();
+    const next = Math.min(0, Math.max(-REVEAL_WIDTH, start.startDragX + dx));
+    setDragX(next);
+  }
+
+  function onTouchEnd() {
+    if (startRef.current?.horizontal) {
+      const shouldReveal = dragX < -REVEAL_WIDTH / 2;
+      setDragX(shouldReveal ? -REVEAL_WIDTH : 0);
+      revealedRef.current = shouldReveal;
+    }
+    setDragging(false);
+    startRef.current = null;
+  }
+
+  function closeSwipe() {
+    setDragX(0);
+    revealedRef.current = false;
+  }
+
   return (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle/70 last:border-0">
-      <Link href={`/stock/${stock.symbol}`} className="flex items-center gap-3 flex-1 min-w-0">
+    <div className="relative overflow-hidden border-b border-border-subtle/70 last:border-0">
+      {/* Swipe-revealed remove action */}
+      <div
+        className="absolute inset-y-0 right-0 flex items-center justify-center"
+        style={{ width: REVEAL_WIDTH }}
+      >
+        <button
+          onClick={() => onRemove(stock.symbol)}
+          aria-label={`Remove ${stock.symbol}`}
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-positive text-black active:scale-90 transition-transform"
+        >
+          <Star className="h-5 w-5 fill-current" />
+        </button>
+      </div>
+
+      <Link
+        href={`/stock/${stock.symbol}`}
+        onClick={(e) => { if (revealedRef.current) { e.preventDefault(); closeSwipe(); } }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        className="flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted"
+        style={{
+          transform: `translateX(${dragX}px)`,
+          transition: dragging ? "none" : "transform 0.2s ease",
+          touchAction: "pan-y",
+        }}
+      >
         {stock.logo
           ? <img src={stock.logo} alt="" className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
           : <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
@@ -80,13 +152,6 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
           </span>
         </span>
       </Link>
-      <button
-        onClick={() => onRemove(stock.symbol)}
-        className="ml-2 shrink-0 text-positive active:text-negative transition-colors p-1"
-        aria-label={`Remove ${stock.symbol}`}
-      >
-        <Star className="h-4 w-4 fill-current" />
-      </button>
     </div>
   );
 }
@@ -152,7 +217,7 @@ export function MobileWatchlist() {
           <p className="text-sm text-text-muted">Search for stocks to add them.</p>
         </div>
       ) : (
-        <div className="mx-4 rounded-xl bg-black overflow-hidden">
+        <div className="mx-4 mt-6 rounded-xl bg-black overflow-hidden">
           {orderedStocks.map(stock => (
             <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} />
           ))}

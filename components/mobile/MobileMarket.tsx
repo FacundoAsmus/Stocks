@@ -73,7 +73,7 @@ function getMarketStatus(now: Date) {
 function MoverRow({ stock, rank }: { stock: StockSummary; rank: number }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
   return (
-    <Link href={`/stock/${stock.symbol}`} className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle/70 last:border-0 active:bg-panel-muted">
+    <Link href={`/stock/${stock.symbol}`} className="flex items-center gap-3 px-4 py-4 border-b border-border-subtle/70 last:border-0 active:bg-panel-muted">
       <span className="text-xs text-text-muted w-4 shrink-0">{rank}</span>
       {stock.logo
         ? <img src={stock.logo} alt="" className="h-8 w-8 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
@@ -96,7 +96,7 @@ function MoverRow({ stock, rank }: { stock: StockSummary; rank: number }) {
 
 function NewsRow({ article }: { article: MarketNewsArticle }) {
   return (
-    <a href={article.url} target="_blank" rel="noreferrer" className="flex gap-3 px-4 py-3 border-b border-border-subtle/70 last:border-0 active:bg-panel-muted">
+    <a href={article.url} target="_blank" rel="noreferrer" className="flex gap-3 px-4 py-4 border-b border-border-subtle/70 last:border-0 active:bg-panel-muted">
       {article.image
         ? <img src={article.image} alt="" className="h-12 w-16 rounded-md object-cover shrink-0 self-start" />
         : <span className="h-12 w-16 rounded-md bg-panel-muted shrink-0" />}
@@ -195,7 +195,7 @@ export function MobileMarket() {
         <div className="px-4 mt-8"><MarketFearGreed /></div>
 
         {/* Movers / ETF tabs — spaced from fear & greed */}
-        <div className="mt-8"><MoversSection gainers={data.gainers ?? []} losers={data.losers ?? []} etfs={data.etfs ?? []} /></div>
+        <div className="mt-14"><MoversSection gainers={data.gainers ?? []} losers={data.losers ?? []} etfs={data.etfs ?? []} /></div>
 
         {/* News — always spaced below the list, never overlapping */}
         <div className="mt-8">
