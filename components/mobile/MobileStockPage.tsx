@@ -20,40 +20,12 @@ interface MobileStockPageProps {
 }
 
 // Plays the search-close animation (fullscreen → tiny circle in bottom-right).
-function CollapsingSearchOverlay({ onDone }: { onDone: () => void }) {
-  const [expanded, setExpanded] = useState(true);
-  useEffect(() => {
-    requestAnimationFrame(() => { requestAnimationFrame(() => setExpanded(false)); });
-    const t = setTimeout(onDone, 320);
-    return () => clearTimeout(t);
-  }, [onDone]);
-  return (
-    <div
-      className="fixed z-50 overflow-hidden bg-black/96 backdrop-blur-xl pointer-events-none"
-      style={{
-        bottom:       expanded ? 0 : "calc(1.25rem + env(safe-area-inset-bottom))",
-        right:        expanded ? 0 : "1rem",
-        width:        expanded ? "100vw"  : "2.75rem",
-        height:       expanded ? "100dvh" : "2.75rem",
-        borderRadius: expanded ? "0px"   : "50%",
-        transition: [
-          "width 300ms cubic-bezier(0.4,0,0.2,1)",
-          "height 300ms cubic-bezier(0.4,0,0.2,1)",
-          "border-radius 300ms cubic-bezier(0.4,0,0.2,1)",
-          "bottom 300ms cubic-bezier(0.4,0,0.2,1)",
-          "right 300ms cubic-bezier(0.4,0,0.2,1)",
-        ].join(", "),
-      }}
-    />
-  );
-}
 
 export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: MobileStockPageProps) {
   const router = useRouter();
   const pageRef = useRef<HTMLDivElement>(null);
   const [fromSearch,       setFromSearch]       = useState(false);
   const [searchOrigin,     setSearchOrigin]     = useState<string>("/");
-  const [playingCloseAnim, setPlayingCloseAnim] = useState(false);
 
   useEffect(() => {
     const flag = sessionStorage.getItem("nav-from-search");
@@ -71,23 +43,20 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
 
   function handleBack() {
     const el = pageRef.current;
-    if (fromSearch) {
-      setPlayingCloseAnim(true);
-      router.push(searchOrigin as "/" | "/watchlist");
-    } else if (el) {
+    if (el) {
       el.classList.add("page-exit-sink");
-      setTimeout(() => router.back(), 380);
+      setTimeout(() => {
+        if (fromSearch) router.push(searchOrigin as "/" | "/watchlist");
+        else router.back();
+      }, 380);
     } else {
-      router.back();
+      if (fromSearch) router.push(searchOrigin as "/" | "/watchlist");
+      else router.back();
     }
   }
 
   return (
     <>
-      {playingCloseAnim && (
-        <CollapsingSearchOverlay onDone={() => setPlayingCloseAnim(false)} />
-      )}
-
       {/* AI Chat — self-contained floating pill + overlay, mounted always */}
       <StockAIChat
         stock={stock}

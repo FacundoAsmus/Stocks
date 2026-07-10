@@ -92,29 +92,27 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
       const elapsed = now - startTime;
       const t = elapsed / 1000;
 
-      // ── Background: radial gradient that slowly rotates through wave colours ──
-      // The accent colour pulses gently using a slow sine, then fades toward
-      // the base (black/white) at the edges so the waves always read clearly.
-      const bgAccentT = (Math.sin(t * 0.35) * 0.5 + 0.5);
+      // ── Background: strong, fast radial gradient cycling through wave colours ──
+      const bgAccentT = (Math.sin(t * 1.2) * 0.5 + 0.5);   // 1.2 rad/s — noticeably faster
 
-      // Radial: accent tinted centre (very subtle, ~12% mix), pure base at edges
-      const cx = W * (0.35 + 0.3 * Math.sin(t * 0.22));              // drifts L↔R
-      const cy = H * (0.35 + 0.25 * Math.sin(t * 0.17 + 1.0));       // drifts U↔D
-      const grad = ctx!.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.75);
+      const cx = W * (0.35 + 0.3 * Math.sin(t * 0.5));
+      const cy = H * (0.35 + 0.25 * Math.sin(t * 0.4 + 1.0));
+      const grad = ctx!.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.9);
 
-      // Build tinted-base colour (12% accent mixed into pure base)
       const aR = Math.round(C_TOP[0] + (C_BOT[0]-C_TOP[0])*bgAccentT);
       const aG = Math.round(C_TOP[1] + (C_BOT[1]-C_TOP[1])*bgAccentT);
       const aB = Math.round(C_TOP[2] + (C_BOT[2]-C_TOP[2])*bgAccentT);
-      const centreR = Math.round(bgBase[0]*0.88 + aR*0.12);
-      const centreG = Math.round(bgBase[1]*0.88 + aG*0.12);
-      const centreB = Math.round(bgBase[2]*0.88 + aB*0.12);
-      const centreRgb = `rgb(${centreR},${centreG},${centreB})`;
-      const edgeRgb   = `rgb(${bgBase[0]},${bgBase[1]},${bgBase[2]})`;
+      // 70% accent — very prominent, bold colour shift
+      const centreR = Math.round(bgBase[0]*0.30 + aR*0.70);
+      const centreG = Math.round(bgBase[1]*0.30 + aG*0.70);
+      const centreB = Math.round(bgBase[2]*0.30 + aB*0.70);
+      const midR = Math.round(bgBase[0]*0.60 + aR*0.40);
+      const midG = Math.round(bgBase[1]*0.60 + aG*0.40);
+      const midB = Math.round(bgBase[2]*0.60 + aB*0.40);
 
-      grad.addColorStop(0,   centreRgb);
-      grad.addColorStop(0.6, edgeRgb);
-      grad.addColorStop(1,   edgeRgb);
+      grad.addColorStop(0,   `rgb(${centreR},${centreG},${centreB})`);
+      grad.addColorStop(0.45, `rgb(${midR},${midG},${midB})`);
+      grad.addColorStop(1,   `rgb(${bgBase[0]},${bgBase[1]},${bgBase[2]})`);
       ctx!.fillStyle = grad;
       ctx!.fillRect(0, 0, W, H);
 

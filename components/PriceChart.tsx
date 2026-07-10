@@ -622,7 +622,7 @@ export function PriceChart({
 
       {/* ── Period selector — centred below chart ────────────────────── */}
       <div className="mt-4 flex justify-center">
-        <div className="flex flex-col gap-1 rounded-md border border-border-subtle bg-background p-1">
+        <div className="flex flex-col gap-1">
           <div className="flex items-center justify-center">
             {SHORT_PERIODS.map((o) => <PeriodButton key={o} option={o} />)}
           </div>

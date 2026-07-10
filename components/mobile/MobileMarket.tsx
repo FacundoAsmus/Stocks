@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
@@ -70,11 +70,10 @@ function getMarketStatus(now: Date) {
   return { isOpen: dow >= 1 && dow <= 5 && etMin >= 570 && etMin < 960, label: (dow >= 1 && dow <= 5 && etMin >= 570 && etMin < 960) ? "Open" : "Closed" };
 }
 
-function MoverRow({ stock, rank }: { stock: StockSummary; rank: number }) {
+function MoverRow({ stock }: { stock: StockSummary }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
   return (
     <Link href={`/stock/${stock.symbol}`} className="flex items-center gap-3 px-4 py-4 border-b border-border-subtle/70 last:border-0 active:bg-panel-muted">
-      <span className="text-xs text-text-muted w-4 shrink-0">{rank}</span>
       {stock.logo
         ? <img src={stock.logo} alt="" className="h-8 w-8 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
         : <span className="h-8 w-8 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">{stock.symbol.slice(0, 2)}</span>
@@ -120,7 +119,7 @@ function MoversSection({ gainers, losers, etfs }: { gainers: StockSummary[]; los
           <button key={t} onClick={() => setTab(t)}
             className={cn(
               "text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full transition-colors shrink-0",
-              tab === t ? "bg-positive text-black" : "text-text-muted border border-border-subtle"
+              tab === t ? "bg-positive text-black" : "text-positive"
             )}>
             {t === "etf" ? "ETF" : t === "winners" ? "Top Winners" : "Top Losers"}
           </button>
@@ -131,8 +130,8 @@ function MoversSection({ gainers, losers, etfs }: { gainers: StockSummary[]; los
 
       {tab !== "etf" && (
         <div className="mx-4 rounded-xl bg-black overflow-hidden">
-          {(tab === "winners" ? gainers : losers).slice(0, 8).map((s, i) => (
-            <MoverRow key={s.symbol} stock={s} rank={i + 1} />
+          {(tab === "winners" ? gainers : losers).slice(0, 8).map((s) => (
+            <MoverRow key={s.symbol} stock={s} />
           ))}
         </div>
       )}
@@ -159,14 +158,6 @@ export function MobileMarket() {
     return () => ctrl.abort();
   }, []);
 
-  const { sentimentColor } = useMemo(() => {
-    const stocks = [...(data.gainers ?? []), ...(data.losers ?? [])];
-    if (!stocks.length) return { sentimentColor: "transparent" };
-    const g = stocks.filter(s => (s.changePercent ?? 0) > 0).length;
-    const r = stocks.filter(s => (s.changePercent ?? 0) < 0).length;
-    return { sentimentColor: g > r ? "rgba(0,200,5,0.18)" : r > g ? "rgba(255,48,3,0.18)" : "rgba(250,204,21,0.12)" };
-  }, [data.gainers, data.losers]);
-
   const now = new Date();
   const dayName = now.toLocaleDateString("en-US", { weekday: "long" });
   const dayNum  = now.getDate();
@@ -176,9 +167,7 @@ export function MobileMarket() {
   if (isLoading) return <LoadingScreen label="Loading market data" />;
 
   return (
-    <div className="relative pb-24" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}>
-      <div className="absolute inset-0 z-0 pointer-events-none transition-all duration-1000"
-        style={{ background: `linear-gradient(to top, ${sentimentColor} 0%, transparent 60%)` }} />
+    <div className="relative pb-24 bg-black" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}>
       <div className="relative z-10">
         <MobileTicker stocks={data.tickerStocks ?? []} />
 

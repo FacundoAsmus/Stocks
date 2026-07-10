@@ -42,6 +42,12 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [proMode, setProMode] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
   );
+  const [closing, setClosing] = useState(false);
+
+  function handleClose() {
+    setClosing(true);
+    setTimeout(onClose, 220);
+  }
 
   function changeTheme(t: Theme) {
     setTheme(t);
@@ -65,12 +71,12 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col bg-black"
-      style={{ animation: "settingsFadeIn 0.2s ease both" }}
+      style={{ animation: closing ? "settingsFadeOut 0.22s ease both" : "settingsFadeIn 0.2s ease both" }}
     >
       {/* Fixed header with blur */}
       <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border-subtle px-4 pt-14 pb-4 flex flex-col gap-3">
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg self-start"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -130,6 +136,10 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
         @keyframes settingsFadeIn {
           from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes settingsFadeOut {
+          from { opacity: 1; transform: translateY(0); }
+          to   { opacity: 0; transform: translateY(10px); }
         }
       `}</style>
     </div>

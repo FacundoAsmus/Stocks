@@ -56,11 +56,9 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
   );
 }
 
-const REVEAL_WIDTH = 76; // px distance the row travels to fully reveal the star
-const OVERDRAG_MAX = 28; // px of soft resistance allowed past REVEAL_WIDTH
+const REVEAL_WIDTH = 76;
+const OVERDRAG_MAX = 28;
 
-// Soft rubber-band resistance once the drag passes the reveal point, so the
-// motion isn't a flat linear line — it eases off the further you pull.
 function withResistance(raw: number) {
   if (raw >= -REVEAL_WIDTH) return raw;
   const excess = -REVEAL_WIDTH - raw;
@@ -68,93 +66,118 @@ function withResistance(raw: number) {
   return -REVEAL_WIDTH - damped;
 }
 
-const SETTLE_TRANSITION = "transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)"; // eases out, slows into place
+const SETTLE_TRANSITION = "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
 
 function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: string) => void }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
-  const [dragX, setDragX] = useState(0); // 0..-REVEAL_WIDTH (with a little overdrag give)
-  const [dragging, setDragging] = useState(false);
-  const revealedRef = useRef(false);
-  const startRef = useRef<{ x: number; y: number; startDragX: number; horizontal: boolean } | null>(null);
+  const rowRef   = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLAnchorElement>(null);
 
-  function onTouchStart(e: React.TouchEvent) {
-    const t = e.touches[0];
-    startRef.current = { x: t.clientX, y: t.clientY, startDragX: dragX, horizontal: false };
+  // Use refs for drag state to avoid re-renders mid-gesture
+  const dragXRef     = useRef(0);
+  const draggingRef  = useRef(false);
+  const revealedRef  = useRef(false);
+  const startRef     = useRef<{ x: number; y: number; startDragX: number; decided: boolean; isH: boolean } | null>(null);
+
+  function applyX(x: number, animate: boolean) {
+    const el = innerRef.current;
+    if (!el) return;
+    el.style.transition = animate ? SETTLE_TRANSITION : "none";
+    el.style.transform  = `translateX(${x}px)`;
   }
 
-  function onTouchMove(e: React.TouchEvent) {
-    const start = startRef.current;
-    if (!start) return;
-    const t = e.touches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-
-    if (!start.horizontal) {
-      if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-      if (Math.abs(dy) >= Math.abs(dx)) { startRef.current = null; return; } // vertical scroll — let it pass
-      start.horizontal = true;
-      setDragging(true);
-    }
-
-    e.preventDefault();
-    const raw = start.startDragX + dx;
-    const next = raw > 0 ? 0 : withResistance(raw);
-    setDragX(next);
-  }
-
-  function onTouchEnd() {
-    if (startRef.current?.horizontal) {
-      const shouldReveal = dragX < -REVEAL_WIDTH / 2;
-      setDragX(shouldReveal ? -REVEAL_WIDTH : 0);
-      revealedRef.current = shouldReveal;
-    }
-    setDragging(false);
-    startRef.current = null;
-  }
-
-  function closeSwipe() {
-    setDragX(0);
+  function close() {
+    dragXRef.current    = 0;
     revealedRef.current = false;
+    applyX(0, true);
   }
 
-  // If the page gets scrolled (e.g. the user swiped and then dragged
-  // up/down to scroll the list) any revealed row snaps back closed.
   useEffect(() => {
-    function onScroll() {
-      if (revealedRef.current) closeSwipe();
+    const el = rowRef.current;
+    if (!el) return;
+
+    function onTouchStart(e: TouchEvent) {
+      const t = e.touches[0];
+      startRef.current = { x: t.clientX, y: t.clientY, startDragX: dragXRef.current, decided: false, isH: false };
     }
+
+    function onTouchMove(e: TouchEvent) {
+      const start = startRef.current;
+      if (!start) return;
+      const t  = e.touches[0];
+      const dx = t.clientX - start.x;
+      const dy = t.clientY - start.y;
+
+      if (!start.decided) {
+        if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;   // wait for intent
+        start.decided = true;
+        start.isH     = Math.abs(dx) > Math.abs(dy);
+        if (!start.isH) { startRef.current = null; return; }
+        draggingRef.current = true;
+      }
+
+      if (!start.isH) return;
+      e.preventDefault();                                      // blocks scroll
+      e.stopPropagation();
+
+      const raw  = start.startDragX + dx;
+      const next = raw > 0 ? 0 : withResistance(raw);
+      dragXRef.current = next;
+      applyX(next, false);
+    }
+
+    function onTouchEnd() {
+      if (!startRef.current?.isH) { startRef.current = null; draggingRef.current = false; return; }
+      const shouldReveal = dragXRef.current < -REVEAL_WIDTH / 2;
+      const target       = shouldReveal ? -REVEAL_WIDTH : 0;
+      dragXRef.current   = target;
+      revealedRef.current = shouldReveal;
+      applyX(target, true);
+      draggingRef.current = false;
+      startRef.current    = null;
+    }
+
+    el.addEventListener("touchstart",  onTouchStart, { passive: true });
+    el.addEventListener("touchmove",   onTouchMove,  { passive: false });
+    el.addEventListener("touchend",    onTouchEnd,   { passive: true });
+    el.addEventListener("touchcancel", onTouchEnd,   { passive: true });
+
+    return () => {
+      el.removeEventListener("touchstart",  onTouchStart);
+      el.removeEventListener("touchmove",   onTouchMove);
+      el.removeEventListener("touchend",    onTouchEnd);
+      el.removeEventListener("touchcancel", onTouchEnd);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    function onScroll() { if (revealedRef.current) close(); }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div className="relative overflow-hidden border-b border-border-subtle/70 last:border-0">
-      {/* Swipe-revealed remove action */}
-      <div
-        className="absolute inset-y-0 right-0 flex items-center justify-center"
-        style={{ width: REVEAL_WIDTH }}
-      >
+    <div ref={rowRef} className="relative overflow-hidden border-b border-border-subtle/70 last:border-0">
+      {/* Swipe-revealed remove button */}
+      <div className="absolute inset-y-0 right-0 flex items-center justify-center" style={{ width: REVEAL_WIDTH }}>
         <button
           onClick={() => onRemove(stock.symbol)}
           aria-label={`Remove ${stock.symbol}`}
           className="flex items-center justify-center text-positive active:scale-90 transition-transform"
         >
-          <Star className="h-7 w-7 fill-current" />
+          <Star className="h-5 w-5 fill-current" />
         </button>
       </div>
 
       <Link
+        ref={innerRef}
         href={`/stock/${stock.symbol}`}
-        onClick={(e) => { if (revealedRef.current) { e.preventDefault(); closeSwipe(); } }}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+        onClick={(e) => { if (revealedRef.current) { e.preventDefault(); close(); } }}
         className="flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted"
-        style={{
-          transform: `translateX(${dragX}px)`,
-          transition: dragging ? "none" : SETTLE_TRANSITION,
-          touchAction: "pan-y",
-        }}
+        style={{ transform: "translateX(0px)", willChange: "transform" }}
+        suppressHydrationWarning
       >
         {stock.logo
           ? <img src={stock.logo} alt="" className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
