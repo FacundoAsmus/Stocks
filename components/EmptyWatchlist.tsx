@@ -92,27 +92,27 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
       const elapsed = now - startTime;
       const t = elapsed / 1000;
 
-      // ── Background: strong, fast radial gradient cycling through wave colours ──
-      const bgAccentT = (Math.sin(t * 1.2) * 0.5 + 0.5);   // 1.2 rad/s — noticeably faster
-
-      const cx = W * (0.35 + 0.3 * Math.sin(t * 0.5));
-      const cy = H * (0.35 + 0.25 * Math.sin(t * 0.4 + 1.0));
-      const grad = ctx!.createRadialGradient(cx, cy, 0, cx, cy, Math.max(W, H) * 0.9);
+      // ── Background: linear gradient rising from the bottom, fading to black
+      //    at mid-screen. Colour cycles between the two wave accent colours.
+      const bgAccentT = (Math.sin(t * 1.2) * 0.5 + 0.5);
 
       const aR = Math.round(C_TOP[0] + (C_BOT[0]-C_TOP[0])*bgAccentT);
       const aG = Math.round(C_TOP[1] + (C_BOT[1]-C_TOP[1])*bgAccentT);
       const aB = Math.round(C_TOP[2] + (C_BOT[2]-C_TOP[2])*bgAccentT);
-      // 70% accent — very prominent, bold colour shift
-      const centreR = Math.round(bgBase[0]*0.30 + aR*0.70);
-      const centreG = Math.round(bgBase[1]*0.30 + aG*0.70);
-      const centreB = Math.round(bgBase[2]*0.30 + aB*0.70);
-      const midR = Math.round(bgBase[0]*0.60 + aR*0.40);
-      const midG = Math.round(bgBase[1]*0.60 + aG*0.40);
-      const midB = Math.round(bgBase[2]*0.60 + aB*0.40);
 
-      grad.addColorStop(0,   `rgb(${centreR},${centreG},${centreB})`);
-      grad.addColorStop(0.45, `rgb(${midR},${midG},${midB})`);
+      // 40% accent at the very bottom edge — moderate intensity
+      const bottomR = Math.round(bgBase[0]*0.60 + aR*0.40);
+      const bottomG = Math.round(bgBase[1]*0.60 + aG*0.40);
+      const bottomB = Math.round(bgBase[2]*0.60 + aB*0.40);
+
+      // Gradient: bottom of screen → mid-screen (pure base = black/white)
+      const grad = ctx!.createLinearGradient(0, H, 0, H * 0.5);
+      grad.addColorStop(0,   `rgb(${bottomR},${bottomG},${bottomB})`);
       grad.addColorStop(1,   `rgb(${bgBase[0]},${bgBase[1]},${bgBase[2]})`);
+
+      // Fill entire canvas with base first, then overlay the gradient
+      ctx!.fillStyle = `rgb(${bgBase[0]},${bgBase[1]},${bgBase[2]})`;
+      ctx!.fillRect(0, 0, W, H);
       ctx!.fillStyle = grad;
       ctx!.fillRect(0, 0, W, H);
 
