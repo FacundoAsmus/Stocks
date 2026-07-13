@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
@@ -310,6 +310,66 @@ function NewsSection({ articles }: { articles: MarketNewsArticle[] }) {
   );
 }
 
+// ─── Shared sticky title bar for ETFs / Winners / Losers (desktop only) ──────
+const COLUMN_TITLES: Record<"etfs" | "gainers" | "losers", string> = {
+  etfs: "Sector ETFs",
+  gainers: "Top Winners",
+  losers: "Top Losers",
+};
+
+function MarketColumnTitleBar() {
+  // Tracks whether the bar is currently pinned to the top of the viewport
+  // (sticky "stuck" state). A shadow is only shown while stuck — never while
+  // the bar is sitting in its normal, non-stuck position.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [isStuck, setIsStuck] = useState(false);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsStuck(!entry.isIntersecting),
+      // Matches the bar's sticky top offset so the flip happens exactly
+      // when it becomes pinned.
+      { rootMargin: "-161px 0px 0px 0px", threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <>
+      <div ref={sentinelRef} className="h-px w-full" />
+      {/* Full-bleed wrapper: breaks out of the page's horizontal padding so
+          the frame spans edge-to-edge of the screen, regardless of where
+          this section sits in the layout. */}
+      <div className="relative left-1/2 w-screen -ml-[50vw]">
+        <div
+          className="sticky z-20 bg-black transition-shadow duration-200 ease-out"
+          style={{
+            top: "160px",
+            borderBottom: "1px solid #3a3a42",
+            // Downward-only shadow (no negative spread on top/sides), and
+            // only rendered at all while the bar is actually stuck.
+            boxShadow: isStuck ? "0 8px 10px -6px rgba(0,0,0,0.35)" : "none",
+          }}
+        >
+          <div className="mx-auto grid w-full grid-cols-3 px-8">
+            {(Object.keys(COLUMN_TITLES) as Array<keyof typeof COLUMN_TITLES>).map((key) => (
+              <h2
+                key={key}
+                className="px-6 py-3 text-xl font-semibold text-positive"
+              >
+                {COLUMN_TITLES[key]}
+              </h2>
+            ))}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ─── Root component ────────────────────────────────────────────────────────
 export function MarketHome() {
   const [data, setData] = useState<MarketPayload>({});
@@ -359,38 +419,29 @@ export function MarketHome() {
 
         {/* Three columns: ETFs | Top Winners | Top Losers */}
         <section>
+          {/* One shared, full-bleed sticky title bar for all three columns */}
+          <MarketColumnTitleBar />
+
           {/* Outer wrapper provides the column gaps visually via padding.
               All three columns get IDENTICAL padding (1.5rem each side) so
               their card areas are the same width. The dividers are purely
               decorative overlays that don't participate in layout. */}
-          <div className="relative grid lg:grid-cols-3" style={{ alignItems: "start" }}>
+          <div className="relative mt-4 grid lg:grid-cols-3" style={{ alignItems: "start" }}>
 
             {/* Decorative vertical dividers — overlay only, no layout impact */}
             <div className="hidden lg:block absolute top-10 bottom-10 w-px bg-[#3a3a42]" style={{ left: "calc(33.333%)" }} />
             <div className="hidden lg:block absolute top-10 bottom-10 w-px bg-[#3a3a42]" style={{ left: "calc(66.666%)" }} />
 
             {(["etfs", "gainers", "losers"] as const).map((key) => {
-              const titles = { etfs: "Sector ETFs", gainers: "Top Winners", losers: "Top Losers" };
               const stocks = (key === "etfs" ? data.etfs : key === "gainers" ? data.gainers : data.losers) ?? [];
               return (
                 <div key={key} className="flex flex-col min-w-0 px-6">
 
-                  {/* Sticky title bar — thicker frame, shadow, green text */}
-                  <div
-                    className="sticky z-20 bg-black mb-4"
-                    style={{
-                      top: "160px",
-                      borderBottom: "2px solid #3a3a42",
-                      paddingBottom: "0.75rem",
-                      paddingTop: "0.5rem",
-                      boxShadow: "0 8px 24px 4px rgba(0,0,0,0.85)",
-                    }}
-                  >
-                    <h2 className="text-xl font-semibold text-positive">{titles[key]}</h2>
-                  </div>
-
-                  {/* Cards — same grid as watchlist */}
-                  <div className="grid grid-cols-1 gap-3 sm:gap-6 auto-rows-fr items-stretch w-full">
+                  {/* Cards — a plain vertical stack (not a fr-sized grid) so every
+                      card's height comes purely from its own fixed content and
+                      stays identical top to bottom, instead of being squeezed by
+                      grid row-sizing as the list grows. */}
+                  <div className="flex flex-col gap-3 sm:gap-6 w-full">
                     {stocks.slice(0, 10).map((stock) => (
                       <StockCard key={stock.symbol} stock={stock} />
                     ))}
