@@ -357,32 +357,39 @@ export function MarketHome() {
         {/* Fear & Greed */}
         <MarketFearGreed />
 
-        {/* Three columns: ETFs | Top Winners | Top Losers
-            Cards are identical to the watchlist page — same grid, same min-h.
-            Titles are sticky, cards scroll behind them.
-            Vertical dividers sit between columns, inset from top and bottom. */}
+        {/* Three columns: ETFs | Top Winners | Top Losers */}
         <section>
+          {/* Outer wrapper provides the column gaps visually via padding.
+              All three columns get IDENTICAL padding (1.5rem each side) so
+              their card areas are the same width. The dividers are purely
+              decorative overlays that don't participate in layout. */}
           <div className="relative grid lg:grid-cols-3" style={{ alignItems: "start" }}>
 
-            {/* Dividers — positioned after the grid so they don't affect column width */}
-            <div className="hidden lg:block absolute top-8 bottom-8 w-px bg-[#3a3a42]" style={{ left: "calc(33.333% - 0.5px)" }} />
-            <div className="hidden lg:block absolute top-8 bottom-8 w-px bg-[#3a3a42]" style={{ left: "calc(66.666% - 0.5px)" }} />
+            {/* Decorative vertical dividers — overlay only, no layout impact */}
+            <div className="hidden lg:block absolute top-10 bottom-10 w-px bg-[#3a3a42]" style={{ left: "calc(33.333%)" }} />
+            <div className="hidden lg:block absolute top-10 bottom-10 w-px bg-[#3a3a42]" style={{ left: "calc(66.666%)" }} />
 
-            {(["etfs", "gainers", "losers"] as const).map((key, colIdx) => {
+            {(["etfs", "gainers", "losers"] as const).map((key) => {
               const titles = { etfs: "Sector ETFs", gainers: "Top Winners", losers: "Top Losers" };
               const stocks = (key === "etfs" ? data.etfs : key === "gainers" ? data.gainers : data.losers) ?? [];
-              const isFirst = colIdx === 0;
-              const isLast  = colIdx === 2;
               return (
-                <div key={key} className="flex flex-col min-w-0" style={{
-                  paddingLeft:  isFirst ? 0 : "2rem",
-                  paddingRight: isLast  ? 0 : "2rem",
-                }}>
-                  {/* Sticky title — stays visible while scrolling the list */}
-                  <div className="sticky z-20 bg-black pb-3 pt-1" style={{ top: "160px" }}>
-                    <h2 className="text-xl font-semibold text-text-primary">{titles[key]}</h2>
+                <div key={key} className="flex flex-col min-w-0 px-6">
+
+                  {/* Sticky title bar — thicker frame, shadow, green text */}
+                  <div
+                    className="sticky z-20 bg-black mb-4"
+                    style={{
+                      top: "160px",
+                      borderBottom: "2px solid #3a3a42",
+                      paddingBottom: "0.75rem",
+                      paddingTop: "0.5rem",
+                      boxShadow: "0 8px 24px 4px rgba(0,0,0,0.85)",
+                    }}
+                  >
+                    <h2 className="text-xl font-semibold text-positive">{titles[key]}</h2>
                   </div>
-                  {/* Cards — same grid class as watchlist */}
+
+                  {/* Cards — same grid as watchlist */}
                   <div className="grid grid-cols-1 gap-3 sm:gap-6 auto-rows-fr items-stretch w-full">
                     {stocks.slice(0, 10).map((stock) => (
                       <StockCard key={stock.symbol} stock={stock} />
