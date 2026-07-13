@@ -316,57 +316,76 @@ const COLUMN_TITLES: Record<"etfs" | "gainers" | "losers", string> = {
   gainers: "Top Winners",
   losers: "Top Losers",
 };
+const TITLE_BAR_TOP = 160;
 
-function MarketColumnTitleBar() {
-  // Tracks whether the bar is currently pinned to the top of the viewport
-  // (sticky "stuck" state). A shadow is only shown while stuck — never while
-  // the bar is sitting in its normal, non-stuck position.
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const [isStuck, setIsStuck] = useState(false);
+/**
+ * A single sticky title bar shared by all three columns.
+ *
+ * Important: this element is rendered as a DIRECT child of `sectionRef`
+ * (the same block that also holds the three card columns), so its CSS
+ * containing block is exactly as tall as "title + all the lists" — that's
+ * what lets it stay pinned while scrolling through the cards, and stop
+ * following once the lists end, instead of detaching immediately.
+ *
+ * The bar's own box keeps the page's normal padding (so its 3 columns are
+ * pixel-identical to the card columns below — no drift). A separate,
+ * purely decorative layer behind the text stretches edge-to-edge of the
+ * screen for the "frame" look, without affecting text alignment.
+ */
+function MarketColumnTitleBar({ topRef, bottomRef }: { topRef: React.RefObject<HTMLDivElement | null>; bottomRef: React.RefObject<HTMLDivElement | null> }) {
+  const [topPassed, setTopPassed] = useState(false);
+  const [bottomPassed, setBottomPassed] = useState(false);
 
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setIsStuck(!entry.isIntersecting),
-      // Matches the bar's sticky top offset so the flip happens exactly
-      // when it becomes pinned.
-      { rootMargin: "-161px 0px 0px 0px", threshold: 0 }
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, []);
+    const opts: IntersectionObserverInit = { rootMargin: `-${TITLE_BAR_TOP + 1}px 0px 0px 0px`, threshold: 0 };
+    const topEl = topRef.current;
+    const bottomEl = bottomRef.current;
+    const topObserver = topEl
+      ? new IntersectionObserver(([entry]) => setTopPassed(!entry.isIntersecting), opts)
+      : null;
+    const bottomObserver = bottomEl
+      ? new IntersectionObserver(([entry]) => setBottomPassed(!entry.isIntersecting), opts)
+      : null;
+    if (topEl && topObserver) topObserver.observe(topEl);
+    if (bottomEl && bottomObserver) bottomObserver.observe(bottomEl);
+    return () => {
+      topObserver?.disconnect();
+      bottomObserver?.disconnect();
+    };
+  }, [topRef, bottomRef]);
+
+  // Stuck (and therefore casting its shadow) only while pinned at the top —
+  // i.e. past the top of the lists but not yet past their end.
+  const isStuck = topPassed && !bottomPassed;
 
   return (
-    <>
-      <div ref={sentinelRef} className="h-px w-full" />
-      {/* Full-bleed wrapper: breaks out of the page's horizontal padding so
-          the frame spans edge-to-edge of the screen, regardless of where
-          this section sits in the layout. */}
-      <div className="relative left-1/2 w-screen -ml-[50vw]">
-        <div
-          className="sticky z-20 bg-black transition-shadow duration-200 ease-out"
-          style={{
-            top: "160px",
-            borderBottom: "1px solid #3a3a42",
-            // Downward-only shadow (no negative spread on top/sides), and
-            // only rendered at all while the bar is actually stuck.
-            boxShadow: isStuck ? "0 8px 10px -6px rgba(0,0,0,0.35)" : "none",
-          }}
-        >
-          <div className="mx-auto grid w-full grid-cols-3 px-8">
-            {(Object.keys(COLUMN_TITLES) as Array<keyof typeof COLUMN_TITLES>).map((key) => (
-              <h2
-                key={key}
-                className="px-6 py-3 text-xl font-semibold text-positive"
-              >
-                {COLUMN_TITLES[key]}
-              </h2>
-            ))}
-          </div>
-        </div>
+    <div
+      className="sticky z-20"
+      style={{ top: `${TITLE_BAR_TOP}px` }}
+    >
+      {/* Decorative backdrop only — stretches to the true screen edges for
+          the "border to border" frame. Purely visual, so it doesn't need
+          pixel-perfect alignment and can't drag the text out of place. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-black transition-shadow duration-200 ease-out"
+        style={{
+          borderBottom: "1px solid #3a3a42",
+          // Downward-only shadow (negative spread keeps it off the top/sides),
+          // and only rendered while the bar is actually pinned.
+          boxShadow: isStuck ? "0 8px 10px -6px rgba(0,0,0,0.35)" : "none",
+        }}
+      />
+      {/* Real content — same padding chain as the cards grid below, so the
+          three titles land exactly above their columns. */}
+      <div className="relative grid grid-cols-3">
+        {(Object.keys(COLUMN_TITLES) as Array<keyof typeof COLUMN_TITLES>).map((key) => (
+          <h2 key={key} className="px-6 py-3 text-xl font-semibold text-positive">
+            {COLUMN_TITLES[key]}
+          </h2>
+        ))}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -377,6 +396,8 @@ export function MarketHome() {
   const [error, setError] = useState<string | null>(null);
   const [initialWatchlist] = useState<string[]>(() => readWatchlist());
   const watchlistQuery = useMemo(() => initialWatchlist.join(","), [initialWatchlist]);
+  const titleBarTopSentinel = useRef<HTMLDivElement>(null);
+  const titleBarBottomSentinel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -419,8 +440,12 @@ export function MarketHome() {
 
         {/* Three columns: ETFs | Top Winners | Top Losers */}
         <section>
+          {/* Sits right above the title bar so we can detect when scrolling
+              has carried it past the sticky offset. */}
+          <div ref={titleBarTopSentinel} className="h-px w-full" />
+
           {/* One shared, full-bleed sticky title bar for all three columns */}
-          <MarketColumnTitleBar />
+          <MarketColumnTitleBar topRef={titleBarTopSentinel} bottomRef={titleBarBottomSentinel} />
 
           {/* Outer wrapper provides the column gaps visually via padding.
               All three columns get IDENTICAL padding (1.5rem each side) so
@@ -443,7 +468,7 @@ export function MarketHome() {
                       grid row-sizing as the list grows. */}
                   <div className="flex flex-col gap-3 sm:gap-6 w-full">
                     {stocks.slice(0, 10).map((stock) => (
-                      <StockCard key={stock.symbol} stock={stock} />
+                      <StockCard key={stock.symbol} stock={stock} minHeightClassName="min-h-[260px] sm:min-h-[490px]" />
                     ))}
                   </div>
                 </div>
@@ -451,6 +476,11 @@ export function MarketHome() {
             })}
 
           </div>
+
+          {/* Marks the end of the lists — once this scrolls past the sticky
+              offset, the title bar has run out of room and detaches, so we
+              also drop its shadow at that exact point. */}
+          <div ref={titleBarBottomSentinel} className="h-px w-full" />
         </section>
 
         {/* News — full width, bottom of page */}
