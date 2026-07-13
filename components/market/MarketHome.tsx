@@ -65,7 +65,22 @@ function MiniSparkline({ stock, className }: { stock: StockSummary; className?: 
 }
 
 function TickerBar({ stocks }: { stocks: StockSummary[] }) {
+  const sectionRef = useRef<HTMLElement>(null);
   const tickerStocks = stocks.length ? [...stocks, ...stocks] : [];
+
+  // Publish this bar's real rendered height as a CSS var so the sticky
+  // title frame below it can compute an accurate "header + ticker" offset
+  // instead of relying on a guessed constant.
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const setVar = () => document.documentElement.style.setProperty("--ticker-bar-height", `${el.offsetHeight}px`);
+    setVar();
+    const observer = new ResizeObserver(setVar);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [tickerStocks.length]);
+
   if (!tickerStocks.length) {
     return (
       <div className="border-y border-border-subtle bg-black py-5 text-sm text-text-muted">
@@ -74,7 +89,7 @@ function TickerBar({ stocks }: { stocks: StockSummary[] }) {
     );
   }
   return (
-    <section className="sticky z-30 overflow-hidden border-y border-border-subtle bg-black" style={{ top: "var(--header-height, 97px)" }}>
+    <section ref={sectionRef} data-market-ticker className="sticky z-30 overflow-hidden border-y border-border-subtle bg-black" style={{ top: "var(--header-height, 97px)" }}>
       <div className="market-ticker flex w-max items-stretch">
         {tickerStocks.map((stock, index) => {
           const isPositive = (stock.changePercent ?? 0) >= 0;
@@ -205,7 +220,7 @@ function FeaturedNews({ articles }: { articles: MarketNewsArticle[] }) {
   return (
     <section>
       <h2 className="mb-4 text-2xl font-semibold text-text-primary">Top Story</h2>
-      <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         {/* Hero article — big image on the left */}
         <a
           href={hero.url}
@@ -215,19 +230,19 @@ function FeaturedNews({ articles }: { articles: MarketNewsArticle[] }) {
         >
           {hero.image ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={hero.image} alt="" className="h-56 w-full object-cover sm:h-72" />
+            <img src={hero.image} alt="" className="h-72 w-full object-cover sm:h-[28rem]" />
           ) : (
-            <div className="h-56 w-full bg-panel-muted sm:h-72" />
+            <div className="h-72 w-full bg-panel-muted sm:h-[28rem]" />
           )}
-          <div className="p-5">
-            <p className="text-xs text-text-muted mb-2">
+          <div className="p-6 sm:p-7">
+            <p className="text-sm text-text-muted mb-2">
               {hero.source || "Market news"} · {formatDateTime(hero.datetime)}
             </p>
-            <h3 className="text-xl font-bold leading-7 text-text-primary group-hover:text-positive transition-colors">
+            <h3 className="text-2xl sm:text-3xl font-bold leading-8 sm:leading-9 text-text-primary group-hover:text-positive transition-colors">
               {hero.headline}
             </h3>
             {hero.summary && (
-              <p className="mt-2 line-clamp-2 text-sm leading-6 text-text-muted">{hero.summary}</p>
+              <p className="mt-3 line-clamp-3 text-base leading-7 text-text-muted">{hero.summary}</p>
             )}
           </div>
         </a>
@@ -385,7 +400,47 @@ const COLUMN_TITLES: Record<"etfs" | "gainers" | "losers", string> = {
   gainers: "Top Winners",
   losers: "Top Losers",
 };
-const TITLE_BAR_TOP = 160;
+
+/**
+ * Reads the real, currently-rendered header + ticker-bar heights (published
+ * as CSS vars by SiteHeader and TickerBar) and keeps them in sync via
+ * ResizeObserver. Using a stale hardcoded pixel guess here was the root
+ * cause of two bugs at once: a visible gap between the ticker bar and the
+ * title frame, and the title frame's "stuck" shadow only kicking in near
+ * the bottom of the list (the IntersectionObserver threshold was off by
+ * however many pixels the guess was wrong by).
+ */
+function useStickyOffset(): number {
+  const [offset, setOffset] = useState(160);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    function readOffset() {
+      const headerH = parseFloat(getComputedStyle(root).getPropertyValue("--header-height")) || 0;
+      const tickerH = parseFloat(getComputedStyle(root).getPropertyValue("--ticker-bar-height")) || 0;
+      if (headerH || tickerH) setOffset(headerH + tickerH);
+    }
+    readOffset();
+
+    // The CSS vars are set by other components' effects on the same tick,
+    // so re-check on the next frame too, then keep watching for layout
+    // changes (font load, window resize, responsive header wrapping, etc).
+    const raf = requestAnimationFrame(readOffset);
+    const header = document.querySelector("header");
+    const ticker = document.querySelector<HTMLElement>("[data-market-ticker]");
+    const observer = new ResizeObserver(readOffset);
+    if (header) observer.observe(header);
+    if (ticker) observer.observe(ticker);
+    window.addEventListener("resize", readOffset);
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+      window.removeEventListener("resize", readOffset);
+    };
+  }, []);
+
+  return offset;
+}
 
 /**
  * A single sticky title bar shared by all three columns.
@@ -404,9 +459,10 @@ const TITLE_BAR_TOP = 160;
 function MarketColumnTitleBar({ topRef, bottomRef }: { topRef: React.RefObject<HTMLDivElement | null>; bottomRef: React.RefObject<HTMLDivElement | null> }) {
   const [topPassed, setTopPassed] = useState(false);
   const [bottomPassed, setBottomPassed] = useState(false);
+  const stickyTop = useStickyOffset();
 
   useEffect(() => {
-    const opts: IntersectionObserverInit = { rootMargin: `-${TITLE_BAR_TOP + 1}px 0px 0px 0px`, threshold: 0 };
+    const opts: IntersectionObserverInit = { rootMargin: `-${stickyTop + 1}px 0px 0px 0px`, threshold: 0 };
     const topEl = topRef.current;
     const bottomEl = bottomRef.current;
     const topObserver = topEl
@@ -421,7 +477,7 @@ function MarketColumnTitleBar({ topRef, bottomRef }: { topRef: React.RefObject<H
       topObserver?.disconnect();
       bottomObserver?.disconnect();
     };
-  }, [topRef, bottomRef]);
+  }, [topRef, bottomRef, stickyTop]);
 
   // Stuck (and therefore casting its shadow) only while pinned at the top —
   // i.e. past the top of the lists but not yet past their end.
@@ -430,7 +486,7 @@ function MarketColumnTitleBar({ topRef, bottomRef }: { topRef: React.RefObject<H
   return (
     <div
       className="sticky z-20"
-      style={{ top: `${TITLE_BAR_TOP}px` }}
+      style={{ top: `${stickyTop}px` }}
     >
       {/* Decorative backdrop only — stretches to the true screen edges for
           the "border to border" frame. Purely visual, so it doesn't need
@@ -543,7 +599,7 @@ export function MarketHome() {
                       grid row-sizing as the list grows. */}
                   <div className="flex flex-col gap-3 sm:gap-6 w-full">
                     {stocks.slice(0, 10).map((stock) => (
-                      <StockCard key={stock.symbol} stock={stock} minHeightClassName="min-h-[260px] sm:min-h-[490px]" />
+                      <StockCard key={stock.symbol} stock={stock} minHeightClassName="min-h-[260px] sm:min-h-[560px]" />
                     ))}
                   </div>
                 </div>
