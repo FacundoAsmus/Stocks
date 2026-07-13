@@ -357,27 +357,48 @@ export function MarketHome() {
         {/* Fear & Greed */}
         <MarketFearGreed />
 
-        {/* Three columns: ETFs | Top Winners | Top Losers — each is a vertical stack of cards */}
+        {/* Three columns: ETFs | Top Winners | Top Losers
+            Cards are identical to the watchlist page — same grid, same min-h.
+            Vertical dividers sit between columns, inset from top and bottom. */}
         <section>
-          <div className="grid gap-8 lg:grid-cols-3 items-start">
-            <div className="flex flex-col gap-4">
-              <h2 className="text-xl font-semibold text-text-primary">Sector ETFs</h2>
-              {(data.etfs ?? []).slice(0, 10).map((stock) => (
-                <StockCard key={stock.symbol} stock={stock} />
-              ))}
+          <div className="relative grid gap-0 lg:grid-cols-3">
+
+            {/* Column 1 — ETFs */}
+            <div className="flex flex-col pr-0 lg:pr-8">
+              <h2 className="mb-4 text-xl font-semibold text-text-primary px-2 sm:px-4">Sector ETFs</h2>
+              <div className="grid grid-cols-1 gap-3 px-2 sm:gap-6 sm:px-4 auto-rows-fr items-stretch w-full">
+                {(data.etfs ?? []).slice(0, 10).map((stock) => (
+                  <StockCard key={stock.symbol} stock={stock} />
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col gap-4">
-              <h2 className="text-xl font-semibold text-text-primary">Top Winners</h2>
-              {(data.gainers ?? []).slice(0, 10).map((stock) => (
-                <StockCard key={stock.symbol} stock={stock} />
-              ))}
+
+            {/* Divider 1 */}
+            <div className="hidden lg:block absolute left-1/3 top-8 bottom-8 w-px bg-[#3a3a42]" />
+
+            {/* Column 2 — Winners */}
+            <div className="flex flex-col px-0 lg:px-8">
+              <h2 className="mb-4 text-xl font-semibold text-text-primary px-2 sm:px-4">Top Winners</h2>
+              <div className="grid grid-cols-1 gap-3 px-2 sm:gap-6 sm:px-4 auto-rows-fr items-stretch w-full">
+                {(data.gainers ?? []).slice(0, 10).map((stock) => (
+                  <StockCard key={stock.symbol} stock={stock} />
+                ))}
+              </div>
             </div>
-            <div className="flex flex-col gap-4">
-              <h2 className="text-xl font-semibold text-text-primary">Top Losers</h2>
-              {(data.losers ?? []).slice(0, 10).map((stock) => (
-                <StockCard key={stock.symbol} stock={stock} />
-              ))}
+
+            {/* Divider 2 */}
+            <div className="hidden lg:block absolute left-2/3 top-8 bottom-8 w-px bg-[#3a3a42]" />
+
+            {/* Column 3 — Losers */}
+            <div className="flex flex-col pl-0 lg:pl-8">
+              <h2 className="mb-4 text-xl font-semibold text-text-primary px-2 sm:px-4">Top Losers</h2>
+              <div className="grid grid-cols-1 gap-3 px-2 sm:gap-6 sm:px-4 auto-rows-fr items-stretch w-full">
+                {(data.losers ?? []).slice(0, 10).map((stock) => (
+                  <StockCard key={stock.symbol} stock={stock} />
+                ))}
+              </div>
             </div>
+
           </div>
         </section>
 
