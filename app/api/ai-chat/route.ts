@@ -61,7 +61,7 @@ Guidelines:
 
   const requestBody = JSON.stringify({
     contents,
-    //tools: [{ google_search: {} }],
+    tools: [{ google_search: {} }],
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 512,
