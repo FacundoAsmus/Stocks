@@ -30,7 +30,7 @@ export function StockCard({
 
   return (
     <article className={`group relative flex flex-col ${minHeightClassName} w-full rounded-2xl sm:rounded-[32px] border border-[#3a3a42] bg-black transition-all duration-300 ease-out hover:border-positive/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]`}>
-      <div className="absolute right-8 top-8 z-30">
+      <div className="absolute right-8 top-8 z-[15]">
         <AddToWatchlistButton symbol={stock.symbol} name={stock.name} compact />
       </div>
 

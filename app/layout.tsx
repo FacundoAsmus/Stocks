@@ -3,9 +3,8 @@ import { DM_Sans } from "next/font/google";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
 
-import { AppNav } from "@/components/AppNav";
 import { MobileNav } from "@/components/MobileNav";
-import { SearchBar } from "@/components/SearchBar";
+import { SiteHeader } from "@/components/SiteHeader";
 import { ToastProvider } from "@/components/ToastProvider";
 import "./globals.css";
 
@@ -30,12 +29,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ToastProvider>
           <div className="min-h-screen">
             {/* Desktop header — hidden on mobile */}
-            <header className="sticky top-0 z-40 border-b border-border-subtle/70 bg-background/86 backdrop-blur-xl hidden lg:block">
-              <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-                <AppNav />
-                <SearchBar />
-              </div>
-            </header>
+            <SiteHeader />
 
             <main className="w-full">{children}</main>
 

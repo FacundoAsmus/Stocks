@@ -74,7 +74,7 @@ function TickerBar({ stocks }: { stocks: StockSummary[] }) {
     );
   }
   return (
-    <section className="sticky top-[97px] z-30 overflow-hidden border-y border-border-subtle bg-black">
+    <section className="sticky z-30 overflow-hidden border-y border-border-subtle bg-black" style={{ top: "var(--header-height, 97px)" }}>
       <div className="market-ticker flex w-max items-stretch">
         {tickerStocks.map((stock, index) => {
           const isPositive = (stock.changePercent ?? 0) >= 0;
@@ -192,6 +192,75 @@ function MarketStatusCard() {
       </p>
       <p className="mt-1 text-sm text-text-muted">{status.subLabel}</p>
     </div>
+  );
+}
+
+// ─── Featured news teaser — big story + 3 smaller, above Fear & Greed ──────
+function FeaturedNews({ articles }: { articles: MarketNewsArticle[] }) {
+  const [hero, ...rest] = articles.slice(0, 4);
+  const secondary = rest.slice(0, 3);
+
+  if (!hero) return null;
+
+  return (
+    <section>
+      <h2 className="mb-4 text-2xl font-semibold text-text-primary">Top Story</h2>
+      <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
+        {/* Hero article — big image on the left */}
+        <a
+          href={hero.url}
+          target="_blank"
+          rel="noreferrer"
+          className="group relative overflow-hidden rounded-2xl border border-[#3a3a42] bg-black transition-all duration-300 hover:border-positive/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] hover:-translate-y-1"
+        >
+          {hero.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={hero.image} alt="" className="h-56 w-full object-cover sm:h-72" />
+          ) : (
+            <div className="h-56 w-full bg-panel-muted sm:h-72" />
+          )}
+          <div className="p-5">
+            <p className="text-xs text-text-muted mb-2">
+              {hero.source || "Market news"} · {formatDateTime(hero.datetime)}
+            </p>
+            <h3 className="text-xl font-bold leading-7 text-text-primary group-hover:text-positive transition-colors">
+              {hero.headline}
+            </h3>
+            {hero.summary && (
+              <p className="mt-2 line-clamp-2 text-sm leading-6 text-text-muted">{hero.summary}</p>
+            )}
+          </div>
+        </a>
+
+        {/* 3 smaller stories, stacked on the right */}
+        <div className="flex flex-col gap-4">
+          {secondary.map((article) => (
+            <a
+              key={article.id}
+              href={article.url}
+              target="_blank"
+              rel="noreferrer"
+              className="group flex flex-1 gap-4 overflow-hidden rounded-xl border border-[#3a3a42] bg-black p-3 transition-all duration-200 hover:border-positive/50 hover:shadow-lg hover:-translate-y-0.5"
+            >
+              {article.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={article.image} alt="" className="h-20 w-28 rounded-lg object-cover shrink-0" />
+              ) : (
+                <div className="h-20 w-28 rounded-lg bg-panel-muted shrink-0" />
+              )}
+              <div className="min-w-0 flex flex-col justify-center">
+                <p className="text-xs text-text-muted mb-1.5">
+                  {article.source || "Market news"} · {formatDateTime(article.datetime)}
+                </p>
+                <h3 className="line-clamp-2 text-sm font-semibold leading-5 text-text-primary group-hover:text-positive transition-colors">
+                  {article.headline}
+                </h3>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -372,8 +441,11 @@ function MarketColumnTitleBar({ topRef, bottomRef }: { topRef: React.RefObject<H
         style={{
           borderBottom: "1px solid #3a3a42",
           // Downward-only shadow (negative spread keeps it off the top/sides),
-          // and only rendered while the bar is actually pinned.
-          boxShadow: isStuck ? "0 8px 10px -6px rgba(0,0,0,0.35)" : "none",
+          // and only rendered while the bar is actually pinned. A pure black
+          // shadow is invisible against this page's pure-black background,
+          // so we use the app's dark-grey border tone instead — it reads as
+          // a shadow while still sitting on a true black page.
+          boxShadow: isStuck ? "0 10px 14px -6px rgba(58, 58, 66, 0.85), 0 2px 4px rgba(58, 58, 66, 0.5)" : "none",
         }}
       />
       {/* Real content — same padding chain as the cards grid below, so the
@@ -435,6 +507,9 @@ export function MarketHome() {
           <MarketStatusCard />
         </div>
 
+        {/* Featured news — big story + 3 smaller, right above Fear & Greed */}
+        <FeaturedNews articles={data.news ?? []} />
+
         {/* Fear & Greed */}
         <MarketFearGreed />
 
@@ -484,7 +559,7 @@ export function MarketHome() {
         </section>
 
         {/* News — full width, bottom of page */}
-        <NewsSection articles={data.news ?? []} />
+        <NewsSection articles={(data.news ?? []).slice(4)} />
       </div>
     </div>
   );
