@@ -359,45 +359,38 @@ export function MarketHome() {
 
         {/* Three columns: ETFs | Top Winners | Top Losers
             Cards are identical to the watchlist page — same grid, same min-h.
+            Titles are sticky, cards scroll behind them.
             Vertical dividers sit between columns, inset from top and bottom. */}
         <section>
-          <div className="relative grid gap-0 lg:grid-cols-3">
+          <div className="relative grid lg:grid-cols-3" style={{ alignItems: "start" }}>
 
-            {/* Column 1 — ETFs */}
-            <div className="flex flex-col pr-0 lg:pr-8">
-              <h2 className="mb-4 text-xl font-semibold text-text-primary px-2 sm:px-4">Sector ETFs</h2>
-              <div className="grid grid-cols-1 gap-3 px-2 sm:gap-6 sm:px-4 auto-rows-fr items-stretch w-full">
-                {(data.etfs ?? []).slice(0, 10).map((stock) => (
-                  <StockCard key={stock.symbol} stock={stock} />
-                ))}
-              </div>
-            </div>
+            {/* Dividers — positioned after the grid so they don't affect column width */}
+            <div className="hidden lg:block absolute top-8 bottom-8 w-px bg-[#3a3a42]" style={{ left: "calc(33.333% - 0.5px)" }} />
+            <div className="hidden lg:block absolute top-8 bottom-8 w-px bg-[#3a3a42]" style={{ left: "calc(66.666% - 0.5px)" }} />
 
-            {/* Divider 1 */}
-            <div className="hidden lg:block absolute left-1/3 top-8 bottom-8 w-px bg-[#3a3a42]" />
-
-            {/* Column 2 — Winners */}
-            <div className="flex flex-col px-0 lg:px-8">
-              <h2 className="mb-4 text-xl font-semibold text-text-primary px-2 sm:px-4">Top Winners</h2>
-              <div className="grid grid-cols-1 gap-3 px-2 sm:gap-6 sm:px-4 auto-rows-fr items-stretch w-full">
-                {(data.gainers ?? []).slice(0, 10).map((stock) => (
-                  <StockCard key={stock.symbol} stock={stock} />
-                ))}
-              </div>
-            </div>
-
-            {/* Divider 2 */}
-            <div className="hidden lg:block absolute left-2/3 top-8 bottom-8 w-px bg-[#3a3a42]" />
-
-            {/* Column 3 — Losers */}
-            <div className="flex flex-col pl-0 lg:pl-8">
-              <h2 className="mb-4 text-xl font-semibold text-text-primary px-2 sm:px-4">Top Losers</h2>
-              <div className="grid grid-cols-1 gap-3 px-2 sm:gap-6 sm:px-4 auto-rows-fr items-stretch w-full">
-                {(data.losers ?? []).slice(0, 10).map((stock) => (
-                  <StockCard key={stock.symbol} stock={stock} />
-                ))}
-              </div>
-            </div>
+            {(["etfs", "gainers", "losers"] as const).map((key, colIdx) => {
+              const titles = { etfs: "Sector ETFs", gainers: "Top Winners", losers: "Top Losers" };
+              const stocks = (key === "etfs" ? data.etfs : key === "gainers" ? data.gainers : data.losers) ?? [];
+              const isFirst = colIdx === 0;
+              const isLast  = colIdx === 2;
+              return (
+                <div key={key} className="flex flex-col min-w-0" style={{
+                  paddingLeft:  isFirst ? 0 : "2rem",
+                  paddingRight: isLast  ? 0 : "2rem",
+                }}>
+                  {/* Sticky title — stays visible while scrolling the list */}
+                  <div className="sticky z-20 bg-black pb-3 pt-1" style={{ top: "160px" }}>
+                    <h2 className="text-xl font-semibold text-text-primary">{titles[key]}</h2>
+                  </div>
+                  {/* Cards — same grid class as watchlist */}
+                  <div className="grid grid-cols-1 gap-3 sm:gap-6 auto-rows-fr items-stretch w-full">
+                    {stocks.slice(0, 10).map((stock) => (
+                      <StockCard key={stock.symbol} stock={stock} />
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
 
           </div>
         </section>
