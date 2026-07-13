@@ -310,25 +310,6 @@ function NewsSection({ articles }: { articles: MarketNewsArticle[] }) {
   );
 }
 
-// ─── Stock card grid section (ETF / Winners / Losers) ─────────────────────
-// Uses <StockCard> directly — identical behaviour, size, hover, star button.
-function StockCardGrid({ title, stocks }: { title: string; stocks: StockSummary[] }) {
-  return (
-    <section>
-      <h2 className="mb-4 text-xl font-semibold text-text-primary">{title}</h2>
-      {stocks.length ? (
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {stocks.slice(0, 10).map((stock) => (
-            <StockCard key={stock.symbol} stock={stock} />
-          ))}
-        </div>
-      ) : (
-        <p className="py-8 text-sm text-text-muted">No data available.</p>
-      )}
-    </section>
-  );
-}
-
 // ─── Root component ────────────────────────────────────────────────────────
 export function MarketHome() {
   const [data, setData] = useState<MarketPayload>({});
@@ -376,12 +357,27 @@ export function MarketHome() {
         {/* Fear & Greed */}
         <MarketFearGreed />
 
-        {/* Three-column card grid: ETFs | Top Winners | Top Losers */}
+        {/* Three columns: ETFs | Top Winners | Top Losers — each is a vertical stack of cards */}
         <section>
-          <div className="grid gap-8 lg:grid-cols-3">
-            <StockCardGrid title="Sector ETFs"  stocks={data.etfs    ?? []} />
-            <StockCardGrid title="Top Winners"  stocks={data.gainers ?? []} />
-            <StockCardGrid title="Top Losers"   stocks={data.losers  ?? []} />
+          <div className="grid gap-8 lg:grid-cols-3 items-start">
+            <div className="flex flex-col gap-4">
+              <h2 className="text-xl font-semibold text-text-primary">Sector ETFs</h2>
+              {(data.etfs ?? []).slice(0, 10).map((stock) => (
+                <StockCard key={stock.symbol} stock={stock} />
+              ))}
+            </div>
+            <div className="flex flex-col gap-4">
+              <h2 className="text-xl font-semibold text-text-primary">Top Winners</h2>
+              {(data.gainers ?? []).slice(0, 10).map((stock) => (
+                <StockCard key={stock.symbol} stock={stock} />
+              ))}
+            </div>
+            <div className="flex flex-col gap-4">
+              <h2 className="text-xl font-semibold text-text-primary">Top Losers</h2>
+              {(data.losers ?? []).slice(0, 10).map((stock) => (
+                <StockCard key={stock.symbol} stock={stock} />
+              ))}
+            </div>
           </div>
         </section>
 
