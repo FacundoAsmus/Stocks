@@ -95,7 +95,7 @@ function DropLine() {
 const REVEAL_WIDTH = 76;
 const OVERDRAG_MAX = 28;
 const LONG_PRESS_MS = 450;
-const MOVE_CANCEL_PX = 8; // movement before the long-press timer fires cancels it
+const MOVE_CANCEL_PX = 14; // movement before the long-press timer fires cancels it — generous enough to tolerate natural hand tremor while holding still
 
 function withResistance(raw: number) {
   if (raw >= -REVEAL_WIDTH) return raw;
@@ -132,7 +132,11 @@ function WatchlistRow({
   const revealedRef    = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
-  const startRef = useRef<{ x: number; y: number; startDragX: number; decided: boolean; isH: boolean } | null>(null);
+  const startRef = useRef<{
+    x: number; y: number; startDragX: number;
+    decided: boolean; isH: boolean;
+    scrollLastY: number; // last Y we've already applied to the manual scroll
+  } | null>(null);
 
   function applyX(x: number, animate: boolean) {
     const el = innerRef.current;
@@ -160,7 +164,10 @@ function WatchlistRow({
 
     function onTouchStart(e: TouchEvent) {
       const t = e.touches[0];
-      startRef.current = { x: t.clientX, y: t.clientY, startDragX: dragXRef.current, decided: false, isH: false };
+      startRef.current = {
+        x: t.clientX, y: t.clientY, startDragX: dragXRef.current,
+        decided: false, isH: false, scrollLastY: t.clientY,
+      };
       longPressFired.current = false;
       clearLongPress();
       // Only offer drag-to-reorder from a row's resting position (not mid-swipe).
@@ -168,7 +175,7 @@ function WatchlistRow({
         longPressTimer.current = setTimeout(() => {
           longPressTimer.current = null;
           longPressFired.current = true;
-          startRef.current = null; // stop any swipe-gesture bookkeeping
+          startRef.current = null; // stop any swipe/scroll bookkeeping
           if (rowRef.current) {
             if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
             onDragStart(index, rowRef.current, t.clientY);
@@ -192,16 +199,36 @@ function WatchlistRow({
       const dy = t.clientY - start.y;
 
       if (!start.decided) {
-        if (Math.abs(dx) < MOVE_CANCEL_PX && Math.abs(dy) < MOVE_CANCEL_PX) return; // wait for intent
+        // Touch-action is "none" on this row (see JSX below), so the browser
+        // never gets a chance to silently start its own scroll gesture here
+        // — we always own the event. That's what makes preventDefault()
+        // further down actually work reliably instead of being a no-op
+        // because native scrolling already committed a few pixels earlier.
+        e.preventDefault();
+        if (Math.abs(dx) < MOVE_CANCEL_PX && Math.abs(dy) < MOVE_CANCEL_PX) return; // wait for intent — tolerate natural hand tremor
         start.decided = true;
-        start.isH     = Math.abs(dx) > Math.abs(dy);
+        start.isH     = Math.abs(dx) > Math.abs(dy) * 1.15; // slight bias toward "this is a scroll", the more common gesture
         clearLongPress(); // real movement — this isn't a long-press-and-hold
-        if (!start.isH) { startRef.current = null; return; }
+
+        if (!start.isH) {
+          // Vertical intent: since native scrolling is disabled on this
+          // element, drive the page scroll ourselves so it never stalls —
+          // apply the full buffered delta first so nothing jumps.
+          window.scrollBy(0, start.scrollLastY - t.clientY);
+          start.scrollLastY = t.clientY;
+          return;
+        }
         draggingRef.current = true;
       }
 
-      if (!start.isH) return;
-      e.preventDefault();                                      // blocks scroll
+      if (!start.isH) {
+        window.scrollBy(0, start.scrollLastY - t.clientY);
+        start.scrollLastY = t.clientY;
+        e.preventDefault();
+        return;
+      }
+
+      e.preventDefault();
       e.stopPropagation();
 
       const raw  = start.startDragX + dx;
@@ -230,7 +257,11 @@ function WatchlistRow({
       startRef.current    = null;
     }
 
-    el.addEventListener("touchstart",  onTouchStart, { passive: true });
+    // touchstart/move are non-passive: we need to be able to preventDefault()
+    // from the very first moved pixel, otherwise the browser can commit to
+    // native scrolling before our long-press timer or gesture logic ever
+    // gets a say, and preventDefault() later in the same gesture is ignored.
+    el.addEventListener("touchstart",  onTouchStart, { passive: false });
     el.addEventListener("touchmove",   onTouchMove,  { passive: false });
     el.addEventListener("touchend",    onTouchEnd,   { passive: true });
     el.addEventListener("touchcancel", onTouchEnd,   { passive: true });
@@ -256,7 +287,7 @@ function WatchlistRow({
       ref={rowRef}
       data-watchlist-row
       className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 transition-opacity duration-150"
-      style={{ opacity: isDragSource ? 0 : 1 }}
+      style={{ opacity: isDragSource ? 0 : 1, touchAction: "none" }}
     >
       {/* Swipe-revealed remove button */}
       <div className="absolute inset-y-0 right-0 flex items-center justify-center" style={{ width: REVEAL_WIDTH }}>
