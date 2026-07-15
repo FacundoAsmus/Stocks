@@ -135,7 +135,6 @@ function WatchlistRow({
   const startRef = useRef<{
     x: number; y: number; startDragX: number;
     decided: boolean; isH: boolean;
-    scrollLastY: number; // last Y we've already applied to the manual scroll
   } | null>(null);
 
   function applyX(x: number, animate: boolean) {
@@ -166,7 +165,7 @@ function WatchlistRow({
       const t = e.touches[0];
       startRef.current = {
         x: t.clientX, y: t.clientY, startDragX: dragXRef.current,
-        decided: false, isH: false, scrollLastY: t.clientY,
+        decided: false, isH: false,
       };
       longPressFired.current = false;
       clearLongPress();
@@ -175,7 +174,7 @@ function WatchlistRow({
         longPressTimer.current = setTimeout(() => {
           longPressTimer.current = null;
           longPressFired.current = true;
-          startRef.current = null; // stop any swipe/scroll bookkeeping
+          startRef.current = null; // stop any swipe-gesture bookkeeping
           if (rowRef.current) {
             if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
             onDragStart(index, rowRef.current, t.clientY);
@@ -188,6 +187,8 @@ function WatchlistRow({
       const t = e.touches[0];
 
       if (longPressFired.current) {
+        // Drag engaged — take the gesture over completely, this is the one
+        // case where we actively stop the page from scrolling.
         e.preventDefault();
         onDragMove(t.clientY);
         return;
@@ -199,35 +200,27 @@ function WatchlistRow({
       const dy = t.clientY - start.y;
 
       if (!start.decided) {
-        // Touch-action is "none" on this row (see JSX below), so the browser
-        // never gets a chance to silently start its own scroll gesture here
-        // — we always own the event. That's what makes preventDefault()
-        // further down actually work reliably instead of being a no-op
-        // because native scrolling already committed a few pixels earlier.
-        e.preventDefault();
-        if (Math.abs(dx) < MOVE_CANCEL_PX && Math.abs(dy) < MOVE_CANCEL_PX) return; // wait for intent — tolerate natural hand tremor
+        if (Math.abs(dx) < MOVE_CANCEL_PX && Math.abs(dy) < MOVE_CANCEL_PX) return; // wait for intent — tolerate natural hand tremor while holding still
         start.decided = true;
         start.isH     = Math.abs(dx) > Math.abs(dy) * 1.15; // slight bias toward "this is a scroll", the more common gesture
         clearLongPress(); // real movement — this isn't a long-press-and-hold
 
         if (!start.isH) {
-          // Vertical intent: since native scrolling is disabled on this
-          // element, drive the page scroll ourselves so it never stalls —
-          // apply the full buffered delta first so nothing jumps.
-          window.scrollBy(0, start.scrollLastY - t.clientY);
-          start.scrollLastY = t.clientY;
+          // Vertical intent: this is an ordinary scroll. `touch-action: pan-y`
+          // on the row (see JSX below) means the browser has been handling
+          // this natively — with full native momentum — the whole time, so
+          // there's nothing for us to do here; just stop tracking it as a
+          // possible swipe/drag.
+          startRef.current = null;
           return;
         }
         draggingRef.current = true;
       }
 
-      if (!start.isH) {
-        window.scrollBy(0, start.scrollLastY - t.clientY);
-        start.scrollLastY = t.clientY;
-        e.preventDefault();
-        return;
-      }
+      if (!start.isH) return;
 
+      // Horizontal swipe-to-reveal: override the browser's default (which
+      // would otherwise fight us) only for this axis.
       e.preventDefault();
       e.stopPropagation();
 
@@ -257,11 +250,11 @@ function WatchlistRow({
       startRef.current    = null;
     }
 
-    // touchstart/move are non-passive: we need to be able to preventDefault()
-    // from the very first moved pixel, otherwise the browser can commit to
-    // native scrolling before our long-press timer or gesture logic ever
-    // gets a say, and preventDefault() later in the same gesture is ignored.
-    el.addEventListener("touchstart",  onTouchStart, { passive: false });
+    // touchstart/move are non-passive so we can preventDefault() to take
+    // over horizontal swipes and an engaged long-press-drag; ordinary
+    // vertical scrolling is left entirely to the browser (touch-action:
+    // pan-y below) so it keeps its native momentum/inertia.
+    el.addEventListener("touchstart",  onTouchStart, { passive: true });
     el.addEventListener("touchmove",   onTouchMove,  { passive: false });
     el.addEventListener("touchend",    onTouchEnd,   { passive: true });
     el.addEventListener("touchcancel", onTouchEnd,   { passive: true });
@@ -287,7 +280,7 @@ function WatchlistRow({
       ref={rowRef}
       data-watchlist-row
       className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 transition-opacity duration-150"
-      style={{ opacity: isDragSource ? 0 : 1, touchAction: "none" }}
+      style={{ opacity: isDragSource ? 0 : 1, touchAction: "pan-y", WebkitTouchCallout: "none" }}
     >
       {/* Swipe-revealed remove button */}
       <div className="absolute inset-y-0 right-0 flex items-center justify-center" style={{ width: REVEAL_WIDTH }}>
@@ -305,7 +298,13 @@ function WatchlistRow({
         href={`/stock/${stock.symbol}`}
         onClick={(e) => { if (revealedRef.current) { e.preventDefault(); close(); } }}
         className="flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted"
-        style={{ transform: "translateX(0px)", willChange: "transform" }}
+        style={{
+          transform: "translateX(0px)",
+          willChange: "transform",
+          WebkitTouchCallout: "none",
+          WebkitUserSelect: "none",
+          userSelect: "none",
+        }}
         suppressHydrationWarning
       >
         <RowContent stock={stock} />
