@@ -478,8 +478,9 @@ export function MobileNav() {
   const showNav = pathname === "/" || pathname === "/watchlist";
   if (!showNav) return null;
 
-  const isMarket    = activePill === "market";
   const isWatchlist = activePill === "watchlist";
+  const activeIndex = settingsOpen ? 2 : (isWatchlist ? 1 : 0);
+  const BUBBLE_SIZE = "3.5rem"; // matches the search pill's h-14 exactly
 
   function navigateTo(href: "/" | "/watchlist") {
     const goingToWatchlist = href === "/watchlist";
@@ -491,15 +492,7 @@ export function MobileNav() {
     slideAndNavigate(router, href, exitClass);
   }
 
-  // Shared pill style
-  function pillClass(active: boolean) {
-    return cn(
-      "flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 pointer-events-auto",
-      active
-        ? "bg-positive"
-        : "bg-black/40 backdrop-blur-md border border-white/20"
-    );
-  }
+  const iconWrapClass = "relative z-10 flex items-center justify-center transition-colors duration-300";
   function iconClass(active: boolean) {
     return cn("transition-colors duration-300", active ? "text-black" : "text-positive");
   }
@@ -508,22 +501,51 @@ export function MobileNav() {
     <>
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
 
-      {/* Three pills: Market, Watchlist, Settings — left-grouped */}
+      {/* One unified bubble: Market / Watchlist / Settings, with a sliding
+          green indicator behind the active section. Height-matched to the
+          search pill so everything along the bottom bar lines up. */}
       <nav
-        className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center justify-start gap-3 px-5 pointer-events-none"
+        className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center justify-start px-5 pointer-events-none"
         style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))", paddingTop: "1rem" }}
       >
-        <button className={pillClass(isMarket)} onClick={() => navigateTo("/")}>
-          <GlobeIcon className={cn("h-6 w-6", iconClass(isMarket))} />
-        </button>
+        <div
+          className="relative flex items-center rounded-full bg-black/40 backdrop-blur-md border border-white/20 overflow-hidden pointer-events-auto"
+          style={{ height: BUBBLE_SIZE }}
+        >
+          {/* Sliding green indicator */}
+          <span
+            aria-hidden
+            className="absolute left-0 top-0 rounded-full bg-positive transition-transform duration-300 ease-out"
+            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE, transform: `translateX(${activeIndex * 3.5}rem)` }}
+          />
 
-        <button className={pillClass(isWatchlist)} onClick={() => navigateTo("/watchlist")}>
-          <List className={cn("h-6 w-6", iconClass(isWatchlist))} />
-        </button>
+          <button
+            className={iconWrapClass}
+            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE }}
+            onClick={() => navigateTo("/")}
+            aria-label="Market"
+          >
+            <GlobeIcon className={cn("h-6 w-6", iconClass(activeIndex === 0))} />
+          </button>
 
-        <button className={pillClass(false)} onClick={() => setSettingsOpen(true)}>
-          <Settings className="h-6 w-6 text-positive" />
-        </button>
+          <button
+            className={iconWrapClass}
+            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE }}
+            onClick={() => navigateTo("/watchlist")}
+            aria-label="Watchlist"
+          >
+            <List className={cn("h-6 w-6", iconClass(activeIndex === 1))} />
+          </button>
+
+          <button
+            className={iconWrapClass}
+            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE }}
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+          >
+            <Settings className={cn("h-6 w-6", iconClass(activeIndex === 2))} />
+          </button>
+        </div>
       </nav>
 
       {/* Search — self-contained pill, same behaviour as the AI chat pill */}
