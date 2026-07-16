@@ -83,14 +83,8 @@ function RowContent({ stock }: { stock: StockSummary }) {
   );
 }
 
-// ─── Green insertion-point indicator ────────────────────────────────────────
-function DropLine() {
-  return (
-    <div className="relative h-0">
-      <div className="absolute inset-x-3 top-0 h-[3px] -translate-y-1/2 rounded-full bg-positive shadow-[0_0_8px_rgba(0,200,5,0.7)]" />
-    </div>
-  );
-}
+// ─── Green outline marking which stock will swap places ────────────────────
+const SWAP_TARGET_CLASS = "ring-2 ring-inset ring-positive shadow-[0_0_16px_rgba(0,200,5,0.35)]";
 
 const REVEAL_WIDTH = 76;
 const OVERDRAG_MAX = 28;
@@ -110,6 +104,7 @@ function WatchlistRow({
   stock,
   index,
   isDragSource,
+  isSwapTarget,
   onRemove,
   onDragStart,
   onDragMove,
@@ -118,6 +113,7 @@ function WatchlistRow({
   stock: StockSummary;
   index: number;
   isDragSource: boolean;
+  isSwapTarget: boolean;
   onRemove: (s: string) => void;
   onDragStart: (index: number, rowEl: HTMLElement, clientY: number) => void;
   onDragMove: (clientY: number) => void;
@@ -279,7 +275,10 @@ function WatchlistRow({
     <div
       ref={rowRef}
       data-watchlist-row
-      className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 transition-opacity duration-150"
+      className={cn(
+        "relative overflow-hidden border-b border-border-subtle/70 last:border-0 transition-opacity duration-150",
+        isSwapTarget && SWAP_TARGET_CLASS
+      )}
       style={{ opacity: isDragSource ? 0 : 1, touchAction: "pan-y", WebkitTouchCallout: "none" }}
     >
       {/* Swipe-revealed remove button */}
@@ -322,13 +321,14 @@ export function MobileWatchlist() {
 
   // ── Drag-to-reorder state ────────────────────────────────────────────────
   const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null); // which row will be swapped with
   const [ghost, setGhost] = useState<{ stock: StockSummary; top: number; left: number; width: number; height: number } | null>(null);
 
   const dragOffsetYRef   = useRef(0);      // finger-to-row-top offset, kept constant while dragging
   const rowRectsRef      = useRef<{ top: number; height: number }[]>([]);
   const containerRectRef = useRef<DOMRect | null>(null);
-  const dropIndexRef     = useRef<number | null>(null);
+  const hoverIndexRef    = useRef<number | null>(null);
+  const dragIndexRef     = useRef<number | null>(null);
   const symbolsRef       = useRef<string[]>([]);
   const stocksMapRef     = useRef<Map<string, StockSummary>>(new Map());
 
@@ -373,13 +373,18 @@ export function MobileWatchlist() {
     writeWatchlist(updated);
   }
 
-  // Given a finger Y position, find which "gap" (0..n) it's closest to.
-  function computeDropIndex(clientY: number): number {
+  // Given the ghost card's vertical center, find which row it's currently
+  // sitting on top of (the one it would swap places with). Every row is
+  // contiguous with no gaps, so any Y within the list's vertical span maps
+  // to exactly one row; outside that span (or the drag's own original row)
+  // there's no valid swap target.
+  function computeHoverIndex(ghostCenterY: number, excludeIndex: number): number | null {
     const rects = rowRectsRef.current;
     for (let i = 0; i < rects.length; i++) {
-      if (clientY < rects[i].top + rects[i].height / 2) return i;
+      if (i === excludeIndex) continue;
+      if (ghostCenterY >= rects[i].top && ghostCenterY <= rects[i].top + rects[i].height) return i;
     }
-    return rects.length;
+    return null;
   }
 
   const handleDragStart = useCallback((index: number, rowEl: HTMLElement, clientY: number) => {
@@ -400,10 +405,10 @@ export function MobileWatchlist() {
     const symbol = symbolsRef.current[index];
     const stock  = symbol ? stocksMapRef.current.get(symbol) : undefined;
 
+    dragIndexRef.current = index;
     setDragIndex(index);
-    const initialDrop = computeDropIndex(clientY);
-    dropIndexRef.current = initialDrop;
-    setDropIndex(initialDrop);
+    hoverIndexRef.current = null;
+    setHoverIndex(null);
     if (stock) {
       setGhost({
         stock,
@@ -416,11 +421,15 @@ export function MobileWatchlist() {
   }, []);
 
   const handleDragMove = useCallback((clientY: number) => {
-    setGhost(g => g ? { ...g, top: clientY - dragOffsetYRef.current } : g);
-    const next = computeDropIndex(clientY);
-    if (dropIndexRef.current !== next) {
-      dropIndexRef.current = next;
-      setDropIndex(next);
+    const top = clientY - dragOffsetYRef.current;
+    setGhost(g => g ? { ...g, top } : g);
+    if (dragIndexRef.current === null) return;
+    const ghostHeight = rowRectsRef.current[dragIndexRef.current]?.height ?? 0;
+    const centerY = top + ghostHeight / 2;
+    const next = computeHoverIndex(centerY, dragIndexRef.current);
+    if (hoverIndexRef.current !== next) {
+      hoverIndexRef.current = next;
+      setHoverIndex(next);
     }
   }, []);
 
@@ -431,24 +440,22 @@ export function MobileWatchlist() {
       && clientX >= rect.left - margin && clientX <= rect.right + margin
       && clientY >= rect.top - margin && clientY <= rect.bottom + margin;
 
-    setDragIndex(current => {
-      if (withinBounds && current !== null && dropIndexRef.current !== null) {
-        const from = current;
-        let to = dropIndexRef.current;
-        if (to > from) to -= 1; // account for the item being removed first
-        if (to !== from) {
-          const updated = [...symbolsRef.current];
-          const [moved] = updated.splice(from, 1);
-          updated.splice(to, 0, moved);
-          symbolsRef.current = updated;
-          setSymbols(updated);
-          writeWatchlist(updated);
-        }
-      }
-      return null;
-    });
-    dropIndexRef.current = null;
-    setDropIndex(null);
+    const from = dragIndexRef.current;
+    const to   = hoverIndexRef.current;
+
+    if (withinBounds && from !== null && to !== null && to !== from) {
+      const updated = [...symbolsRef.current];
+      // Swap — the dragged stock and the one it's hovering over trade places.
+      [updated[from], updated[to]] = [updated[to], updated[from]];
+      symbolsRef.current = updated;
+      setSymbols(updated);
+      writeWatchlist(updated);
+    }
+
+    dragIndexRef.current  = null;
+    hoverIndexRef.current = null;
+    setDragIndex(null);
+    setHoverIndex(null);
     setGhost(null);
   }, []);
 
@@ -456,24 +463,19 @@ export function MobileWatchlist() {
 
   if (loading && !orderedStocks.length) return <LoadingScreen label="Loading your watchlist" />;
 
-  // Build the row list with a DropLine spliced in at the live drop gap.
-  const rowNodes: React.ReactNode[] = [];
-  orderedStocks.forEach((stock, i) => {
-    if (dragIndex !== null && dropIndex === i) rowNodes.push(<DropLine key="drop-line" />);
-    rowNodes.push(
-      <WatchlistRow
-        key={stock.symbol}
-        stock={stock}
-        index={i}
-        isDragSource={dragIndex === i}
-        onRemove={handleRemove}
-        onDragStart={handleDragStart}
-        onDragMove={handleDragMove}
-        onDragEnd={handleDragEnd}
-      />
-    );
-  });
-  if (dragIndex !== null && dropIndex === orderedStocks.length) rowNodes.push(<DropLine key="drop-line-end" />);
+  const rowNodes = orderedStocks.map((stock, i) => (
+    <WatchlistRow
+      key={stock.symbol}
+      stock={stock}
+      index={i}
+      isDragSource={dragIndex === i}
+      isSwapTarget={dragIndex !== null && hoverIndex === i}
+      onRemove={handleRemove}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+    />
+  ));
 
   return (
     <div className="pb-24">
