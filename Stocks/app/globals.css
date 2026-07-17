@@ -145,16 +145,20 @@ input {
   to   { transform: translateX(0);    opacity: 1; }
 }
 
-main.page-slide-left {
+main.page-slide-left,
+.page-slide-left {
   animation: slideOutLeft 260ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-main.page-slide-right {
+main.page-slide-right,
+.page-slide-right {
   animation: slideOutRight 260ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-main.page-enter-left {
+main.page-enter-left,
+.page-enter-left {
   animation: slideInFromRight 220ms cubic-bezier(0.2, 0, 0, 1) both;
 }
-main.page-enter-right {
+main.page-enter-right,
+.page-enter-right {
   animation: slideInFromLeft 220ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 

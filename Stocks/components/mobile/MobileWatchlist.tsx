@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { Star } from "lucide-react";
@@ -56,8 +56,40 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
   );
 }
 
+// ─── Row visual (shared by the real row and the floating drag ghost) ───────
+function RowContent({ stock }: { stock: StockSummary }) {
+  const isPos = (stock.changePercent ?? 0) >= 0;
+  return (
+    <>
+      {stock.logo
+        ? <img src={stock.logo} alt="" className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
+        : <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
+            {stock.symbol.replace("^", "").slice(0, 2)}
+          </span>
+      }
+      <span className="flex-1 min-w-0">
+        <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
+      </span>
+      <MiniSparkline stock={stock} />
+      <span className="ml-3 shrink-0">
+        <span className={cn(
+          "inline-block text-sm font-bold text-black px-3 py-1 rounded-lg",
+          isPos ? "bg-positive" : "bg-negative"
+        )}>
+          {formatPercent(stock.changePercent)}
+        </span>
+      </span>
+    </>
+  );
+}
+
+// ─── Green outline marking which stock will swap places ────────────────────
+const SWAP_TARGET_CLASS = "ring-2 ring-inset ring-positive shadow-[0_0_16px_rgba(0,200,5,0.35)]";
+
 const REVEAL_WIDTH = 76;
 const OVERDRAG_MAX = 28;
+const LONG_PRESS_MS = 450;
+const MOVE_CANCEL_PX = 14; // movement before the long-press timer fires cancels it — generous enough to tolerate natural hand tremor while holding still
 
 function withResistance(raw: number) {
   if (raw >= -REVEAL_WIDTH) return raw;
@@ -67,44 +99,39 @@ function withResistance(raw: number) {
 }
 
 const SETTLE_TRANSITION = "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
-const LONG_PRESS_MS = 450;
-const MOVE_DECIDE_PX = 5;
 
 function WatchlistRow({
   stock,
+  index,
+  isDragSource,
+  isSwapTarget,
   onRemove,
-  isDragging,
-  dragOffsetY,
-  onReorderStart,
-  onReorderMove,
-  onReorderEnd,
-  onReorderCancel,
-  registerRef,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
 }: {
   stock: StockSummary;
+  index: number;
+  isDragSource: boolean;
+  isSwapTarget: boolean;
   onRemove: (s: string) => void;
-  isDragging: boolean;
-  dragOffsetY: number;
-  onReorderStart: (symbol: string, clientY: number) => void;
-  onReorderMove: (clientY: number) => void;
-  onReorderEnd: (clientY: number) => void;
-  onReorderCancel: () => void;
-  registerRef: (symbol: string, el: HTMLDivElement | null) => void;
+  onDragStart: (index: number, rowEl: HTMLElement, clientY: number) => void;
+  onDragMove: (clientY: number) => void;
+  onDragEnd: (clientY: number, clientX: number) => void;
 }) {
-  const isPos = (stock.changePercent ?? 0) >= 0;
   const rowRef   = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLAnchorElement>(null);
 
-  // Use refs for drag state to avoid re-renders mid-gesture
-  const dragXRef     = useRef(0);
-  const draggingRef  = useRef(false);
-  const revealedRef  = useRef(false);
-  const startRef     = useRef<{ x: number; y: number; startDragX: number; decided: boolean; isH: boolean } | null>(null);
-
-  // Long-press-to-reorder state
-  const longPressTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const reorderActiveRef   = useRef(false);
-  const suppressClickRef   = useRef(false);
+  // Refs for drag state to avoid re-renders mid-gesture
+  const dragXRef       = useRef(0);
+  const draggingRef    = useRef(false);
+  const revealedRef    = useRef(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+  const startRef = useRef<{
+    x: number; y: number; startDragX: number;
+    decided: boolean; isH: boolean;
+  } | null>(null);
 
   function applyX(x: number, animate: boolean) {
     const el = innerRef.current;
@@ -119,10 +146,10 @@ function WatchlistRow({
     applyX(0, true);
   }
 
-  function clearLongPressTimer() {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
+  function clearLongPress() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
     }
   }
 
@@ -132,45 +159,65 @@ function WatchlistRow({
 
     function onTouchStart(e: TouchEvent) {
       const t = e.touches[0];
-      startRef.current = { x: t.clientX, y: t.clientY, startDragX: dragXRef.current, decided: false, isH: false };
-      reorderActiveRef.current = false;
-      clearLongPressTimer();
-      // Hold still for LONG_PRESS_MS to pick the row up for reordering.
-      // Any decisive movement before then (a swipe or a scroll) cancels this.
-      longPressTimerRef.current = setTimeout(() => {
-        if (startRef.current && !startRef.current.decided) {
-          reorderActiveRef.current = true;
-          startRef.current.decided = true;
-          onReorderStart(stock.symbol, startRef.current.y);
-          if (typeof navigator !== "undefined" && navigator.vibrate) navigator.vibrate(8);
-        }
-      }, LONG_PRESS_MS);
+      startRef.current = {
+        x: t.clientX, y: t.clientY, startDragX: dragXRef.current,
+        decided: false, isH: false,
+      };
+      longPressFired.current = false;
+      clearLongPress();
+      // Only offer drag-to-reorder from a row's resting position (not mid-swipe).
+      if (dragXRef.current === 0) {
+        longPressTimer.current = setTimeout(() => {
+          longPressTimer.current = null;
+          longPressFired.current = true;
+          startRef.current = null; // stop any swipe-gesture bookkeeping
+          if (rowRef.current) {
+            if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
+            onDragStart(index, rowRef.current, t.clientY);
+          }
+        }, LONG_PRESS_MS);
+      }
     }
 
     function onTouchMove(e: TouchEvent) {
-      if (reorderActiveRef.current) {
+      const t = e.touches[0];
+
+      if (longPressFired.current) {
+        // Drag engaged — take the gesture over completely, this is the one
+        // case where we actively stop the page from scrolling.
         e.preventDefault();
-        onReorderMove(e.touches[0].clientY);
+        onDragMove(t.clientY);
         return;
       }
 
       const start = startRef.current;
       if (!start) return;
-      const t  = e.touches[0];
       const dx = t.clientX - start.x;
       const dy = t.clientY - start.y;
 
       if (!start.decided) {
-        if (Math.abs(dx) < MOVE_DECIDE_PX && Math.abs(dy) < MOVE_DECIDE_PX) return;   // wait for intent
-        clearLongPressTimer(); // real movement — this isn't a long-press hold
+        if (Math.abs(dx) < MOVE_CANCEL_PX && Math.abs(dy) < MOVE_CANCEL_PX) return; // wait for intent — tolerate natural hand tremor while holding still
         start.decided = true;
-        start.isH     = Math.abs(dx) > Math.abs(dy);
-        if (!start.isH) { startRef.current = null; return; }
+        start.isH     = Math.abs(dx) > Math.abs(dy) * 1.15; // slight bias toward "this is a scroll", the more common gesture
+        clearLongPress(); // real movement — this isn't a long-press-and-hold
+
+        if (!start.isH) {
+          // Vertical intent: this is an ordinary scroll. `touch-action: pan-y`
+          // on the row (see JSX below) means the browser has been handling
+          // this natively — with full native momentum — the whole time, so
+          // there's nothing for us to do here; just stop tracking it as a
+          // possible swipe/drag.
+          startRef.current = null;
+          return;
+        }
         draggingRef.current = true;
       }
 
       if (!start.isH) return;
-      e.preventDefault();                                      // blocks scroll
+
+      // Horizontal swipe-to-reveal: override the browser's default (which
+      // would otherwise fight us) only for this axis.
+      e.preventDefault();
       e.stopPropagation();
 
       const raw  = start.startDragX + dx;
@@ -180,14 +227,12 @@ function WatchlistRow({
     }
 
     function onTouchEnd(e: TouchEvent) {
-      clearLongPressTimer();
+      clearLongPress();
 
-      if (reorderActiveRef.current) {
-        reorderActiveRef.current = false;
-        suppressClickRef.current = true;
+      if (longPressFired.current) {
+        longPressFired.current = false;
         const t = e.changedTouches[0];
-        onReorderEnd(t ? t.clientY : startRef.current?.y ?? 0);
-        startRef.current = null;
+        onDragEnd(t.clientY, t.clientX);
         return;
       }
 
@@ -201,31 +246,23 @@ function WatchlistRow({
       startRef.current    = null;
     }
 
-    function onTouchCancelHandler() {
-      clearLongPressTimer();
-      if (reorderActiveRef.current) {
-        reorderActiveRef.current = false;
-        suppressClickRef.current = true;
-        onReorderCancel();
-      }
-      startRef.current = null;
-      draggingRef.current = false;
-    }
-
+    // touchstart/move are non-passive so we can preventDefault() to take
+    // over horizontal swipes and an engaged long-press-drag; ordinary
+    // vertical scrolling is left entirely to the browser (touch-action:
+    // pan-y below) so it keeps its native momentum/inertia.
     el.addEventListener("touchstart",  onTouchStart, { passive: true });
     el.addEventListener("touchmove",   onTouchMove,  { passive: false });
     el.addEventListener("touchend",    onTouchEnd,   { passive: true });
-    el.addEventListener("touchcancel", onTouchCancelHandler, { passive: true });
+    el.addEventListener("touchcancel", onTouchEnd,   { passive: true });
 
     return () => {
-      clearLongPressTimer();
+      clearLongPress();
       el.removeEventListener("touchstart",  onTouchStart);
       el.removeEventListener("touchmove",   onTouchMove);
       el.removeEventListener("touchend",    onTouchEnd);
-      el.removeEventListener("touchcancel", onTouchCancelHandler);
+      el.removeEventListener("touchcancel", onTouchEnd);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [index, onDragStart, onDragMove, onDragEnd]);
 
   useEffect(() => {
     function onScroll() { if (revealedRef.current) close(); }
@@ -236,16 +273,13 @@ function WatchlistRow({
 
   return (
     <div
-      ref={(el) => { rowRef.current = el; registerRef(stock.symbol, el); }}
-      className="relative overflow-hidden border-b border-border-subtle/70 last:border-0"
-      style={{
-        transform: isDragging ? `translateY(${dragOffsetY}px) scale(1.02)` : "none",
-        transition: isDragging ? "none" : "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-        zIndex: isDragging ? 20 : "auto",
-        boxShadow: isDragging ? "0 12px 28px rgba(0,0,0,0.55)" : "none",
-        borderRadius: isDragging ? 12 : 0,
-        position: "relative",
-      }}
+      ref={rowRef}
+      data-watchlist-row
+      className={cn(
+        "relative overflow-hidden border-b border-border-subtle/70 last:border-0 transition-opacity duration-150",
+        isSwapTarget && SWAP_TARGET_CLASS
+      )}
+      style={{ opacity: isDragSource ? 0 : 1, touchAction: "pan-y", WebkitTouchCallout: "none" }}
     >
       {/* Swipe-revealed remove button */}
       <div className="absolute inset-y-0 right-0 flex items-center justify-center" style={{ width: REVEAL_WIDTH }}>
@@ -261,35 +295,18 @@ function WatchlistRow({
       <Link
         ref={innerRef}
         href={`/stock/${stock.symbol}`}
-        onClick={(e) => {
-          if (suppressClickRef.current) { suppressClickRef.current = false; e.preventDefault(); return; }
-          if (revealedRef.current) { e.preventDefault(); close(); }
+        onClick={(e) => { if (revealedRef.current) { e.preventDefault(); close(); } }}
+        className="flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted"
+        style={{
+          transform: "translateX(0px)",
+          willChange: "transform",
+          WebkitTouchCallout: "none",
+          WebkitUserSelect: "none",
+          userSelect: "none",
         }}
-        className={cn(
-          "flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted",
-          isDragging && "bg-panel-muted"
-        )}
-        style={{ transform: "translateX(0px)", willChange: "transform" }}
         suppressHydrationWarning
       >
-        {stock.logo
-          ? <img src={stock.logo} alt="" className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
-          : <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
-              {stock.symbol.replace("^", "").slice(0, 2)}
-            </span>
-        }
-        <span className="flex-1 min-w-0">
-          <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
-        </span>
-        <MiniSparkline stock={stock} />
-        <span className="ml-3 shrink-0">
-          <span className={cn(
-            "inline-block text-sm font-bold text-black px-3 py-1 rounded-lg",
-            isPos ? "bg-positive" : "bg-negative"
-          )}>
-            {formatPercent(stock.changePercent)}
-          </span>
-        </span>
+        <RowContent stock={stock} />
       </Link>
     </div>
   );
@@ -300,15 +317,20 @@ export function MobileWatchlist() {
   const [stocks, setStocks]   = useState<Map<string, StockSummary>>(new Map());
   const [loading, setLoading] = useState(true);
   const fetchedRef            = useRef<Set<string>>(new Set());
+  const containerRef          = useRef<HTMLDivElement>(null);
 
-  // Reorder-by-long-press state
-  const [dragSymbol, setDragSymbol] = useState<string | null>(null);
-  const [dragOffsetY, setDragOffsetY] = useState(0);
-  const [dropLineTop, setDropLineTop] = useState<number | null>(null);
-  const dropIndexRef  = useRef<number | null>(null);
-  const dragStartYRef = useRef(0);
-  const listRef  = useRef<HTMLDivElement>(null);
-  const rowRefs  = useRef<Map<string, HTMLDivElement>>(new Map());
+  // ── Drag-to-reorder state ────────────────────────────────────────────────
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null); // which row will be swapped with
+  const [ghost, setGhost] = useState<{ stock: StockSummary; top: number; left: number; width: number; height: number } | null>(null);
+
+  const dragOffsetYRef   = useRef(0);      // finger-to-row-top offset, kept constant while dragging
+  const rowRectsRef      = useRef<{ top: number; height: number }[]>([]);
+  const containerRectRef = useRef<DOMRect | null>(null);
+  const hoverIndexRef    = useRef<number | null>(null);
+  const dragIndexRef     = useRef<number | null>(null);
+  const symbolsRef       = useRef<string[]>([]);
+  const stocksMapRef     = useRef<Map<string, StockSummary>>(new Map());
 
   useEffect(() => {
     function sync() { setSymbols(readWatchlist()); }
@@ -323,6 +345,7 @@ export function MobileWatchlist() {
 
   useEffect(() => {
     const missing = symbols.filter(s => !fetchedRef.current.has(s));
+    symbolsRef.current = symbols;
     if (!missing.length) { setLoading(false); return; }
     const ctrl = new AbortController();
     setLoading(true);
@@ -342,94 +365,117 @@ export function MobileWatchlist() {
     return () => ctrl.abort();
   }, [symbols]);
 
+  useEffect(() => { stocksMapRef.current = stocks; }, [stocks]);
+
   function handleRemove(symbol: string) {
     const updated = symbols.filter(s => s !== symbol);
     setSymbols(updated);
     writeWatchlist(updated);
   }
 
-  function registerRowRef(symbol: string, el: HTMLDivElement | null) {
-    if (el) rowRefs.current.set(symbol, el);
-    else rowRefs.current.delete(symbol);
-  }
-
-  // Given the finger's current Y, figure out which gap between the OTHER
-  // rows (i.e. everyone except the one being dragged) it's hovering over,
-  // and where the green insertion line should sit to show that gap.
-  function computeDropTarget(clientY: number, draggedSymbol: string) {
-    const others = symbols.filter(s => s !== draggedSymbol);
-    const container = listRef.current;
-    if (!container) return { gapIndex: 0, lineTop: 0 };
-
-    const containerRect = container.getBoundingClientRect();
-    let gapIndex = others.length;
-    let lineTop = containerRect.height;
-
-    for (let i = 0; i < others.length; i++) {
-      const el = rowRefs.current.get(others[i]);
-      if (!el) continue;
-      const rect = el.getBoundingClientRect();
-      const mid = rect.top + rect.height / 2;
-      if (clientY < mid) {
-        gapIndex = i;
-        lineTop = rect.top - containerRect.top;
-        break;
-      }
+  // Given the ghost card's vertical center, find which row it's currently
+  // sitting on top of (the one it would swap places with). Every row is
+  // contiguous with no gaps, so any Y within the list's vertical span maps
+  // to exactly one row; outside that span (or the drag's own original row)
+  // there's no valid swap target.
+  function computeHoverIndex(ghostCenterY: number, excludeIndex: number): number | null {
+    const rects = rowRectsRef.current;
+    for (let i = 0; i < rects.length; i++) {
+      if (i === excludeIndex) continue;
+      if (ghostCenterY >= rects[i].top && ghostCenterY <= rects[i].top + rects[i].height) return i;
     }
-    return { gapIndex, lineTop };
+    return null;
   }
 
-  function handleReorderStart(symbol: string, clientY: number) {
-    dragStartYRef.current = clientY;
-    setDragSymbol(symbol);
-    setDragOffsetY(0);
-    const { gapIndex, lineTop } = computeDropTarget(clientY, symbol);
-    dropIndexRef.current = gapIndex;
-    setDropLineTop(lineTop);
-  }
+  const handleDragStart = useCallback((index: number, rowEl: HTMLElement, clientY: number) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rowRect = rowEl.getBoundingClientRect();
+    containerRectRef.current = container.getBoundingClientRect();
 
-  function handleReorderMove(clientY: number) {
-    setDragOffsetY(clientY - dragStartYRef.current);
-    setDragSymbol(current => {
-      if (!current) return current;
-      const { gapIndex, lineTop } = computeDropTarget(clientY, current);
-      dropIndexRef.current = gapIndex;
-      setDropLineTop(lineTop);
-      return current;
+    // Snapshot every row's current position so hit-testing stays stable
+    // for the whole gesture even though the real rows don't move.
+    const rowEls = Array.from(container.querySelectorAll<HTMLElement>("[data-watchlist-row]"));
+    rowRectsRef.current = rowEls.map(el => {
+      const r = el.getBoundingClientRect();
+      return { top: r.top, height: r.height };
     });
-  }
 
-  function resetDragState() {
-    setDragSymbol(null);
-    setDragOffsetY(0);
-    setDropLineTop(null);
-    dropIndexRef.current = null;
-  }
+    dragOffsetYRef.current = clientY - rowRect.top;
+    const symbol = symbolsRef.current[index];
+    const stock  = symbol ? stocksMapRef.current.get(symbol) : undefined;
 
-  function handleReorderEnd(clientY: number) {
-    const draggedSymbol = dragSymbol;
-    const container = listRef.current;
-    if (!draggedSymbol || !container) { resetDragState(); return; }
-
-    // "Lift your finger into nothing" — released outside the list entirely
-    // (above the header, below the card, off to the side) — keep the
-    // original order.
-    const rect = container.getBoundingClientRect();
-    const droppedInsideList = clientY >= rect.top && clientY <= rect.bottom;
-
-    if (droppedInsideList && dropIndexRef.current !== null) {
-      const others = symbols.filter(s => s !== draggedSymbol);
-      const idx = Math.max(0, Math.min(dropIndexRef.current, others.length));
-      const reordered = [...others.slice(0, idx), draggedSymbol, ...others.slice(idx)];
-      setSymbols(reordered);
-      writeWatchlist(reordered);
+    dragIndexRef.current = index;
+    setDragIndex(index);
+    hoverIndexRef.current = null;
+    setHoverIndex(null);
+    if (stock) {
+      setGhost({
+        stock,
+        top: rowRect.top,
+        left: rowRect.left,
+        width: rowRect.width,
+        height: rowRect.height,
+      });
     }
-    resetDragState();
-  }
+  }, []);
+
+  const handleDragMove = useCallback((clientY: number) => {
+    const top = clientY - dragOffsetYRef.current;
+    setGhost(g => g ? { ...g, top } : g);
+    if (dragIndexRef.current === null) return;
+    const ghostHeight = rowRectsRef.current[dragIndexRef.current]?.height ?? 0;
+    const centerY = top + ghostHeight / 2;
+    const next = computeHoverIndex(centerY, dragIndexRef.current);
+    if (hoverIndexRef.current !== next) {
+      hoverIndexRef.current = next;
+      setHoverIndex(next);
+    }
+  }, []);
+
+  const handleDragEnd = useCallback((clientY: number, clientX: number) => {
+    const rect = containerRectRef.current;
+    const margin = 48; // small tolerance so releasing right at the edge still counts
+    const withinBounds = !!rect
+      && clientX >= rect.left - margin && clientX <= rect.right + margin
+      && clientY >= rect.top - margin && clientY <= rect.bottom + margin;
+
+    const from = dragIndexRef.current;
+    const to   = hoverIndexRef.current;
+
+    if (withinBounds && from !== null && to !== null && to !== from) {
+      const updated = [...symbolsRef.current];
+      // Swap — the dragged stock and the one it's hovering over trade places.
+      [updated[from], updated[to]] = [updated[to], updated[from]];
+      symbolsRef.current = updated;
+      setSymbols(updated);
+      writeWatchlist(updated);
+    }
+
+    dragIndexRef.current  = null;
+    hoverIndexRef.current = null;
+    setDragIndex(null);
+    setHoverIndex(null);
+    setGhost(null);
+  }, []);
 
   const orderedStocks = symbols.map(s => stocks.get(s)).filter(Boolean) as StockSummary[];
 
   if (loading && !orderedStocks.length) return <LoadingScreen label="Loading your watchlist" />;
+
+  const rowNodes = orderedStocks.map((stock, i) => (
+    <WatchlistRow
+      key={stock.symbol}
+      stock={stock}
+      index={i}
+      isDragSource={dragIndex === i}
+      isSwapTarget={dragIndex !== null && hoverIndex === i}
+      onRemove={handleRemove}
+      onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
+      onDragEnd={handleDragEnd}
+    />
+  ));
 
   return (
     <div className="pb-24">
@@ -444,37 +490,18 @@ export function MobileWatchlist() {
           <p className="text-sm text-text-muted">Search for stocks to add them.</p>
         </div>
       ) : (
-        <div ref={listRef} className="relative mx-4 mt-6 rounded-xl bg-black overflow-hidden">
-          {orderedStocks.map(stock => (
-            <WatchlistRow
-              key={stock.symbol}
-              stock={stock}
-              onRemove={handleRemove}
-              isDragging={dragSymbol === stock.symbol}
-              dragOffsetY={dragSymbol === stock.symbol ? dragOffsetY : 0}
-              onReorderStart={handleReorderStart}
-              onReorderMove={handleReorderMove}
-              onReorderEnd={handleReorderEnd}
-              onReorderCancel={resetDragState}
-              registerRef={registerRowRef}
-            />
-          ))}
+        <div ref={containerRef} className="mx-4 mt-6 rounded-xl bg-black overflow-hidden">
+          {rowNodes}
+        </div>
+      )}
 
-          {/* Green insertion line — shows exactly where the dragged stock
-              would land if you let go right now. */}
-          {dragSymbol && dropLineTop !== null && (
-            <div
-              className="absolute left-3 right-3 pointer-events-none"
-              style={{
-                top: dropLineTop - 1,
-                height: 2,
-                borderRadius: 999,
-                backgroundColor: "#00c805",
-                boxShadow: "0 0 8px rgba(0,200,5,0.7)",
-                zIndex: 30,
-              }}
-            />
-          )}
+      {/* Floating drag ghost — follows the finger while reordering */}
+      {ghost && (
+        <div
+          className="fixed z-50 flex items-center gap-3 px-4 py-3.5 rounded-xl border border-positive/50 bg-black shadow-[0_16px_40px_rgba(0,0,0,0.55)] scale-[1.03] pointer-events-none"
+          style={{ top: ghost.top, left: ghost.left, width: ghost.width, height: ghost.height }}
+        >
+          <RowContent stock={ghost.stock} />
         </div>
       )}
     </div>

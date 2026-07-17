@@ -1,6 +1,6 @@
 "use client";
 
-import { List, Search, Settings, X, ChevronLeft, Monitor, Sun, Moon } from "lucide-react";
+import { List, Search, Settings, X, Monitor, Sun, Moon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -37,17 +37,11 @@ function applyTheme(theme: Theme) {
 }
 
 // ─── Settings panel ───────────────────────────────────────────────────────
-function SettingsPanel({ onClose }: { onClose: () => void }) {
+function SettingsPanel({ closing }: { closing: boolean }) {
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
   const [proMode, setProMode] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
   );
-  const [closing, setClosing] = useState(false);
-
-  function handleClose() {
-    setClosing(true);
-    setTimeout(onClose, 220);
-  }
 
   function changeTheme(t: Theme) {
     setTheme(t);
@@ -70,22 +64,17 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-black"
-      style={{ animation: closing ? "settingsFadeOut 0.22s ease both" : "settingsFadeIn 0.2s ease both" }}
+      className={cn("fixed inset-0 z-20 flex flex-col bg-black", closing && "page-slide-right")}
     >
       {/* Fixed header with blur */}
-      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border-subtle px-4 pt-14 pb-4 flex flex-col gap-3">
-        <button
-          onClick={handleClose}
-          className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg self-start"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back
-        </button>
+      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border-subtle px-4 pt-14 pb-4">
         <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-6">
+      <div
+        className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-6"
+        style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}
+      >
         {/* Appearance */}
         <section>
           <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-3">Appearance</p>
@@ -131,17 +120,6 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           </div>
         </section>
       </div>
-
-      <style>{`
-        @keyframes settingsFadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes settingsFadeOut {
-          from { opacity: 1; transform: translateY(0); }
-          to   { opacity: 0; transform: translateY(10px); }
-        }
-      `}</style>
     </div>
   );
 }
@@ -456,7 +434,7 @@ function slideAndNavigate(
 export function MobileNav() {
   const pathname = usePathname();
   const router   = useRouter();
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsPhase, setSettingsPhase] = useState<"closed" | "open" | "closing">("closed");
   const [activePill,   setActivePill]   = useState<"market" | "watchlist">(
     pathname === "/watchlist" ? "watchlist" : "market"
   );
@@ -478,80 +456,96 @@ export function MobileNav() {
   const showNav = pathname === "/" || pathname === "/watchlist";
   if (!showNav) return null;
 
-  const isMarket    = activePill === "market";
   const isWatchlist = activePill === "watchlist";
-  const activeIndex = isMarket ? 0 : 1; // settings (index 2) never gets the active indicator — it's an overlay, not a section
+  const activeIndex = settingsPhase !== "closed" ? 2 : (isWatchlist ? 1 : 0);
+  const BUBBLE_SIZE = "3.5rem"; // matches the search pill's h-14 exactly
 
   function navigateTo(href: "/" | "/watchlist") {
     const goingToWatchlist = href === "/watchlist";
     const currentIsMarket  = pathname === "/";
     const alreadyThere = (goingToWatchlist && !currentIsMarket) || (!goingToWatchlist && currentIsMarket);
+
+    if (settingsPhase !== "closed") {
+      // Leaving Settings for Market/Watchlist always plays the swipe-right
+      // close transition, then (only if actually changing page) navigates.
+      setActivePill(goingToWatchlist ? "watchlist" : "market");
+      setSettingsPhase("closing");
+      setTimeout(() => {
+        setSettingsPhase("closed");
+        if (!alreadyThere) router.push(href);
+      }, SLIDE_DURATION);
+      return;
+    }
+
     if (alreadyThere) return;
     setActivePill(goingToWatchlist ? "watchlist" : "market");
     const exitClass = goingToWatchlist ? "page-slide-left" : "page-slide-right";
     slideAndNavigate(router, href, exitClass);
   }
 
-  // Icon color only — the green background now comes from the single sliding
-  // indicator bubble underneath, not from each button individually.
-  function iconClass(active: boolean) {
-    return cn("relative z-10 transition-colors duration-300", active ? "text-black" : "text-positive");
+  function openSettings() {
+    if (settingsPhase !== "closed") return;
+    const main = document.querySelector("main");
+    main?.classList.remove("page-slide-left", "page-slide-right");
+    main?.classList.add("page-slide-left"); // same "forward" direction as Market → Watchlist
+    setTimeout(() => {
+      setSettingsPhase("open");
+      setTimeout(() => main?.classList.remove("page-slide-left"), 100);
+    }, SLIDE_DURATION - 20);
   }
 
-  // Layout constants for the sliding indicator (must match the button/gap
-  // sizes used in the JSX below).
-  const SLOT = 48;  // button diameter (h-12/w-12)
-  const GAP  = 4;   // gap-1
-  const PAD  = 4;   // p-1
+  const iconWrapClass = "relative z-10 flex items-center justify-center transition-colors duration-300";
+  function iconClass(active: boolean) {
+    return cn("transition-colors duration-300", active ? "text-black" : "text-positive");
+  }
 
   return (
     <>
-      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      {settingsPhase !== "closed" && <SettingsPanel closing={settingsPhase === "closing"} />}
 
-      {/* One unified glass capsule holding Market / Watchlist / Settings,
-          with a single green bubble sliding to whichever section is active.
-          Height matches the search pill exactly (3.5rem) so everything in
-          the bottom bar lines up. */}
+      {/* One unified bubble: Market / Watchlist / Settings, with a sliding
+          green indicator behind the active section. Height-matched to the
+          search pill so everything along the bottom bar lines up. */}
       <nav
         className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center justify-start px-5 pointer-events-none"
         style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))", paddingTop: "1rem" }}
       >
         <div
-          className="relative flex items-center gap-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 pointer-events-auto"
-          style={{ height: "3.5rem", padding: PAD }}
+          className="relative flex items-center rounded-full bg-black/40 backdrop-blur-md border border-white/20 overflow-hidden pointer-events-auto"
+          style={{ height: BUBBLE_SIZE }}
         >
-          {/* Sliding active-section indicator */}
-          <div
-            className="absolute rounded-full bg-positive transition-transform duration-300 ease-out"
-            style={{
-              top: PAD, left: PAD,
-              height: SLOT, width: SLOT,
-              transform: `translateX(${activeIndex * (SLOT + GAP)}px)`,
-            }}
+          {/* Sliding green indicator */}
+          <span
+            aria-hidden
+            className="absolute left-0 top-0 rounded-full bg-positive transition-transform duration-300 ease-out"
+            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE, transform: `translateX(${activeIndex * 3.5}rem)` }}
           />
 
           <button
-            className="relative flex h-12 w-12 items-center justify-center rounded-full"
+            className={iconWrapClass}
+            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE }}
             onClick={() => navigateTo("/")}
             aria-label="Market"
           >
-            <GlobeIcon className={cn("h-6 w-6", iconClass(isMarket))} />
+            <GlobeIcon className={cn("h-6 w-6", iconClass(activeIndex === 0))} />
           </button>
 
           <button
-            className="relative flex h-12 w-12 items-center justify-center rounded-full"
+            className={iconWrapClass}
+            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE }}
             onClick={() => navigateTo("/watchlist")}
             aria-label="Watchlist"
           >
-            <List className={cn("h-6 w-6", iconClass(isWatchlist))} />
+            <List className={cn("h-6 w-6", iconClass(activeIndex === 1))} />
           </button>
 
           <button
-            className="relative flex h-12 w-12 items-center justify-center rounded-full"
-            onClick={() => setSettingsOpen(true)}
+            className={iconWrapClass}
+            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE }}
+            onClick={openSettings}
             aria-label="Settings"
           >
-            <Settings className="relative z-10 h-6 w-6 text-positive" />
+            <Settings className={cn("h-6 w-6", iconClass(activeIndex === 2))} />
           </button>
         </div>
       </nav>
