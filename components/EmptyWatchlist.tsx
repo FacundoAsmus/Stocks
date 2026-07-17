@@ -20,26 +20,15 @@ export function EmptyWatchlist({ isLoading = false }: { isLoading?: boolean }) {
   );
 }
 
-// ─── Wave-field loading animation ───────────────────────────────────────────
+// ─── Full-screen loading background ─────────────────────────────────────────
 //
-// All lines sample the SAME underlying field:
-//   displacement(x, i) = A · sin(k·x  −  ω·t  +  i·Δφ)
+// Background: a slowly shifting linear gradient rising from the bottom,
+// cycling through the same two accent colours used everywhere else in the
+// app (green → red), adapting its base tone to light vs dark mode.
 //
-// Background: a slowly shifting radial gradient that cycles through the wave
-// colours, adapting its base tone to light vs dark mode.
-//
-// Line colour: each line interpolates #c5f446 → #ff3003 top-to-bottom with
-// a slow breathing oscillation.
-
-const NUM_LINES          = 30;
-const LINE_SPACING_PX    = 14;
-const AMPLITUDE          = 55;    // higher for prominent shape
-const WAVELENGTH         = 480;
-const WAVE_SPEED         = 0.75;
-const PHASE_DELTA        = 0.18;
-const STAGGER_MS         = 28;
-const REVEAL_MS          = 480;
-const LINE_WIDTH         = 1.1;
+// On top of it sits a bigger version of the same candle-breathing animation
+// used while an individual stock's chart is loading, for visual consistency
+// across every loading state in the app.
 
 const C_TOP:  [number,number,number] = [0x00, 0xc8, 0x05];
 const C_BOT:  [number,number,number] = [0xff, 0x30, 0x03];
@@ -47,14 +36,6 @@ const C_BOT:  [number,number,number] = [0xff, 0x30, 0x03];
 // Background palette: dark-mode (black base) and light-mode (white base)
 const BG_DARK:  [number,number,number] = [0x00, 0x00, 0x00];
 const BG_LIGHT: [number,number,number] = [0xff, 0xff, 0xff];
-
-function lerpColor(a: [number,number,number], b: [number,number,number], t: number): string {
-  const r = Math.round(a[0] + (b[0]-a[0])*t);
-  const g = Math.round(a[1] + (b[1]-a[1])*t);
-  const bv= Math.round(a[2] + (b[2]-a[2])*t);
-  return `rgb(${r},${g},${bv})`;
-}
-function easeOutCubic(t: number) { return 1 - Math.pow(1-t, 3); }
 
 export function LoadingScreen({ label = "Loading" }: { label?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -84,16 +65,14 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
     resize();
     window.addEventListener("resize", resize);
 
-    const k = (2 * Math.PI) / WAVELENGTH;
-    const ω = 2 * Math.PI * WAVE_SPEED;
     const startTime = performance.now();
 
     function frame(now: number) {
       const elapsed = now - startTime;
       const t = elapsed / 1000;
 
-      // ── Background: linear gradient rising from the bottom, fading to black
-      //    at mid-screen. Colour cycles between the two wave accent colours.
+      // ── Background: linear gradient rising from the bottom, fading to base
+      //    at mid-screen. Colour cycles between the two accent colours.
       const bgAccentT = (Math.sin(t * 1.2) * 0.5 + 0.5);
 
       const aR = Math.round(C_TOP[0] + (C_BOT[0]-C_TOP[0])*bgAccentT);
@@ -116,45 +95,6 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
       ctx!.fillStyle = grad;
       ctx!.fillRect(0, 0, W, H);
 
-      // ── Wave lines ──────────────────────────────────────────────────────────
-      const numLines  = NUM_LINES;
-      const fieldTop  = (H - (numLines - 1) * LINE_SPACING_PX) / 2;
-
-      ctx!.lineWidth = LINE_WIDTH;
-      ctx!.lineJoin  = "round";
-      ctx!.lineCap   = "round";
-
-      const STEP = 6;
-
-      for (let i = 0; i < numLines; i++) {
-        const lineElapsed = elapsed - i * STAGGER_MS;
-        if (lineElapsed <= 0) continue;
-
-        const revealT = Math.min(1, lineElapsed / REVEAL_MS);
-        const revealX = W * easeOutCubic(revealT);
-        if (revealX < 1) continue;
-
-        const baseY  = fieldTop + i * LINE_SPACING_PX;
-        const colorT = Math.max(0, Math.min(1,
-          (i / (numLines - 1) + 0.15 * Math.sin(t * 0.4)) % 1
-        ));
-        ctx!.strokeStyle = lerpColor(C_TOP, C_BOT, colorT);
-
-        const phase  = i * PHASE_DELTA;
-        const sample = (x: number) =>
-          baseY + AMPLITUDE * Math.sin(k * x - ω * t + phase);
-
-        ctx!.beginPath();
-        ctx!.moveTo(0, sample(0));
-        for (let x = STEP; x <= revealX; x += STEP) {
-          const px = x - STEP;
-          const mx = (px + x) / 2;
-          ctx!.quadraticCurveTo(px, sample(px), mx, sample(mx));
-        }
-        ctx!.lineTo(revealX, sample(revealX));
-        ctx!.stroke();
-      }
-
       raf = requestAnimationFrame(frame);
     }
 
@@ -168,6 +108,35 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
   return (
     <div className="fixed inset-0 z-50" role="status" aria-label={label}>
       <canvas ref={canvasRef} className="block h-full w-full" />
+
+      {/* Bigger version of the chart's own candle-breathing loader */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
+        <style>{`
+          @keyframes chart-candle-breathe-lg { 0%,100%{transform:scaleY(0.6)} 50%{transform:scaleY(1.4)} }
+          @keyframes chart-wick-breathe-lg   { 0%,100%{opacity:0.25;transform:scaleY(0.7)} 50%{opacity:0.9;transform:scaleY(1.3)} }
+          .cc-lg-1{animation:chart-candle-breathe-lg 1.8s ease-in-out infinite -1.8s;transform-origin:bottom}
+          .cc-lg-2{animation:chart-candle-breathe-lg 1.8s ease-in-out infinite -1.32s;transform-origin:bottom}
+          .cc-lg-3{animation:chart-candle-breathe-lg 1.8s ease-in-out infinite -0.84s;transform-origin:bottom}
+          .cw-lg-1{animation:chart-wick-breathe-lg 1.8s ease-in-out infinite -1.8s;transform-origin:bottom}
+          .cw-lg-2{animation:chart-wick-breathe-lg 1.8s ease-in-out infinite -1.32s;transform-origin:bottom}
+          .cw-lg-3{animation:chart-wick-breathe-lg 1.8s ease-in-out infinite -0.84s;transform-origin:bottom}
+        `}</style>
+        <div className="flex items-end gap-3 h-24">
+          <div className="flex flex-col items-center gap-1">
+            <div className="cw-lg-1 w-1 h-4 rounded-full bg-positive/50" />
+            <div className="cc-lg-1 w-8 h-10 rounded-md bg-positive/50" />
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <div className="cw-lg-2 w-1 h-5 rounded-full bg-positive/70" />
+            <div className="cc-lg-2 w-8 h-16 rounded-md bg-positive/70" />
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <div className="cw-lg-3 w-1 h-6 rounded-full bg-positive" />
+            <div className="cc-lg-3 w-8 h-20 rounded-md bg-positive" />
+          </div>
+        </div>
+        <span className="text-sm font-medium text-text-muted">{label}</span>
+      </div>
     </div>
   );
 }

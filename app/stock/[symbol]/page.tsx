@@ -177,6 +177,7 @@ export default async function StockPage({ params }: StockPageProps) {
               currentPrice={currentPrice}
               currentChangePercent={stock.quote.dp ?? 0}
               previousClose={stock.quote.pc ?? undefined}
+              heightClassName="h-[384px]"
             />
           </div>
         </section>

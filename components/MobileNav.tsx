@@ -64,8 +64,7 @@ function SettingsPanel({ closing }: { closing: boolean }) {
 
   return (
     <div
-      className="fixed inset-0 z-20 flex flex-col bg-black"
-      style={{ animation: closing ? "slideOutRight 260ms cubic-bezier(0.4,0,0.2,1) forwards" : "slideInFromRight 220ms cubic-bezier(0.2,0,0,1) both" }}
+      className={cn("fixed inset-0 z-20 flex flex-col bg-black", closing && "page-slide-right")}
     >
       {/* Fixed header with blur */}
       <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border-subtle px-4 pt-14 pb-4">
@@ -486,7 +485,13 @@ export function MobileNav() {
 
   function openSettings() {
     if (settingsPhase !== "closed") return;
-    setSettingsPhase("open");
+    const main = document.querySelector("main");
+    main?.classList.remove("page-slide-left", "page-slide-right");
+    main?.classList.add("page-slide-left"); // same "forward" direction as Market → Watchlist
+    setTimeout(() => {
+      setSettingsPhase("open");
+      setTimeout(() => main?.classList.remove("page-slide-left"), 100);
+    }, SLIDE_DURATION - 20);
   }
 
   const iconWrapClass = "relative z-10 flex items-center justify-center transition-colors duration-300";
