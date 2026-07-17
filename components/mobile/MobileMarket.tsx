@@ -46,7 +46,7 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
   return (
     <div
       className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle/30 bg-background/80 backdrop-blur-md"
-      style={{ WebkitBackdropFilter: "blur(12px)" }}
+      style={{ WebkitBackdropFilter: "blur(12px)", paddingTop: "env(safe-area-inset-top)" }}
       ref={(el) => { if (el) document.documentElement.style.setProperty("--ticker-height", el.offsetHeight + "px"); }}
     >
       <div className="market-ticker flex w-max items-center" style={{ pointerEvents: "none" }}>

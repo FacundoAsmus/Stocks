@@ -310,8 +310,6 @@ export function PriceChart({
   const [isTouching, setIsTouching] = useState(false);
   // touchOverlay: the computed X% and Y% for the custom dot/crosshair overlay (touch only)
   const [touchOverlay, setTouchOverlay] = useState<{ xPct: number; yPct: number } | null>(null);
-  // mouseYPct: real mouse Y position as % of chart height, for desktop pro-mode horizontal crosshair
-  const [mouseYPct, setMouseYPct] = useState<number | null>(null);
 
   const onHover = useCallback((price: number | null, date: string | null) => {
     if (suppressRef.current) return;
@@ -441,12 +439,7 @@ export function PriceChart({
       <div
         ref={chartRef}
         className={cn(heightClassName, "relative")}
-        onMouseMove={(e) => {
-          if (!proMode) return;
-          const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-          setMouseYPct((e.clientY - rect.top) / rect.height);
-        }}
-        onMouseLeave={() => { setMouseYPct(null); clearHover(); }}
+        onMouseLeave={() => clearHover()}
       >
         {isLoading ? (
           <div className="flex h-full flex-col items-center justify-center gap-5 rounded-md border border-dashed border-border-subtle">
@@ -516,15 +509,13 @@ export function PriceChart({
                       const points = props.points as Array<{ x: number; y: number }> | undefined;
                       if (!points?.length) return null;
                       const x = points[0].x;
+                      const y = points[0].y; // dot's Y on the graph line — horizontal crosshair follows this
                       const h = (props.height as number) ?? 260;
                       const w = (props.width  as number) ?? 600;
-                      const mouseY = mouseYPct !== null ? mouseYPct * h : null;
                       return (
                         <g>
                           <line x1={x} y1={0} x2={x} y2={h} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
-                          {mouseY !== null && (
-                            <line x1={0} y1={mouseY} x2={w} y2={mouseY} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
-                          )}
+                          <line x1={0} y1={y} x2={w} y2={y} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
                         </g>
                       );
                     };

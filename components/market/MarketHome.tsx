@@ -394,138 +394,14 @@ function NewsSection({ articles }: { articles: MarketNewsArticle[] }) {
   );
 }
 
-// ─── Shared sticky title bar for ETFs / Winners / Losers (desktop only) ──────
-const COLUMN_TITLES: Record<"etfs" | "gainers" | "losers", string> = {
-  etfs: "Sector ETFs",
-  gainers: "Top Winners",
-  losers: "Top Losers",
-};
-
-/**
- * Reads the real, currently-rendered header + ticker-bar heights (published
- * as CSS vars by SiteHeader and TickerBar) and keeps them in sync via
- * ResizeObserver. Using a stale hardcoded pixel guess here was the root
- * cause of two bugs at once: a visible gap between the ticker bar and the
- * title frame, and the title frame's "stuck" shadow only kicking in near
- * the bottom of the list (the IntersectionObserver threshold was off by
- * however many pixels the guess was wrong by).
- */
-function useStickyOffset(): number {
-  const [offset, setOffset] = useState(160);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    function readOffset() {
-      const headerH = parseFloat(getComputedStyle(root).getPropertyValue("--header-height")) || 0;
-      const tickerH = parseFloat(getComputedStyle(root).getPropertyValue("--ticker-bar-height")) || 0;
-      if (headerH || tickerH) setOffset(headerH + tickerH);
-    }
-    readOffset();
-
-    // The CSS vars are set by other components' effects on the same tick,
-    // so re-check on the next frame too, then keep watching for layout
-    // changes (font load, window resize, responsive header wrapping, etc).
-    const raf = requestAnimationFrame(readOffset);
-    const header = document.querySelector("header");
-    const ticker = document.querySelector<HTMLElement>("[data-market-ticker]");
-    const observer = new ResizeObserver(readOffset);
-    if (header) observer.observe(header);
-    if (ticker) observer.observe(ticker);
-    window.addEventListener("resize", readOffset);
-    return () => {
-      cancelAnimationFrame(raf);
-      observer.disconnect();
-      window.removeEventListener("resize", readOffset);
-    };
-  }, []);
-
-  return offset;
-}
-
-/**
- * A single sticky title bar shared by all three columns.
- *
- * Important: this element is rendered as a DIRECT child of `sectionRef`
- * (the same block that also holds the three card columns), so its CSS
- * containing block is exactly as tall as "title + all the lists" — that's
- * what lets it stay pinned while scrolling through the cards, and stop
- * following once the lists end, instead of detaching immediately.
- *
- * The bar's own box keeps the page's normal padding (so its 3 columns are
- * pixel-identical to the card columns below — no drift). A separate,
- * purely decorative layer behind the text stretches edge-to-edge of the
- * screen for the "frame" look, without affecting text alignment.
- */
-function MarketColumnTitleBar({ topRef, bottomRef }: { topRef: React.RefObject<HTMLDivElement | null>; bottomRef: React.RefObject<HTMLDivElement | null> }) {
-  const [topPassed, setTopPassed] = useState(false);
-  const [bottomPassed, setBottomPassed] = useState(false);
-  const stickyTop = useStickyOffset();
-
-  useEffect(() => {
-    const opts: IntersectionObserverInit = { rootMargin: `-${stickyTop + 1}px 0px 0px 0px`, threshold: 0 };
-    const topEl = topRef.current;
-    const bottomEl = bottomRef.current;
-    const topObserver = topEl
-      ? new IntersectionObserver(([entry]) => setTopPassed(!entry.isIntersecting), opts)
-      : null;
-    const bottomObserver = bottomEl
-      ? new IntersectionObserver(([entry]) => setBottomPassed(!entry.isIntersecting), opts)
-      : null;
-    if (topEl && topObserver) topObserver.observe(topEl);
-    if (bottomEl && bottomObserver) bottomObserver.observe(bottomEl);
-    return () => {
-      topObserver?.disconnect();
-      bottomObserver?.disconnect();
-    };
-  }, [topRef, bottomRef, stickyTop]);
-
-  // Stuck (and therefore casting its shadow) only while pinned at the top —
-  // i.e. past the top of the lists but not yet past their end.
-  const isStuck = topPassed && !bottomPassed;
-
-  return (
-    <div
-      className="sticky z-20"
-      style={{ top: `${stickyTop}px` }}
-    >
-      {/* Decorative backdrop only — stretches to the true screen edges for
-          the "border to border" frame. Purely visual, so it doesn't need
-          pixel-perfect alignment and can't drag the text out of place. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-y-0 left-1/2 w-screen -translate-x-1/2 bg-black transition-shadow duration-200 ease-out"
-        style={{
-          borderBottom: "1px solid #3a3a42",
-          // Downward-only shadow (negative spread keeps it off the top/sides),
-          // and only rendered while the bar is actually pinned. A pure black
-          // shadow is invisible against this page's pure-black background,
-          // so we use the app's dark-grey border tone instead — it reads as
-          // a shadow while still sitting on a true black page.
-          boxShadow: isStuck ? "0 10px 14px -6px rgba(58, 58, 66, 0.85), 0 2px 4px rgba(58, 58, 66, 0.5)" : "none",
-        }}
-      />
-      {/* Real content — same padding chain as the cards grid below, so the
-          three titles land exactly above their columns. */}
-      <div className="relative grid grid-cols-3">
-        {(Object.keys(COLUMN_TITLES) as Array<keyof typeof COLUMN_TITLES>).map((key) => (
-          <h2 key={key} className="px-6 py-3 text-xl font-semibold text-positive">
-            {COLUMN_TITLES[key]}
-          </h2>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── Root component ────────────────────────────────────────────────────────
 export function MarketHome() {
   const [data, setData] = useState<MarketPayload>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"etfs" | "gainers" | "losers">("etfs");
   const [initialWatchlist] = useState<string[]>(() => readWatchlist());
   const watchlistQuery = useMemo(() => initialWatchlist.join(","), [initialWatchlist]);
-  const titleBarTopSentinel = useRef<HTMLDivElement>(null);
-  const titleBarBottomSentinel = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -551,6 +427,18 @@ export function MarketHome() {
   if (error) return <ErrorState title="Market unavailable" message={error} />;
   if (isLoading) return <LoadingScreen label="Loading market data" />;
 
+  const TAB_LABELS: Record<typeof activeTab, string> = {
+    etfs: "Sector ETFs",
+    gainers: "Top Winners",
+    losers: "Top Losers",
+  };
+
+  const activeStocks = (
+    activeTab === "etfs"    ? data.etfs    :
+    activeTab === "gainers" ? data.gainers :
+                              data.losers
+  ) ?? [];
+
   return (
     <div className="min-h-dvh bg-black">
       <TickerBar stocks={data.tickerStocks ?? []} />
@@ -563,55 +451,42 @@ export function MarketHome() {
           <MarketStatusCard />
         </div>
 
-        {/* Featured news — big story + 3 smaller, right above Fear & Greed */}
+        {/* Featured news */}
         <FeaturedNews articles={data.news ?? []} />
 
         {/* Fear & Greed */}
         <MarketFearGreed />
 
-        {/* Three columns: ETFs | Top Winners | Top Losers */}
+        {/* Tabbed stock grid: ETFs / Winners / Losers — 3×3 */}
         <section>
-          {/* Sits right above the title bar so we can detect when scrolling
-              has carried it past the sticky offset. */}
-          <div ref={titleBarTopSentinel} className="h-px w-full" />
-
-          {/* One shared, full-bleed sticky title bar for all three columns */}
-          <MarketColumnTitleBar topRef={titleBarTopSentinel} bottomRef={titleBarBottomSentinel} />
-
-          {/* Outer wrapper provides the column gaps visually via padding.
-              All three columns get IDENTICAL padding (1.5rem each side) so
-              their card areas are the same width. The dividers are purely
-              decorative overlays that don't participate in layout. */}
-          <div className="relative mt-4 grid lg:grid-cols-3" style={{ alignItems: "start" }}>
-
-            {/* Decorative vertical dividers — overlay only, no layout impact */}
-            <div className="hidden lg:block absolute top-10 bottom-10 w-px bg-[#3a3a42]" style={{ left: "calc(33.333%)" }} />
-            <div className="hidden lg:block absolute top-10 bottom-10 w-px bg-[#3a3a42]" style={{ left: "calc(66.666%)" }} />
-
-            {(["etfs", "gainers", "losers"] as const).map((key) => {
-              const stocks = (key === "etfs" ? data.etfs : key === "gainers" ? data.gainers : data.losers) ?? [];
-              return (
-                <div key={key} className="flex flex-col min-w-0 px-6">
-
-                  {/* Cards — a plain vertical stack (not a fr-sized grid) so every
-                      card's height comes purely from its own fixed content and
-                      stays identical top to bottom, instead of being squeezed by
-                      grid row-sizing as the list grows. */}
-                  <div className="flex flex-col gap-3 sm:gap-6 w-full">
-                    {stocks.slice(0, 10).map((stock) => (
-                      <StockCard key={stock.symbol} stock={stock} minHeightClassName="min-h-[260px] sm:min-h-[560px]" />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-
+          {/* Tab selector — pill for active, green text for inactive */}
+          <div className="flex items-center gap-3 mb-6">
+            {(Object.keys(TAB_LABELS) as Array<typeof activeTab>).map((key) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-150",
+                  activeTab === key
+                    ? "bg-positive text-black"
+                    : "text-positive hover:text-positive/80"
+                )}
+              >
+                {TAB_LABELS[key]}
+              </button>
+            ))}
           </div>
 
-          {/* Marks the end of the lists — once this scrolls past the sticky
-              offset, the title bar has run out of room and detaches, so we
-              also drop its shadow at that exact point. */}
-          <div ref={titleBarBottomSentinel} className="h-px w-full" />
+          {/* 3×3 grid — cards are 90% width, ~80% height of watchlist cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            {activeStocks.slice(0, 9).map((stock) => (
+              <StockCard
+                key={stock.symbol}
+                stock={stock}
+                minHeightClassName="min-h-[210px] sm:min-h-[396px]"
+              />
+            ))}
+          </div>
         </section>
 
         {/* News — full width, bottom of page */}

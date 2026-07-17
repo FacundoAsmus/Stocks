@@ -59,9 +59,10 @@ html.light-mode .text-text-muted { color: #6e6e80; }
 html.light-mode .border-white\/10 { border-color: rgba(0,0,0,0.08) !important; }
 html.light-mode .border-white\/20 { border-color: rgba(0,0,0,0.12) !important; }
 
-/* Sticky glass headers: pure white in light mode */
-html.light-mode [class*="bg-background/85"] {
-  background-color: rgba(255,255,255,0.88) !important;
+/* Sticky glass headers: pure white in light mode — cover all opacity variants */
+html.light-mode [class*="bg-background/8"],
+html.light-mode [class*="bg-background/9"] {
+  background-color: rgba(255,255,255,0.92) !important;
 }
 
 /* List row dividers and card borders: much lighter in light mode */
