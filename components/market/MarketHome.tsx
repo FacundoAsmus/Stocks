@@ -483,7 +483,8 @@ export function MarketHome() {
               <StockCard
                 key={stock.symbol}
                 stock={stock}
-                minHeightClassName="min-h-[210px] sm:min-h-[396px]"
+                minHeightClassName=""
+                style={{ aspectRatio: "1 / 1.35" }}
               />
             ))}
           </div>

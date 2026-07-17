@@ -310,6 +310,8 @@ export function PriceChart({
   const [isTouching, setIsTouching] = useState(false);
   // touchOverlay: the computed X% and Y% for the custom dot/crosshair overlay (touch only)
   const [touchOverlay, setTouchOverlay] = useState<{ xPct: number; yPct: number } | null>(null);
+  // dotCY: active dot's Y pixel inside the SVG, used to draw the pro-mode horizontal crosshair
+  const [dotCY, setDotCY] = useState<number | null>(null);
 
   const onHover = useCallback((price: number | null, date: string | null) => {
     if (suppressRef.current) return;
@@ -439,7 +441,7 @@ export function PriceChart({
       <div
         ref={chartRef}
         className={cn(heightClassName, "relative")}
-        onMouseLeave={() => clearHover()}
+        onMouseLeave={() => { setDotCY(null); clearHover(); }}
       >
         {isLoading ? (
           <div className="flex h-full flex-col items-center justify-center gap-5 rounded-md border border-dashed border-border-subtle">
@@ -505,23 +507,11 @@ export function PriceChart({
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return false;
                   if (proMode) {
-                    const ProCursor = (props: Record<string, unknown>) => {
-                      const points = props.points as Array<{ x: number; y: number }> | undefined;
-                      if (!points?.length) return null;
-                      const x = points[0].x;
-                      const y = points[0].y; // dot's Y on the graph line — horizontal crosshair follows this
-                      const h = (props.height as number) ?? 260;
-                      const w = (props.width  as number) ?? 600;
-                      return (
-                        <g>
-                          <line x1={x} y1={0} x2={x} y2={h} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
-                          <line x1={0} y1={y} x2={w} y2={y} stroke="rgba(255,255,255,0.15)" strokeWidth={1} />
-                        </g>
-                      );
-                    };
-                    return <ProCursor />;
+                    // Vertical line only — drawn via SVG props (what Recharts cursor accepts).
+                    // The horizontal line is drawn as a separate overlay div using dotCY.
+                    return { stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 };
                   }
-                  return { stroke: "#ffffff22", strokeWidth: 1 };
+                  return { stroke: "rgba(128,128,128,0.4)", strokeWidth: 1 };
                 })()}
                 content={(() => {
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
@@ -541,10 +531,11 @@ export function PriceChart({
                 dot={false}
                 activeDot={(props: Record<string, unknown>) => {
                   const { cx, cy } = props as { cx?: number; cy?: number };
-                  // On touch we draw our own dot overlay; on desktop keep Recharts'
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return <g key="no-dot" />;
                   if (cx == null || cy == null) return <g key="no-dot2" />;
+                  // Update horizontal crosshair position for pro mode
+                  if (proMode && cy !== dotCY) setDotCY(cy);
                   return <circle key="dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} />;
                 }}
                 isAnimationActive={false}
@@ -552,6 +543,22 @@ export function PriceChart({
             </AreaChart>
           </ResponsiveContainer>
           </div>
+
+          {/* ── Pro mode desktop horizontal crosshair — follows the active dot ── */}
+          {proMode && !isTouching && dotCY !== null && (() => {
+            // dotCY is in SVG coordinates inside the AreaChart which has margin top:8.
+            // Convert to % of the full container height so the overlay div lines up.
+            const rect = chartRef.current?.getBoundingClientRect();
+            const containerH = rect?.height ?? 260;
+            const topPct = ((dotCY + 8) / containerH) * 100;
+            return (
+              <div
+                className="absolute inset-x-0 pointer-events-none"
+                aria-hidden
+                style={{ top: `${topPct}%`, height: 1, background: "rgba(128,128,128,0.5)" }}
+              />
+            );
+          })()}
 
           {/* ── Custom touch overlay: dot + crosshair line + date bubble ── */}
           {isTouching && touchOverlay && (() => {
