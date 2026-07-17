@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   title: "Wave form",
   description: "A stock news, watchlist, fundamentals, and analyst research starter app.",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)",  color: "#000000" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+  ],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

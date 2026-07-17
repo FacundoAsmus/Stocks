@@ -23,6 +23,12 @@ html {
   background: #000000;
 }
 
+body {
+  background: #000000;
+  border: 0;
+  margin: 0;
+}
+
 
 /* ── Light mode ──────────────────────────────────────────────────────────── */
 html.light-mode {
@@ -31,6 +37,7 @@ html.light-mode {
 }
 html.light-mode body {
   background: #ffffff;
+  border: 0;
 }
 html.light-mode :root,
 html.light-mode {

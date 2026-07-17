@@ -104,7 +104,8 @@ function WatchlistRow({
   stock,
   index,
   isDragSource,
-  isSwapTarget,
+  insertAbove,
+  dragSourceHeight,
   onRemove,
   onDragStart,
   onDragMove,
@@ -113,7 +114,8 @@ function WatchlistRow({
   stock: StockSummary;
   index: number;
   isDragSource: boolean;
-  isSwapTarget: boolean;
+  insertAbove: boolean;   // show gap ABOVE this row
+  dragSourceHeight: number; // height of the gap to show
   onRemove: (s: string) => void;
   onDragStart: (index: number, rowEl: HTMLElement, clientY: number) => void;
   onDragMove: (clientY: number) => void;
@@ -272,15 +274,20 @@ function WatchlistRow({
   }, []);
 
   return (
-    <div
-      ref={rowRef}
-      data-watchlist-row
-      className={cn(
-        "relative overflow-hidden border-b border-border-subtle/70 last:border-0 transition-opacity duration-150",
-        isSwapTarget && SWAP_TARGET_CLASS
+    <>
+      {/* Gap that opens above this row when drag insertion point is here */}
+      {insertAbove && (
+        <div
+          className="overflow-hidden transition-all duration-150 bg-black border border-dashed border-positive/50"
+          style={{ height: dragSourceHeight, borderRadius: 0 }}
+        />
       )}
-      style={{ opacity: isDragSource ? 0 : 1, touchAction: "pan-y", WebkitTouchCallout: "none" }}
-    >
+      <div
+        ref={rowRef}
+        data-watchlist-row
+        className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 transition-opacity duration-150"
+        style={{ opacity: isDragSource ? 0 : 1, touchAction: "pan-y", WebkitTouchCallout: "none" }}
+      >
       {/* Swipe-revealed remove button */}
       <div className="absolute inset-y-0 right-0 flex items-center justify-center" style={{ width: REVEAL_WIDTH }}>
         <button
@@ -309,6 +316,7 @@ function WatchlistRow({
         <RowContent stock={stock} />
       </Link>
     </div>
+    </>
   );
 }
 
@@ -320,14 +328,14 @@ export function MobileWatchlist() {
   const containerRef          = useRef<HTMLDivElement>(null);
 
   // ── Drag-to-reorder state ────────────────────────────────────────────────
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null); // which row will be swapped with
+  const [dragIndex,   setDragIndex]   = useState<number | null>(null);
+  const [insertIndex, setInsertIndex] = useState<number | null>(null); // insert BEFORE this index (0..n)
   const [ghost, setGhost] = useState<{ stock: StockSummary; top: number; left: number; width: number; height: number } | null>(null);
 
-  const dragOffsetYRef   = useRef(0);      // finger-to-row-top offset, kept constant while dragging
+  const dragOffsetYRef   = useRef(0);
   const rowRectsRef      = useRef<{ top: number; height: number }[]>([]);
   const containerRectRef = useRef<DOMRect | null>(null);
-  const hoverIndexRef    = useRef<number | null>(null);
+  const insertIndexRef   = useRef<number | null>(null);
   const dragIndexRef     = useRef<number | null>(null);
   const symbolsRef       = useRef<string[]>([]);
   const stocksMapRef     = useRef<Map<string, StockSummary>>(new Map());
@@ -373,18 +381,19 @@ export function MobileWatchlist() {
     writeWatchlist(updated);
   }
 
-  // Given the ghost card's vertical center, find which row it's currently
-  // sitting on top of (the one it would swap places with). Every row is
-  // contiguous with no gaps, so any Y within the list's vertical span maps
-  // to exactly one row; outside that span (or the drag's own original row)
-  // there's no valid swap target.
-  function computeHoverIndex(ghostCenterY: number, excludeIndex: number): number | null {
+  // Given ghost centre Y, compute insert-before index (0..n), null if outside list
+  function computeInsertIndex(ghostCenterY: number): number | null {
     const rects = rowRectsRef.current;
+    if (!rects.length) return null;
+    const first = rects[0];
+    const last  = rects[rects.length - 1];
+    if (ghostCenterY < first.top) return null;
+    if (ghostCenterY > last.top + last.height) return null;
     for (let i = 0; i < rects.length; i++) {
-      if (i === excludeIndex) continue;
-      if (ghostCenterY >= rects[i].top && ghostCenterY <= rects[i].top + rects[i].height) return i;
+      const mid = rects[i].top + rects[i].height / 2;
+      if (ghostCenterY <= mid) return i;
     }
-    return null;
+    return rects.length;
   }
 
   const handleDragStart = useCallback((index: number, rowEl: HTMLElement, clientY: number) => {
@@ -393,8 +402,6 @@ export function MobileWatchlist() {
     const rowRect = rowEl.getBoundingClientRect();
     containerRectRef.current = container.getBoundingClientRect();
 
-    // Snapshot every row's current position so hit-testing stays stable
-    // for the whole gesture even though the real rows don't move.
     const rowEls = Array.from(container.querySelectorAll<HTMLElement>("[data-watchlist-row]"));
     rowRectsRef.current = rowEls.map(el => {
       const r = el.getBoundingClientRect();
@@ -405,18 +412,12 @@ export function MobileWatchlist() {
     const symbol = symbolsRef.current[index];
     const stock  = symbol ? stocksMapRef.current.get(symbol) : undefined;
 
-    dragIndexRef.current = index;
+    dragIndexRef.current   = index;
     setDragIndex(index);
-    hoverIndexRef.current = null;
-    setHoverIndex(null);
+    insertIndexRef.current = null;
+    setInsertIndex(null);
     if (stock) {
-      setGhost({
-        stock,
-        top: rowRect.top,
-        left: rowRect.left,
-        width: rowRect.width,
-        height: rowRect.height,
-      });
+      setGhost({ stock, top: rowRect.top, left: rowRect.left, width: rowRect.width, height: rowRect.height });
     }
   }, []);
 
@@ -426,40 +427,43 @@ export function MobileWatchlist() {
     if (dragIndexRef.current === null) return;
     const ghostHeight = rowRectsRef.current[dragIndexRef.current]?.height ?? 0;
     const centerY = top + ghostHeight / 2;
-    const next = computeHoverIndex(centerY, dragIndexRef.current);
-    if (hoverIndexRef.current !== next) {
-      hoverIndexRef.current = next;
-      setHoverIndex(next);
+    const next = computeInsertIndex(centerY);
+    if (insertIndexRef.current !== next) {
+      insertIndexRef.current = next;
+      setInsertIndex(next);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDragEnd = useCallback((clientY: number, clientX: number) => {
     const rect = containerRectRef.current;
-    const margin = 48; // small tolerance so releasing right at the edge still counts
+    const margin = 48;
     const withinBounds = !!rect
       && clientX >= rect.left - margin && clientX <= rect.right + margin
       && clientY >= rect.top - margin && clientY <= rect.bottom + margin;
 
     const from = dragIndexRef.current;
-    const to   = hoverIndexRef.current;
+    const to   = insertIndexRef.current;
 
-    if (withinBounds && from !== null && to !== null && to !== from) {
+    if (withinBounds && from !== null && to !== null) {
       const updated = [...symbolsRef.current];
-      // Swap — the dragged stock and the one it's hovering over trade places.
-      [updated[from], updated[to]] = [updated[to], updated[from]];
+      const [item] = updated.splice(from, 1);
+      const adjustedTo = to > from ? to - 1 : to;
+      updated.splice(adjustedTo, 0, item);
       symbolsRef.current = updated;
       setSymbols(updated);
       writeWatchlist(updated);
     }
 
-    dragIndexRef.current  = null;
-    hoverIndexRef.current = null;
+    dragIndexRef.current   = null;
+    insertIndexRef.current = null;
     setDragIndex(null);
-    setHoverIndex(null);
+    setInsertIndex(null);
     setGhost(null);
   }, []);
 
   const orderedStocks = symbols.map(s => stocks.get(s)).filter(Boolean) as StockSummary[];
+  const dragSourceHeight = ghost?.height ?? 0;
 
   if (loading && !orderedStocks.length) return <LoadingScreen label="Loading your watchlist" />;
 
@@ -469,13 +473,17 @@ export function MobileWatchlist() {
       stock={stock}
       index={i}
       isDragSource={dragIndex === i}
-      isSwapTarget={dragIndex !== null && hoverIndex === i}
+      insertAbove={dragIndex !== null && insertIndex === i}
+      dragSourceHeight={dragSourceHeight}
       onRemove={handleRemove}
       onDragStart={handleDragStart}
       onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
     />
   ));
+
+  // Gap after the last row when insertIndex === orderedStocks.length
+  const trailingGap = dragIndex !== null && insertIndex === orderedStocks.length;
 
   return (
     <div className="pb-24">
@@ -492,13 +500,19 @@ export function MobileWatchlist() {
       ) : (
         <div ref={containerRef} className="mx-4 mt-6 rounded-xl bg-black overflow-hidden">
           {rowNodes}
+          {trailingGap && (
+            <div
+              className="border border-dashed border-positive/50 bg-black transition-all duration-150"
+              style={{ height: dragSourceHeight }}
+            />
+          )}
         </div>
       )}
 
-      {/* Floating drag ghost — follows the finger while reordering */}
+      {/* Floating drag ghost */}
       {ghost && (
         <div
-          className="fixed z-50 flex items-center gap-3 px-4 py-3.5 rounded-xl border border-positive/50 bg-black shadow-[0_16px_40px_rgba(0,0,0,0.55)] scale-[1.03] pointer-events-none"
+          className="fixed z-50 flex items-center gap-3 px-4 py-3.5 rounded-xl border border-positive/50 bg-black shadow-[0_16px_40px_rgba(0,0,0,0.55)] scale-[1.03] pointer-events-none opacity-50"
           style={{ top: ghost.top, left: ghost.left, width: ghost.width, height: ghost.height }}
         >
           <RowContent stock={ghost.stock} />
