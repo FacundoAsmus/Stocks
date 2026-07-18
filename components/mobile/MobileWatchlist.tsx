@@ -420,8 +420,12 @@ export function MobileWatchlist() {
 
     dragIndexRef.current   = index;
     setDragIndex(index);
-    insertIndexRef.current = null;
-    setInsertIndex(null);
+    // Start the insertion gap at the item's own slot, so the moment it's
+    // picked up the gap appears exactly where it originally was. As soon as
+    // the finger moves over a different slot, handleDragMove below updates
+    // insertIndex and the gap follows — leaving nothing behind at the start.
+    insertIndexRef.current = index;
+    setInsertIndex(index);
     if (stock) {
       setGhost({ stock, top: rowRect.top, left: rowRect.left, width: rowRect.width, height: rowRect.height });
     }

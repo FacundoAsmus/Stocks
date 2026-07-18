@@ -546,11 +546,12 @@ export function PriceChart({
 
           {/* ── Pro mode desktop horizontal crosshair — follows the active dot ── */}
           {proMode && !isTouching && dotCY !== null && (() => {
-            // dotCY is in SVG coordinates inside the AreaChart which has margin top:8.
-            // Convert to % of the full container height so the overlay div lines up.
+            // dotCY is already an absolute pixel position within the chart SVG —
+            // Recharts bakes margin.top into cx/cy for activeDot, so no extra
+            // offset is needed here (adding one pushes the line below the dot).
             const rect = chartRef.current?.getBoundingClientRect();
             const containerH = rect?.height ?? 260;
-            const topPct = ((dotCY + 8) / containerH) * 100;
+            const topPct = (dotCY / containerH) * 100;
             return (
               <div
                 className="absolute inset-x-0 pointer-events-none"
