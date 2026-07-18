@@ -285,8 +285,14 @@ function WatchlistRow({
       <div
         ref={rowRef}
         data-watchlist-row
-        className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 transition-opacity duration-150"
-        style={{ opacity: isDragSource ? 0 : 1, touchAction: "pan-y", WebkitTouchCallout: "none" }}
+        className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 transition-all duration-150"
+        style={{
+          height: isDragSource ? 0 : undefined,
+          opacity: isDragSource ? 0 : 1,
+          borderBottomWidth: isDragSource ? 0 : undefined,
+          touchAction: "pan-y",
+          WebkitTouchCallout: "none",
+        }}
       >
       {/* Swipe-revealed remove button */}
       <div className="absolute inset-y-0 right-0 flex items-center justify-center" style={{ width: REVEAL_WIDTH }}>
