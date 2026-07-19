@@ -12,10 +12,7 @@ export const metadata: Metadata = {
   title: "Wave form",
   description: "A stock news, watchlist, fundamentals, and analyst research starter app.",
   viewport: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: dark)",  color: "#000000" },
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-  ],
+  themeColor: "#000000",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -28,6 +25,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             var isDark = t === 'dark' || (t === 'system' && prefersDark);
             if (!isDark) document.documentElement.classList.add('light-mode');
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', isDark ? '#000000' : '#ffffff');
           })();
         `}} />
         <ToastProvider>

@@ -20,6 +20,11 @@ function applyTheme(theme: Theme) {
   const isDark = theme === "dark" || (theme === "system" && prefersDark);
   html.classList.toggle("light-mode", !isDark);
   localStorage.setItem("theme", theme);
+  // Keep Safari's status-bar/dynamic-island color matching the app's actual
+  // resolved theme — not the OS's — so a light-mode page never shows a
+  // stray gray/dark bar just because the phone itself is set to dark mode.
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", isDark ? "#000000" : "#ffffff");
 }
 
 function GlobeIcon({ className }: { className?: string }) {
