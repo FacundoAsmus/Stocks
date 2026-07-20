@@ -7,6 +7,7 @@ import type {
   ChartPeriod,
   CompanyNewsArticle,
   CompanyProfile,
+  EarningsEvent,
   FinnhubQuote,
   MarketNewsArticle,
   PriceTarget,
@@ -403,6 +404,22 @@ export async function getPriceTarget(symbol: string) {
   );
 }
 
+// Quarterly earnings dates + EPS/revenue estimate vs. actual, from Finnhub's
+// /calendar/earnings. Window: ~13 months back (covers "past 12 months" for
+// the calendar UI with a little slack) through ~7 months ahead (covers the
+// next known scheduled report date). Sorted ascending by date.
+export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent[]> {
+  const data = await fetchFinnhub<{ earningsCalendar?: EarningsEvent[] }>(
+    "/calendar/earnings",
+    { symbol: cleanSymbol(symbol), from: yyyyMmDdDaysAgo(400), to: yyyyMmDdDaysAgo(-220) },
+    1000 * 60 * 60
+  );
+  return (data.earningsCalendar ?? [])
+    .filter(e => e.date)
+    .slice()
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
+
 // Well-known company name → ticker map for reliable name searches
 const COMPANY_NAME_MAP: Record<string, string> = {
   "META": "META", "FACEBOOK": "META",
@@ -767,13 +784,14 @@ export async function getStockSummary(symbol: string): Promise<StockSummary> {
 
 export async function getStockDetail(symbol: string): Promise<StockDetail> {
   const normalizedSymbol = cleanSymbol(symbol);
-  const [quote, profile, financials, news, recommendations, priceTarget] = await Promise.all([
+  const [quote, profile, financials, news, recommendations, priceTarget, earnings] = await Promise.all([
     getQuote(normalizedSymbol),
     getCompanyProfile(normalizedSymbol).catch(() => ({} as CompanyProfile)),
     getBasicFinancials(normalizedSymbol).catch(() => ({} as BasicFinancials)),
     getCompanyNews(normalizedSymbol).catch(() => []),
     getAnalystRecommendations(normalizedSymbol).catch(() => []),
-    getPriceTarget(normalizedSymbol).catch(() => ({} as PriceTarget))
+    getPriceTarget(normalizedSymbol).catch(() => ({} as PriceTarget)),
+    getEarningsCalendar(normalizedSymbol).catch(() => [] as EarningsEvent[])
   ]);
 
   console.log("priceTarget:", JSON.stringify(priceTarget));
@@ -789,7 +807,8 @@ export async function getStockDetail(symbol: string): Promise<StockDetail> {
     financials,
     news: news.slice(0, 8),
     recommendations: recommendations.slice(0, 6),
-    priceTarget
+    priceTarget,
+    earnings
   };
 }
 

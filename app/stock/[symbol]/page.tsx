@@ -194,6 +194,7 @@ export default async function StockPage({ params }: StockPageProps) {
           metrics={metrics}
           marketCap={stock.profile.marketCapitalization}
           currentPrice={currentPrice}
+          earnings={stock.earnings}
         />
 
         <section>

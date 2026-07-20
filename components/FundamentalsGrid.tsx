@@ -1,4 +1,6 @@
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
+import { expectedRevenueGrowthPct, getNextReport } from "@/lib/earnings";
+import type { EarningsEvent } from "@/types/stock";
 
 type MetricValue = number | string | null;
 
@@ -54,6 +56,12 @@ function highLowTone(currentPrice: number, target: number | null, type: "high" |
   return { tone: "neutral" as const, note: "Normal Range" };
 }
 
+function formatReportDate(dateStr: string) {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
+    new Date(`${dateStr}T00:00:00`)
+  );
+}
+
 function toneClasses(tone: FundamentalItem["tone"]) {
   if (tone === "positive") return "border-positive/25 bg-positive/5 text-positive";
   if (tone === "negative") return "border-negative/25 bg-negative/5 text-negative";
@@ -63,11 +71,13 @@ function toneClasses(tone: FundamentalItem["tone"]) {
 export function FundamentalsGrid({
   metrics,
   marketCap,
-  currentPrice
+  currentPrice,
+  earnings = []
 }: {
   metrics?: Record<string, MetricValue>;
   marketCap?: number;
   currentPrice: number;
+  earnings?: EarningsEvent[];
 }) {
   const pe = toNumber(metrics?.peTTM ?? metrics?.peNormalizedAnnual);
   const forwardPe = toNumber(metrics?.forwardPE ?? null);        // ✅ correct Finnhub field
@@ -88,6 +98,9 @@ export function FundamentalsGrid({
   const high52 = toNumber(metrics?.["52WeekHigh"]);
   const low52 = toNumber(metrics?.["52WeekLow"]);
   const volume = toNumber(metrics?.["10DayAverageTradingVolume"]);
+
+  const nextReport = getNextReport(earnings);
+  const expectedGrowth = nextReport ? expectedRevenueGrowthPct(earnings, nextReport) : null;
 
   const items: FundamentalItem[] = [
     {
@@ -125,7 +138,19 @@ export function FundamentalsGrid({
     { label: "Beta", value: formatNumber(beta), ...ratioTone(beta, 0.8, 1.4) },
     { label: "52W High", value: formatCurrency(high52), ...highLowTone(currentPrice, high52, "high") },
     { label: "52W Low", value: formatCurrency(low52), ...highLowTone(currentPrice, low52, "low") },
-    { label: "Avg. Volume", value: formatCompact(volume ? volume * 1_000_000 : null), tone: "neutral", note: "10 Day Avg." }
+    { label: "Avg. Volume", value: formatCompact(volume ? volume * 1_000_000 : null), tone: "neutral", note: "10 Day Avg." },
+    {
+      label: "Next Report",
+      value: nextReport ? formatReportDate(nextReport.date) : "N/A",
+      tone: "neutral",
+      note: nextReport ? `Q${nextReport.quarter} ${nextReport.year}` : "Not scheduled yet"
+    },
+    {
+      label: "Expected Earnings",
+      value: expectedGrowth !== null ? formatPercent(expectedGrowth) : "N/A",
+      tone: expectedGrowth === null ? "neutral" : expectedGrowth >= 0 ? "positive" : "negative",
+      note: expectedGrowth !== null ? "Est. QoQ Growth" : "Data unavailable"
+    }
   ];
 
   return (

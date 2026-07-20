@@ -9,6 +9,7 @@ import { AnalystSection } from "@/components/AnalystSection";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { PriceChart } from "@/components/PriceChart";
+import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
 import type { StockDetail } from "@/types/stock";
 
@@ -117,7 +118,12 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
             metrics={metrics}
             marketCap={stock.profile.marketCapitalization}
             currentPrice={currentPrice}
+            earnings={stock.earnings}
           />
+
+          <div className="flex justify-end -mt-2">
+            <EarningsCalendarButton earnings={stock.earnings} />
+          </div>
 
           {stock.news.length > 0 && (
             <section>

@@ -83,6 +83,19 @@ export interface CandlePoint {
   volume?: number;
 }
 
+// A single quarterly earnings-calendar entry from Finnhub's /calendar/earnings.
+// For future quarters, epsActual/revenueActual are null until reported.
+export interface EarningsEvent {
+  date: string;                    // "YYYY-MM-DD"
+  quarter: number;
+  year: number;
+  hour?: string | null;            // "bmo" | "amc" | "dmh"
+  epsEstimate: number | null;
+  epsActual: number | null;
+  revenueEstimate: number | null;
+  revenueActual: number | null;
+}
+
 export interface StockSummary {
   symbol: string;
   name: string;
@@ -101,6 +114,7 @@ export interface StockDetail {
   news: CompanyNewsArticle[];
   recommendations: AnalystRecommendation[];
   priceTarget: PriceTarget;
+  earnings: EarningsEvent[];
 }
 
 export interface SymbolSearchResult {
