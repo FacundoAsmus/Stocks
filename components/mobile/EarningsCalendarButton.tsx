@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft } from "lucide-react";
 
@@ -10,7 +10,8 @@ import {
   expectedEpsGrowthPct,
   expectedRevenueGrowthPct,
   isReported,
-  revenueSurprisePct
+  revenueSurprisePct,
+  todayStr
 } from "@/lib/earnings";
 import type { EarningsEvent } from "@/types/stock";
 
@@ -37,16 +38,16 @@ function StatBlock({
   tone: "positive" | "negative" | "neutral";
 }) {
   return (
-    <div className="rounded-lg bg-panel border border-border-subtle px-3.5 py-3">
-      <p className="text-[10px] uppercase tracking-wider text-text-muted mb-2">{title}</p>
+    <div className="px-0.5 py-2.5">
+      <p className="text-xs uppercase tracking-wider text-text-muted mb-2">{title}</p>
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="text-[10px] text-text-muted">{primaryLabel}</p>
-          <p className="text-base font-semibold text-text-primary">{primaryValue}</p>
+          <p className="text-xs text-text-muted">{primaryLabel}</p>
+          <p className="text-lg font-semibold text-text-primary">{primaryValue}</p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] text-text-muted">{secondaryLabel}</p>
-          <p className={`text-base font-semibold ${
+          <p className="text-xs text-text-muted">{secondaryLabel}</p>
+          <p className={`text-lg font-semibold ${
             tone === "positive" ? "text-positive" : tone === "negative" ? "text-negative" : "text-text-muted"
           }`}>
             {secondaryValue}
@@ -69,8 +70,15 @@ function EarningsDetailCard({
 
   return (
     <div
-      className="w-full rounded-2xl border border-border-subtle bg-black p-5 shadow-2xl"
-      style={{ maxWidth: "min(380px, calc(100vw - 2rem))", animation: "detailFadeIn 0.18s ease both" }}
+      className="w-full rounded-2xl p-5 shadow-2xl"
+      style={{
+        maxWidth: "min(380px, calc(100vw - 2rem))",
+        animation: "detailFadeIn 0.18s ease both",
+        background: "linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.35))",
+        backdropFilter: "blur(22px) saturate(160%)",
+        WebkitBackdropFilter: "blur(22px) saturate(160%)",
+        boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 0 1px rgba(255,255,255,0.05)"
+      }}
       onClick={e => e.stopPropagation()}
     >
       <div className="flex items-center gap-3 mb-5">
@@ -87,7 +95,7 @@ function EarningsDetailCard({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col">
         <StatBlock
           title="Earnings (Revenue)"
           primaryLabel="Expected"
@@ -111,11 +119,14 @@ function EarningsDetailCard({
 
 // ─── One month's grid ───────────────────────────────────────────────────────
 function MonthGrid({
-  monthDate, eventsByDate, onSelect
+  monthDate, eventsByDate, onSelect, today, isCurrent, monthRef
 }: {
   monthDate: Date;
   eventsByDate: Map<string, EarningsEvent>;
   onSelect: (event: EarningsEvent) => void;
+  today: string;
+  isCurrent: boolean;
+  monthRef?: (el: HTMLDivElement | null) => void;
 }) {
   const year  = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -129,24 +140,29 @@ function MonthGrid({
   ];
 
   return (
-    <div className="mb-6">
-      <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-2">{monthLabel}</p>
+    <div className="mb-6" ref={monthRef} data-current-month={isCurrent || undefined}>
+      <p className="text-sm font-semibold uppercase tracking-widest text-positive mb-2">{monthLabel}</p>
       <div className="grid grid-cols-7 gap-y-1.5">
         {cells.map((day, i) => {
           if (day === null) return <div key={`blank-${i}`} />;
           const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const event = eventsByDate.get(dateStr);
+          const isToday = dateStr === today;
           return (
             <div key={dateStr} className="flex items-center justify-center py-0.5">
               {event ? (
                 <button
                   onClick={() => onSelect(event)}
-                  className="h-7 w-7 rounded-full bg-positive text-black text-xs font-bold flex items-center justify-center active:scale-90 transition"
+                  className="h-8 w-8 rounded-full bg-positive text-black text-sm font-bold flex items-center justify-center active:scale-90 transition"
                 >
                   {day}
                 </button>
               ) : (
-                <span className="h-7 w-7 flex items-center justify-center text-xs text-text-muted">{day}</span>
+                <span className={`h-8 w-8 flex items-center justify-center text-sm ${
+                  isToday ? "text-positive font-bold" : "text-text-muted"
+                }`}>
+                  {day}
+                </span>
               )}
             </div>
           );
@@ -159,16 +175,33 @@ function MonthGrid({
 // ─── Trigger button + calendar overlay + detail popup ──────────────────────
 export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[] }) {
   const [open, setOpen]         = useState(false);
+  const [closing, setClosing]   = useState(false);
   const [selected, setSelected] = useState<EarningsEvent | null>(null);
+  const [origin, setOrigin]     = useState({ x: 0, y: 0 });
+
+  const scrollRef      = useRef<HTMLDivElement>(null);
+  const currentMonthRef = useRef<HTMLDivElement | null>(null);
+
+  const today = todayStr();
 
   // Lock the stock page's scroll while the calendar is open — only the
   // calendar's own list should move.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
   }, [open]);
+
+  // Center the current month in view the moment the calendar opens.
+  useLayoutEffect(() => {
+    if (!open || closing) return;
+    const container = scrollRef.current;
+    const target = currentMonthRef.current;
+    if (container && target) {
+      container.scrollTop = target.offsetTop - (container.clientHeight / 2) + (target.clientHeight / 2);
+    }
+  }, [open, closing]);
 
   const eventsByDate = useMemo(() => {
     const m = new Map<string, EarningsEvent>();
@@ -178,7 +211,7 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
 
   // 12 months back from this month, through the furthest known scheduled
   // report (capped ~6 months out so we never render an unbounded tail).
-  const months = useMemo(() => {
+  const { months, now } = useMemo(() => {
     const now = new Date();
     const start = new Date(now.getFullYear(), now.getMonth() - 11, 1);
     let end = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -196,14 +229,32 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
       list.push(new Date(cursor));
       cursor.setMonth(cursor.getMonth() + 1);
     }
-    return list;
+    return { months: list, now };
   }, [earnings]);
+
+  function openCalendar(e: React.MouseEvent<HTMLButtonElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setOrigin({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    setClosing(false);
+    setOpen(true);
+  }
+
+  function closeCalendar() {
+    setClosing(true);
+    setTimeout(() => { setOpen(false); setClosing(false); }, 260);
+  }
+
+  // Sheet is anchored to the bottom of the viewport at 88vh tall — express
+  // the button's tap point as a transform-origin relative to the sheet's own
+  // box, so the open animation visibly grows out from the button.
+  const sheetTop = typeof window !== "undefined" ? window.innerHeight * 0.12 : 0;
+  const transformOrigin = `${origin.x}px ${origin.y - sheetTop}px`;
 
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={openCalendar}
         aria-label="Earnings calendar"
         className="flex items-center justify-center h-7 w-7 text-positive active:opacity-60"
       >
@@ -216,12 +267,19 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
           style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
         >
           <div
-            className="w-full rounded-t-2xl border-t border-border-subtle bg-black flex flex-col"
-            style={{ height: "88vh", animation: "calendarRise 0.28s cubic-bezier(0.22,1,0.36,1) both" }}
+            className="w-full rounded-t-2xl border-t border-border-subtle flex flex-col"
+            style={{
+              height: "88vh",
+              backgroundColor: "#000000",
+              transformOrigin,
+              animation: closing
+                ? "calendarSink 0.26s cubic-bezier(0.4,0,1,1) forwards"
+                : "calendarRise 0.32s cubic-bezier(0.22,1,0.36,1) both"
+            }}
           >
             <div className="flex items-center gap-3 px-4 pt-4 pb-3 shrink-0">
               <button
-                onClick={() => setOpen(false)}
+                onClick={closeCalendar}
                 className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -232,19 +290,25 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
 
             <div className="grid grid-cols-7 px-4 pb-2 shrink-0">
               {WEEKDAYS.map((d, i) => (
-                <p key={i} className="text-center text-[10px] font-semibold uppercase tracking-wider text-text-muted">{d}</p>
+                <p key={i} className="text-center text-xs font-semibold uppercase tracking-wider text-text-muted">{d}</p>
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-8 overscroll-contain">
-              {months.map(monthDate => (
-                <MonthGrid
-                  key={`${monthDate.getFullYear()}-${monthDate.getMonth()}`}
-                  monthDate={monthDate}
-                  eventsByDate={eventsByDate}
-                  onSelect={setSelected}
-                />
-              ))}
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pb-8 overscroll-contain">
+              {months.map(monthDate => {
+                const isCurrent = monthDate.getFullYear() === now.getFullYear() && monthDate.getMonth() === now.getMonth();
+                return (
+                  <MonthGrid
+                    key={`${monthDate.getFullYear()}-${monthDate.getMonth()}`}
+                    monthDate={monthDate}
+                    eventsByDate={eventsByDate}
+                    onSelect={setSelected}
+                    today={today}
+                    isCurrent={isCurrent}
+                    monthRef={isCurrent ? (el => { currentMonthRef.current = el; }) : undefined}
+                  />
+                );
+              })}
             </div>
           </div>
         </div>,
@@ -254,7 +318,7 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
       {selected && typeof document !== "undefined" && createPortal(
         <div
           className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
+          style={{ background: "rgba(0,0,0,0.2)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
         >
           <EarningsDetailCard event={selected} earnings={earnings} onBack={() => setSelected(null)} />
@@ -264,8 +328,12 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
 
       <style>{`
         @keyframes calendarRise {
-          from { transform: translateY(24px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
+          from { transform: scale(0.08); opacity: 0; }
+          to   { transform: scale(1);    opacity: 1; }
+        }
+        @keyframes calendarSink {
+          from { transform: scale(1);    opacity: 1; }
+          to   { transform: translateY(80px) scale(0.9); opacity: 0; }
         }
         @keyframes detailFadeIn {
           from { opacity: 0; transform: scale(0.96) translateY(6px); }
