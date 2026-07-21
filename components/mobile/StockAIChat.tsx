@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Send, Sparkles, X } from "lucide-react";
 import { Area, AreaChart, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
+import { formatEarningsForAIContext } from "@/lib/earnings";
 import type { CandlePoint, StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
@@ -1007,6 +1008,9 @@ export async function buildStockContextAsync(
   if (a) lines.push(`Analyst: Strong Buy ${a.strongBuy} | Buy ${a.buy} | Hold ${a.hold} | Sell ${a.sell} | Strong Sell ${a.strongSell}`);
   if (stock.priceTarget?.targetMean) lines.push(`Avg Price Target: $${stock.priceTarget.targetMean.toFixed(2)}`);
 
+  const earningsBlock = formatEarningsForAIContext(stock.earnings);
+  if (earningsBlock) lines.push(earningsBlock);
+
   // Fetch graph stats for key periods, a year of daily candles for
   // deterministic market statistics, and full article text for the most
   // recent news items — all in parallel so total wait time is bounded by
@@ -1069,6 +1073,8 @@ function buildStockContext(
   const a = stock.recommendations?.[0];
   if (a) lines.push(`Analyst: Strong Buy ${a.strongBuy} | Buy ${a.buy} | Hold ${a.hold} | Sell ${a.sell} | Strong Sell ${a.strongSell}`);
   if (stock.priceTarget?.targetMean) lines.push(`Avg Price Target: $${stock.priceTarget.targetMean.toFixed(2)}`);
+  const earningsBlock = formatEarningsForAIContext(stock.earnings);
+  if (earningsBlock) lines.push(earningsBlock);
   if (stock.news?.length) {
     const h = stock.news.slice(0, 8).map((n, i) =>
       `[${i}] ${n.headline} (${n.source})${n.summary ? `\n    Summary: ${n.summary}` : ""}`

@@ -414,10 +414,19 @@ export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent
     { symbol: cleanSymbol(symbol), from: yyyyMmDdDaysAgo(400), to: yyyyMmDdDaysAgo(-220) },
     1000 * 60 * 60
   );
-  return (data.earningsCalendar ?? [])
+  const events = (data.earningsCalendar ?? [])
     .filter(e => e.date)
     .slice()
     .sort((a, b) => a.date.localeCompare(b.date));
+
+  // TEMP DIAGNOSTIC — remove once we've confirmed whether Finnhub's plan
+  // populates estimate/actual fields for this account. Check Vercel logs.
+  console.log(
+    `[earnings] ${cleanSymbol(symbol)}: ${events.length} events —`,
+    JSON.stringify(events.slice(0, 3))
+  );
+
+  return events;
 }
 
 // Well-known company name → ticker map for reliable name searches

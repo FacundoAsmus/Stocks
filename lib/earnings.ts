@@ -53,3 +53,40 @@ export function epsSurprisePct(event: EarningsEvent): number | null {
 export function isReported(event: EarningsEvent, today = todayStr()): boolean {
   return event.date < today;
 }
+
+// Human-readable earnings-calendar block for the AI chat context — same
+// idea as the other data blocks (Fundamentals, Graph Data, etc.): plain
+// text the model can cite directly.
+export function formatEarningsForAIContext(earnings: EarningsEvent[]): string | null {
+  if (!earnings.length) return null;
+  const today = todayStr();
+  const fmtRev = (v: number | null) => v !== null ? `$${(v / 1_000_000_000).toFixed(2)}B` : "N/A";
+  const fmtEps = (v: number | null) => v !== null ? `$${v.toFixed(2)}` : "N/A";
+  const fmtPct = (v: number | null) => v !== null ? `${v >= 0 ? "+" : ""}${v.toFixed(1)}%` : "N/A";
+
+  const next = getNextReport(earnings);
+  const lines: string[] = [];
+
+  if (next) {
+    const revGrowth = expectedRevenueGrowthPct(earnings, next);
+    const epsGrowth = expectedEpsGrowthPct(earnings, next);
+    lines.push(
+      `Next Report: ${next.date} (Q${next.quarter} ${next.year}) — ` +
+      `Est. Revenue ${fmtRev(next.revenueEstimate)} (${fmtPct(revGrowth)} vs last qtr actual), ` +
+      `Est. EPS ${fmtEps(next.epsEstimate)} (${fmtPct(epsGrowth)} vs last qtr actual)`
+    );
+  }
+
+  const reported = earnings.filter(e => e.date < today).slice(-6).reverse();
+  reported.forEach(e => {
+    const revPct = revenueSurprisePct(e);
+    const epsPct = epsSurprisePct(e);
+    lines.push(
+      `Q${e.quarter} ${e.year} (${e.date}, reported): ` +
+      `Revenue ${fmtRev(e.revenueActual)} vs Est. ${fmtRev(e.revenueEstimate)} (${fmtPct(revPct)}) | ` +
+      `EPS ${fmtEps(e.epsActual)} vs Est. ${fmtEps(e.epsEstimate)} (${fmtPct(epsPct)})`
+    );
+  });
+
+  return lines.length ? `Earnings Calendar:\n${lines.join("\n")}` : null;
+}
