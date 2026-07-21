@@ -7,6 +7,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { MarketFearGreed } from "@/components/market/MarketFearGreed";
 import { EtfMobileList } from "@/components/market/EtfList";
+import { TopBlur } from "@/components/EdgeBlur";
 import { formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MarketNewsArticle, StockSummary } from "@/types/stock";
@@ -143,6 +144,7 @@ export function MobileMarket() {
   const [data, setData] = useState<MarketPayload>({});
   const [isLoading, setIsLoading] = useState(true);
   const [status] = useState(() => getMarketStatus(new Date()));
+  const [headerHeight, setHeaderHeight] = useState(110);
 
   useEffect(() => {
     const ctrl = new AbortController();
@@ -168,16 +170,22 @@ export function MobileMarket() {
 
   return (
     <div className="relative pb-24 bg-black" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}>
-      <div className="relative z-10">
-        <MobileTicker stocks={data.tickerStocks ?? []} />
+      {/* Blur ends exactly where the ticker + date/status header end —
+          content below stays fully crisp, never bleed-blurred. */}
+      <TopBlur height={headerHeight} />
 
-        {/* Welcome + status — sticky below the ticker bar */}
-        <div className="sticky z-30 flex items-start justify-between px-4 pt-4 pb-3" style={{ top: "var(--ticker-height, 34px)" }}>
-          <div>
-            <h1 className="text-2xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
-            <p className="text-xs text-text-muted mt-0.5">{monthYear}</p>
+      <div className="relative z-10">
+        <div ref={(el) => { if (el) setHeaderHeight(el.offsetHeight); }}>
+          <MobileTicker stocks={data.tickerStocks ?? []} />
+
+          {/* Welcome + status — sticky below the ticker bar */}
+          <div className="sticky z-30 flex items-start justify-between px-4 pt-4 pb-3" style={{ top: "var(--ticker-height, 34px)" }}>
+            <div>
+              <h1 className="text-2xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
+              <p className="text-xs text-text-muted mt-0.5">{monthYear}</p>
+            </div>
+            <p className={cn("text-xl font-bold pt-1", status.isOpen ? "text-positive" : "text-negative")}>{status.label}</p>
           </div>
-          <p className={cn("text-xl font-bold pt-1", status.isOpen ? "text-positive" : "text-negative")}>{status.label}</p>
         </div>
 
         {/* Fear & Greed — spaced from welcome */}
