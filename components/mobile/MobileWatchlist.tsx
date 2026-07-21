@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Reorder, useDragControls } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { Star } from "lucide-react";
 
@@ -56,7 +57,6 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
   );
 }
 
-// ─── Row visual (shared by the real row and the floating drag ghost) ───────
 function RowContent({ stock }: { stock: StockSummary }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
   return (
@@ -83,9 +83,6 @@ function RowContent({ stock }: { stock: StockSummary }) {
   );
 }
 
-// ─── Green outline marking which stock will swap places ────────────────────
-const SWAP_TARGET_CLASS = "ring-2 ring-inset ring-positive shadow-[0_0_16px_rgba(0,200,5,0.35)]";
-
 const REVEAL_WIDTH = 76;
 const OVERDRAG_MAX = 28;
 const LONG_PRESS_MS = 450;
@@ -100,33 +97,18 @@ function withResistance(raw: number) {
 
 const SETTLE_TRANSITION = "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
 
-function WatchlistRow({
-  stock,
-  index,
-  isDragSource,
-  insertAbove,
-  dragSourceHeight,
-  onRemove,
-  onDragStart,
-  onDragMove,
-  onDragEnd,
-}: {
-  stock: StockSummary;
-  index: number;
-  isDragSource: boolean;
-  insertAbove: boolean;   // show gap ABOVE this row
-  dragSourceHeight: number; // height of the gap to show
-  onRemove: (s: string) => void;
-  onDragStart: (index: number, rowEl: HTMLElement, clientY: number) => void;
-  onDragMove: (clientY: number) => void;
-  onDragEnd: (clientY: number, clientX: number) => void;
-}) {
-  const rowRef   = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLAnchorElement>(null);
+// One row. Reordering itself (the vertical drag + smooth reflow of
+// siblings) is entirely delegated to Framer Motion's Reorder.Item — it's
+// only *activated* after our own long-press timer fires, via dragControls,
+// so a quick tap or a horizontal swipe never accidentally starts a drag.
+// The horizontal swipe-to-reveal-delete gesture stays hand-rolled (Framer's
+// Reorder locks the drag axis to "y", so it doesn't touch this at all).
+function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: string) => void }) {
+  const rowRef    = useRef<HTMLDivElement>(null);
+  const innerRef  = useRef<HTMLAnchorElement>(null);
+  const dragControls = useDragControls();
 
-  // Refs for drag state to avoid re-renders mid-gesture
   const dragXRef       = useRef(0);
-  const draggingRef    = useRef(false);
   const revealedRef    = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
@@ -159,10 +141,10 @@ function WatchlistRow({
     const el = rowRef.current;
     if (!el) return;
 
-    function onTouchStart(e: TouchEvent) {
-      const t = e.touches[0];
+    function onPointerDown(e: PointerEvent) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
       startRef.current = {
-        x: t.clientX, y: t.clientY, startDragX: dragXRef.current,
+        x: e.clientX, y: e.clientY, startDragX: dragXRef.current,
         decided: false, isH: false,
       };
       longPressFired.current = false;
@@ -173,29 +155,21 @@ function WatchlistRow({
           longPressTimer.current = null;
           longPressFired.current = true;
           startRef.current = null; // stop any swipe-gesture bookkeeping
-          if (rowRef.current) {
-            if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
-            onDragStart(index, rowRef.current, t.clientY);
-          }
+          if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
+          // Hand off to Framer Motion — it takes pointer capture from here
+          // and drives the drag + sibling reflow itself.
+          dragControls.start(e, { snapToCursor: false });
         }, LONG_PRESS_MS);
       }
     }
 
-    function onTouchMove(e: TouchEvent) {
-      const t = e.touches[0];
-
-      if (longPressFired.current) {
-        // Drag engaged — take the gesture over completely, this is the one
-        // case where we actively stop the page from scrolling.
-        e.preventDefault();
-        onDragMove(t.clientY);
-        return;
-      }
+    function onPointerMove(e: PointerEvent) {
+      if (longPressFired.current) return; // Framer owns the gesture now
 
       const start = startRef.current;
       if (!start) return;
-      const dx = t.clientX - start.x;
-      const dy = t.clientY - start.y;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
 
       if (!start.decided) {
         if (Math.abs(dx) < MOVE_CANCEL_PX && Math.abs(dy) < MOVE_CANCEL_PX) return; // wait for intent — tolerate natural hand tremor while holding still
@@ -205,14 +179,12 @@ function WatchlistRow({
 
         if (!start.isH) {
           // Vertical intent: this is an ordinary scroll. `touch-action: pan-y`
-          // on the row (see JSX below) means the browser has been handling
-          // this natively — with full native momentum — the whole time, so
-          // there's nothing for us to do here; just stop tracking it as a
-          // possible swipe/drag.
+          // on the row means the browser has been handling this natively —
+          // with full native momentum — the whole time, so there's nothing
+          // for us to do here; just stop tracking it as a possible swipe.
           startRef.current = null;
           return;
         }
-        draggingRef.current = true;
       }
 
       if (!start.isH) return;
@@ -228,43 +200,36 @@ function WatchlistRow({
       applyX(next, false);
     }
 
-    function onTouchEnd(e: TouchEvent) {
+    function onPointerEnd() {
       clearLongPress();
 
       if (longPressFired.current) {
         longPressFired.current = false;
-        const t = e.changedTouches[0];
-        onDragEnd(t.clientY, t.clientX);
-        return;
+        return; // Framer handles pointerup itself
       }
 
-      if (!startRef.current?.isH) { startRef.current = null; draggingRef.current = false; return; }
+      if (!startRef.current?.isH) { startRef.current = null; return; }
       const shouldReveal = dragXRef.current < -REVEAL_WIDTH / 2;
       const target       = shouldReveal ? -REVEAL_WIDTH : 0;
       dragXRef.current   = target;
       revealedRef.current = shouldReveal;
       applyX(target, true);
-      draggingRef.current = false;
       startRef.current    = null;
     }
 
-    // touchstart/move are non-passive so we can preventDefault() to take
-    // over horizontal swipes and an engaged long-press-drag; ordinary
-    // vertical scrolling is left entirely to the browser (touch-action:
-    // pan-y below) so it keeps its native momentum/inertia.
-    el.addEventListener("touchstart",  onTouchStart, { passive: true });
-    el.addEventListener("touchmove",   onTouchMove,  { passive: false });
-    el.addEventListener("touchend",    onTouchEnd,   { passive: true });
-    el.addEventListener("touchcancel", onTouchEnd,   { passive: true });
+    el.addEventListener("pointerdown",   onPointerDown, { passive: true });
+    el.addEventListener("pointermove",   onPointerMove, { passive: false });
+    el.addEventListener("pointerup",     onPointerEnd,  { passive: true });
+    el.addEventListener("pointercancel", onPointerEnd,  { passive: true });
 
     return () => {
       clearLongPress();
-      el.removeEventListener("touchstart",  onTouchStart);
-      el.removeEventListener("touchmove",   onTouchMove);
-      el.removeEventListener("touchend",    onTouchEnd);
-      el.removeEventListener("touchcancel", onTouchEnd);
+      el.removeEventListener("pointerdown",   onPointerDown);
+      el.removeEventListener("pointermove",   onPointerMove);
+      el.removeEventListener("pointerup",     onPointerEnd);
+      el.removeEventListener("pointercancel", onPointerEnd);
     };
-  }, [index, onDragStart, onDragMove, onDragEnd]);
+  }, [dragControls]);
 
   useEffect(() => {
     function onScroll() { if (revealedRef.current) close(); }
@@ -274,55 +239,46 @@ function WatchlistRow({
   }, []);
 
   return (
-    <>
-      {/* Gap that opens above this row when drag insertion point is here */}
-      {insertAbove && (
-        <div
-          className="overflow-hidden transition-all duration-150 bg-black border border-dashed border-positive/50"
-          style={{ height: dragSourceHeight, borderRadius: 0 }}
-        />
-      )}
-      <div
-        ref={rowRef}
-        data-watchlist-row
-        className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 transition-all duration-150"
-        style={{
-          height: isDragSource ? 0 : undefined,
-          opacity: isDragSource ? 0 : 1,
-          borderBottomWidth: isDragSource ? 0 : undefined,
-          touchAction: "pan-y",
-          WebkitTouchCallout: "none",
-        }}
-      >
-      {/* Swipe-revealed remove button */}
-      <div className="absolute inset-y-0 right-0 flex items-center justify-center" style={{ width: REVEAL_WIDTH }}>
-        <button
-          onClick={() => onRemove(stock.symbol)}
-          aria-label={`Remove ${stock.symbol}`}
-          className="flex items-center justify-center text-positive active:scale-90 transition-transform"
-        >
-          <Star className="h-5 w-5 fill-current" />
-        </button>
-      </div>
+    <Reorder.Item
+      value={stock.symbol}
+      dragListener={false}
+      dragControls={dragControls}
+      as="div"
+      className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 bg-black"
+      style={{ touchAction: "pan-y", WebkitTouchCallout: "none" }}
+      whileDrag={{ scale: 1.03, boxShadow: "0 16px 40px rgba(0,0,0,0.55)", zIndex: 10 }}
+      transition={{ type: "spring", stiffness: 500, damping: 40 }}
+    >
+      <div ref={rowRef}>
+        {/* Swipe-revealed remove button */}
+        <div className="absolute inset-y-0 right-0 flex items-center justify-center" style={{ width: REVEAL_WIDTH }}>
+          <button
+            onClick={() => onRemove(stock.symbol)}
+            aria-label={`Remove ${stock.symbol}`}
+            className="flex items-center justify-center text-positive active:scale-90 transition-transform"
+          >
+            <Star className="h-5 w-5 fill-current" />
+          </button>
+        </div>
 
-      <Link
-        ref={innerRef}
-        href={`/stock/${stock.symbol}`}
-        onClick={(e) => { if (revealedRef.current) { e.preventDefault(); close(); } }}
-        className="flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted"
-        style={{
-          transform: "translateX(0px)",
-          willChange: "transform",
-          WebkitTouchCallout: "none",
-          WebkitUserSelect: "none",
-          userSelect: "none",
-        }}
-        suppressHydrationWarning
-      >
-        <RowContent stock={stock} />
-      </Link>
-    </div>
-    </>
+        <Link
+          ref={innerRef}
+          href={`/stock/${stock.symbol}`}
+          onClick={(e) => { if (revealedRef.current) { e.preventDefault(); close(); } }}
+          className="flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted"
+          style={{
+            transform: "translateX(0px)",
+            willChange: "transform",
+            WebkitTouchCallout: "none",
+            WebkitUserSelect: "none",
+            userSelect: "none",
+          }}
+          suppressHydrationWarning
+        >
+          <RowContent stock={stock} />
+        </Link>
+      </div>
+    </Reorder.Item>
   );
 }
 
@@ -331,20 +287,6 @@ export function MobileWatchlist() {
   const [stocks, setStocks]   = useState<Map<string, StockSummary>>(new Map());
   const [loading, setLoading] = useState(true);
   const fetchedRef            = useRef<Set<string>>(new Set());
-  const containerRef          = useRef<HTMLDivElement>(null);
-
-  // ── Drag-to-reorder state ────────────────────────────────────────────────
-  const [dragIndex,   setDragIndex]   = useState<number | null>(null);
-  const [insertIndex, setInsertIndex] = useState<number | null>(null); // insert BEFORE this index (0..n)
-  const [ghost, setGhost] = useState<{ stock: StockSummary; top: number; left: number; width: number; height: number } | null>(null);
-
-  const dragOffsetYRef   = useRef(0);
-  const rowRectsRef      = useRef<{ top: number; height: number }[]>([]);
-  const containerRectRef = useRef<DOMRect | null>(null);
-  const insertIndexRef   = useRef<number | null>(null);
-  const dragIndexRef     = useRef<number | null>(null);
-  const symbolsRef       = useRef<string[]>([]);
-  const stocksMapRef     = useRef<Map<string, StockSummary>>(new Map());
 
   useEffect(() => {
     function sync() { setSymbols(readWatchlist()); }
@@ -359,7 +301,6 @@ export function MobileWatchlist() {
 
   useEffect(() => {
     const missing = symbols.filter(s => !fetchedRef.current.has(s));
-    symbolsRef.current = symbols;
     if (!missing.length) { setLoading(false); return; }
     const ctrl = new AbortController();
     setLoading(true);
@@ -379,121 +320,24 @@ export function MobileWatchlist() {
     return () => ctrl.abort();
   }, [symbols]);
 
-  useEffect(() => { stocksMapRef.current = stocks; }, [stocks]);
-
   function handleRemove(symbol: string) {
     const updated = symbols.filter(s => s !== symbol);
     setSymbols(updated);
     writeWatchlist(updated);
   }
 
-  // Given ghost centre Y, compute insert-before index (0..n), null if outside list
-  function computeInsertIndex(ghostCenterY: number): number | null {
-    const rects = rowRectsRef.current;
-    if (!rects.length) return null;
-    const first = rects[0];
-    const last  = rects[rects.length - 1];
-    if (ghostCenterY < first.top) return null;
-    if (ghostCenterY > last.top + last.height) return null;
-    for (let i = 0; i < rects.length; i++) {
-      const mid = rects[i].top + rects[i].height / 2;
-      if (ghostCenterY <= mid) return i;
-    }
-    return rects.length;
+  function handleReorder(newOrder: string[]) {
+    // Guard: only commit if every currently-tracked symbol is accounted for
+    // (i.e. nothing is still mid-fetch) — avoids silently dropping a symbol
+    // that hasn't loaded into `stocks` yet.
+    if (newOrder.length !== symbols.length) return;
+    setSymbols(newOrder);
+    writeWatchlist(newOrder);
   }
 
-  const handleDragStart = useCallback((index: number, rowEl: HTMLElement, clientY: number) => {
-    const container = containerRef.current;
-    if (!container) return;
-    const rowRect = rowEl.getBoundingClientRect();
-    containerRectRef.current = container.getBoundingClientRect();
-
-    const rowEls = Array.from(container.querySelectorAll<HTMLElement>("[data-watchlist-row]"));
-    rowRectsRef.current = rowEls.map(el => {
-      const r = el.getBoundingClientRect();
-      return { top: r.top, height: r.height };
-    });
-
-    dragOffsetYRef.current = clientY - rowRect.top;
-    const symbol = symbolsRef.current[index];
-    const stock  = symbol ? stocksMapRef.current.get(symbol) : undefined;
-
-    dragIndexRef.current   = index;
-    setDragIndex(index);
-    // Start the insertion gap at the item's own slot, so the moment it's
-    // picked up the gap appears exactly where it originally was. As soon as
-    // the finger moves over a different slot, handleDragMove below updates
-    // insertIndex and the gap follows — leaving nothing behind at the start.
-    insertIndexRef.current = index;
-    setInsertIndex(index);
-    if (stock) {
-      setGhost({ stock, top: rowRect.top, left: rowRect.left, width: rowRect.width, height: rowRect.height });
-    }
-  }, []);
-
-  const handleDragMove = useCallback((clientY: number) => {
-    const top = clientY - dragOffsetYRef.current;
-    setGhost(g => g ? { ...g, top } : g);
-    if (dragIndexRef.current === null) return;
-    const ghostHeight = rowRectsRef.current[dragIndexRef.current]?.height ?? 0;
-    const centerY = top + ghostHeight / 2;
-    const next = computeInsertIndex(centerY);
-    if (insertIndexRef.current !== next) {
-      insertIndexRef.current = next;
-      setInsertIndex(next);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleDragEnd = useCallback((clientY: number, clientX: number) => {
-    const rect = containerRectRef.current;
-    const margin = 48;
-    const withinBounds = !!rect
-      && clientX >= rect.left - margin && clientX <= rect.right + margin
-      && clientY >= rect.top - margin && clientY <= rect.bottom + margin;
-
-    const from = dragIndexRef.current;
-    const to   = insertIndexRef.current;
-
-    if (withinBounds && from !== null && to !== null) {
-      const updated = [...symbolsRef.current];
-      const [item] = updated.splice(from, 1);
-      const adjustedTo = to > from ? to - 1 : to;
-      updated.splice(adjustedTo, 0, item);
-      symbolsRef.current = updated;
-      setSymbols(updated);
-      writeWatchlist(updated);
-    }
-
-    dragIndexRef.current   = null;
-    insertIndexRef.current = null;
-    setDragIndex(null);
-    setInsertIndex(null);
-    setGhost(null);
-  }, []);
-
   const orderedStocks = symbols.map(s => stocks.get(s)).filter(Boolean) as StockSummary[];
-  const dragSourceHeight = ghost?.height ?? 0;
 
   if (loading && !orderedStocks.length) return <LoadingScreen label="Loading your watchlist" />;
-
-  const rowNodes = orderedStocks.map((stock, i) => (
-    <WatchlistRow
-      key={stock.symbol}
-      stock={stock}
-      index={i}
-      isDragSource={dragIndex === i}
-      insertAbove={dragIndex !== null && insertIndex === i}
-      dragSourceHeight={dragSourceHeight}
-      onRemove={handleRemove}
-      onDragStart={handleDragStart}
-      onDragMove={handleDragMove}
-      onDragEnd={handleDragEnd}
-    />
-  ));
-
-  // Gap after the last row when insertIndex === orderedStocks.length
-  const trailingGap = dragIndex !== null && insertIndex === orderedStocks.length;
 
   return (
     <div className="pb-24">
@@ -508,25 +352,17 @@ export function MobileWatchlist() {
           <p className="text-sm text-text-muted">Search for stocks to add them.</p>
         </div>
       ) : (
-        <div ref={containerRef} className="mx-4 mt-6 rounded-xl bg-black overflow-hidden">
-          {rowNodes}
-          {trailingGap && (
-            <div
-              className="border border-dashed border-positive/50 bg-black transition-all duration-150"
-              style={{ height: dragSourceHeight }}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Floating drag ghost */}
-      {ghost && (
-        <div
-          className="fixed z-50 flex items-center gap-3 px-4 py-3.5 rounded-xl border border-positive/50 bg-black shadow-[0_16px_40px_rgba(0,0,0,0.55)] scale-[1.03] pointer-events-none opacity-50"
-          style={{ top: ghost.top, left: ghost.left, width: ghost.width, height: ghost.height }}
+        <Reorder.Group
+          as="div"
+          axis="y"
+          values={orderedStocks.map(s => s.symbol)}
+          onReorder={handleReorder}
+          className="mx-4 mt-6 rounded-xl bg-black"
         >
-          <RowContent stock={ghost.stock} />
-        </div>
+          {orderedStocks.map(stock => (
+            <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} />
+          ))}
+        </Reorder.Group>
       )}
     </div>
   );
