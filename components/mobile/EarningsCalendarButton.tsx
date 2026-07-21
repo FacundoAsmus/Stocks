@@ -241,7 +241,7 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
 
   function closeCalendar() {
     setClosing(true);
-    setTimeout(() => { setOpen(false); setClosing(false); }, 260);
+    setTimeout(() => { setOpen(false); setClosing(false); }, 300);
   }
 
   // Sheet is anchored to the bottom of the viewport at 88vh tall — express
@@ -273,7 +273,7 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
               backgroundColor: "#000000",
               transformOrigin,
               animation: closing
-                ? "calendarSink 0.26s cubic-bezier(0.4,0,1,1) forwards"
+                ? "calendarSink 0.3s cubic-bezier(0.4,0,1,1) forwards"
                 : "calendarRise 0.32s cubic-bezier(0.22,1,0.36,1) both"
             }}
           >
@@ -333,7 +333,7 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
         }
         @keyframes calendarSink {
           from { transform: scale(1);    opacity: 1; }
-          to   { transform: translateY(80px) scale(0.9); opacity: 0; }
+          to   { transform: scale(0.08); opacity: 0; }
         }
         @keyframes detailFadeIn {
           from { opacity: 0; transform: scale(0.96) translateY(6px); }

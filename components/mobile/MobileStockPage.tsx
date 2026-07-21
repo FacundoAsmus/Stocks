@@ -128,14 +128,14 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
           {stock.news.length > 0 && (
             <section>
               <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-3">News</p>
-              <div className="rounded-xl border border-border-subtle bg-panel overflow-hidden">
+              <div className="flex flex-col gap-3">
                 {stock.news.slice(0, 8).map(article => (
                   <a key={article.id} href={article.url} target="_blank" rel="noreferrer"
-                    className="flex gap-3 px-4 py-3 border-b border-border-subtle/40 last:border-0 active:bg-panel-muted">
+                    className="flex gap-3 rounded-xl bg-black p-3 active:opacity-80">
                     {article.image
                       // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={article.image} alt="" className="h-12 w-16 rounded-md object-cover shrink-0 self-start" />
-                      : <span className="h-12 w-16 rounded-md bg-panel-muted shrink-0" />}
+                      ? <img src={article.image} alt="" className="h-[53px] w-[70px] rounded-md object-cover shrink-0 self-start" />
+                      : <span className="h-[53px] w-[70px] rounded-md bg-white/5 shrink-0" />}
                     <span className="flex-1 min-w-0">
                       <span className="block text-sm font-semibold text-text-primary leading-snug line-clamp-2">{article.headline}</span>
                       <span className="block mt-1 text-[10px] text-text-muted">{article.source}</span>

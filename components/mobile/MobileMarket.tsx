@@ -95,10 +95,10 @@ function MoverRow({ stock }: { stock: StockSummary }) {
 
 function NewsRow({ article }: { article: MarketNewsArticle }) {
   return (
-    <a href={article.url} target="_blank" rel="noreferrer" className="flex gap-3 px-4 py-4 border-b border-border-subtle/70 last:border-0 active:bg-panel-muted">
+    <a href={article.url} target="_blank" rel="noreferrer" className="flex gap-3 rounded-xl bg-black p-3 active:opacity-80">
       {article.image
-        ? <img src={article.image} alt="" className="h-12 w-16 rounded-md object-cover shrink-0 self-start" />
-        : <span className="h-12 w-16 rounded-md bg-panel-muted shrink-0" />}
+        ? <img src={article.image} alt="" className="h-[53px] w-[70px] rounded-md object-cover shrink-0 self-start" />
+        : <span className="h-[53px] w-[70px] rounded-md bg-white/5 shrink-0" />}
       <span className="flex-1 min-w-0">
         <span className="block text-sm font-semibold text-text-primary leading-snug line-clamp-2">{article.headline}</span>
         <span className="block mt-1 text-[10px] text-text-muted">{article.source} · {formatDateTime(article.datetime)}</span>
@@ -189,7 +189,7 @@ export function MobileMarket() {
         {/* News — always spaced below the list, never overlapping */}
         <div className="mt-8">
           <p className="px-4 text-xs font-semibold uppercase tracking-widest text-positive mb-3">News</p>
-          <div className="mx-4 rounded-xl bg-black overflow-hidden">
+          <div className="mx-4 flex flex-col gap-3">
             {(data.news ?? []).slice(0, 10).map(a => <NewsRow key={a.id} article={a} />)}
           </div>
         </div>
