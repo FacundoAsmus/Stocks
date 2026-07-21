@@ -10,12 +10,12 @@ interface EdgeBlurProps {
 // each masked to fade from opaque (at the edge) to transparent (toward the
 // content) — so text/images scrolling underneath soften out gradually
 // instead of hard-clipping under fixed chrome (the mobile bottom nav pill).
-export function EdgeBlur({ position = "bottom", height = 90, className = "" }: EdgeBlurProps) {
+export function EdgeBlur({ position = "bottom", height = 130, className = "" }: EdgeBlurProps) {
   const blurLayers = [1, 2, 3, 6, 12];
   const isTop = position === "top";
   return (
     <div
-      className={`fixed inset-x-0 isolate z-30 pointer-events-none ${isTop ? "top-0" : "bottom-0"} ${className}`}
+      className={`fixed inset-x-0 isolate z-20 pointer-events-none ${isTop ? "top-0" : "bottom-0"} ${className}`}
       style={{ height }}
     >
       {blurLayers.map((blur) => (
@@ -35,7 +35,7 @@ export function EdgeBlur({ position = "bottom", height = 90, className = "" }: E
 }
 
 // Convenience exports for specific positions
-export function TopBlur({ height = 90 }: { height?: number }) {
+export function TopBlur({ height = 130 }: { height?: number }) {
   return <EdgeBlur position="top" height={height} />;
 }
 

@@ -45,8 +45,8 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
   const duped = [...stocks, ...stocks];
   return (
     <div
-      className="sticky top-0 z-20 overflow-hidden border-b border-border-subtle/30 bg-background/80 backdrop-blur-md"
-      style={{ WebkitBackdropFilter: "blur(12px)", paddingTop: "env(safe-area-inset-top)" }}
+      className="sticky top-0 z-30 overflow-hidden"
+      style={{ paddingTop: "env(safe-area-inset-top)" }}
       ref={(el) => { if (el) document.documentElement.style.setProperty("--ticker-height", el.offsetHeight + "px"); }}
     >
       <div className="market-ticker flex w-max items-center" style={{ pointerEvents: "none" }}>
@@ -172,7 +172,7 @@ export function MobileMarket() {
         <MobileTicker stocks={data.tickerStocks ?? []} />
 
         {/* Welcome + status — sticky below the ticker bar */}
-        <div className="sticky z-10 flex items-start justify-between px-4 pt-4 pb-3 bg-background/85 backdrop-blur-md" style={{ top: "var(--ticker-height, 34px)" }}>
+        <div className="sticky z-30 flex items-start justify-between px-4 pt-4 pb-3" style={{ top: "var(--ticker-height, 34px)" }}>
           <div>
             <h1 className="text-2xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
             <p className="text-xs text-text-muted mt-0.5">{monthYear}</p>

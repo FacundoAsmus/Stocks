@@ -156,6 +156,12 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
           longPressFired.current = true;
           startRef.current = null; // stop any swipe-gesture bookkeeping
           if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
+          // Lock out native scrolling on this row for the duration of the
+          // drag — otherwise touch-action: pan-y (needed so ordinary
+          // scrolling still works the rest of the time) lets the browser
+          // keep treating vertical finger movement as "scroll the page"
+          // even after Framer takes over, and the browser wins that race.
+          if (el) el.style.touchAction = "none";
           // Hand off to Framer Motion — it takes pointer capture from here
           // and drives the drag + sibling reflow itself.
           dragControls.start(e, { snapToCursor: false });
@@ -205,7 +211,8 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
 
       if (longPressFired.current) {
         longPressFired.current = false;
-        return; // Framer handles pointerup itself
+        if (el) el.style.touchAction = "pan-y";
+        return; // Framer handles the rest of its own gesture lifecycle
       }
 
       if (!startRef.current?.isH) { startRef.current = null; return; }
@@ -248,6 +255,7 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
       style={{ touchAction: "pan-y", WebkitTouchCallout: "none" }}
       whileDrag={{ scale: 1.03, boxShadow: "0 16px 40px rgba(0,0,0,0.55)", zIndex: 10 }}
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
+      onDragEnd={() => { if (rowRef.current) rowRef.current.style.touchAction = "pan-y"; }}
     >
       <div ref={rowRef}>
         {/* Swipe-revealed remove button */}
@@ -341,7 +349,7 @@ export function MobileWatchlist() {
 
   return (
     <div className="pb-24">
-      <div className="sticky top-0 z-10 px-4 pb-4 bg-background/85 backdrop-blur-md" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}>
+      <div className="sticky top-0 z-30 px-4 pb-4" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}>
         <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
         <h1 className="mt-1 text-2xl font-bold text-text-primary">Your Stocks</h1>
       </div>

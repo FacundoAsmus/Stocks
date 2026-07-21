@@ -6,7 +6,7 @@ const dmSans = DM_Sans({ subsets: ["latin"] });
 import { MobileNav } from "@/components/MobileNav";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ToastProvider } from "@/components/ToastProvider";
-import { BottomBlur } from "@/components/EdgeBlur";
+import { BottomBlur, TopBlur } from "@/components/EdgeBlur";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -38,7 +38,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <main className="w-full">{children}</main>
 
             {/* Progressive blur so content fades out before disappearing
-                under the floating mobile nav pill / bottom edge, on every page */}
+                under the floating mobile nav pill / bottom edge, or behind
+                sticky page headers at the top, on every page */}
+            <TopBlur />
             <BottomBlur />
 
             {/* Mobile bottom tab bar */}
