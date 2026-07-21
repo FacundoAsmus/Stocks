@@ -4,6 +4,7 @@ import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
 import { ErrorState } from "@/components/ErrorState";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
+import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { NewsCard } from "@/components/NewsCard";
 import { PriceChart } from "@/components/PriceChart";
@@ -196,6 +197,10 @@ export default async function StockPage({ params }: StockPageProps) {
           currentPrice={currentPrice}
           earnings={stock.earnings}
         />
+
+        <div className="flex justify-end -mt-2">
+          <EarningsCalendarButton earnings={stock.earnings} />
+        </div>
 
         <section>
           <div className="mb-4 flex items-end justify-between">

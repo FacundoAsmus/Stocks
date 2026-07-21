@@ -404,25 +404,89 @@ export async function getPriceTarget(symbol: string) {
   );
 }
 
-// Quarterly earnings dates + EPS/revenue estimate vs. actual, from Finnhub's
-// /calendar/earnings. Window: ~13 months back (covers "past 12 months" for
-// the calendar UI with a little slack) through ~7 months ahead (covers the
-// next known scheduled report date). Sorted ascending by date.
-export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent[]> {
-  const data = await fetchFinnhub<{ earningsCalendar?: EarningsEvent[] }>(
-    "/calendar/earnings",
-    { symbol: cleanSymbol(symbol), from: yyyyMmDdDaysAgo(400), to: yyyyMmDdDaysAgo(-220) },
+// Finnhub's raw response shape for /stock/earnings (historical EPS surprise).
+interface FinnhubEarningsSurprise {
+  actual: number | null;
+  period: string; // fiscal quarter end date, "YYYY-MM-DD"
+  estimate: number | null;
+  symbol: string;
+  surprise: number | null;
+  surprisePercent: number | null;
+}
+
+async function getEarningsSurpriseHistory(symbol: string): Promise<FinnhubEarningsSurprise[]> {
+  const data = await fetchFinnhub<FinnhubEarningsSurprise[]>(
+    "/stock/earnings",
+    { symbol: cleanSymbol(symbol) },
     1000 * 60 * 60
   );
-  const events = (data.earningsCalendar ?? [])
+  return Array.isArray(data) ? data : [];
+}
+
+function periodToQuarter(period: string): { quarter: number; year: number } {
+  const d = new Date(`${period}T00:00:00`);
+  return { quarter: Math.floor(d.getMonth() / 3) + 1, year: d.getFullYear() };
+}
+
+// Quarterly earnings dates + EPS/revenue estimate vs. actual. Window: ~13
+// months back (covers "past 12 months" for the calendar UI with a little
+// slack) through ~7 months ahead (covers the next known scheduled report
+// date). Sorted ascending by date.
+//
+// /calendar/earnings alone is frequently forward-looking-only on Finnhub's
+// free tier — it reliably gives upcoming dates/estimates but often omits
+// historical actual/estimate values entirely. /stock/earnings is the
+// endpoint Finnhub documents as reliable for historical EPS actual vs.
+// estimate on the free tier, so we fetch both and merge: it backfills EPS
+// on dates the calendar already gave us, and adds whole past quarters the
+// calendar never returned. For quarters only found via /stock/earnings we
+// have no real announcement date (that endpoint only gives the fiscal
+// period-end date), so we place the marker on the period-end date as a
+// best-effort approximation — it can be a few weeks off from the actual
+// report date. Revenue actual/estimate isn't in /stock/earnings at all, so
+// it stays null for any quarter that only came from that source.
+export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent[]> {
+  const cleaned = cleanSymbol(symbol);
+  const [calendarData, surpriseHistory] = await Promise.all([
+    fetchFinnhub<{ earningsCalendar?: EarningsEvent[] }>(
+      "/calendar/earnings",
+      { symbol: cleaned, from: yyyyMmDdDaysAgo(400), to: yyyyMmDdDaysAgo(-220) },
+      1000 * 60 * 60
+    ),
+    getEarningsSurpriseHistory(cleaned).catch(() => [] as FinnhubEarningsSurprise[])
+  ]);
+
+  const events = (calendarData.earningsCalendar ?? [])
     .filter(e => e.date)
-    .slice()
-    .sort((a, b) => a.date.localeCompare(b.date));
+    .map(e => ({ ...e }));
+
+  surpriseHistory.forEach(s => {
+    if (s.actual === null && s.estimate === null) return;
+    const { quarter, year } = periodToQuarter(s.period);
+    const match = events.find(e => e.quarter === quarter && e.year === year);
+    if (match) {
+      if (match.epsActual === null)   match.epsActual   = s.actual;
+      if (match.epsEstimate === null) match.epsEstimate = s.estimate;
+    } else {
+      events.push({
+        date: s.period,
+        quarter,
+        year,
+        hour: null,
+        epsEstimate: s.estimate,
+        epsActual: s.actual,
+        revenueEstimate: null,
+        revenueActual: null
+      });
+    }
+  });
+
+  events.sort((a, b) => a.date.localeCompare(b.date));
 
   // TEMP DIAGNOSTIC — remove once we've confirmed whether Finnhub's plan
   // populates estimate/actual fields for this account. Check Vercel logs.
   console.log(
-    `[earnings] ${cleanSymbol(symbol)}: ${events.length} events —`,
+    `[earnings] ${cleaned}: ${events.length} events (calendar=${calendarData.earningsCalendar?.length ?? 0}, surpriseHistory=${surpriseHistory.length}) —`,
     JSON.stringify(events.slice(0, 3))
   );
 

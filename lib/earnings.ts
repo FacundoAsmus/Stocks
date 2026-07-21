@@ -64,18 +64,20 @@ export function formatEarningsForAIContext(earnings: EarningsEvent[]): string | 
   const fmtEps = (v: number | null) => v !== null ? `$${v.toFixed(2)}` : "N/A";
   const fmtPct = (v: number | null) => v !== null ? `${v >= 0 ? "+" : ""}${v.toFixed(1)}%` : "N/A";
 
-  const next = getNextReport(earnings);
   const lines: string[] = [];
 
-  if (next) {
-    const revGrowth = expectedRevenueGrowthPct(earnings, next);
-    const epsGrowth = expectedEpsGrowthPct(earnings, next);
+  // Every scheduled future quarter we know about — not just the nearest one.
+  const upcoming = earnings.filter(e => e.date >= today);
+  upcoming.forEach((e, i) => {
+    const revGrowth = expectedRevenueGrowthPct(earnings, e);
+    const epsGrowth = expectedEpsGrowthPct(earnings, e);
+    const label = i === 0 ? "Next Report" : "Also Scheduled";
     lines.push(
-      `Next Report: ${next.date} (Q${next.quarter} ${next.year}) — ` +
-      `Est. Revenue ${fmtRev(next.revenueEstimate)} (${fmtPct(revGrowth)} vs last qtr actual), ` +
-      `Est. EPS ${fmtEps(next.epsEstimate)} (${fmtPct(epsGrowth)} vs last qtr actual)`
+      `${label}: ${e.date} (Q${e.quarter} ${e.year}) — ` +
+      `Est. Revenue ${fmtRev(e.revenueEstimate)} (${fmtPct(revGrowth)} vs last qtr actual), ` +
+      `Est. EPS ${fmtEps(e.epsEstimate)} (${fmtPct(epsGrowth)} vs last qtr actual)`
     );
-  }
+  });
 
   const reported = earnings.filter(e => e.date < today).slice(-6).reverse();
   reported.forEach(e => {
@@ -88,5 +90,5 @@ export function formatEarningsForAIContext(earnings: EarningsEvent[]): string | 
     );
   });
 
-  return lines.length ? `Earnings Calendar:\n${lines.join("\n")}` : null;
+  return lines.length ? `Earnings Calendar (list every line below if asked "what quarters do you know about" — do not stop at just the first one):\n${lines.join("\n")}` : null;
 }
