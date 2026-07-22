@@ -46,21 +46,23 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
   const duped = [...stocks, ...stocks];
   return (
     <div
-      className="sticky top-0 z-30 overflow-hidden"
+      className="sticky top-0 z-30"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
       ref={(el) => { if (el) document.documentElement.style.setProperty("--ticker-height", el.offsetHeight + "px"); }}
     >
       <HeaderTopBlur />
-      <div className="market-ticker flex w-max items-center" style={{ pointerEvents: "none" }}>
-        {duped.map((s, i) => {
-          const pos = (s.changePercent ?? 0) >= 0;
-          return (
-            <span key={`${s.symbol}-${i}`} className="flex items-center gap-2 border-r border-border-subtle/60 px-3 py-2">
-              <span className="text-xs font-bold text-text-primary">{s.symbol}</span>
-              <span className={cn("text-xs font-semibold", pos ? "text-positive" : "text-negative")}>{formatPercent(s.changePercent)}</span>
-            </span>
-          );
-        })}
+      <div className="overflow-hidden">
+        <div className="market-ticker flex w-max items-center" style={{ pointerEvents: "none" }}>
+          {duped.map((s, i) => {
+            const pos = (s.changePercent ?? 0) >= 0;
+            return (
+              <span key={`${s.symbol}-${i}`} className="flex items-center gap-2 border-r border-border-subtle/60 px-3 py-2">
+                <span className="text-xs font-bold text-text-primary">{s.symbol}</span>
+                <span className={cn("text-xs font-semibold", pos ? "text-positive" : "text-negative")}>{formatPercent(s.changePercent)}</span>
+              </span>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

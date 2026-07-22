@@ -51,22 +51,21 @@ export function BottomBlur({ height = 90 }: { height?: number }) {
 // it's a normal DOM child rendered first, the header's actual text/buttons
 // simply paint after it in the same box and sit above it automatically —
 // no separate global overlay, no z-index race against anything else.
+//
+// Single backdrop-filter layer (not stacked) — stacking several inside a
+// position: sticky, safe-area-padded container caused WebKit to render an
+// inconsistent seam right at the safe-area boundary on real devices.
 export function HeaderTopBlur() {
-  const blurLayers = [1, 2, 3, 6, 12];
   return (
-    <div className="absolute inset-0 isolate -z-10 pointer-events-none" aria-hidden>
-      {blurLayers.map((blur) => (
-        <div
-          key={blur}
-          className="absolute inset-0"
-          style={{
-            backdropFilter: `blur(${blur}px)`,
-            WebkitBackdropFilter: `blur(${blur}px)`,
-            maskImage: "linear-gradient(to bottom, black, transparent)",
-            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
-          }}
-        />
-      ))}
-    </div>
+    <div
+      className="absolute inset-0 -z-10 pointer-events-none"
+      aria-hidden
+      style={{
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
+        maskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
+        WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 55%, transparent 100%)",
+      }}
+    />
   );
 }
