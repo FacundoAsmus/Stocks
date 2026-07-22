@@ -2,7 +2,7 @@
 
 interface EdgeBlurProps {
   position?: "top" | "bottom";
-  height?: number;
+  height?: number | string;
   className?: string;
 }
 
@@ -35,7 +35,7 @@ export function EdgeBlur({ position = "bottom", height = 130, className = "" }: 
 }
 
 // Convenience exports for specific positions
-export function TopBlur({ height = 130 }: { height?: number }) {
+export function TopBlur({ height = 130 }: { height?: number | string }) {
   return <EdgeBlur position="top" height={height} />;
 }
 

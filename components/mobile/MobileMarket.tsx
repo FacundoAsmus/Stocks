@@ -7,7 +7,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { MarketFearGreed } from "@/components/market/MarketFearGreed";
 import { EtfMobileList } from "@/components/market/EtfList";
-import { HeaderTopBlur } from "@/components/EdgeBlur";
+import { TopBlur } from "@/components/EdgeBlur";
 import { formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MarketNewsArticle, StockSummary } from "@/types/stock";
@@ -50,7 +50,6 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
       style={{ paddingTop: "env(safe-area-inset-top)" }}
       ref={(el) => { if (el) document.documentElement.style.setProperty("--ticker-height", el.offsetHeight + "px"); }}
     >
-      <HeaderTopBlur />
       <div className="overflow-hidden">
         <div className="market-ticker flex w-max items-center" style={{ pointerEvents: "none" }}>
           {duped.map((s, i) => {
@@ -172,12 +171,14 @@ export function MobileMarket() {
 
   return (
     <div className="relative pb-24 bg-black" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}>
-      <div className="relative z-10">
+      {/* One viewport-pinned blur spans the safe area and both sticky headers.
+          The headers are z-30, so their ticker/date/status remain crisp. */}
+      <TopBlur height="calc(env(safe-area-inset-top) + 7rem)" />
+      <div className="relative">
         <MobileTicker stocks={data.tickerStocks ?? []} />
 
         {/* Welcome + status — sticky below the ticker bar */}
         <div className="sticky z-30 flex items-start justify-between px-4 pt-4 pb-3" style={{ top: "var(--ticker-height, 34px)" }}>
-          <HeaderTopBlur />
           <div>
             <h1 className="text-2xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
             <p className="text-xs text-text-muted mt-0.5">{monthYear}</p>
