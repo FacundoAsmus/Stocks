@@ -1,18 +1,10 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-
-import { TopBlur } from "@/components/EdgeBlur";
-
-// Root-level placement prevents Safari from compositing separate backdrop
-// samples for sticky headers and the top safe area.
+// Disabled: this used to render a fixed blur (TopBlur, from EdgeBlur) over
+// the status-bar/dynamic-island area on every page, hiding whatever content
+// scrolled underneath it. Now a no-op so that area is left fully
+// transparent and shows whatever the page is actually scrolling behind it.
+// EdgeBlur.tsx itself is untouched — it's still used elsewhere.
 export function MobileTopBlur() {
-  const pathname = usePathname();
-  const height = pathname.startsWith("/stock/")
-    ? "calc(env(safe-area-inset-top) + 4.5rem)"
-    : pathname === "/watchlist"
-      ? "calc(env(safe-area-inset-top) + 5rem)"
-      : "calc(env(safe-area-inset-top) + 7rem)";
-
-  return <TopBlur height={height} className="lg:hidden" />;
+  return null;
 }
