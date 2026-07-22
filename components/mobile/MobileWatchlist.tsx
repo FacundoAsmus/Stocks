@@ -348,9 +348,26 @@ export function MobileWatchlist() {
   if (loading && !orderedStocks.length) return <LoadingScreen label="Loading your watchlist" />;
 
   return (
-    <div className="pb-24">
-      {/* One fixed blur keeps the Dynamic Island, status bar, and sticky title
-          in the same compositing layer on iOS. */}
+    <div className="relative pb-24">
+      {/* Real page pixels behind the edge blur: this clipped, non-interactive
+          copy prevents the safe area from sampling only the black document
+          background. The visible list below remains the interactive source. */}
+      {orderedStocks.length > 0 && (
+        <div
+          aria-hidden
+          className="fixed inset-x-0 top-0 z-0 overflow-hidden pointer-events-none"
+          style={{ height: "calc(env(safe-area-inset-top) + 5rem)" }}
+        >
+          <div className="mx-4 rounded-xl bg-black">
+            {orderedStocks.slice(0, 3).map((stock) => (
+              <div key={stock.symbol} className="flex items-center gap-3 border-b border-border-subtle/70 px-4 py-3.5 last:border-0 bg-black">
+                <RowContent stock={stock} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div
         className="sticky top-0 z-30 px-4 pb-4"
         style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
