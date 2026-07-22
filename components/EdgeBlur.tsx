@@ -44,8 +44,8 @@ export function EdgeBlur({ position = "bottom", height = 130, className = "" }: 
 }
 
 // Convenience exports for specific positions
-export function TopBlur({ height = 130 }: { height?: number | string }) {
-  return <EdgeBlur position="top" height={height} />;
+export function TopBlur({ height = 130, className = "" }: { height?: number | string; className?: string }) {
+  return <EdgeBlur position="top" height={height} className={className} />;
 }
 
 export function BottomBlur({ height = 90 }: { height?: number }) {
