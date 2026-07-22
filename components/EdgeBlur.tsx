@@ -42,3 +42,31 @@ export function TopBlur({ height = 130 }: { height?: number }) {
 export function BottomBlur({ height = 90 }: { height?: number }) {
   return <EdgeBlur position="bottom" height={height} />;
 }
+
+// Self-contained blur meant to be the FIRST child of a sticky/positioned
+// header (position: sticky already qualifies as a containing block). It
+// fills the header's own box exactly — including any safe-area-inset-top
+// padding, so it reaches the true top of the screen — and fades from
+// opaque at the top to transparent at the header's own bottom edge. Because
+// it's a normal DOM child rendered first, the header's actual text/buttons
+// simply paint after it in the same box and sit above it automatically —
+// no separate global overlay, no z-index race against anything else.
+export function HeaderTopBlur() {
+  const blurLayers = [1, 2, 3, 6, 12];
+  return (
+    <div className="absolute inset-0 isolate -z-10 pointer-events-none" aria-hidden>
+      {blurLayers.map((blur) => (
+        <div
+          key={blur}
+          className="absolute inset-0"
+          style={{
+            backdropFilter: `blur(${blur}px)`,
+            WebkitBackdropFilter: `blur(${blur}px)`,
+            maskImage: "linear-gradient(to bottom, black, transparent)",
+            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+          }}
+        />
+      ))}
+    </div>
+  );
+}

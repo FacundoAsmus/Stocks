@@ -11,7 +11,7 @@ import { MarketSentiment } from "@/components/MarketSentiment";
 import { PriceChart } from "@/components/PriceChart";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
-import { TopBlur } from "@/components/EdgeBlur";
+import { HeaderTopBlur } from "@/components/EdgeBlur";
 import type { StockDetail } from "@/types/stock";
 
 interface MobileStockPageProps {
@@ -28,7 +28,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   const pageRef = useRef<HTMLDivElement>(null);
   const [fromSearch,       setFromSearch]       = useState(false);
   const [searchOrigin,     setSearchOrigin]     = useState<string>("/");
-  const [headerHeight,     setHeaderHeight]     = useState(70);
 
   useEffect(() => {
     const flag = sessionStorage.getItem("nav-from-search");
@@ -69,15 +68,12 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
       />
 
       <div ref={pageRef} className="pb-24" style={{ opacity: 1 }} data-stock-page="">
-        {/* Blur ends exactly where this header does — content below (the
-            stock name/price) should stay fully crisp, never bleed-blurred. */}
-        <TopBlur height={headerHeight} />
-
         {/* Top bar: Back */}
         <div
-          ref={(el) => { if (el) setHeaderHeight(el.offsetHeight); }}
-          className="sticky top-0 z-30 flex items-center justify-between gap-2 bg-background/85 backdrop-blur-xl px-4 py-3"
+          className="sticky top-0 z-30 flex items-center justify-between gap-2 px-4 pb-3"
+          style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
         >
+          <HeaderTopBlur />
           <button
             onClick={handleBack}
             className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
