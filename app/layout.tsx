@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { DM_Sans } from "next/font/google";
 
 const dmSans = DM_Sans({ subsets: ["latin"] });
@@ -13,7 +13,16 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Wave form",
   description: "A stock news, watchlist, fundamentals, and analyst research starter app.",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover",
+  themeColor: "#000000",
+};
+
+// `viewport-fit=cover` must be emitted through Next's viewport export. It
+// lets the document and fixed top blur extend beneath the iPhone status bar.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
   themeColor: "#000000",
 };
 

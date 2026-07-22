@@ -66,20 +66,22 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         metrics={metrics}
       />
 
-      <div ref={pageRef} className="pb-24" style={{ opacity: 1 }} data-stock-page="">
-        {/* Top bar: Back */}
-        <div
-          className="sticky top-0 z-30 flex items-center justify-between gap-2 px-4 pb-3"
-          style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
+      {/* This header is outside the animated page layer, so its z-index can
+          place the Back button above the root-level edge blur. */}
+      <div
+        className="sticky top-0 z-30 flex items-center justify-between gap-2 px-4 pb-3"
+        style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
+      >
+        <button
+          onClick={handleBack}
+          className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
         >
-          <button
-            onClick={handleBack}
-            className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </button>
-        </div>
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </button>
+      </div>
+
+      <div ref={pageRef} className="pb-24" style={{ opacity: 1 }} data-stock-page="">
 
         <div className="flex items-center gap-3 px-4 pt-5 pb-3">
           {stock.profile.logo ? (

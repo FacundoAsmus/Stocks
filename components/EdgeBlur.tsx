@@ -19,14 +19,6 @@ export function EdgeBlur({ position = "bottom", height = 130, className = "" }: 
       style={{ height }}
       aria-hidden
     >
-      {isTop && (
-        <div
-          className="absolute inset-0"
-          style={{
-            background: "linear-gradient(to bottom, rgba(5, 5, 7, 0.74) 0%, rgba(5, 5, 7, 0.48) 42%, rgba(5, 5, 7, 0) 100%)",
-          }}
-        />
-      )}
       {blurLayers.map((blur) => (
         <div
           key={blur}
@@ -34,8 +26,8 @@ export function EdgeBlur({ position = "bottom", height = 130, className = "" }: 
           style={{
             backdropFilter: `blur(${blur}px)`,
             WebkitBackdropFilter: `blur(${blur}px)`,
-            maskImage: `linear-gradient(to ${isTop ? "bottom" : "top"}, black, transparent)`,
-            WebkitMaskImage: `linear-gradient(to ${isTop ? "bottom" : "top"}, black, transparent)`,
+            maskImage: `linear-gradient(to ${isTop ? "bottom" : "top"}, ${isTop ? "transparent, black" : "black, transparent"})`,
+            WebkitMaskImage: `linear-gradient(to ${isTop ? "bottom" : "top"}, ${isTop ? "transparent, black" : "black, transparent"})`,
           }}
         />
       ))}
