@@ -69,8 +69,8 @@ function SettingsPanel({ closing }: { closing: boolean }) {
     <div
       className={cn("fixed inset-0 z-20 flex flex-col bg-black", closing && "page-slide-right")}
     >
-      {/* Header (blur/solid background removed) */}
-      <div className="sticky top-0 z-10 px-4 pt-14 pb-4">
+      {/* Fixed header with blur */}
+      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border-subtle px-4 pt-14 pb-4">
         <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
       </div>
 
