@@ -7,7 +7,6 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { MarketFearGreed } from "@/components/market/MarketFearGreed";
 import { EtfMobileList } from "@/components/market/EtfList";
-import { TopBlur } from "@/components/EdgeBlur";
 import { formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MarketNewsArticle, StockSummary } from "@/types/stock";
@@ -171,9 +170,6 @@ export function MobileMarket() {
 
   return (
     <div className="relative pb-24 bg-black" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}>
-      {/* One viewport-pinned blur spans the safe area and both sticky headers.
-          The headers are z-30, so their ticker/date/status remain crisp. */}
-      <TopBlur height="calc(env(safe-area-inset-top) + 7rem)" />
       <div className="relative">
         <MobileTicker stocks={data.tickerStocks ?? []} />
 

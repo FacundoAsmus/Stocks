@@ -11,7 +11,6 @@ import { MarketSentiment } from "@/components/MarketSentiment";
 import { PriceChart } from "@/components/PriceChart";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
-import { TopBlur } from "@/components/EdgeBlur";
 import type { StockDetail } from "@/types/stock";
 
 interface MobileStockPageProps {
@@ -66,10 +65,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         sentiment={sentiment}
         metrics={metrics}
       />
-
-      {/* The back button stays above this page-level blur while content
-          scrolls continuously beneath the iOS safe area. */}
-      <TopBlur height="calc(env(safe-area-inset-top) + 4.5rem)" />
 
       <div ref={pageRef} className="pb-24" style={{ opacity: 1 }} data-stock-page="">
         {/* Top bar: Back */}

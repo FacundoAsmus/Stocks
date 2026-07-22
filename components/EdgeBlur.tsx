@@ -17,7 +17,16 @@ export function EdgeBlur({ position = "bottom", height = 130, className = "" }: 
     <div
       className={`fixed inset-x-0 isolate z-20 pointer-events-none ${isTop ? "top-0" : "bottom-0"} ${className}`}
       style={{ height }}
+      aria-hidden
     >
+      {isTop && (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(to bottom, rgba(5, 5, 7, 0.74) 0%, rgba(5, 5, 7, 0.48) 42%, rgba(5, 5, 7, 0) 100%)",
+          }}
+        />
+      )}
       {blurLayers.map((blur) => (
         <div
           key={blur}
