@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
@@ -12,24 +11,24 @@ import { StockAIChat } from "@/components/mobile/StockAIChat";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import type { StockDetail } from "@/types/stock";
 
-export function MobileStockPage({ symbol }: { symbol: string }) {
-  const [stock, setStock] = useState<StockDetail | null>(null);
-  const [loading, setLoading] = useState(true);
+interface MobileStockPageProps {
+  stock: StockDetail;
+  currentPrice: number;
+  sentiment?: {
+    score: number;
+    drivers: string[];
+  };
+  metrics?: Record<string, string | number | null>;
+}
 
-  useEffect(() => {
-    const ctrl = new AbortController();
-    setLoading(true);
-    fetch(`/api/stocks?symbol=${encodeURIComponent(symbol)}`, { signal: ctrl.signal })
-      .then((r) => r.json() as Promise<StockDetail>)
-      .then((d) => setStock(d))
-      .catch(() => {})
-      .finally(() => {
-        if (!ctrl.signal.aborted) setLoading(false);
-      });
-    return () => ctrl.abort();
-  }, [symbol]);
-
-  const isPos = ((stock?.summary.changePercent ?? 0) >= 0);
+export function MobileStockPage({
+  stock,
+  currentPrice,
+  sentiment,
+  metrics,
+}: MobileStockPageProps) {
+  const symbol = stock.summary.symbol;
+  const isPos = (stock.summary.changePercent ?? 0) >= 0;
 
   return (
     <div className="pb-28">
@@ -55,22 +54,20 @@ export function MobileStockPage({ symbol }: { symbol: string }) {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-text-primary">{symbol}</h1>
-            <p className="text-xs text-text-muted">{stock?.summary.name}</p>
+            <p className="text-xs text-text-muted">{stock.summary.name}</p>
           </div>
-          {stock && (
-            <div className="text-right">
-              <div className="text-xl font-bold text-text-primary">
-                {formatCurrency(stock.summary.price)}
-              </div>
-              <div
-                className={`text-xs font-semibold ${
-                  isPos ? "text-positive" : "text-negative"
-                }`}
-              >
-                {formatPercent(stock.summary.changePercent)}
-              </div>
+          <div className="text-right">
+            <div className="text-xl font-bold text-text-primary">
+              {formatCurrency(currentPrice ?? stock.summary.price)}
             </div>
-          )}
+            <div
+              className={`text-xs font-semibold ${
+                isPos ? "text-positive" : "text-negative"
+              }`}
+            >
+              {formatPercent(stock.summary.changePercent)}
+            </div>
+          </div>
         </div>
 
         {/* Chart */}
@@ -79,11 +76,9 @@ export function MobileStockPage({ symbol }: { symbol: string }) {
         </div>
 
         {/* Analysts / Fundamentals */}
-        {stock && (
-          <div className="mt-4">
-            <AnalystSection detail={stock} />
-          </div>
-        )}
+        <div className="mt-4">
+          <AnalystSection detail={stock} />
+        </div>
       </div>
     </div>
   );
