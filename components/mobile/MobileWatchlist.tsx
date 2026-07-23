@@ -181,7 +181,16 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
     }
 
     function onPointerMove(e: PointerEvent) {
-      if (longPressFired.current) return; // Framer owns the gesture now
+      if (longPressFired.current) {
+        // Framer drives the actual drag visuals from here, but iOS will
+        // keep scrolling the page underneath unless *this* listener also
+        // keeps calling preventDefault on every subsequent move of the
+        // same touch — CSS hints like touch-action only get evaluated once
+        // at the start of the touch, but per-event preventDefault works
+        // mid-gesture, so we do it ourselves rather than trust Framer to.
+        e.preventDefault();
+        return;
+      }
 
       const start = startRef.current;
       if (!start) return;
