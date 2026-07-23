@@ -47,7 +47,12 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
   return (
     <div
       className="sticky top-0 z-10"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        transform: "translateZ(0)",
+        WebkitTransform: "translateZ(0)",
+        willChange: "transform",
+      }}
       ref={(el) => { if (el) document.documentElement.style.setProperty("--ticker-height", el.offsetHeight + "px"); }}
     >
       <HeaderTopBlur />

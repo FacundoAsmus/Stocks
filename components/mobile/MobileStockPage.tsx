@@ -71,7 +71,13 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
           place the Back button above the root-level edge blur. */}
       <div
         className="sticky top-0 z-40 flex items-center justify-between gap-2 px-4 pb-3"
-        style={{ zIndex: 40, paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
+        style={{
+          zIndex: 40,
+          paddingTop: "calc(0.75rem + env(safe-area-inset-top))",
+          transform: "translateZ(0)",
+          WebkitTransform: "translateZ(0)",
+          willChange: "transform",
+        }}
       >
         <HeaderTopBlur />
         <button

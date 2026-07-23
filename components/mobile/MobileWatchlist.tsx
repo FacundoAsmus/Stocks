@@ -352,7 +352,12 @@ export function MobileWatchlist() {
     <div className="pb-24">
       <div
         className="sticky top-0 z-30 px-4 pb-4"
-        style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
+        style={{
+          paddingTop: "calc(1.5rem + env(safe-area-inset-top))",
+          transform: "translateZ(0)",
+          WebkitTransform: "translateZ(0)",
+          willChange: "transform",
+        }}
       >
         <HeaderTopBlur />
         <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
