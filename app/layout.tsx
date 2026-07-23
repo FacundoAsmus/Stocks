@@ -7,23 +7,23 @@ import { MobileNav } from "@/components/MobileNav";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ToastProvider } from "@/components/ToastProvider";
 import { BottomBlur } from "@/components/EdgeBlur";
+import { MobileTopBlur } from "@/components/MobileTopBlur";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Wave form",
   description: "A stock news, watchlist, fundamentals, and analyst research starter app.",
+  themeColor: "#000000",
 };
 
 // `viewport-fit=cover` must be emitted through Next's viewport export. It
 // lets the document and fixed top blur extend beneath the iPhone status bar.
-// No `themeColor` here: setting one makes Safari paint its own translucent
-// status-bar/toolbar chrome on top of everything, which showed up as a
-// separate solid/blurred bar layered above our own gradient blur.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -49,8 +49,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
             {/* Progressive blur so content fades out before disappearing
                 under the floating mobile nav pill / bottom edge, on every page.
-                (The top blur is page-specific — each page's own sticky header
-                renders its own HeaderTopBlur, since header heights differ per page.) */}
+                (The top blur is page-specific — see each page's own header,
+                since header heights differ per page.) */}
+            <MobileTopBlur />
             <BottomBlur />
 
             {/* Mobile bottom tab bar */}
