@@ -245,7 +245,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
   const keyboardInset = Math.max(0, winH - vpH - vp.top);
   const pillBottom = open && keyboardInset > 8
     ? `${keyboardInset + 12}px`
-    : "calc(1.25rem + env(safe-area-inset-bottom))";
+    : "calc(0.625rem + env(safe-area-inset-bottom))";
 
   const showDropdown = open && (loading || results.length > 0 || query.trim().length > 0);
 
@@ -511,7 +511,7 @@ export function MobileNav() {
           search pill so everything along the bottom bar lines up. */}
       <nav
         className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center justify-start px-5 pointer-events-none"
-        style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))", paddingTop: "1rem" }}
+        style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom))", paddingTop: "1rem" }}
       >
         <div
           className="relative flex items-center rounded-full bg-black/40 backdrop-blur-md border border-white/20 overflow-hidden pointer-events-auto"
