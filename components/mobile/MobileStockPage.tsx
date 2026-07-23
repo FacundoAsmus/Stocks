@@ -42,6 +42,15 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
     }
   }, []);
 
+  // Reset scroll to the top whenever the viewed stock changes — not just on
+  // first mount. Next.js reuses this same page component instance (rather
+  // than remounting it) when navigating directly from one stock page to
+  // another, so a mount-only effect misses that case and the page opens
+  // wherever the previous stock happened to be scrolled to.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [stock.symbol]);
+
   function handleBack() {
     const el = pageRef.current;
     if (el) {
@@ -77,7 +86,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         }}
       >
         <div
-          className="absolute inset-0 -z-10 pointer-events-none"
+          className="absolute inset-0 pointer-events-none"
           style={{
             backdropFilter: "blur(14px)",
             WebkitBackdropFilter: "blur(14px)",
@@ -87,7 +96,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         />
         <button
           onClick={handleBack}
-          className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
+          className="relative z-10 flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
         >
           <ChevronLeft className="h-4 w-4" />
           Back
