@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Reorder, useDragControls } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
-import { Star } from "lucide-react";
+import { GripVertical, Star } from "lucide-react";
 
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { formatPercent } from "@/lib/format";
@@ -104,8 +104,9 @@ const SETTLE_TRANSITION = "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
 // The horizontal swipe-to-reveal-delete gesture stays hand-rolled (Framer's
 // Reorder locks the drag axis to "y", so it doesn't touch this at all).
 function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: string) => void }) {
+  const router    = useRouter();
   const rowRef    = useRef<HTMLDivElement>(null);
-  const innerRef  = useRef<HTMLAnchorElement>(null);
+  const innerRef  = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
 
   const dragXRef       = useRef(0);
@@ -138,8 +139,17 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
     }
   }
 
-  function unlockPageScroll() {
+  // Fires from Framer itself the moment a drag actually begins, regardless
+  // of whether it was triggered by the long-press-anywhere-on-the-row path
+  // below or by a direct press on the handle — so scroll gets locked/
+  // unlocked consistently no matter which path started it.
+  function handleDragStart() {
+    prevBodyOverflow.current = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+  }
+  function handleDragEnd() {
     document.body.style.overflow = prevBodyOverflow.current;
+    if (rowRef.current) rowRef.current.style.touchAction = "pan-y";
   }
 
   useEffect(() => {
@@ -161,18 +171,13 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
           longPressFired.current = true;
           startRef.current = null; // stop any swipe-gesture bookkeeping
           if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
-          // Lock out native scrolling on this row for the duration of the
-          // drag — otherwise touch-action: pan-y (needed so ordinary
-          // scrolling still works the rest of the time) lets the browser
-          // keep treating vertical finger movement as "scroll the page"
-          // even after Framer takes over, and the browser wins that race.
+          // Best-effort: browsers only reliably honor touch-action set at
+          // the very start of a touch, so this alone can't fully stop
+          // native scrolling for a touch already in progress (see the
+          // preventDefault fallback in onPointerMove below, and — more
+          // reliably — the dedicated drag handle, which never has this
+          // problem because touch-action is set on it from the start).
           if (el) el.style.touchAction = "none";
-          // touch-action changed mid-touch (as above) isn't reliably honored
-          // by the browser for a touch sequence already in progress — it's
-          // only guaranteed to apply to the *next* one. So also hard-lock
-          // page scroll directly for the duration of the drag.
-          prevBodyOverflow.current = document.body.style.overflow;
-          document.body.style.overflow = "hidden";
           // Hand off to Framer Motion — it takes pointer capture from here
           // and drives the drag + sibling reflow itself.
           dragControls.start(e, { snapToCursor: false });
@@ -232,8 +237,7 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
       if (longPressFired.current) {
         longPressFired.current = false;
         if (el) el.style.touchAction = "pan-y";
-        unlockPageScroll();
-        return; // Framer handles the rest of its own gesture lifecycle
+        return; // Framer handles the rest of its own gesture lifecycle (including handleDragEnd)
       }
 
       if (!startRef.current?.isH) { startRef.current = null; return; }
@@ -252,7 +256,7 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
 
     return () => {
       clearLongPress();
-      if (longPressFired.current) unlockPageScroll();
+      if (longPressFired.current) document.body.style.overflow = prevBodyOverflow.current;
       el.removeEventListener("pointerdown",   onPointerDown);
       el.removeEventListener("pointermove",   onPointerMove);
       el.removeEventListener("pointerup",     onPointerEnd);
@@ -277,10 +281,8 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
       style={{ touchAction: "pan-y", WebkitTouchCallout: "none" }}
       whileDrag={{ scale: 1.03, boxShadow: "0 16px 40px rgba(0,0,0,0.55)", zIndex: 10 }}
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
-      onDragEnd={() => {
-        if (rowRef.current) rowRef.current.style.touchAction = "pan-y";
-        document.body.style.overflow = prevBodyOverflow.current;
-      }}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
     >
       <div ref={rowRef}>
         {/* Swipe-revealed remove button */}
@@ -294,11 +296,16 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
           </button>
         </div>
 
-        <Link
+        <div
           ref={innerRef}
-          href={`/stock/${stock.symbol}`}
-          onClick={(e) => { if (revealedRef.current) { e.preventDefault(); close(); } }}
-          className="flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted"
+          role="link"
+          tabIndex={0}
+          onClick={() => {
+            if (revealedRef.current) { close(); return; }
+            router.push(`/stock/${stock.symbol}`);
+          }}
+          onKeyDown={(e) => { if (e.key === "Enter") router.push(`/stock/${stock.symbol}`); }}
+          className="flex items-center gap-1 pl-1 pr-4 py-3.5 bg-black active:bg-panel-muted"
           style={{
             transform: "translateX(0px)",
             willChange: "transform",
@@ -308,8 +315,29 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
           }}
           suppressHydrationWarning
         >
-          <RowContent stock={stock} />
-        </Link>
+          {/* Dedicated drag handle: touch-action is "none" from the very
+              first touch on this element (not changed later, unlike the
+              rest of the row), so iOS never has a chance to commit to a
+              native scroll here in the first place — no race condition,
+              no long-press delay needed. */}
+          <button
+            type="button"
+            aria-label={`Reorder ${stock.symbol}`}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
+              dragControls.start(e, { snapToCursor: false });
+            }}
+            className="flex items-center justify-center shrink-0 h-9 w-7 text-text-muted/40 active:text-text-muted"
+            style={{ touchAction: "none", WebkitTouchCallout: "none" }}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+          <div className="flex items-center gap-3 flex-1 min-w-0 pl-2">
+            <RowContent stock={stock} />
+          </div>
+        </div>
       </div>
     </Reorder.Item>
   );
