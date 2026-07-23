@@ -6,7 +6,6 @@ import { ChevronLeft } from "lucide-react";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
-import { HeaderTopBlur } from "@/components/EdgeBlur";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { PriceChart } from "@/components/PriceChart";
@@ -71,15 +70,8 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
           place the Back button above the root-level edge blur. */}
       <div
         className="sticky top-0 z-40 flex items-center justify-between gap-2 px-4 pb-3"
-        style={{
-          zIndex: 40,
-          paddingTop: "calc(0.75rem + env(safe-area-inset-top))",
-          transform: "translateZ(0)",
-          WebkitTransform: "translateZ(0)",
-          willChange: "transform",
-        }}
+        style={{ zIndex: 40, paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
       >
-        <HeaderTopBlur />
         <button
           onClick={handleBack}
           className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
