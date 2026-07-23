@@ -24,8 +24,6 @@ interface MobileStockPageProps {
 export function MobileStockPage({
   stock,
   currentPrice,
-  sentiment,
-  metrics,
 }: MobileStockPageProps) {
   const symbol = stock.summary.symbol;
   const isPos = (stock.summary.changePercent ?? 0) >= 0;

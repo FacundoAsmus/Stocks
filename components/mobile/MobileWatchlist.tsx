@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Reorder, useDragControls } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
@@ -68,6 +68,7 @@ function RowContent({ stock }: { stock: StockSummary }) {
   return (
     <>
       {stock.logo ? (
+        /* eslint-disable-next-line @next/next/no-img-element */
         <img
           src={stock.logo}
           alt=""
@@ -130,18 +131,18 @@ function WatchlistRow({
   const [isDragging, setIsDragging] = useState(false);
   const isDraggingRef = useRef(false);
 
-  function applyX(x: number, animate: boolean) {
+  const applyX = useCallback((x: number, animate: boolean) => {
     const el = innerRef.current;
     if (!el) return;
     el.style.transition = animate ? SETTLE_TRANSITION : "none";
     el.style.transform = `translateX(${x}px)`;
-  }
+  }, []);
 
-  function close() {
+  const close = useCallback(() => {
     dragXRef.current = 0;
     revealedRef.current = false;
     applyX(0, true);
-  }
+  }, [applyX]);
 
   useEffect(() => {
     function preventTouchScroll(e: TouchEvent) {
@@ -256,7 +257,7 @@ function WatchlistRow({
       el.removeEventListener("pointerup", onPointerEnd);
       el.removeEventListener("pointercancel", onPointerEnd);
     };
-  }, [dragControls]);
+  }, [dragControls, applyX]);
 
   useEffect(() => {
     function onScroll() {
@@ -264,7 +265,7 @@ function WatchlistRow({
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [close]);
 
   const handleDragEnd = () => {
     isDraggingRef.current = false;
