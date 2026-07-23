@@ -6,7 +6,7 @@ import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButt
 import { StockAIChat } from "@/components/mobile/StockAIChat";
 
 export function MobileMarket() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export function MobileMarket() {
       </div>
 
       <div className="px-4 mt-4">
-        <MarketHome data={data} loading={loading} />
+        <MarketHome data={data as Parameters<typeof MarketHome>[0]["data"]} loading={loading} />
       </div>
     </div>
   );
