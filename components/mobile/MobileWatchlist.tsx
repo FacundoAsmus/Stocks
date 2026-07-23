@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Reorder, useDragControls } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
-import { GripVertical, Star } from "lucide-react";
+import { Star } from "lucide-react";
 
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { formatPercent } from "@/lib/format";
@@ -113,7 +113,6 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
   const revealedRef    = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
-  const prevBodyOverflow = useRef<string>("");
   const startRef = useRef<{
     x: number; y: number; startDragX: number;
     decided: boolean; isH: boolean;
@@ -139,16 +138,17 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
     }
   }
 
-  // Fires from Framer itself the moment a drag actually begins, regardless
-  // of whether it was triggered by the long-press-anywhere-on-the-row path
-  // below or by a direct press on the handle — so scroll gets locked/
-  // unlocked consistently no matter which path started it.
-  function handleDragStart() {
-    prevBodyOverflow.current = document.body.style.overflow;
+  // Fires from Framer the moment a drag actually begins/ends. Idempotent by
+  // design (always sets an explicit value rather than restoring a "previous"
+  // one) so it's safe to call this from multiple places as a redundancy —
+  // which we do, since Framer's onDragEnd alone wasn't reliably firing when
+  // the touch ended via pointercancel (can happen mid-drag once the row
+  // starts reordering/reflowing), leaving scroll stuck locked forever.
+  function lockPageScroll() {
     document.body.style.overflow = "hidden";
   }
-  function handleDragEnd() {
-    document.body.style.overflow = prevBodyOverflow.current;
+  function unlockPageScroll() {
+    document.body.style.overflow = "";
     if (rowRef.current) rowRef.current.style.touchAction = "pan-y";
   }
 
@@ -171,13 +171,8 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
           longPressFired.current = true;
           startRef.current = null; // stop any swipe-gesture bookkeeping
           if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
-          // Best-effort: browsers only reliably honor touch-action set at
-          // the very start of a touch, so this alone can't fully stop
-          // native scrolling for a touch already in progress (see the
-          // preventDefault fallback in onPointerMove below, and — more
-          // reliably — the dedicated drag handle, which never has this
-          // problem because touch-action is set on it from the start).
           if (el) el.style.touchAction = "none";
+          lockPageScroll();
           // Hand off to Framer Motion — it takes pointer capture from here
           // and drives the drag + sibling reflow itself.
           dragControls.start(e, { snapToCursor: false });
@@ -236,8 +231,8 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
 
       if (longPressFired.current) {
         longPressFired.current = false;
-        if (el) el.style.touchAction = "pan-y";
-        return; // Framer handles the rest of its own gesture lifecycle (including handleDragEnd)
+        unlockPageScroll();
+        return; // Framer handles the rest of its own gesture lifecycle
       }
 
       if (!startRef.current?.isH) { startRef.current = null; return; }
@@ -254,13 +249,30 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
     el.addEventListener("pointerup",     onPointerEnd,  { passive: true });
     el.addEventListener("pointercancel", onPointerEnd,  { passive: true });
 
+    // Last-resort safety net: no matter what ended the touch (including
+    // cases our own and Framer's handlers might both miss), any pointerup/
+    // pointercancel/visibility-change anywhere clears our lock if it was us
+    // who set it. Cheap and idempotent, so it's safe to always run.
+    function globalSafetyUnlock() {
+      if (longPressFired.current) {
+        longPressFired.current = false;
+        unlockPageScroll();
+      }
+    }
+    window.addEventListener("pointerup",   globalSafetyUnlock, { passive: true });
+    window.addEventListener("pointercancel", globalSafetyUnlock, { passive: true });
+    document.addEventListener("visibilitychange", globalSafetyUnlock);
+
     return () => {
       clearLongPress();
-      if (longPressFired.current) document.body.style.overflow = prevBodyOverflow.current;
+      if (longPressFired.current) unlockPageScroll();
       el.removeEventListener("pointerdown",   onPointerDown);
       el.removeEventListener("pointermove",   onPointerMove);
       el.removeEventListener("pointerup",     onPointerEnd);
       el.removeEventListener("pointercancel", onPointerEnd);
+      window.removeEventListener("pointerup",   globalSafetyUnlock);
+      window.removeEventListener("pointercancel", globalSafetyUnlock);
+      document.removeEventListener("visibilitychange", globalSafetyUnlock);
     };
   }, [dragControls]);
 
@@ -281,8 +293,8 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
       style={{ touchAction: "pan-y", WebkitTouchCallout: "none" }}
       whileDrag={{ scale: 1.03, boxShadow: "0 16px 40px rgba(0,0,0,0.55)", zIndex: 10 }}
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
+      onDragStart={lockPageScroll}
+      onDragEnd={unlockPageScroll}
     >
       <div ref={rowRef}>
         {/* Swipe-revealed remove button */}
@@ -305,7 +317,7 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
             router.push(`/stock/${stock.symbol}`);
           }}
           onKeyDown={(e) => { if (e.key === "Enter") router.push(`/stock/${stock.symbol}`); }}
-          className="flex items-center gap-1 pl-1 pr-4 py-3.5 bg-black active:bg-panel-muted"
+          className="flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted"
           style={{
             transform: "translateX(0px)",
             willChange: "transform",
@@ -315,28 +327,7 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
           }}
           suppressHydrationWarning
         >
-          {/* Dedicated drag handle: touch-action is "none" from the very
-              first touch on this element (not changed later, unlike the
-              rest of the row), so iOS never has a chance to commit to a
-              native scroll here in the first place — no race condition,
-              no long-press delay needed. */}
-          <button
-            type="button"
-            aria-label={`Reorder ${stock.symbol}`}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
-              dragControls.start(e, { snapToCursor: false });
-            }}
-            className="flex items-center justify-center shrink-0 h-9 w-7 text-text-muted/40 active:text-text-muted"
-            style={{ touchAction: "none", WebkitTouchCallout: "none" }}
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
-          <div className="flex items-center gap-3 flex-1 min-w-0 pl-2">
-            <RowContent stock={stock} />
-          </div>
+          <RowContent stock={stock} />
         </div>
       </div>
     </Reorder.Item>
