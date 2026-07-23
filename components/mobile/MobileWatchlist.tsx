@@ -7,6 +7,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { Star } from "lucide-react";
 
 import { LoadingScreen } from "@/components/EmptyWatchlist";
+import { HeaderTopBlur } from "@/components/EdgeBlur";
 import { formatPercent } from "@/lib/format";
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -353,6 +354,7 @@ export function MobileWatchlist() {
         className="sticky top-0 z-30 px-4 pb-4"
         style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
       >
+        <HeaderTopBlur />
         <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
         <h1 className="mt-1 text-2xl font-bold text-text-primary">Your Stocks</h1>
       </div>

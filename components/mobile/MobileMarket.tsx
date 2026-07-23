@@ -7,6 +7,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { MarketFearGreed } from "@/components/market/MarketFearGreed";
 import { EtfMobileList } from "@/components/market/EtfList";
+import { HeaderTopBlur } from "@/components/EdgeBlur";
 import { formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MarketNewsArticle, StockSummary } from "@/types/stock";
@@ -49,6 +50,7 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
       style={{ paddingTop: "env(safe-area-inset-top)" }}
       ref={(el) => { if (el) document.documentElement.style.setProperty("--ticker-height", el.offsetHeight + "px"); }}
     >
+      <HeaderTopBlur />
       <div className="overflow-hidden">
         <div className="market-ticker flex w-max items-center" style={{ pointerEvents: "none" }}>
           {duped.map((s, i) => {
