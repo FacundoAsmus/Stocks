@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Reorder, useDragControls } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
-import { Star } from "lucide-react";
+import { GripVertical, Star } from "lucide-react";
 
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { formatPercent } from "@/lib/format";
@@ -85,8 +85,6 @@ function RowContent({ stock }: { stock: StockSummary }) {
 
 const REVEAL_WIDTH = 76;
 const OVERDRAG_MAX = 28;
-const LONG_PRESS_MS = 450;
-const MOVE_CANCEL_PX = 14; // movement before the long-press timer fires cancels it — generous enough to tolerate natural hand tremor while holding still
 
 function withResistance(raw: number) {
   if (raw >= -REVEAL_WIDTH) return raw;
@@ -97,26 +95,31 @@ function withResistance(raw: number) {
 
 const SETTLE_TRANSITION = "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
 
-// One row. Reordering itself (the vertical drag + smooth reflow of
-// siblings) is entirely delegated to Framer Motion's Reorder.Item — it's
-// only *activated* after our own long-press timer fires, via dragControls,
-// so a quick tap or a horizontal swipe never accidentally starts a drag.
-// The horizontal swipe-to-reveal-delete gesture stays hand-rolled (Framer's
-// Reorder locks the drag axis to "y", so it doesn't touch this at all).
-function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: string) => void }) {
+// One row, in one of two modes:
+//
+// - Browsing (isEditing=false): tap navigates, swipe left reveals a remove
+//   button. No drag-to-reorder here at all — trying to make "long-press
+//   this same element to start a drag" reliably beat native scrolling on
+//   iOS Safari, with zero visible affordance, turned out to be an
+//   unwinnable race condition no matter how it was implemented.
+//
+// - Editing (isEditing=true, toggled from the "Edit" button in the header):
+//   a dedicated grip handle appears. Because that handle has
+//   touch-action: none from the very first touch on it — not changed
+//   later, unlike the old approach — iOS never has a chance to start a
+//   native scroll there in the first place, so there's no race at all.
+//   Tap-to-navigate and swipe-to-remove are disabled while editing, same
+//   as native iOS list-editing (e.g. Settings, Reminders).
+function WatchlistRow({
+  stock, onRemove, isEditing,
+}: { stock: StockSummary; onRemove: (s: string) => void; isEditing: boolean }) {
   const router    = useRouter();
-  const rowRef    = useRef<HTMLDivElement>(null);
   const innerRef  = useRef<HTMLDivElement>(null);
   const dragControls = useDragControls();
 
   const dragXRef       = useRef(0);
   const revealedRef    = useRef(false);
-  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressFired = useRef(false);
-  const startRef = useRef<{
-    x: number; y: number; startDragX: number;
-    decided: boolean; isH: boolean;
-  } | null>(null);
+  const startRef = useRef<{ x: number; y: number; startDragX: number; decided: boolean } | null>(null);
 
   function applyX(x: number, animate: boolean) {
     const el = innerRef.current;
@@ -131,95 +134,33 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
     applyX(0, true);
   }
 
-  function clearLongPress() {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }
-
-  // Fires from Framer the moment a drag actually begins/ends. Idempotent by
-  // design (always sets an explicit value rather than restoring a "previous"
-  // one) so it's safe to call this from multiple places as a redundancy —
-  // which we do, since Framer's onDragEnd alone wasn't reliably firing when
-  // the touch ended via pointercancel (can happen mid-drag once the row
-  // starts reordering/reflowing), leaving scroll stuck locked forever.
-  function lockPageScroll() {
-    document.body.style.overflow = "hidden";
-  }
-  function unlockPageScroll() {
-    document.body.style.overflow = "";
-    if (rowRef.current) rowRef.current.style.touchAction = "pan-y";
-  }
+  // Reset any open swipe state whenever edit mode toggles, so rows don't
+  // get stuck mid-swipe when switching modes.
+  useEffect(() => { close(); }, [isEditing]);
 
   useEffect(() => {
-    const el = rowRef.current;
+    if (isEditing) return; // swipe-to-remove is only active while browsing
+    const el = innerRef.current;
     if (!el) return;
 
     function onPointerDown(e: PointerEvent) {
       if (e.pointerType === "mouse" && e.button !== 0) return;
-      startRef.current = {
-        x: e.clientX, y: e.clientY, startDragX: dragXRef.current,
-        decided: false, isH: false,
-      };
-      longPressFired.current = false;
-      clearLongPress();
-      // Only offer drag-to-reorder from a row's resting position (not mid-swipe).
-      if (dragXRef.current === 0) {
-        longPressTimer.current = setTimeout(() => {
-          longPressTimer.current = null;
-          longPressFired.current = true;
-          startRef.current = null; // stop any swipe-gesture bookkeeping
-          if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
-          if (el) el.style.touchAction = "none";
-          lockPageScroll();
-          // Hand off to Framer Motion — it takes pointer capture from here
-          // and drives the drag + sibling reflow itself.
-          dragControls.start(e, { snapToCursor: false });
-        }, LONG_PRESS_MS);
-      }
+      startRef.current = { x: e.clientX, y: e.clientY, startDragX: dragXRef.current, decided: false };
     }
 
     function onPointerMove(e: PointerEvent) {
-      if (longPressFired.current) {
-        // Framer drives the actual drag visuals from here, but iOS will
-        // keep scrolling the page underneath unless *this* listener also
-        // keeps calling preventDefault on every subsequent move of the
-        // same touch — CSS hints like touch-action only get evaluated once
-        // at the start of the touch, but per-event preventDefault works
-        // mid-gesture, so we do it ourselves rather than trust Framer to.
-        e.preventDefault();
-        return;
-      }
-
       const start = startRef.current;
       if (!start) return;
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
 
       if (!start.decided) {
-        if (Math.abs(dx) < MOVE_CANCEL_PX && Math.abs(dy) < MOVE_CANCEL_PX) return; // wait for intent — tolerate natural hand tremor while holding still
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
         start.decided = true;
-        start.isH     = Math.abs(dx) > Math.abs(dy) * 1.15; // slight bias toward "this is a scroll", the more common gesture
-        clearLongPress(); // real movement — this isn't a long-press-and-hold
-
-        if (!start.isH) {
-          // Vertical intent: this is an ordinary scroll. `touch-action: pan-y`
-          // on the row means the browser has been handling this natively —
-          // with full native momentum — the whole time, so there's nothing
-          // for us to do here; just stop tracking it as a possible swipe.
-          startRef.current = null;
-          return;
-        }
+        if (Math.abs(dx) <= Math.abs(dy) * 1.15) { startRef.current = null; return; } // vertical: let native scroll handle it
       }
 
-      if (!start.isH) return;
-
-      // Horizontal swipe-to-reveal: override the browser's default (which
-      // would otherwise fight us) only for this axis.
       e.preventDefault();
-      e.stopPropagation();
-
       const raw  = start.startDragX + dx;
       const next = raw > 0 ? 0 : withResistance(raw);
       dragXRef.current = next;
@@ -227,15 +168,7 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
     }
 
     function onPointerEnd() {
-      clearLongPress();
-
-      if (longPressFired.current) {
-        longPressFired.current = false;
-        unlockPageScroll();
-        return; // Framer handles the rest of its own gesture lifecycle
-      }
-
-      if (!startRef.current?.isH) { startRef.current = null; return; }
+      if (!startRef.current) return;
       const shouldReveal = dragXRef.current < -REVEAL_WIDTH / 2;
       const target       = shouldReveal ? -REVEAL_WIDTH : 0;
       dragXRef.current   = target;
@@ -248,33 +181,13 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
     el.addEventListener("pointermove",   onPointerMove, { passive: false });
     el.addEventListener("pointerup",     onPointerEnd,  { passive: true });
     el.addEventListener("pointercancel", onPointerEnd,  { passive: true });
-
-    // Last-resort safety net: no matter what ended the touch (including
-    // cases our own and Framer's handlers might both miss), any pointerup/
-    // pointercancel/visibility-change anywhere clears our lock if it was us
-    // who set it. Cheap and idempotent, so it's safe to always run.
-    function globalSafetyUnlock() {
-      if (longPressFired.current) {
-        longPressFired.current = false;
-        unlockPageScroll();
-      }
-    }
-    window.addEventListener("pointerup",   globalSafetyUnlock, { passive: true });
-    window.addEventListener("pointercancel", globalSafetyUnlock, { passive: true });
-    document.addEventListener("visibilitychange", globalSafetyUnlock);
-
     return () => {
-      clearLongPress();
-      if (longPressFired.current) unlockPageScroll();
       el.removeEventListener("pointerdown",   onPointerDown);
       el.removeEventListener("pointermove",   onPointerMove);
       el.removeEventListener("pointerup",     onPointerEnd);
       el.removeEventListener("pointercancel", onPointerEnd);
-      window.removeEventListener("pointerup",   globalSafetyUnlock);
-      window.removeEventListener("pointercancel", globalSafetyUnlock);
-      document.removeEventListener("visibilitychange", globalSafetyUnlock);
     };
-  }, [dragControls]);
+  }, [isEditing]);
 
   useEffect(() => {
     function onScroll() { if (revealedRef.current) close(); }
@@ -290,34 +203,26 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
       dragControls={dragControls}
       as="div"
       className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 bg-black"
-      style={{ touchAction: "pan-y", WebkitTouchCallout: "none" }}
       whileDrag={{ scale: 1.03, boxShadow: "0 16px 40px rgba(0,0,0,0.55)", zIndex: 10 }}
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
-      onDragStart={lockPageScroll}
-      onDragEnd={unlockPageScroll}
     >
-      <div ref={rowRef}>
-        {/* Swipe-revealed remove button */}
-        <div className="absolute inset-y-0 right-0 flex items-center justify-center" style={{ width: REVEAL_WIDTH }}>
-          <button
-            onClick={() => onRemove(stock.symbol)}
-            aria-label={`Remove ${stock.symbol}`}
-            className="flex items-center justify-center text-positive active:scale-90 transition-transform"
-          >
-            <Star className="h-5 w-5 fill-current" />
-          </button>
-        </div>
+      <div className="relative">
+        {/* Swipe-revealed remove button (browsing mode only) */}
+        {!isEditing && (
+          <div className="absolute inset-y-0 right-0 flex items-center justify-center" style={{ width: REVEAL_WIDTH }}>
+            <button
+              onClick={() => onRemove(stock.symbol)}
+              aria-label={`Remove ${stock.symbol}`}
+              className="flex items-center justify-center text-positive active:scale-90 transition-transform"
+            >
+              <Star className="h-5 w-5 fill-current" />
+            </button>
+          </div>
+        )}
 
         <div
           ref={innerRef}
-          role="link"
-          tabIndex={0}
-          onClick={() => {
-            if (revealedRef.current) { close(); return; }
-            router.push(`/stock/${stock.symbol}`);
-          }}
-          onKeyDown={(e) => { if (e.key === "Enter") router.push(`/stock/${stock.symbol}`); }}
-          className="flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted"
+          className="flex items-center gap-1 pl-1 pr-4 py-3.5 bg-black"
           style={{
             transform: "translateX(0px)",
             willChange: "transform",
@@ -327,7 +232,45 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
           }}
           suppressHydrationWarning
         >
-          <RowContent stock={stock} />
+          {isEditing && (
+            <>
+              <button
+                type="button"
+                onClick={() => onRemove(stock.symbol)}
+                aria-label={`Remove ${stock.symbol}`}
+                className="flex items-center justify-center shrink-0 h-7 w-7 rounded-full bg-negative text-white active:scale-90 transition-transform"
+              >
+                <span className="text-lg leading-none">−</span>
+              </button>
+              {/* Dedicated drag handle: touch-action is "none" from the very
+                  first touch on it, so iOS never gets a chance to start a
+                  native scroll here — no race condition, no delay needed. */}
+              <button
+                type="button"
+                aria-label={`Reorder ${stock.symbol}`}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
+                  dragControls.start(e, { snapToCursor: false });
+                }}
+                className="flex items-center justify-center shrink-0 h-9 w-8 text-text-muted/50 active:text-text-muted"
+                style={{ touchAction: "none", WebkitTouchCallout: "none" }}
+              >
+                <GripVertical className="h-4 w-4" />
+              </button>
+            </>
+          )}
+          <div
+            className="flex items-center gap-3 flex-1 min-w-0"
+            onClick={() => {
+              if (isEditing) return;
+              if (revealedRef.current) { close(); return; }
+              router.push(`/stock/${stock.symbol}`);
+            }}
+          >
+            <RowContent stock={stock} />
+          </div>
         </div>
       </div>
     </Reorder.Item>
@@ -338,6 +281,7 @@ export function MobileWatchlist() {
   const [symbols, setSymbols] = useState<string[]>([]);
   const [stocks, setStocks]   = useState<Map<string, StockSummary>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
   const fetchedRef            = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -394,11 +338,25 @@ export function MobileWatchlist() {
   return (
     <div className="pb-24">
       <div
-        className="sticky top-0 z-30 px-4 pb-4"
+        className="sticky top-0 z-30 px-4 pb-4 flex items-end justify-between gap-3"
         style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
       >
-        <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
-        <h1 className="mt-1 text-2xl font-bold text-text-primary">Your Stocks</h1>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
+          <h1 className="mt-1 text-2xl font-bold text-text-primary">Your Stocks</h1>
+        </div>
+        {orderedStocks.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setIsEditing(v => !v)}
+            className={cn(
+              "shrink-0 text-sm font-semibold px-3 py-1.5 rounded-lg mb-1",
+              isEditing ? "bg-positive text-black" : "bg-panel-muted text-text-primary"
+            )}
+          >
+            {isEditing ? "Done" : "Edit"}
+          </button>
+        )}
       </div>
 
       {orderedStocks.length === 0 ? (
@@ -415,7 +373,7 @@ export function MobileWatchlist() {
           className="mx-4 mt-6 rounded-xl bg-black"
         >
           {orderedStocks.map(stock => (
-            <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} />
+            <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} isEditing={isEditing} />
           ))}
         </Reorder.Group>
       )}
