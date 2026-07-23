@@ -112,6 +112,7 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
   const revealedRef    = useRef(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
+  const prevBodyOverflow = useRef<string>("");
   const startRef = useRef<{
     x: number; y: number; startDragX: number;
     decided: boolean; isH: boolean;
@@ -135,6 +136,10 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
+  }
+
+  function unlockPageScroll() {
+    document.body.style.overflow = prevBodyOverflow.current;
   }
 
   useEffect(() => {
@@ -162,6 +167,12 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
           // keep treating vertical finger movement as "scroll the page"
           // even after Framer takes over, and the browser wins that race.
           if (el) el.style.touchAction = "none";
+          // touch-action changed mid-touch (as above) isn't reliably honored
+          // by the browser for a touch sequence already in progress — it's
+          // only guaranteed to apply to the *next* one. So also hard-lock
+          // page scroll directly for the duration of the drag.
+          prevBodyOverflow.current = document.body.style.overflow;
+          document.body.style.overflow = "hidden";
           // Hand off to Framer Motion — it takes pointer capture from here
           // and drives the drag + sibling reflow itself.
           dragControls.start(e, { snapToCursor: false });
@@ -212,6 +223,7 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
       if (longPressFired.current) {
         longPressFired.current = false;
         if (el) el.style.touchAction = "pan-y";
+        unlockPageScroll();
         return; // Framer handles the rest of its own gesture lifecycle
       }
 
@@ -231,6 +243,7 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
 
     return () => {
       clearLongPress();
+      if (longPressFired.current) unlockPageScroll();
       el.removeEventListener("pointerdown",   onPointerDown);
       el.removeEventListener("pointermove",   onPointerMove);
       el.removeEventListener("pointerup",     onPointerEnd);
@@ -255,7 +268,10 @@ function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: 
       style={{ touchAction: "pan-y", WebkitTouchCallout: "none" }}
       whileDrag={{ scale: 1.03, boxShadow: "0 16px 40px rgba(0,0,0,0.55)", zIndex: 10 }}
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
-      onDragEnd={() => { if (rowRef.current) rowRef.current.style.touchAction = "pan-y"; }}
+      onDragEnd={() => {
+        if (rowRef.current) rowRef.current.style.touchAction = "pan-y";
+        document.body.style.overflow = prevBodyOverflow.current;
+      }}
     >
       <div ref={rowRef}>
         {/* Swipe-revealed remove button */}
