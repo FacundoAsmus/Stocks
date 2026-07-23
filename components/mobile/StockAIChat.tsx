@@ -1280,7 +1280,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
     ? "1.5rem"
     : open && keyboardInset > 8
       ? `${keyboardInset + 12}px`
-      : "calc(1.25rem + env(safe-area-inset-bottom))";
+      : "env(safe-area-inset-bottom)";
 
   if (!mounted) return null;
 
