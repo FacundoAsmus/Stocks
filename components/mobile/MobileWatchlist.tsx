@@ -126,7 +126,10 @@ function WatchlistRow({
   // Long press refs & state
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const pointerStartPos = useRef<{ x: number; y: number } | null>(null);
+  const activePointerEvent = useRef<PointerEvent | null>(null);
+
   const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
 
   function applyX(x: number, animate: boolean) {
     const el = innerRef.current;
@@ -141,7 +144,21 @@ function WatchlistRow({
     applyX(0, true);
   }
 
-  // Handle horizontal swipe-to-delete & long-press reorder via Pointer Events
+  // Non-passive Touch listener to intercept scroll when reorder activates
+  useEffect(() => {
+    function preventTouchScroll(e: TouchEvent) {
+      if (isDraggingRef.current) {
+        if (e.cancelable) e.preventDefault();
+      }
+    }
+
+    window.addEventListener("touchmove", preventTouchScroll, { passive: false });
+    return () => {
+      window.removeEventListener("touchmove", preventTouchScroll);
+    };
+  }, []);
+
+  // Handle horizontal swipe-to-delete & long-press reorder
   useEffect(() => {
     const el = innerRef.current;
     if (!el) return;
@@ -155,13 +172,14 @@ function WatchlistRow({
 
     function onPointerDown(e: PointerEvent) {
       if (e.pointerType === "mouse" && e.button !== 0) return;
-      
+
       startRef.current = { x: e.clientX, y: e.clientY, startDragX: dragXRef.current, decided: false };
       pointerStartPos.current = { x: e.clientX, y: e.clientY };
+      activePointerEvent.current = e;
 
       clearTimer();
 
-      // Trigger reorder drag after holding stationary for 300ms
+      // Trigger drag reorder after holding for 250ms
       longPressTimer.current = setTimeout(() => {
         if (navigator.vibrate) {
           try {
@@ -171,27 +189,33 @@ function WatchlistRow({
           }
         }
 
-        // Lock document scroll completely
-        document.body.style.overflow = "hidden";
-        document.body.style.touchAction = "none";
+        isDraggingRef.current = true;
         setIsDragging(true);
 
-        // Pass native PointerEvent directly to Framer Motion
-        dragControls.start(e, { snapToCursor: false });
-      }, 300);
+        if (activePointerEvent.current) {
+          dragControls.start(activePointerEvent.current, { snapToCursor: false });
+        }
+      }, 250);
     }
 
     function onPointerMove(e: PointerEvent) {
-      // Cancel long press if pointer moves > 8px before timer fires
-      if (pointerStartPos.current && !isDragging) {
+      activePointerEvent.current = e;
+
+      if (isDraggingRef.current) {
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+
+      // If finger moves > 6px before 250ms, cancel long press
+      if (pointerStartPos.current) {
         const dx = Math.abs(e.clientX - pointerStartPos.current.x);
         const dy = Math.abs(e.clientY - pointerStartPos.current.y);
-        if (dx > 8 || dy > 8) {
+        if (dx > 6 || dy > 6) {
           clearTimer();
         }
       }
 
-      // Handle horizontal swipe reveal
+      // Horizontal swipe reveal handling
       const start = startRef.current;
       if (!start) return;
       const dx = e.clientX - start.x;
@@ -206,7 +230,7 @@ function WatchlistRow({
         }
       }
 
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       const raw = start.startDragX + dx;
       const next = raw > 0 ? 0 : withResistance(raw);
       dragXRef.current = next;
@@ -215,6 +239,7 @@ function WatchlistRow({
 
     function onPointerEnd() {
       clearTimer();
+      activePointerEvent.current = null;
 
       if (!startRef.current) return;
       const shouldReveal = dragXRef.current < -REVEAL_WIDTH / 2;
@@ -237,7 +262,7 @@ function WatchlistRow({
       el.removeEventListener("pointerup", onPointerEnd);
       el.removeEventListener("pointercancel", onPointerEnd);
     };
-  }, [dragControls, isDragging]);
+  }, [dragControls]);
 
   useEffect(() => {
     function onScroll() {
@@ -248,10 +273,8 @@ function WatchlistRow({
   }, []);
 
   const handleDragEnd = () => {
+    isDraggingRef.current = false;
     setIsDragging(false);
-    // Restore document scroll after dropping
-    document.body.style.overflow = "";
-    document.body.style.touchAction = "";
   };
 
   return (
