@@ -7,6 +7,7 @@ import { MobileNav } from "@/components/MobileNav";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ToastProvider } from "@/components/ToastProvider";
 import { BottomBlur } from "@/components/EdgeBlur";
+import { MobileTopBlur } from "@/components/MobileTopBlur";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -48,8 +49,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
             {/* Progressive blur so content fades out before disappearing
                 under the floating mobile nav pill / bottom edge, on every page.
-                (The top blur is page-specific — each page's own sticky header
-                renders its own local blur, since header heights differ per page.) */}
+                (The top blur is page-specific — see each page's own header,
+                since header heights differ per page.) */}
+            <MobileTopBlur />
             <BottomBlur />
 
             {/* Mobile bottom tab bar */}
