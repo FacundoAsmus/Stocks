@@ -123,7 +123,6 @@ function WatchlistRow({
   const revealedRef = useRef(false);
   const startRef = useRef<{ x: number; y: number; startDragX: number; decided: boolean } | null>(null);
 
-  // Long press refs & state
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const pointerStartPos = useRef<{ x: number; y: number } | null>(null);
   const activePointerEvent = useRef<PointerEvent | null>(null);
@@ -144,7 +143,6 @@ function WatchlistRow({
     applyX(0, true);
   }
 
-  // Non-passive Touch listener to intercept scroll when reorder activates
   useEffect(() => {
     function preventTouchScroll(e: TouchEvent) {
       if (isDraggingRef.current) {
@@ -158,7 +156,6 @@ function WatchlistRow({
     };
   }, []);
 
-  // Handle horizontal swipe-to-delete & long-press reorder
   useEffect(() => {
     const el = innerRef.current;
     if (!el) return;
@@ -179,7 +176,6 @@ function WatchlistRow({
 
       clearTimer();
 
-      // Trigger drag reorder after holding for 250ms
       longPressTimer.current = setTimeout(() => {
         if (navigator.vibrate) {
           try {
@@ -206,7 +202,6 @@ function WatchlistRow({
         return;
       }
 
-      // If finger moves > 6px before 250ms, cancel long press
       if (pointerStartPos.current) {
         const dx = Math.abs(e.clientX - pointerStartPos.current.x);
         const dy = Math.abs(e.clientY - pointerStartPos.current.y);
@@ -215,7 +210,6 @@ function WatchlistRow({
         }
       }
 
-      // Horizontal swipe reveal handling
       const start = startRef.current;
       if (!start) return;
       const dx = e.clientX - start.x;
@@ -405,9 +399,10 @@ export function MobileWatchlist() {
 
   return (
     <div className="pb-24">
+      {/* Translucent top bar overlapping the safe area inset */}
       <div
-        className="sticky top-0 z-30 px-4 pb-4 flex items-end justify-between gap-3 bg-black/80 backdrop-blur-md"
-        style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
+        className="sticky top-0 z-30 px-4 pb-4 flex items-end justify-between gap-3 bg-background/40 backdrop-blur-xl border-b border-border-subtle/30"
+        style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
       >
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
