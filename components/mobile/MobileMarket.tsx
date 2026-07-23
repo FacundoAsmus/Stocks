@@ -4,10 +4,9 @@ import { useEffect, useState } from "react";
 import { MarketHome } from "@/components/market/MarketHome";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
-import type { MarketData } from "@/types/stock";
 
 export function MobileMarket() {
-  const [data, setData] = useState<MarketData | null>(null);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
