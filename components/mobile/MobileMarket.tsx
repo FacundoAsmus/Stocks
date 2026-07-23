@@ -45,7 +45,7 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
   const duped = [...stocks, ...stocks];
   return (
     <div
-      className="sticky top-0 z-30"
+      className="sticky top-0 z-10"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
       ref={(el) => { if (el) document.documentElement.style.setProperty("--ticker-height", el.offsetHeight + "px"); }}
     >
