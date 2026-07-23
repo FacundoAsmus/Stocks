@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Reorder } from "framer-motion";
+import { Reorder, useDragControls } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { Star } from "lucide-react";
 
@@ -117,10 +117,15 @@ function WatchlistRow({
 }) {
   const router = useRouter();
   const innerRef = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
 
   const dragXRef = useRef(0);
   const revealedRef = useRef(false);
   const startRef = useRef<{ x: number; y: number; startDragX: number; decided: boolean } | null>(null);
+
+  // Long press refs & state
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
   function applyX(x: number, animate: boolean) {
@@ -136,6 +141,7 @@ function WatchlistRow({
     applyX(0, true);
   }
 
+  // Handle horizontal swipe-to-delete
   useEffect(() => {
     const el = innerRef.current;
     if (!el) return;
@@ -197,23 +203,59 @@ function WatchlistRow({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const handleDragStart = () => {
-    setIsDragging(true);
-    // Hard-disable viewport scrolling while moving the item
-    document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
-    if (navigator.vibrate) {
-      try {
-        navigator.vibrate(15);
-      } catch {
-        /* ignore */
-      }
+  const clearLongPressTimer = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
     }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+
+    clearLongPressTimer();
+
+    // Trigger drag mode after 300ms hold
+    longPressTimer.current = setTimeout(() => {
+      if (navigator.vibrate) {
+        try {
+          navigator.vibrate(20);
+        } catch {
+          /* ignore */
+        }
+      }
+
+      // Lock scrolling completely
+      document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
+      setIsDragging(true);
+
+      // Pass the touch event to Framer Motion drag controls
+      dragControls.start(e.nativeEvent, { snapToCursor: false });
+    }, 300);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartPos.current || isDragging) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+
+    // Cancel long press if the finger moves before the 300ms hold completes
+    if (dx > 8 || dy > 8) {
+      clearLongPressTimer();
+    }
+  };
+
+  const handleTouchEnd = () => {
+    clearLongPressTimer();
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
-    // Restore normal page scroll
+    // Re-enable scrolling when reordering ends
     document.body.style.overflow = "";
     document.body.style.touchAction = "";
   };
@@ -222,6 +264,8 @@ function WatchlistRow({
     <Reorder.Item
       value={stock.symbol}
       as="div"
+      dragListener={false}
+      dragControls={dragControls}
       className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 bg-black select-none"
       whileDrag={{
         scale: 1.03,
@@ -229,7 +273,6 @@ function WatchlistRow({
         zIndex: 50,
       }}
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
-      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       style={{
         touchAction: isDragging ? "none" : "pan-y",
@@ -253,6 +296,10 @@ function WatchlistRow({
 
         <div
           ref={innerRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
           className="flex items-center gap-1 pl-4 pr-4 py-3.5 bg-black"
           style={{
             transform: "translateX(0px)",
@@ -264,8 +311,9 @@ function WatchlistRow({
           suppressHydrationWarning
         >
           <div
-            className="flex items-center gap-3 flex-1 min-w-0 cursor-grab active:cursor-grabbing"
+            className="flex items-center gap-3 flex-1 min-w-0"
             onClick={() => {
+              if (isDragging) return;
               if (revealedRef.current) {
                 close();
                 return;
