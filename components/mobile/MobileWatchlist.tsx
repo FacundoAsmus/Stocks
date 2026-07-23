@@ -406,9 +406,18 @@ export function MobileWatchlist() {
   return (
     <div className="pb-24">
       <div
-        className="sticky top-0 z-30 px-4 pb-4 flex items-end justify-between gap-3 bg-black/80 backdrop-blur-md"
+        className="sticky top-0 z-30 px-4 pb-4 flex items-end justify-between gap-3"
         style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
       >
+        <div
+          className="absolute inset-0 -z-10 pointer-events-none"
+          style={{
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            maskImage: "linear-gradient(to bottom, black, transparent)",
+            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+          }}
+        />
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
           <h1 className="mt-1 text-2xl font-bold text-text-primary">Your Stocks</h1>

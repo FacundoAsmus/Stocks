@@ -76,6 +76,15 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
           transform: "translateZ(0)",
         }}
       >
+        <div
+          className="absolute inset-0 -z-10 pointer-events-none"
+          style={{
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            maskImage: "linear-gradient(to bottom, black, transparent)",
+            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+          }}
+        />
         <button
           onClick={handleBack}
           className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"

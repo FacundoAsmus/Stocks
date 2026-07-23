@@ -49,6 +49,23 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
       style={{ paddingTop: "env(safe-area-inset-top)" }}
       ref={(el) => { if (el) document.documentElement.style.setProperty("--ticker-height", el.offsetHeight + "px"); }}
     >
+      {/* Fills this header's own box (including its safe-area-inset-top
+          padding) with a blur that fades continuously from fully blurred
+          at the very top to clear at the header's own bottom edge — sized
+          automatically to this header via `absolute inset-0`, no
+          per-page height guessing needed. A single layer with a pure
+          gradient mask (no flat/non-fading portion), unlike EdgeBlur's
+          HeaderTopBlur, which has a flat opaque segment before it starts
+          fading and reads as a constant/non-gradient blur. */}
+      <div
+        className="absolute inset-0 -z-10 pointer-events-none"
+        style={{
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
+          maskImage: "linear-gradient(to bottom, black, transparent)",
+          WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+        }}
+      />
       <div className="overflow-hidden">
         <div className="market-ticker flex w-max items-center" style={{ pointerEvents: "none" }}>
           {duped.map((s, i) => {
