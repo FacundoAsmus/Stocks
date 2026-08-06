@@ -65,12 +65,6 @@ Guidelines:
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 512,
-      // Explicitly exclude the model's internal reasoning/thinking from the
-      // response. Without this, a thinking-capable model like this one can
-      // surface its scratch reasoning (e.g. "Wait, let's keep it simple...")
-      // either inline in the answer text or as a separate "thought" part —
-      // neither of which should ever reach the user.
-      thinkingConfig: { includeThoughts: false },
     },
   });
 
@@ -98,20 +92,10 @@ Guidelines:
     }
 
     const data = await res.json() as {
-      candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[];
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
     };
 
-    // Defensive, even with thinkingConfig.includeThoughts: false above: join
-    // every non-thought text part rather than assuming the answer is always
-    // exactly parts[0] — if the API ever returns more than one part, taking
-    // only the first could silently show reasoning instead of the answer,
-    // or truncate a real multi-part answer.
-    const parts = data.candidates?.[0]?.content?.parts ?? [];
-    const text = parts
-      .filter(p => !p.thought && p.text)
-      .map(p => p.text)
-      .join("")
-      .trim();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
     return NextResponse.json({ text });
   } catch (e) {
     console.error("AI chat error:", e);

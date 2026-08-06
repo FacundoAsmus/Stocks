@@ -410,8 +410,9 @@ export function MobileWatchlist() {
         style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
       >
         <div
-          className="absolute inset-0 -z-10 pointer-events-none"
+          className="absolute inset-x-0 top-0 -z-10 pointer-events-none"
           style={{
+            height: "calc(100% + 3rem)",
             backdropFilter: "blur(14px)",
             WebkitBackdropFilter: "blur(14px)",
             maskImage: "linear-gradient(to bottom, black, transparent)",
@@ -420,7 +421,7 @@ export function MobileWatchlist() {
         />
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
-          <h1 className="mt-1 text-2xl font-bold text-text-primary">Your Stocks</h1>
+          <h1 className="mt-1 text-4xl font-bold text-text-primary">Your Stocks</h1>
         </div>
       </div>
 

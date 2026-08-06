@@ -58,8 +58,9 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
           HeaderTopBlur, which has a flat opaque segment before it starts
           fading and reads as a constant/non-gradient blur. */}
       <div
-        className="absolute inset-0 -z-10 pointer-events-none"
+        className="absolute inset-x-0 top-0 -z-10 pointer-events-none"
         style={{
+          height: "calc(100% + 3rem)",
           backdropFilter: "blur(14px)",
           WebkitBackdropFilter: "blur(14px)",
           maskImage: "linear-gradient(to bottom, black, transparent)",
@@ -193,10 +194,10 @@ export function MobileMarket() {
         {/* Welcome + status — sticky below the ticker bar */}
         <div className="sticky z-30 flex items-start justify-between px-4 pt-4 pb-3" style={{ top: "var(--ticker-height, 34px)" }}>
           <div>
-            <h1 className="text-2xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
+            <h1 className="text-4xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
             <p className="text-xs text-text-muted mt-0.5">{monthYear}</p>
           </div>
-          <p className={cn("text-xl font-bold pt-1", status.isOpen ? "text-positive" : "text-negative")}>{status.label}</p>
+          <p className={cn("text-3xl font-bold pt-1", status.isOpen ? "text-positive" : "text-negative")}>{status.label}</p>
         </div>
 
         {/* Fear & Greed — spaced from welcome */}
