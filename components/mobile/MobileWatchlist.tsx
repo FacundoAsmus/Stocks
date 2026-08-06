@@ -412,7 +412,7 @@ export function MobileWatchlist() {
         <div
           className="absolute inset-x-0 top-0 -z-10 pointer-events-none"
           style={{
-            height: "calc(100% + 3rem)",
+            height: "calc(100% + 3.6rem)",
             backdropFilter: "blur(14px)",
             WebkitBackdropFilter: "blur(14px)",
             maskImage: "linear-gradient(to bottom, black, transparent)",
@@ -436,7 +436,7 @@ export function MobileWatchlist() {
           axis="y"
           values={orderedStocks.map((s) => s.symbol)}
           onReorder={handleReorder}
-          className="mx-4 mt-2 rounded-xl bg-black"
+          className="mx-4 mt-[0.95rem] rounded-xl bg-black"
         >
           {orderedStocks.map((stock) => (
             <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} />

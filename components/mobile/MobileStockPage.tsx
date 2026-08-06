@@ -75,14 +75,10 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         metrics={metrics}
       />
 
-      {/* This header is outside the animated page layer, so its z-index can
-          place the Back button above the root-level edge blur. */}
       <div
-        className="sticky top-0 z-40 isolate flex items-center justify-between gap-2 px-4 pb-3"
+        className="sticky top-0 z-40 flex items-center justify-between gap-2 px-4 pb-3"
         style={{
-          zIndex: 40,
           paddingTop: "calc(0.75rem + env(safe-area-inset-top))",
-          transform: "translateZ(0)",
         }}
       >
         <div

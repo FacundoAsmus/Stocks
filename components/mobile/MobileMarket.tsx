@@ -60,7 +60,7 @@ function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
       <div
         className="absolute inset-x-0 top-0 -z-10 pointer-events-none"
         style={{
-          height: "calc(100% + 3rem)",
+          height: "calc(100% + 6rem)",
           backdropFilter: "blur(14px)",
           WebkitBackdropFilter: "blur(14px)",
           maskImage: "linear-gradient(to bottom, black, transparent)",
