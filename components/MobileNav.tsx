@@ -67,11 +67,14 @@ function SettingsPanel({ closing }: { closing: boolean }) {
 
   return (
     <div
-      className={cn("fixed inset-0 z-20 flex flex-col bg-black", closing && "page-slide-right")}
+      className={cn("fixed inset-0 z-50 flex flex-col bg-black", closing && "page-slide-right")}
     >
       {/* Fixed header with blur */}
-      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border-subtle px-4 pt-14 pb-4">
-        <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
+      <div
+        className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border-subtle px-4 pb-4"
+        style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
+      >
+        <h2 className="text-4xl font-bold text-text-primary">Settings</h2>
       </div>
 
       <div
@@ -510,7 +513,7 @@ export function MobileNav() {
           green indicator behind the active section. Height-matched to the
           search pill so everything along the bottom bar lines up. */}
       <nav
-        className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center justify-start px-5 pointer-events-none"
+        className="fixed bottom-0 inset-x-0 z-[60] flex lg:hidden items-center justify-start px-5 pointer-events-none"
         style={{ paddingBottom: "env(safe-area-inset-bottom)", paddingTop: "1rem" }}
       >
         <div
