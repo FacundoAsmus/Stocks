@@ -420,8 +420,8 @@ export function MobileWatchlist() {
           }}
         />
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
-          <h1 className="mt-1 text-4xl font-bold text-text-primary">Your Stocks</h1>
+          <h1 className="text-4xl font-bold text-text-primary">Your Stocks</h1>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
         </div>
       </div>
 
@@ -436,7 +436,7 @@ export function MobileWatchlist() {
           axis="y"
           values={orderedStocks.map((s) => s.symbol)}
           onReorder={handleReorder}
-          className="mx-4 mt-[0.95rem] rounded-xl bg-black"
+          className="mx-2 mt-[0.95rem] rounded-xl bg-black"
         >
           {orderedStocks.map((stock) => (
             <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} />
