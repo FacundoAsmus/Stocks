@@ -40,50 +40,6 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
   );
 }
 
-function MobileTicker({ stocks }: { stocks: StockSummary[] }) {
-  if (!stocks.length) return null;
-  const duped = [...stocks, ...stocks];
-  return (
-    <div
-      className="sticky top-0 z-30"
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
-      ref={(el) => { if (el) document.documentElement.style.setProperty("--ticker-height", el.offsetHeight + "px"); }}
-    >
-      {/* Fills this header's own box (including its safe-area-inset-top
-          padding) with a blur that fades continuously from fully blurred
-          at the very top to clear at the header's own bottom edge — sized
-          automatically to this header via `absolute inset-0`, no
-          per-page height guessing needed. A single layer with a pure
-          gradient mask (no flat/non-fading portion), unlike EdgeBlur's
-          HeaderTopBlur, which has a flat opaque segment before it starts
-          fading and reads as a constant/non-gradient blur. */}
-      <div
-        className="absolute inset-x-0 top-0 -z-10 pointer-events-none"
-        style={{
-          height: "calc(100% + 6rem)",
-          backdropFilter: "blur(14px)",
-          WebkitBackdropFilter: "blur(14px)",
-          maskImage: "linear-gradient(to bottom, black, transparent)",
-          WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
-        }}
-      />
-      <div className="overflow-hidden">
-        <div className="market-ticker flex w-max items-center" style={{ pointerEvents: "none" }}>
-          {duped.map((s, i) => {
-            const pos = (s.changePercent ?? 0) >= 0;
-            return (
-              <span key={`${s.symbol}-${i}`} className="flex items-center gap-2 border-r border-border-subtle/60 px-3 py-2">
-                <span className="text-xs font-bold text-text-primary">{s.symbol}</span>
-                <span className={cn("text-xs font-semibold", pos ? "text-positive" : "text-negative")}>{formatPercent(s.changePercent)}</span>
-              </span>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function getMarketStatus(now: Date) {
   const utcH = now.getUTCHours(), utcM = now.getUTCMinutes(), dow = now.getUTCDay();
   const etMin = (((utcH - 5) % 24 + 24) % 24) * 60 + utcM;
@@ -117,8 +73,8 @@ function NewsRow({ article }: { article: MarketNewsArticle }) {
   return (
     <a href={article.url} target="_blank" rel="noreferrer" className="flex gap-3 rounded-xl bg-black p-3 active:opacity-80">
       {article.image
-        ? <img src={article.image} alt="" className="h-[53px] w-[70px] rounded-md object-cover shrink-0 self-start" />
-        : <span className="h-[53px] w-[70px] rounded-md bg-white/5 shrink-0" />}
+        ? <img src={article.image} alt="" className="h-[69px] w-[91px] rounded-md object-cover shrink-0 self-start" />
+        : <span className="h-[69px] w-[91px] rounded-md bg-white/5 shrink-0" />}
       <span className="flex-1 min-w-0">
         <span className="block text-sm font-semibold text-text-primary leading-snug line-clamp-2">{article.headline}</span>
         <span className="block mt-1 text-[10px] text-text-muted">{article.source} · {formatDateTime(article.datetime)}</span>
@@ -149,7 +105,7 @@ function MoversSection({ gainers, losers, etfs }: { gainers: StockSummary[]; los
       {tab === "etf" && <EtfMobileList etfs={etfs} />}
 
       {tab !== "etf" && (
-        <div className="mx-4 rounded-xl bg-black overflow-hidden">
+        <div className="mx-2 rounded-xl bg-black overflow-hidden">
           {(tab === "winners" ? gainers : losers).slice(0, 8).map((s) => (
             <MoverRow key={s.symbol} stock={s} />
           ))}
@@ -179,29 +135,40 @@ export function MobileMarket() {
   }, []);
 
   const now = new Date();
-  const dayName = now.toLocaleDateString("en-US", { weekday: "long" });
+  const dayName = now.toLocaleDateString("en-US", { weekday: "short" });
   const dayNum  = now.getDate();
   const suffix  = ["th","st","nd","rd"][dayNum % 10 > 3 || Math.floor(dayNum / 10) === 1 ? 0 : dayNum % 10] ?? "th";
-  const monthYear = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
   if (isLoading) return <LoadingScreen label="Loading market data" />;
 
   return (
     <div className="relative pb-24 bg-black" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}>
       <div className="relative">
-        <MobileTicker stocks={data.tickerStocks ?? []} />
-
-        {/* Welcome + status — sticky below the ticker bar */}
-        <div className="sticky z-30 flex items-start justify-between px-4 pt-4 pb-3" style={{ top: "var(--ticker-height, 34px)" }}>
-          <div>
-            <h1 className="text-4xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
-            <p className="text-xs text-text-muted mt-0.5">{monthYear}</p>
-          </div>
-          <p className={cn("text-3xl font-bold pt-1", status.isOpen ? "text-positive" : "text-negative")}>{status.label}</p>
+        {/* Date + status header — owns its own safe-area padding and top
+            blur now that the scrolling ticker (which used to own both) is
+            gone. */}
+        <div
+          className="sticky top-0 z-30 px-4 pb-3"
+          style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
+        >
+          <div
+            className="absolute inset-x-0 top-0 -z-10 pointer-events-none"
+            style={{
+              height: "calc(100% + 6rem)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+              maskImage: "linear-gradient(to bottom, black, transparent)",
+              WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+            }}
+          />
+          <h1 className="text-4xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
+          <p className={cn("mt-1 text-xs font-semibold uppercase tracking-widest", status.isOpen ? "text-positive" : "text-negative")}>
+            Market {status.label}
+          </p>
         </div>
 
         {/* Fear & Greed — spaced from welcome */}
-        <div className="px-4 mt-8"><MarketFearGreed /></div>
+        <div className="px-2 mt-8"><MarketFearGreed /></div>
 
         {/* Movers / ETF tabs — spaced from fear & greed */}
         <div className="mt-14"><MoversSection gainers={data.gainers ?? []} losers={data.losers ?? []} etfs={data.etfs ?? []} /></div>
