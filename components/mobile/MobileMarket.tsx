@@ -51,14 +51,16 @@ function MoverRow({ stock }: { stock: StockSummary }) {
   return (
     <Link href={`/stock/${stock.symbol}`} className="flex items-center gap-3 px-4 py-4 border-b border-border-subtle/70 last:border-0 active:bg-panel-muted">
       {stock.logo
-        ? <img src={stock.logo} alt="" className="h-8 w-8 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
-        : <span className="h-8 w-8 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">{stock.symbol.slice(0, 2)}</span>
+        ? <img src={stock.logo} alt="" className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
+        : <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">{stock.symbol.slice(0, 2)}</span>
       }
-      <span className="flex-1 min-w-0">
+      <span className="w-24 min-w-0 shrink-0">
         <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
         <span className="block text-xs text-text-muted truncate">{stock.name}</span>
       </span>
-      <MiniSparkline stock={stock} />
+      <span className="flex-1 flex justify-center">
+        <MiniSparkline stock={stock} />
+      </span>
       <span className={cn(
         "text-sm font-bold text-black shrink-0 px-3 py-1 rounded-lg min-w-[52px] text-center",
         isPos ? "bg-positive" : "bg-negative"
@@ -135,7 +137,7 @@ export function MobileMarket() {
   }, []);
 
   const now = new Date();
-  const dayName = now.toLocaleDateString("en-US", { weekday: "short" });
+  const dayName = now.toLocaleDateString("en-US", { weekday: "long" });
   const dayNum  = now.getDate();
   const suffix  = ["th","st","nd","rd"][dayNum % 10 > 3 || Math.floor(dayNum / 10) === 1 ? 0 : dayNum % 10] ?? "th";
 
