@@ -248,7 +248,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
   const keyboardInset = Math.max(0, winH - vpH - vp.top);
   const pillBottom = open && keyboardInset > 8
     ? `${keyboardInset + 12}px`
-    : "env(safe-area-inset-bottom)";
+    : "calc(env(safe-area-inset-bottom) - 0.5rem)";
 
   const showDropdown = open && (loading || results.length > 0 || query.trim().length > 0);
 
@@ -352,16 +352,29 @@ function MobileSearchPill({ origin }: { origin: string }) {
       {/* The pill — same element morphs from a small circle into the search
           bar, identical geometry/easing/timing to the AI chat pill. */}
       <div
-        className="fixed lg:hidden rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-positive overflow-hidden"
+        className="fixed lg:hidden rounded-full border border-white/25 text-positive overflow-hidden"
         style={{
           zIndex: 1002,
           bottom: pillBottom,
           right: open ? "1rem" : "1.25rem",
           width: open ? "calc(100vw - 2rem)" : "3.5rem",
           height: "3.5rem",
+          background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
+          backdropFilter: "blur(22px) saturate(160%)",
+          WebkitBackdropFilter: "blur(22px) saturate(160%)",
+          boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
           transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
         }}
       >
+        {/* Thin specular highlight along the top edge — matching the AI pill's glass sheen */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute", top: 0, left: "8%", right: "8%", height: 1,
+            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
+            pointerEvents: "none",
+          }}
+        />
         {/* Closed state: search icon */}
         <button
           onClick={() => setOpen(true)}
@@ -514,12 +527,24 @@ export function MobileNav() {
           search pill so everything along the bottom bar lines up. */}
       <nav
         className="fixed bottom-0 inset-x-0 z-[60] flex lg:hidden items-center justify-start px-5 pointer-events-none"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)", paddingTop: "1rem" }}
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 0.5rem)", paddingTop: "1rem" }}
       >
         <div
-          className="relative flex items-center rounded-full bg-black/40 backdrop-blur-md border border-white/20 overflow-hidden pointer-events-auto"
-          style={{ height: BUBBLE_SIZE }}
+          className="relative flex items-center rounded-full border border-white/25 overflow-hidden pointer-events-auto"
+          style={{
+            height: BUBBLE_SIZE,
+            background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
+            backdropFilter: "blur(22px) saturate(160%)",
+            WebkitBackdropFilter: "blur(22px) saturate(160%)",
+            boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
+          }}
         >
+          {/* Thin specular highlight along the top edge — matching the AI pill's glass sheen */}
+          <div
+            aria-hidden
+            className="absolute top-0 left-[8%] right-[8%] pointer-events-none"
+            style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)" }}
+          />
           {/* Sliding green indicator */}
           <span
             aria-hidden

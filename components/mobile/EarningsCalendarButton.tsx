@@ -341,7 +341,7 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
           background: linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.35));
         }
         html.light-mode .earnings-detail-glass {
-          background: linear-gradient(155deg, rgba(255,255,255,0.92), rgba(255,255,255,0.8) 40%, rgba(255,255,255,0.65));
+          background: linear-gradient(155deg, rgba(255,255,255,0.72), rgba(255,255,255,0.58) 40%, rgba(255,255,255,0.42));
         }
         html.light-mode .earnings-detail-glass,
         html.light-mode .earnings-detail-glass .text-text-primary,

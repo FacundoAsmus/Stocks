@@ -283,7 +283,7 @@ function WatchlistRow({
       as="div"
       dragListener={false}
       dragControls={dragControls}
-      className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 bg-black select-none"
+      className="relative overflow-hidden rounded-2xl border-b border-border-subtle/70 last:border-0 bg-black select-none"
       whileDrag={{
         scale: 1.03,
         boxShadow: "0 16px 40px rgba(0,0,0,0.55)",
