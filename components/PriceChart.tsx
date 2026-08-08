@@ -609,10 +609,14 @@ export function PriceChart({
                 {/* Date bubble — flip to left side if too close to right edge */}
                 {hoverDate && (
                   <div
-                    className="absolute top-2 rounded-md border border-positive/60 bg-black/90 px-2.5 py-1.5 text-xs text-text-muted shadow-lg shadow-positive/10 backdrop-blur-sm"
+                    className="absolute top-2 rounded-md border border-white/25 px-2.5 py-1.5 text-xs text-text-muted"
                     style={{
                       left: xPct > 65 ? undefined : `calc(${xPct}% + 10px)`,
                       right: xPct > 65 ? `calc(${100 - xPct}% + 10px)` : undefined,
+                      background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
+                      backdropFilter: "blur(22px) saturate(160%)",
+                      WebkitBackdropFilter: "blur(22px) saturate(160%)",
+                      boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
                     }}
                   >
                     {tooltipLabel(hoverDate, period)}
