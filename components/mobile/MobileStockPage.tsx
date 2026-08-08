@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
@@ -10,6 +11,7 @@ import { FundamentalsGrid } from "@/components/FundamentalsGrid";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { PriceChart } from "@/components/PriceChart";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
+import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
 import type { StockDetail } from "@/types/stock";
 
@@ -27,6 +29,11 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   const pageRef = useRef<HTMLDivElement>(null);
   const [fromSearch,       setFromSearch]       = useState(false);
   const [searchOrigin,     setSearchOrigin]     = useState<string>("/");
+  // ETFs don't file earnings reports the way individual companies do, so an
+  // earnings calendar doesn't apply to them.
+  const isEtf = SECTOR_ETFS.some(e => e.symbol === stock.symbol);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const flag = sessionStorage.getItem("nav-from-search");
@@ -90,14 +97,31 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
             WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
           }}
         />
+        {/* Invisible — exists only to hold the same layout height as the
+            real button below, so page content doesn't jump. */}
+        <span className="invisible flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg" aria-hidden>
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </span>
+      </div>
+
+      {/* The real, clickable Back button — portaled straight onto
+          document.body (same pattern StockAIChat already uses reliably)
+          so it's never nested inside the blurred header's own stacking
+          context. That local nesting is what kept letting the blur end up
+          rendered over the button despite z-index/isolate/transform
+          attempts from inside the header itself. */}
+      {mounted && createPortal(
         <button
           onClick={handleBack}
-          className="relative z-10 flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
+          className="fixed flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
+          style={{ top: "calc(0.75rem + env(safe-area-inset-top))", left: "1rem", zIndex: 500 }}
         >
           <ChevronLeft className="h-4 w-4" />
           Back
-        </button>
-      </div>
+        </button>,
+        document.body
+      )}
 
       <div ref={pageRef} className="pb-24" style={{ opacity: 1 }} data-stock-page="">
 
@@ -144,9 +168,11 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
             earnings={stock.earnings}
           />
 
-          <div className="flex justify-end -mt-2">
-            <EarningsCalendarButton earnings={stock.earnings} />
-          </div>
+          {!isEtf && (
+            <div className="flex justify-end -mt-2">
+              <EarningsCalendarButton earnings={stock.earnings} />
+            </div>
+          )}
 
           {stock.news.length > 0 && (
             <section>

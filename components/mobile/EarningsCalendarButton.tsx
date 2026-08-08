@@ -267,10 +267,9 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
           style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
         >
           <div
-            className="w-full rounded-t-2xl border-t border-border-subtle flex flex-col"
+            className="w-full rounded-t-2xl border-t border-border-subtle flex flex-col bg-black"
             style={{
               height: "88vh",
-              backgroundColor: "#000000",
               transformOrigin,
               animation: closing
                 ? "calendarSink 0.3s cubic-bezier(0.4,0,1,1) forwards"
