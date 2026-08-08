@@ -282,7 +282,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
           (closest match) renders nearest the bar via column-reverse. */}
       {showDropdown && (
         <div
-          className="fixed lg:hidden rounded-2xl bg-black/40 backdrop-blur-md border border-white/20"
+          className="fixed lg:hidden rounded-2xl border border-white/25"
           style={{
             zIndex: 1001,
             right: "1rem",
@@ -295,6 +295,10 @@ function MobileSearchPill({ origin }: { origin: string }) {
             opacity: open ? 1 : 0,
             transform: open ? "translateY(0)" : "translateY(8px)",
             transition: "opacity 0.22s ease, transform 0.22s ease",
+            background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
+            backdropFilter: "blur(22px) saturate(160%)",
+            WebkitBackdropFilter: "blur(22px) saturate(160%)",
+            boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
           }}
           onClick={onEmptyAreaClick}
           onTouchStart={onEmptyAreaTouchStart}
