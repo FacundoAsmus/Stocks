@@ -413,7 +413,7 @@ export function PriceChart({
     return (
       <button
         type="button"
-        onClick={() => { setPeriod(option); setChartKey(k => k + 1); }}
+        onClick={() => { if (active) return; setPeriod(option); setChartKey(k => k + 1); }}
         className={cn(
           "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition sm:px-3 sm:py-2 sm:text-sm",
           active ? "bg-positive text-black" : "text-positive hover:text-positive/80"
@@ -444,7 +444,7 @@ export function PriceChart({
         onMouseLeave={() => { setDotCY(null); clearHover(); }}
       >
         {isLoading ? (
-          <div className="flex h-full flex-col items-center justify-center gap-5 rounded-md border border-dashed border-border-subtle">
+          <div className="flex h-full flex-col items-center justify-center gap-5">
             <style>{`
               @keyframes chart-candle-breathe { 0%,100%{transform:scaleY(0.6)} 50%{transform:scaleY(1.4)} }
               @keyframes chart-wick-breathe   { 0%,100%{opacity:0.25;transform:scaleY(0.7)} 50%{opacity:0.9;transform:scaleY(1.3)} }

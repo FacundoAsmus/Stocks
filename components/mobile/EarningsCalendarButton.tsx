@@ -70,11 +70,10 @@ function EarningsDetailCard({
 
   return (
     <div
-      className="w-full rounded-2xl p-5 shadow-2xl"
+      className="earnings-detail-glass w-full rounded-2xl p-5 shadow-2xl"
       style={{
         maxWidth: "min(380px, calc(100vw - 2rem))",
         animation: "detailFadeIn 0.18s ease both",
-        background: "linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.35))",
         backdropFilter: "blur(22px) saturate(160%)",
         WebkitBackdropFilter: "blur(22px) saturate(160%)",
         boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 0 1px rgba(255,255,255,0.05)"
@@ -337,6 +336,17 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
         @keyframes detailFadeIn {
           from { opacity: 0; transform: scale(0.96) translateY(6px); }
           to   { opacity: 1; transform: scale(1)    translateY(0);   }
+        }
+        .earnings-detail-glass {
+          background: linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.35));
+        }
+        html.light-mode .earnings-detail-glass {
+          background: linear-gradient(155deg, rgba(255,255,255,0.92), rgba(255,255,255,0.8) 40%, rgba(255,255,255,0.65));
+        }
+        html.light-mode .earnings-detail-glass,
+        html.light-mode .earnings-detail-glass .text-text-primary,
+        html.light-mode .earnings-detail-glass .text-text-muted {
+          color: #000;
         }
       `}</style>
     </>
