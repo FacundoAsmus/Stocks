@@ -415,8 +415,8 @@ export function MobileWatchlist() {
             height: "calc(100% + 3.6rem)",
             backdropFilter: "blur(14px)",
             WebkitBackdropFilter: "blur(14px)",
-            maskImage: "linear-gradient(to bottom, black, transparent)",
-            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+            maskImage: "linear-gradient(to bottom, black 0%, rgba(0,0,0,0.9) 15%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.25) 70%, transparent 100%)",
+            WebkitMaskImage: "linear-gradient(to bottom, black 0%, rgba(0,0,0,0.9) 15%, rgba(0,0,0,0.6) 40%, rgba(0,0,0,0.25) 70%, transparent 100%)",
           }}
         />
         <div>
