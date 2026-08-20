@@ -337,18 +337,22 @@ function MobileSearchPill({ origin }: { origin: string }) {
                     backgroundColor: "var(--color-panel-muted)",
                     objectFit: "contain",
                   }}
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    const sib = e.currentTarget.nextElementSibling as HTMLElement | null;
+                    if (sib) sib.style.display = "flex";
+                  }}
                 />
-              ) : (
-                <span style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  height: 40, width: 40, borderRadius: 10, flexShrink: 0,
-                  border: "1px solid var(--color-border-subtle)",
-                  backgroundColor: "var(--color-panel-muted)",
-                  fontSize: 11, fontWeight: 700, color: "var(--color-text-primary)",
-                }}>
-                  {r.symbol.replace("^", "").slice(0, 2)}
-                </span>
-              )}
+              ) : null}
+              <span style={{
+                display: logos[r.symbol] ? "none" : "flex", alignItems: "center", justifyContent: "center",
+                height: 40, width: 40, borderRadius: 10, flexShrink: 0,
+                border: "1px solid var(--color-border-subtle)",
+                backgroundColor: "var(--color-panel-muted)",
+                fontSize: 11, fontWeight: 700, color: "var(--color-text-primary)",
+              }}>
+                {r.symbol.replace("^", "").slice(0, 2)}
+              </span>
               <span style={{ minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>{r.symbol}</span>
                 <span style={{ display: "block", fontSize: 12, color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>

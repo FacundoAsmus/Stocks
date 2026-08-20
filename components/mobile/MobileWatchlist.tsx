@@ -72,12 +72,18 @@ function RowContent({ stock }: { stock: StockSummary }) {
           src={stock.logo}
           alt=""
           className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0 pointer-events-none"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+            e.currentTarget.nextElementSibling?.classList.remove("hidden");
+          }}
         />
-      ) : (
-        <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0 pointer-events-none">
-          {stock.symbol.replace("^", "").slice(0, 2)}
-        </span>
-      )}
+      ) : null}
+      <span className={cn(
+        "h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0 pointer-events-none",
+        stock.logo && "hidden"
+      )}>
+        {stock.symbol.replace("^", "").slice(0, 2)}
+      </span>
       <span className="flex-1 min-w-0 pointer-events-none">
         <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
       </span>

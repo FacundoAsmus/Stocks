@@ -13,6 +13,7 @@ import { PriceChart } from "@/components/PriceChart";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
+import { cn } from "@/lib/utils";
 import type { StockDetail } from "@/types/stock";
 
 interface MobileStockPageProps {
@@ -129,12 +130,18 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
           {stock.profile.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={stock.profile.logo} alt=""
-              className="h-12 w-12 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
-          ) : (
-            <span className="h-12 w-12 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-sm font-bold text-text-primary shrink-0">
-              {stock.symbol.replace("^", "").slice(0, 2)}
-            </span>
-          )}
+              className="h-12 w-12 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                e.currentTarget.nextElementSibling?.classList.remove("hidden");
+              }} />
+          ) : null}
+          <span className={cn(
+            "h-12 w-12 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-sm font-bold text-text-primary shrink-0",
+            stock.profile.logo && "hidden"
+          )}>
+            {stock.symbol.replace("^", "").slice(0, 2)}
+          </span>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-text-primary leading-tight truncate">{stock.profile.name ?? stock.symbol}</h1>
             <p className="text-xs text-text-muted">{stock.symbol}</p>

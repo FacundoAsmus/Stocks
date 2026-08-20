@@ -50,10 +50,21 @@ function MoverRow({ stock }: { stock: StockSummary }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
   return (
     <Link href={`/stock/${stock.symbol}`} className="flex items-center gap-3 px-4 py-4 border-b border-border-subtle/70 last:border-0 active:bg-panel-muted">
-      {stock.logo
-        ? <img src={stock.logo} alt="" className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
-        : <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">{stock.symbol.slice(0, 2)}</span>
-      }
+      {stock.logo ? (
+        <img
+          src={stock.logo}
+          alt=""
+          className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+            e.currentTarget.nextElementSibling?.classList.remove("hidden");
+          }}
+        />
+      ) : null}
+      <span className={cn(
+        "h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0",
+        stock.logo && "hidden"
+      )}>{stock.symbol.slice(0, 2)}</span>
       <span className="w-24 min-w-0 shrink-0">
         <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
         <span className="block text-xs text-text-muted truncate">{stock.name}</span>
