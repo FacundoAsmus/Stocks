@@ -7,6 +7,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { Star } from "lucide-react";
 
 import { LoadingScreen } from "@/components/EmptyWatchlist";
+import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { formatPercent } from "@/lib/format";
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -79,10 +80,11 @@ function RowContent({ stock }: { stock: StockSummary }) {
         />
       ) : null}
       <span className={cn(
-        "h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0 pointer-events-none",
-        stock.logo && "hidden"
+        "h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold shrink-0 pointer-events-none",
+        stock.logo && "hidden",
+        SECTOR_ETFS.some(e => e.symbol === stock.symbol) ? "text-positive text-[9px]" : "text-text-primary"
       )}>
-        {stock.symbol.replace("^", "").slice(0, 2)}
+        {SECTOR_ETFS.some(e => e.symbol === stock.symbol) ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
       </span>
       <span className="flex-1 min-w-0 pointer-events-none">
         <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>

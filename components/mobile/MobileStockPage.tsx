@@ -137,10 +137,11 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
               }} />
           ) : null}
           <span className={cn(
-            "h-12 w-12 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-sm font-bold text-text-primary shrink-0",
-            stock.profile.logo && "hidden"
+            "h-12 w-12 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted font-bold shrink-0",
+            stock.profile.logo && "hidden",
+            isEtf ? "text-positive text-[11px]" : "text-sm text-text-primary"
           )}>
-            {stock.symbol.replace("^", "").slice(0, 2)}
+            {isEtf ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
           </span>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold text-text-primary leading-tight truncate">{stock.profile.name ?? stock.symbol}</h1>
@@ -173,6 +174,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
             marketCap={stock.profile.marketCapitalization}
             currentPrice={currentPrice}
             earnings={stock.earnings}
+            isEtf={isEtf}
           />
 
           {!isEtf && (

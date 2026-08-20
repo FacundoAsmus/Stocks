@@ -72,12 +72,14 @@ export function FundamentalsGrid({
   metrics,
   marketCap,
   currentPrice,
-  earnings = []
+  earnings = [],
+  isEtf = false
 }: {
   metrics?: Record<string, MetricValue>;
   marketCap?: number;
   currentPrice: number;
   earnings?: EarningsEvent[];
+  isEtf?: boolean;
 }) {
   const pe = toNumber(metrics?.peTTM ?? metrics?.peNormalizedAnnual);
   const forwardPe = toNumber(metrics?.forwardPE ?? null);        // ✅ correct Finnhub field
@@ -153,9 +155,14 @@ export function FundamentalsGrid({
     }
   ];
 
+  const ETF_EXCLUDED_LABELS = new Set([
+    "P/E Ratio", "Forward P/E", "PEG", "EPS", "Dividend Yield", "Next Report", "Expected Earnings"
+  ]);
+  const visibleItems = isEtf ? items.filter(item => !ETF_EXCLUDED_LABELS.has(item.label)) : items;
+
   return (
     <section className="grid grid-cols-2 gap-2">
-      {items.map((item) => (
+      {visibleItems.map((item) => (
         <div key={item.label} className="rounded-md bg-black p-4">
           <div className="flex items-center gap-1.5 mb-2">
             <span className={`h-2 w-2 rounded-full shrink-0 ${
