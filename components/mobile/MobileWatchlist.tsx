@@ -82,7 +82,7 @@ function RowContent({ stock }: { stock: StockSummary }) {
       <span className={cn(
         "h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold shrink-0 pointer-events-none",
         stock.logo && "hidden",
-        SECTOR_ETFS.some(e => e.symbol === stock.symbol) ? "text-positive text-[9px]" : "text-text-primary"
+        SECTOR_ETFS.some(e => e.symbol === stock.symbol) ? "text-text-primary text-[10px]" : "text-text-primary"
       )}>
         {SECTOR_ETFS.some(e => e.symbol === stock.symbol) ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
       </span>

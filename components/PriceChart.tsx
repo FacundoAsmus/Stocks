@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
-  AreaChart,
+  ComposedChart,
   CartesianGrid,
+  Line,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -19,6 +20,39 @@ import type { CandlePoint, ChartPeriod } from "@/types/stock";
 const SHORT_PERIODS: ChartPeriod[] = ["1D", "1W", "1M", "2M", "3M", "5M", "6M"];
 const LONG_PERIODS:  ChartPeriod[] = ["1Y", "2Y", "5Y", "ALL"];
 const LONG_TERM_SET  = new Set<ChartPeriod>(["1Y", "2Y", "5Y", "ALL"]);
+
+// Which moving averages make sense to offer for a given period — a moving
+// average that's much longer than the visible window just renders as a
+// flat, uninformative line, so it's hidden rather than shown broken.
+const MA_AVAILABILITY: Record<ChartPeriod, number[]> = {
+  "1D": [],
+  "1W": [7],
+  "1M": [7, 25],
+  "2M": [7, 25],
+  "3M": [7, 25, 99],
+  "5M": [7, 25, 99],
+  "6M": [7, 25, 99],
+  "1Y": [7, 25, 99],
+  "2Y": [7, 25, 99],
+  "5Y": [7, 25, 99],
+  "ALL": [7, 25, 99],
+};
+const MA_COLORS: Record<number, string> = {
+  7: "#f59e0b",   // orange-yellowish
+  25: "#ec4899",  // pink
+  99: "#8b5cf6",  // violet
+};
+
+function computeMA(points: CandlePoint[], window: number): (number | null)[] {
+  const result: (number | null)[] = [];
+  let sum = 0;
+  for (let i = 0; i < points.length; i++) {
+    sum += points[i].close;
+    if (i >= window) sum -= points[i - window].close;
+    result.push(i >= window - 1 ? sum / window : null);
+  }
+  return result;
+}
 
 /* ─── Date label for tooltip crosshair ──────────────────────────────────── */
 function tooltipLabel(dateStr: string, period: ChartPeriod): string {
@@ -213,6 +247,18 @@ export function PriceChart({
   const [hoverPrice, setHoverPrice]   = useState<number | null>(null);
   const [hoverDate,  setHoverDate]    = useState<string | null>(null);
   const [priceVisible, setPriceVisible] = useState(true);
+  const [activeMAs, setActiveMAs] = useState<Set<number>>(new Set());
+
+  // If the period changes to one that doesn't support a currently-active MA
+  // (e.g. switching from 1M to 1W drops MA(25)), drop it rather than leave
+  // it toggled on with nothing shown.
+  useEffect(() => {
+    const allowed = MA_AVAILABILITY[period] ?? [];
+    setActiveMAs(prev => {
+      const next = new Set([...prev].filter(w => allowed.includes(w)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [period]);
   const [proMode, setProMode]         = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
   );
@@ -288,6 +334,21 @@ export function PriceChart({
 
   const hasData    = data.length > 1;
   const isLongTerm = LONG_TERM_SET.has(period);
+
+  // Merge in MA fields for whichever windows are both available for this
+  // period and currently toggled on. Only computed when needed.
+  const chartData = useMemo(() => {
+    const allowed = MA_AVAILABILITY[period] ?? [];
+    const toCompute = [7, 25, 99].filter(w => allowed.includes(w) && activeMAs.has(w));
+    if (!toCompute.length) return data;
+    const mas = new Map(toCompute.map(w => [w, computeMA(data, w)]));
+    return data.map((d, i) => ({
+      ...d,
+      ma7:  mas.get(7)?.[i]  ?? undefined,
+      ma25: mas.get(25)?.[i] ?? undefined,
+      ma99: mas.get(99)?.[i] ?? undefined,
+    }));
+  }, [data, period, activeMAs]);
 
   /* Displayed price and % change — hover overrides live values */
   const displayPrice = hoverPrice ?? currentPrice;
@@ -501,8 +562,8 @@ export function PriceChart({
             style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both", width: "100%", height: "100%" }}
           >
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={data}
+            <ComposedChart
+              data={chartData}
               margin={{ left: 0, right: 0, top: 8, bottom: 0 }}
             >
               {/* No Y axis, no grid lines */}
@@ -548,7 +609,21 @@ export function PriceChart({
                 }}
                 isAnimationActive={false}
               />
-            </AreaChart>
+
+              {/* ── Moving average overlays ── */}
+              {(MA_AVAILABILITY[period] ?? []).includes(7) && activeMAs.has(7) && (
+                <Line type="monotone" dataKey="ma7" stroke={MA_COLORS[7]} strokeWidth={1.5}
+                  dot={false} activeDot={false} isAnimationActive={false} connectNulls />
+              )}
+              {(MA_AVAILABILITY[period] ?? []).includes(25) && activeMAs.has(25) && (
+                <Line type="monotone" dataKey="ma25" stroke={MA_COLORS[25]} strokeWidth={1.5}
+                  dot={false} activeDot={false} isAnimationActive={false} connectNulls />
+              )}
+              {(MA_AVAILABILITY[period] ?? []).includes(99) && activeMAs.has(99) && (
+                <Line type="monotone" dataKey="ma99" stroke={MA_COLORS[99]} strokeWidth={1.5}
+                  dot={false} activeDot={false} isAnimationActive={false} connectNulls />
+              )}
+            </ComposedChart>
           </ResponsiveContainer>
           </div>
 
@@ -645,6 +720,38 @@ export function PriceChart({
           </div>
         </div>
       </div>
+
+      {/* ── Moving average toggles — only shown when at least one MA makes
+          sense for the currently selected period ── */}
+      {(MA_AVAILABILITY[period] ?? []).length > 0 && (
+        <div className="mt-3 flex items-center justify-center gap-2">
+          {(MA_AVAILABILITY[period] ?? []).map((window) => {
+            const active = activeMAs.has(window);
+            const color  = MA_COLORS[window];
+            return (
+              <button
+                key={window}
+                type="button"
+                onClick={() => {
+                  setActiveMAs(prev => {
+                    const next = new Set(prev);
+                    if (next.has(window)) next.delete(window); else next.add(window);
+                    return next;
+                  });
+                }}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition border"
+                style={active
+                  ? { borderColor: color, backgroundColor: `${color}22`, color }
+                  : { borderColor: "var(--color-border-subtle)", color: "var(--color-text-muted)" }
+                }
+              >
+                <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                MA({window})
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

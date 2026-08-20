@@ -75,7 +75,7 @@ export function EtfRow({ etfs }: { etfs: StockSummary[] }) {
             className="group grid grid-cols-[34px_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(120px,1.5fr)_minmax(92px,auto)] items-center gap-3 rounded-md border border-transparent border-b-border-subtle/70 px-4 py-3 transition-all duration-200 hover:-translate-y-1 hover:border-positive/50 hover:bg-panel-muted/75 hover:shadow-2xl hover:shadow-black/25 hover:z-10 relative"
           >
             <Link href={`/stock/${etf.symbol}`} aria-label={`Open ${etf.symbol}`}>
-              <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-[9px] font-bold text-positive">
+              <span className="flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary">
                 ETF
               </span>
             </Link>
@@ -128,7 +128,7 @@ export function EtfMobileList({ etfs }: { etfs: StockSummary[] }) {
           >
             {/* Symbol + name */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <span className="h-8 w-8 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-[9px] font-bold text-positive shrink-0">
+              <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
                 ETF
               </span>
               <div className="min-w-0">

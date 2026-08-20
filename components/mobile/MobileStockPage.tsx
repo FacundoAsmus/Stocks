@@ -139,7 +139,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
           <span className={cn(
             "h-12 w-12 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted font-bold shrink-0",
             stock.profile.logo && "hidden",
-            isEtf ? "text-positive text-[11px]" : "text-sm text-text-primary"
+            isEtf ? "text-text-primary text-[11px]" : "text-sm text-text-primary"
           )}>
             {isEtf ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
           </span>
