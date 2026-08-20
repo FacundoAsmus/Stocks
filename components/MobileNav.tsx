@@ -194,16 +194,21 @@ function MobileSearchPill({ origin }: { origin: string }) {
         const data = await res.json() as { results?: Array<{ symbol: string; description: string }> };
         const newResults = (data.results ?? []).slice(0, 8).map(r => ({ symbol: r.symbol, name: r.description }));
         setResults(newResults);
-        // Fetch logos in batch for the result symbols
+
+        // Logos are a nice-to-have enrichment, not the search result itself —
+        // a failure here (rate limit, a bad symbol in the batch, a network
+        // blip) must never clear the real results that already loaded above.
         if (newResults.length) {
-          const symbols = newResults.map(r => r.symbol).join(",");
-          const stockRes = await fetch(`/api/stocks?symbols=${encodeURIComponent(symbols)}`, { signal: controller.signal });
-          const stockData = await stockRes.json() as { stocks?: Array<{ symbol: string; logo?: string }> };
-          const logoMap: Record<string, string> = {};
-          for (const s of stockData.stocks ?? []) {
-            if (s.logo) logoMap[s.symbol] = s.logo;
-          }
-          if (!controller.signal.aborted) setLogos(logoMap);
+          try {
+            const symbols = newResults.map(r => r.symbol).join(",");
+            const stockRes = await fetch(`/api/stocks?symbols=${encodeURIComponent(symbols)}`, { signal: controller.signal });
+            const stockData = await stockRes.json() as { stocks?: Array<{ symbol: string; logo?: string }> };
+            const logoMap: Record<string, string> = {};
+            for (const s of stockData.stocks ?? []) {
+              if (s.logo) logoMap[s.symbol] = s.logo;
+            }
+            if (!controller.signal.aborted) setLogos(logoMap);
+          } catch { /* logos are optional — results above stay intact either way */ }
         }
       } catch { if (!controller.signal.aborted) setResults([]); }
       finally { if (!controller.signal.aborted) setLoading(false); }
