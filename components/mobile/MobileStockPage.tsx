@@ -100,9 +100,8 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         />
         {/* Invisible — exists only to hold the same layout height as the
             real button below, so page content doesn't jump. */}
-        <span className="invisible flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-lg" aria-hidden>
-          <ChevronLeft className="h-4 w-4" />
-          Back
+        <span className="invisible flex items-center justify-center h-9 w-9 rounded-full" aria-hidden>
+          <ChevronLeft className="h-5 w-5" />
         </span>
       </div>
 
@@ -115,11 +114,11 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
       {mounted && createPortal(
         <button
           onClick={handleBack}
-          className="fixed flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
+          aria-label="Back"
+          className="fixed flex items-center justify-center h-9 w-9 rounded-full bg-positive text-black"
           style={{ top: "calc(0.75rem + env(safe-area-inset-top))", left: "1rem", zIndex: 500 }}
         >
-          <ChevronLeft className="h-4 w-4" />
-          Back
+          <ChevronLeft className="h-5 w-5" />
         </button>,
         document.body
       )}
