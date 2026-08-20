@@ -74,25 +74,20 @@ Answer questions about this stock using the above data. Always write complete se
 
 // ─── Gemini API call (proxied through /api/ai so the key stays server-side) ─
 async function callGemini(
-  systemPrompt: string,
+  stockContext: string,
   history: Message[],
   userText: string,
-  signal: AbortSignal,
+  signal: AbortSignal
 ): Promise<string> {
-  const contents = [
-    { role: "user",  parts: [{ text: systemPrompt }] },
-    { role: "model", parts: [{ text: "Understood. I have the stock data and am ready to answer questions." }] },
-    ...history.map(m => ({ role: m.role, parts: [{ text: m.text }] })),
-    { role: "user", parts: [{ text: userText }] },
-  ];
+  const messages = [...history, { role: "user" as const, text: userText }];
 
   const res = await fetch("/api/ai", {
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      contents,
-      generationConfig: { temperature: 0.4, maxOutputTokens: 1024 },
+      messages,
+      stockContext,
     }),
   });
 
@@ -101,14 +96,8 @@ async function callGemini(
     throw new Error(err.error ?? String(res.status));
   }
 
-  const data = await res.json() as {
-    candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-  };
-
-  return data.candidates?.[0]?.content?.parts
-    ?.map(p => p.text ?? "")
-    .join("")
-    .trim() ?? "No response received.";
+  const data = await res.json() as { text?: string };
+  return data.text ?? "No response received.";
 }
 
 // ─── Chat panel ───────────────────────────────────────────────────────────

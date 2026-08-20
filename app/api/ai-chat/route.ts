@@ -64,7 +64,7 @@ Guidelines:
     //tools: [{ google_search: {} }],
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 512,
+      maxOutputTokens: 2048,
       // Explicitly exclude the model's internal reasoning/thinking from the
       // response. Without this, a thinking-capable model like this one can
       // surface its scratch reasoning (e.g. "Wait, let's keep it simple...")
