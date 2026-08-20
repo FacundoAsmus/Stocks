@@ -558,7 +558,7 @@ export async function searchSymbols(query: string) {
   const firstWord = normalizedQuery.split(" ")[0];
   const [response1, response2] = await Promise.all([
     fetchFinnhub<{ result?: SymbolSearchResult[] }>(
-      "/search", { q: query.trim() }, 1000 * 60 * 5
+      "/search", { q: normalizedQuery }, 1000 * 60 * 5
     ).catch(() => ({ result: [] as SymbolSearchResult[] })),
     firstWord !== normalizedQuery
       ? fetchFinnhub<{ result?: SymbolSearchResult[] }>(
