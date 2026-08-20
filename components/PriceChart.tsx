@@ -248,7 +248,6 @@ export function PriceChart({
   const [hoverDate,  setHoverDate]    = useState<string | null>(null);
   const [priceVisible, setPriceVisible] = useState(true);
   const [activeMAs, setActiveMAs] = useState<Set<number>>(new Set());
-  const [chartReady, setChartReady] = useState(false);
 
   // If the period changes to one that doesn't support a currently-active MA
   // (e.g. switching from 1M to 1W drops MA(25)), drop it rather than leave
@@ -276,14 +275,6 @@ export function PriceChart({
       window.removeEventListener("storage", sync);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isLoading && data.length > 1) {
-      setChartReady(false);
-      const timer = setTimeout(() => setChartReady(true), 700);
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, data.length, chartKey]);
 
   /* Load candles */
   useEffect(() => {
@@ -622,23 +613,16 @@ export function PriceChart({
               {/* ── Moving average overlays ── */}
               {(MA_AVAILABILITY[period] ?? []).includes(7) && activeMAs.has(7) && (
                 <Line type="monotone" dataKey="ma7" stroke={MA_COLORS[7]} strokeWidth={1.5}
-                  dot={false} activeDot={false} 
-                  isAnimationActive={chartReady} animationDuration={700} 
-                  connectNulls />
+                  dot={false} activeDot={false} isAnimationActive={false} connectNulls />
               )}
               {(MA_AVAILABILITY[period] ?? []).includes(25) && activeMAs.has(25) && (
                 <Line type="monotone" dataKey="ma25" stroke={MA_COLORS[25]} strokeWidth={1.5}
-                  dot={false} activeDot={false} 
-                  isAnimationActive={chartReady} animationDuration={700} 
-                  connectNulls />
+                  dot={false} activeDot={false} isAnimationActive={false} connectNulls />
               )}
               {(MA_AVAILABILITY[period] ?? []).includes(99) && activeMAs.has(99) && (
                 <Line type="monotone" dataKey="ma99" stroke={MA_COLORS[99]} strokeWidth={1.5}
-                  dot={false} activeDot={false} 
-                  isAnimationActive={chartReady} animationDuration={700} 
-                  connectNulls />
+                  dot={false} activeDot={false} isAnimationActive={false} connectNulls />
               )}
-
             </ComposedChart>
           </ResponsiveContainer>
           </div>
