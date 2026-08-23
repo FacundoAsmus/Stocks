@@ -612,16 +612,16 @@ export function PriceChart({
 
               {/* ── Moving average overlays ── */}
               {(MA_AVAILABILITY[period] ?? []).includes(7) && activeMAs.has(7) && (
-                <Line type="monotone" dataKey="ma7" stroke={MA_COLORS[7]} strokeWidth={1.5}
-                  dot={false} activeDot={false} isAnimationActive={false} connectNulls />
+                <Line key="ma7" type="monotone" dataKey="ma7" stroke={MA_COLORS[7]} strokeWidth={3}
+                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
               )}
               {(MA_AVAILABILITY[period] ?? []).includes(25) && activeMAs.has(25) && (
-                <Line type="monotone" dataKey="ma25" stroke={MA_COLORS[25]} strokeWidth={1.5}
-                  dot={false} activeDot={false} isAnimationActive={false} connectNulls />
+                <Line key="ma25" type="monotone" dataKey="ma25" stroke={MA_COLORS[25]} strokeWidth={3}
+                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
               )}
               {(MA_AVAILABILITY[period] ?? []).includes(99) && activeMAs.has(99) && (
-                <Line type="monotone" dataKey="ma99" stroke={MA_COLORS[99]} strokeWidth={1.5}
-                  dot={false} activeDot={false} isAnimationActive={false} connectNulls />
+                <Line key="ma99" type="monotone" dataKey="ma99" stroke={MA_COLORS[99]} strokeWidth={3}
+                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
               )}
             </ComposedChart>
           </ResponsiveContainer>
@@ -724,6 +724,13 @@ export function PriceChart({
       {/* ── Moving average toggles — only shown when at least one MA makes
           sense for the currently selected period ── */}
       {(MA_AVAILABILITY[period] ?? []).length > 0 && (
+        <>
+        <style>{`
+          @keyframes ma-btn-pop {
+            from { transform: scale(0); opacity: 0; }
+            to   { transform: scale(1); opacity: 1; }
+          }
+        `}</style>
         <div className="mt-3 flex items-center justify-center gap-2">
           {(MA_AVAILABILITY[period] ?? []).map((window) => {
             const active = activeMAs.has(window);
@@ -740,10 +747,12 @@ export function PriceChart({
                   });
                 }}
                 className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition border"
-                style={active
-                  ? { borderColor: color, backgroundColor: `${color}22`, color }
-                  : { borderColor: "var(--color-border-subtle)", color: "var(--color-text-muted)" }
-                }
+                style={{
+                  ...(active
+                    ? { borderColor: color, backgroundColor: `${color}22`, color }
+                    : { borderColor: "var(--color-border-subtle)", color: "var(--color-text-muted)" }),
+                  animation: "ma-btn-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+                }}
               >
                 <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
                 MA({window})
@@ -751,6 +760,7 @@ export function PriceChart({
             );
           })}
         </div>
+        </>
       )}
     </div>
   );
