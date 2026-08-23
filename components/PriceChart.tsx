@@ -43,13 +43,33 @@ const MA_COLORS: Record<number, string> = {
   99: "#8b5cf6",  // violet
 };
 
-function computeMA(points: CandlePoint[], window: number): (number | null)[] {
-  const result: (number | null)[] = [];
+// `windowDays` is a number of *days*, not points — periods have wildly
+// different point granularity (a "5Y" chart's points might each span a
+// week, while "1M" points are daily), so a fixed point-count window would
+// mean very different real time spans depending on the period. Using a
+// time-based sliding window keeps "MA(99)" meaning the same thing — the
+// trailing 99 days — regardless of how coarse the underlying data is.
+function computeMA(points: CandlePoint[], windowDays: number): (number | null)[] {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const result: (number | null)[] = new Array(points.length).fill(null);
+  if (!points.length) return result;
+
+  const time = (p: CandlePoint) => new Date(p.date === "prev" ? Date.now() : p.date).getTime();
+  const firstTime = time(points[0]);
+
+  let start = 0;
   let sum = 0;
   for (let i = 0; i < points.length; i++) {
     sum += points[i].close;
-    if (i >= window) sum -= points[i - window].close;
-    result.push(i >= window - 1 ? sum / window : null);
+    const endTime = time(points[i]);
+    const windowStart = endTime - windowDays * DAY_MS;
+    while (start < i && time(points[start]) < windowStart) {
+      sum -= points[start].close;
+      start++;
+    }
+    const count = i - start + 1;
+    const hasFullWindow = (endTime - firstTime) >= windowDays * DAY_MS;
+    result[i] = hasFullWindow && count > 0 ? sum / count : null;
   }
   return result;
 }
@@ -249,6 +269,13 @@ export function PriceChart({
   const [priceVisible, setPriceVisible] = useState(true);
   const [activeMAs, setActiveMAs] = useState<Set<number>>(new Set());
 
+  // Buttons currently rendered (includes ones mid-exit-animation) and which
+  // of those are actively exiting — kept mounted a bit longer than
+  // MA_AVAILABILITY[period] itself so the shrink-out animation can play
+  // instead of the button just vanishing instantly.
+  const [displayedMAWindows, setDisplayedMAWindows] = useState<number[]>(MA_AVAILABILITY[period] ?? []);
+  const [exitingMAWindows, setExitingMAWindows] = useState<Set<number>>(new Set());
+
   // If the period changes to one that doesn't support a currently-active MA
   // (e.g. switching from 1M to 1W drops MA(25)), drop it rather than leave
   // it toggled on with nothing shown.
@@ -257,6 +284,24 @@ export function PriceChart({
     setActiveMAs(prev => {
       const next = new Set([...prev].filter(w => allowed.includes(w)));
       return next.size === prev.size ? prev : next;
+    });
+
+    setDisplayedMAWindows(prev => {
+      const removed = prev.filter(w => !allowed.includes(w));
+      const added   = allowed.filter(w => !prev.includes(w));
+      if (removed.length) {
+        setExitingMAWindows(ex => new Set([...ex, ...removed]));
+        setTimeout(() => {
+          setExitingMAWindows(ex => {
+            const n = new Set(ex);
+            removed.forEach(w => n.delete(w));
+            return n;
+          });
+          setDisplayedMAWindows(cur => cur.filter(w => !removed.includes(w)));
+        }, 320);
+      }
+      if (!added.length && !removed.length) return prev;
+      return [...prev, ...added];
     });
   }, [period]);
   const [proMode, setProMode]         = useState(() =>
@@ -339,16 +384,20 @@ export function PriceChart({
   // period and currently toggled on. Only computed when needed.
   const chartData = useMemo(() => {
     const allowed = MA_AVAILABILITY[period] ?? [];
-    const toCompute = [7, 25, 99].filter(w => allowed.includes(w) && activeMAs.has(w));
-    if (!toCompute.length) return data;
-    const mas = new Map(toCompute.map(w => [w, computeMA(data, w)]));
+    if (!allowed.length) return data;
+    // Compute every MA available for this period regardless of whether it's
+    // currently toggled on — this array must stay referentially stable
+    // across activeMAs changes, or Recharts treats the whole chart's data
+    // as "changed" and replays every line's draw animation, not just the
+    // one that was actually toggled.
+    const mas = new Map(allowed.map(w => [w, computeMA(data, w)]));
     return data.map((d, i) => ({
       ...d,
       ma7:  mas.get(7)?.[i]  ?? undefined,
       ma25: mas.get(25)?.[i] ?? undefined,
       ma99: mas.get(99)?.[i] ?? undefined,
     }));
-  }, [data, period, activeMAs]);
+  }, [data, period]);
 
   /* Displayed price and % change — hover overrides live values */
   const displayPrice = hoverPrice ?? currentPrice;
@@ -723,22 +772,28 @@ export function PriceChart({
 
       {/* ── Moving average toggles — only shown when at least one MA makes
           sense for the currently selected period ── */}
-      {(MA_AVAILABILITY[period] ?? []).length > 0 && (
+      {displayedMAWindows.length > 0 && (
         <>
         <style>{`
           @keyframes ma-btn-pop {
             from { transform: scale(0); opacity: 0; }
             to   { transform: scale(1); opacity: 1; }
           }
+          @keyframes ma-btn-pop-out {
+            from { transform: scale(1); opacity: 1; }
+            to   { transform: scale(0); opacity: 0; }
+          }
         `}</style>
         <div className="mt-3 flex items-center justify-center gap-2">
-          {(MA_AVAILABILITY[period] ?? []).map((window) => {
-            const active = activeMAs.has(window);
-            const color  = MA_COLORS[window];
+          {displayedMAWindows.map((window) => {
+            const active   = activeMAs.has(window);
+            const exiting  = exitingMAWindows.has(window);
+            const color    = MA_COLORS[window];
             return (
               <button
                 key={window}
                 type="button"
+                disabled={exiting}
                 onClick={() => {
                   setActiveMAs(prev => {
                     const next = new Set(prev);
@@ -751,7 +806,9 @@ export function PriceChart({
                   ...(active
                     ? { borderColor: color, backgroundColor: `${color}22`, color }
                     : { borderColor: "var(--color-border-subtle)", color: "var(--color-text-muted)" }),
-                  animation: "ma-btn-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both",
+                  animation: exiting
+                    ? "ma-btn-pop-out 0.32s cubic-bezier(0.4, 0, 1, 1) both"
+                    : "ma-btn-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both",
                 }}
               >
                 <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
