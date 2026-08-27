@@ -100,8 +100,8 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         />
         {/* Invisible — exists only to hold the same layout height as the
             real button below, so page content doesn't jump. */}
-        <span className="invisible flex items-center justify-center h-[2.45rem] w-[2.45rem] rounded-full" aria-hidden>
-          <ChevronLeft className="h-5 w-5" />
+        <span className="invisible flex items-center justify-center h-[3.5rem] w-[3.5rem] rounded-full" aria-hidden>
+          <ChevronLeft className="h-6 w-6" />
         </span>
       </div>
 
@@ -115,10 +115,10 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         <button
           onClick={handleBack}
           aria-label="Back"
-          className="fixed flex items-center justify-center h-[2.45rem] w-[2.45rem] rounded-full bg-positive text-black"
+          className="fixed flex items-center justify-center h-[3.5rem] w-[3.5rem] rounded-full bg-black border-2 border-positive text-positive"
           style={{ top: "calc(0.75rem + env(safe-area-inset-top))", left: "1rem", zIndex: 500 }}
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ChevronLeft className="h-6 w-6" />
         </button>,
         document.body
       )}
