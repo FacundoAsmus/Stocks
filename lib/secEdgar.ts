@@ -5,7 +5,7 @@ import "server-only";
 // blocks requests with a missing/generic one. Replace the contact info
 // below with your own before deploying (SEC's own guidance: "company name
 // admin contact@domain.com").
-const SEC_USER_AGENT = "redx2002x2@gmail.com";
+const SEC_USER_AGENT = "Wave form redx2002x2@gmail.com";
 
 const TICKER_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // company_tickers.json rarely changes
 const DESCRIPTION_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // filings/descriptions rarely change
