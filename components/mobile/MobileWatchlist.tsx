@@ -278,6 +278,7 @@ function WatchlistRow({
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDragEnd = () => {

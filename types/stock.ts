@@ -115,6 +115,10 @@ export interface StockDetail {
   recommendations: AnalystRecommendation[];
   priceTarget: PriceTarget;
   earnings: EarningsEvent[];
+  // SEC EDGAR "Item 1. Business" excerpt from the company's latest 10-K/20-F.
+  // null when unavailable (ETFs, very recent IPOs, fetch/parse failure, etc.)
+  // — the UI shows nothing in that case rather than an empty section.
+  description?: string | null;
 }
 
 export interface SymbolSearchResult {
