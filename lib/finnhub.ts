@@ -16,6 +16,7 @@ import type {
   SymbolSearchResult
 } from "@/types/stock";
 import { MAJOR_INDICES, MARKET_MOVER_FALLBACK_SYMBOLS } from "@/lib/constants";
+import { getCompanyDescription } from "@/lib/secEdgar";
 
 const BASE_URL = "https://finnhub.io/api/v1";
 const YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
@@ -857,14 +858,19 @@ export async function getStockSummary(symbol: string): Promise<StockSummary> {
 
 export async function getStockDetail(symbol: string): Promise<StockDetail> {
   const normalizedSymbol = cleanSymbol(symbol);
-  const [quote, profile, financials, news, recommendations, priceTarget, earnings] = await Promise.all([
+  const [quote, profile, financials, news, recommendations, priceTarget, earnings, description] = await Promise.all([
     getQuote(normalizedSymbol),
     getCompanyProfile(normalizedSymbol).catch(() => ({} as CompanyProfile)),
     getBasicFinancials(normalizedSymbol).catch(() => ({} as BasicFinancials)),
     getCompanyNews(normalizedSymbol).catch(() => []),
     getAnalystRecommendations(normalizedSymbol).catch(() => []),
     getPriceTarget(normalizedSymbol).catch(() => ({} as PriceTarget)),
-    getEarningsCalendar(normalizedSymbol).catch(() => [] as EarningsEvent[])
+    getEarningsCalendar(normalizedSymbol).catch(() => [] as EarningsEvent[]),
+    // SEC EDGAR (10-K/20-F "Item 1. Business" section) — best-effort, never
+    // throws. Returns null for ETFs, very recent IPOs, or anything else
+    // without a matching annual report on file, which the UI treats as
+    // "nothing to show" rather than an error.
+    getCompanyDescription(normalizedSymbol).catch(() => null),
   ]);
 
   console.log("priceTarget:", JSON.stringify(priceTarget));
@@ -881,7 +887,8 @@ export async function getStockDetail(symbol: string): Promise<StockDetail> {
     news: news.slice(0, 8),
     recommendations: recommendations.slice(0, 6),
     priceTarget,
-    earnings
+    earnings,
+    description
   };
 }
 
