@@ -3,10 +3,11 @@ import type { RefObject } from "react";
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
-import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
+import { DesktopEarningsCalendar } from "@/components/desktop/DesktopEarningsCalendar";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { NewsCard } from "@/components/NewsCard";
 import { PriceChart } from "@/components/PriceChart";
+import { SECTOR_ETFS } from "@/components/market/EtfList";
 import type { getStockDetail } from "@/lib/finnhub";
 
 type StockDetail = Awaited<ReturnType<typeof getStockDetail>>;
@@ -37,6 +38,10 @@ export function DesktopStockDetail({
   chartHeightClassName = "h-[384px]",
   earningsCalendarContainerRef
 }: DesktopStockDetailProps) {
+  // ETFs don't file earnings reports the way individual companies do — same
+  // check the mobile stock page already uses to hide the calendar button and
+  // filter irrelevant fundamentals (P/E, EPS, etc.) out of the grid.
+  const isEtf = SECTOR_ETFS.some((e) => e.symbol === stock.symbol);
   return (
     <div className="relative space-y-6">
       <div className="relative z-10 space-y-6">
@@ -92,11 +97,14 @@ export function DesktopStockDetail({
           marketCap={stock.profile.marketCapitalization}
           currentPrice={currentPrice}
           earnings={stock.earnings}
+          isEtf={isEtf}
         />
 
-        <div className="flex justify-end -mt-2">
-          <EarningsCalendarButton earnings={stock.earnings} containerRef={earningsCalendarContainerRef} />
-        </div>
+        {!isEtf && (
+          <div className="flex justify-end -mt-2">
+            <DesktopEarningsCalendar earnings={stock.earnings} containerRef={earningsCalendarContainerRef} />
+          </div>
+        )}
 
         <section>
           <div className="mb-4 flex items-end justify-between">

@@ -16,7 +16,7 @@ import {
 } from "@/lib/earnings";
 import type { EarningsEvent } from "@/types/stock";
 
-const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
+export const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
 function fmtRevenue(value: number | null) {
   return value !== null ? `$${formatCompact(value)}` : "N/A";
@@ -59,7 +59,7 @@ function StatBlock({
   );
 }
 
-function EarningsDetailCard({
+export function EarningsDetailCard({
   event, earnings, onBack
 }: { event: EarningsEvent; earnings: EarningsEvent[]; onBack: () => void }) {
   const reported = isReported(event);
