@@ -136,7 +136,11 @@ input {
 /* Desktop watchlist split view: the 1/3 list card gets its own background,
    distinct from the page/detail-panel background on either side of it. */
 .watchlist-list-panel { background: #0e0e0e; }
-html.light-mode .watchlist-list-panel { background: #ececec; }
+html.light-mode .watchlist-list-panel { background: #ffffff; }
+/* Desktop watchlist page only: swap the overall page background in light
+   mode (the list panel itself is white per the rule above, so it still
+   reads as a distinct card against this slightly darker page backdrop). */
+html.light-mode .watchlist-desktop-root { background: #ececec; }
 
 /* ─── Mobile page slide transitions ─────────────────────────────────────── */
 /* Slide the CURRENT page out — the loading skeleton will slide in with it  */

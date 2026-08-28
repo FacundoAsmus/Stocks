@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { RefObject } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft } from "lucide-react";
 
@@ -172,7 +173,17 @@ function MonthGrid({
 }
 
 // ─── Trigger button + calendar overlay + detail popup ──────────────────────
-export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[] }) {
+export function EarningsCalendarButton({
+  earnings,
+  containerRef
+}: {
+  earnings: EarningsEvent[];
+  /** When provided, the calendar sheet is confined to this element's bounds
+   *  (e.g. the right-hand 3/4 column of the watchlist split view) instead of
+   *  covering the full viewport. The element must have `position: relative`
+   *  (or similar) so absolutely-positioned children resolve against it. */
+  containerRef?: RefObject<HTMLElement | null>;
+}) {
   const [open, setOpen]         = useState(false);
   const [closing, setClosing]   = useState(false);
   const [selected, setSelected] = useState<EarningsEvent | null>(null);
@@ -243,11 +254,16 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
     setTimeout(() => { setOpen(false); setClosing(false); }, 300);
   }
 
-  // Sheet is anchored to the bottom of the viewport at 88vh tall — express
-  // the button's tap point as a transform-origin relative to the sheet's own
-  // box, so the open animation visibly grows out from the button.
-  const sheetTop = typeof window !== "undefined" ? window.innerHeight * 0.12 : 0;
+  // Sheet is anchored to the bottom of its box at 88% tall — express the
+  // button's tap point as a transform-origin relative to the sheet's own
+  // box, so the open animation visibly grows out from the button. When
+  // constrained to a container, "its box" is that container; otherwise
+  // it's the viewport.
+  const boxHeight = containerRef?.current?.clientHeight
+    ?? (typeof window !== "undefined" ? window.innerHeight : 0);
+  const sheetTop = boxHeight * 0.12;
   const transformOrigin = `${origin.x}px ${origin.y - sheetTop}px`;
+  const portalTarget = containerRef?.current ?? (typeof document !== "undefined" ? document.body : null);
 
   return (
     <>
@@ -260,15 +276,15 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
         <CalendarDays className="h-[18px] w-[18px]" />
       </button>
 
-      {open && typeof document !== "undefined" && createPortal(
+      {open && portalTarget && createPortal(
         <div
-          className="fixed inset-0 z-[9999] flex items-end justify-center"
+          className={containerRef ? "absolute inset-0 z-[9999] flex items-end justify-center" : "fixed inset-0 z-[9999] flex items-end justify-center"}
           style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
         >
           <div
             className="w-full rounded-t-2xl border-t border-border-subtle flex flex-col bg-black"
             style={{
-              height: "88vh",
+              height: containerRef ? "88%" : "88vh",
               transformOrigin,
               animation: closing
                 ? "calendarSink 0.3s cubic-bezier(0.4,0,1,1) forwards"
@@ -310,18 +326,18 @@ export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[]
             </div>
           </div>
         </div>,
-        document.body
+        portalTarget
       )}
 
-      {selected && typeof document !== "undefined" && createPortal(
+      {selected && portalTarget && createPortal(
         <div
-          className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
+          className={containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}
           style={{ background: "rgba(0,0,0,0.2)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
         >
           <EarningsDetailCard event={selected} earnings={earnings} onBack={() => setSelected(null)} />
         </div>,
-        document.body
+        portalTarget
       )}
 
       <style>{`

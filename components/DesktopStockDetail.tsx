@@ -1,3 +1,5 @@
+import type { RefObject } from "react";
+
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
@@ -16,6 +18,11 @@ interface DesktopStockDetailProps {
   metrics: Record<string, number | string | null> | undefined;
   /** Height passed to the price chart. Defaults to the size used on the standalone stock page. */
   chartHeightClassName?: string;
+  /** When provided (e.g. from the watchlist split view), the earnings
+   *  calendar sheet is confined to this element's bounds instead of the
+   *  full viewport. Left undefined on the standalone stock page, where
+   *  full-viewport is correct. */
+  earningsCalendarContainerRef?: RefObject<HTMLElement | null>;
 }
 
 // This is the exact "Desktop stock page" content that used to live inline in
@@ -27,7 +34,8 @@ export function DesktopStockDetail({
   currentPrice,
   sentiment,
   metrics,
-  chartHeightClassName = "h-[384px]"
+  chartHeightClassName = "h-[384px]",
+  earningsCalendarContainerRef
 }: DesktopStockDetailProps) {
   return (
     <div className="relative space-y-6">
@@ -87,7 +95,7 @@ export function DesktopStockDetail({
         />
 
         <div className="flex justify-end -mt-2">
-          <EarningsCalendarButton earnings={stock.earnings} />
+          <EarningsCalendarButton earnings={stock.earnings} containerRef={earningsCalendarContainerRef} />
         </div>
 
         <section>

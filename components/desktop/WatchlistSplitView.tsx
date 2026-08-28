@@ -9,6 +9,7 @@ import { formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { StockSummary } from "@/types/stock";
 import { DesktopStockDetail } from "@/components/DesktopStockDetail";
+import { WatchlistAIChatPanel } from "@/components/desktop/WatchlistAIChatPanel";
 import { EmptyWatchlist } from "@/components/EmptyWatchlist";
 import { ErrorState } from "@/components/ErrorState";
 import type { getStockDetail } from "@/lib/finnhub";
@@ -182,6 +183,7 @@ export function WatchlistSplitView() {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
+  const detailColumnRef = useRef<HTMLDivElement>(null);
 
   // ── Load watchlist symbols + summaries (same approach as components/Watchlist.tsx) ──
   useEffect(() => {
@@ -286,9 +288,10 @@ export function WatchlistSplitView() {
   if (!displayedStocks.length) return <EmptyWatchlist />;
 
   return (
-    <div className="flex w-full" style={{ height: "calc(100dvh - var(--header-height, 0px))" }}>
-      {/* Left: 2/9 — its own rounded, distinctly-shaded card holding the title + list.
-          Background: #0e0e0e dark / #ececec light (see .watchlist-list-panel in globals.css). */}
+    <div className="watchlist-desktop-root flex w-full" style={{ height: "calc(100dvh - var(--header-height, 0px))" }}>
+      {/* Left: 1/4 — its own rounded, distinctly-shaded card holding the title + list.
+          Background: #0e0e0e dark / #ffffff light (see .watchlist-list-panel in globals.css).
+          Page background behind it: #ececec in light mode (.watchlist-desktop-root). */}
       <div className="watchlist-list-panel m-3 flex w-[1/4] shrink-0 flex-col overflow-hidden rounded-2xl border border-border-subtle/70">
         <div className="shrink-0 px-6 pb-4 pt-6">
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">Watchlist</p>
@@ -319,27 +322,43 @@ export function WatchlistSplitView() {
         </Reorder.Group>
       </div>
 
-      {/* Right: 2/3 — the individual stock page for whichever row is selected.
+      {/* Right: 3/4 — the individual stock page for whichever row is selected.
           Keeps the page's normal background. Loads in place via
-          /api/stock-detail; no full page reload. */}
-      <div ref={detailPanelRef} className="no-scrollbar relative w-3/4 overflow-y-auto">
-        {isDetailLoading ? (
-          <PanelLoader label={`Loading ${selectedSymbol ?? "stock"} data`} />
-        ) : detailError ? (
-          <div className="p-8">
-            <ErrorState title={`Unable to load ${selectedSymbol}`} message={detailError} />
-          </div>
-        ) : detail ? (
-          <div className="px-6 py-8">
-            <DesktopStockDetail
-              stock={detail.stock}
-              currentPrice={detail.currentPrice}
-              sentiment={detail.sentiment}
-              metrics={detail.metrics}
-              chartHeightClassName="h-[320px]"
-            />
-          </div>
-        ) : null}
+          /api/stock-detail; no full page reload.
+          Outer wrapper is `relative` and non-scrolling (fills the column's
+          full height) so the AI panel and the earnings-calendar sheet — both
+          absolutely positioned against it — are confined to this column no
+          matter how far the inner content is scrolled. */}
+      <div ref={detailColumnRef} className="relative w-3/4 h-full">
+        <div ref={detailPanelRef} className="no-scrollbar relative h-full overflow-y-auto">
+          {isDetailLoading ? (
+            <PanelLoader label={`Loading ${selectedSymbol ?? "stock"} data`} />
+          ) : detailError ? (
+            <div className="p-8">
+              <ErrorState title={`Unable to load ${selectedSymbol}`} message={detailError} />
+            </div>
+          ) : detail ? (
+            <div className="px-6 py-8">
+              <DesktopStockDetail
+                stock={detail.stock}
+                currentPrice={detail.currentPrice}
+                sentiment={detail.sentiment}
+                metrics={detail.metrics}
+                chartHeightClassName="h-[320px]"
+                earningsCalendarContainerRef={detailColumnRef}
+              />
+            </div>
+          ) : null}
+        </div>
+
+        {detail && (
+          <WatchlistAIChatPanel
+            stock={detail.stock}
+            currentPrice={detail.currentPrice}
+            sentiment={detail.sentiment}
+            metrics={detail.metrics}
+          />
+        )}
       </div>
     </div>
   );
