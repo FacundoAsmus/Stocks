@@ -289,7 +289,7 @@ export function WatchlistSplitView() {
     <div className="flex w-full" style={{ height: "calc(100dvh - var(--header-height, 0px))" }}>
       {/* Left: 2/9 — its own rounded, distinctly-shaded card holding the title + list.
           Background: #0e0e0e dark / #ececec light (see .watchlist-list-panel in globals.css). */}
-      <div className="watchlist-list-panel m-3 flex w-[2/9] shrink-0 flex-col overflow-hidden rounded-2xl border border-border-subtle/70">
+      <div className="watchlist-list-panel m-3 flex w-[1/4] shrink-0 flex-col overflow-hidden rounded-2xl border border-border-subtle/70">
         <div className="shrink-0 px-6 pb-4 pt-6">
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">Watchlist</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Your Stocks</h1>
@@ -322,7 +322,7 @@ export function WatchlistSplitView() {
       {/* Right: 2/3 — the individual stock page for whichever row is selected.
           Keeps the page's normal background. Loads in place via
           /api/stock-detail; no full page reload. */}
-      <div ref={detailPanelRef} className="no-scrollbar relative w-7/9 overflow-y-auto">
+      <div ref={detailPanelRef} className="no-scrollbar relative w-3/4 overflow-y-auto">
         {isDetailLoading ? (
           <PanelLoader label={`Loading ${selectedSymbol ?? "stock"} data`} />
         ) : detailError ? (
