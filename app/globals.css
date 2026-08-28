@@ -141,6 +141,14 @@ html.light-mode .watchlist-list-panel { background: #ffffff; }
    mode (the list panel itself is white per the rule above, so it still
    reads as a distinct card against this slightly darker page backdrop). */
 html.light-mode .watchlist-desktop-root { background: #ececec; }
+/* Desktop watchlist page only: the star/add-to-watchlist button, news
+   cards, stock sentiment, analyst recommendations, and the fundamentals
+   ("market indicator") tiles all use the shared .bg-black class, which
+   normally becomes pure white in light mode (see the global rule above).
+   Within this page specifically, match them to the page background
+   instead of standing out as white cards. Scoped to .watchlist-desktop-root
+   so this has no effect on mobile or any other desktop page. */
+html.light-mode .watchlist-desktop-root .bg-black { background-color: #ececec !important; }
 
 /* ─── Mobile page slide transitions ─────────────────────────────────────── */
 /* Slide the CURRENT page out — the loading skeleton will slide in with it  */

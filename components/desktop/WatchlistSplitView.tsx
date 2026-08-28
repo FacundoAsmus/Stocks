@@ -199,6 +199,19 @@ export function WatchlistSplitView() {
     };
   }, []);
 
+  // A search result picked from the header's SearchBar while on this page
+  // previews that symbol in the right-hand panel — it deliberately does NOT
+  // touch `symbols` (the actual watchlist), so the left-hand list is
+  // unaffected until the user explicitly stars it from the detail panel.
+  useEffect(() => {
+    function handlePreview(e: Event) {
+      const symbol = (e as CustomEvent<string>).detail;
+      if (symbol) setSelectedSymbol(symbol);
+    }
+    window.addEventListener("watchlist-preview-symbol", handlePreview);
+    return () => window.removeEventListener("watchlist-preview-symbol", handlePreview);
+  }, []);
+
   const symbolQuery = useMemo(() => symbols.join(","), [symbols]);
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Search, Clock } from "lucide-react";
 
 const RECENT_KEY = "market-lens-recent-searches";
@@ -30,6 +30,7 @@ type SearchResult = {
 
 export function SearchBar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -80,6 +81,16 @@ export function SearchBar() {
     addRecentSearch(cleanSymbol);
     setQuery("");
     setIsOpen(false);
+
+    // On the watchlist page, opening a search result should preview it in
+    // the right-hand 3/4 panel of the split view in place — not navigate
+    // away from the page, and not add it to the watchlist itself (that
+    // still only happens via the star button on the detail panel).
+    if (pathname === "/watchlist") {
+      window.dispatchEvent(new CustomEvent("watchlist-preview-symbol", { detail: cleanSymbol }));
+      return;
+    }
+
     router.push(`/stock/${encodeURIComponent(cleanSymbol)}`);
   }
 
@@ -110,7 +121,7 @@ export function SearchBar() {
           onChange={(event) => setQuery(event.target.value)}
           onFocus={handleFocus}
           placeholder="Search stocks"
-          className="h-11 w-full rounded-md border border-border-subtle bg-panel px-10 text-sm text-text-primary outline-none transition placeholder:text-text-muted focus:border-positive focus:ring-2 focus:ring-positive/20"
+          className="h-11 w-full rounded-full border border-border-subtle bg-panel px-10 text-sm text-text-primary outline-none transition placeholder:text-text-muted focus:border-positive focus:ring-2 focus:ring-positive/20"
         />
         {isLoading ? (
           <span className="absolute right-3 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-accent" />
@@ -118,7 +129,7 @@ export function SearchBar() {
       </form>
 
       {showRecent ? (
-        <div className="absolute mt-2 w-full overflow-hidden rounded-md border border-border-subtle bg-panel shadow-2xl shadow-black/30">
+        <div className="absolute mt-2 w-full overflow-hidden rounded-2xl border border-border-subtle bg-panel shadow-2xl shadow-black/30">
           <p className="px-4 py-2 text-xs uppercase tracking-widest text-text-muted">Recent</p>
           {recentSearches.map((symbol) => (
             <button
@@ -133,7 +144,7 @@ export function SearchBar() {
           ))}
         </div>
       ) : showResults ? (
-        <div className="absolute mt-2 w-full overflow-hidden rounded-md border border-border-subtle bg-panel shadow-2xl shadow-black/30">
+        <div className="absolute mt-2 w-full overflow-hidden rounded-2xl border border-border-subtle bg-panel shadow-2xl shadow-black/30">
           {results.map((result) => (
             <button
               key={`${result.symbol}-${result.description}`}
