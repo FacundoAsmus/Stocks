@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Reorder } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
@@ -37,6 +38,12 @@ function readWatchlist(): string[] {
   }
 }
 
+function writeWatchlist(symbols: string[]) {
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(symbols));
+  window.dispatchEvent(new Event("watchlist-updated"));
+  window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+}
+
 // Same mini sparkline treatment used on the phone watchlist rows
 // (components/mobile/MobileWatchlist.tsx), reused here so the left column
 // looks identical to the phone version, as requested.
@@ -70,46 +77,31 @@ function RowSparkline({ stock }: { stock: StockSummary }) {
 
 // Row content mirrors RowContent in components/mobile/MobileWatchlist.tsx
 // (logo/initials, symbol, sparkline, % badge) so the list reads exactly like
-// the phone watchlist.
+// the phone watchlist. isActive = this row's stock is the one currently
+// loaded in the right-hand detail panel — marked with a green border.
 function WatchlistListRow({
   stock,
-  isSelected,
-  isDragOver,
-  onSelect,
-  onDragStart,
-  onDragOver,
-  onDrop,
-  onDragEnd
+  isActive,
+  onSelect
 }: {
   stock: StockSummary;
-  isSelected: boolean;
-  isDragOver: boolean;
+  isActive: boolean;
   onSelect: () => void;
-  onDragStart: (e: React.DragEvent) => void;
-  onDragOver: (e: React.DragEvent) => void;
-  onDrop: () => void;
-  onDragEnd: () => void;
 }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
   return (
     <div
-      draggable
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
-      onDragEnd={onDragEnd}
       onClick={onSelect}
       className={cn(
-        "flex cursor-pointer items-center gap-3 border-b border-border-subtle/70 px-4 py-3.5 transition-colors last:border-0",
-        isSelected ? "bg-panel-muted" : "hover:bg-panel-muted/50",
-        isDragOver ? "ring-2 ring-positive/60" : ""
+        "mx-2 my-0.5 flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 transition-colors select-none",
+        isActive ? "border-positive bg-panel-muted" : "border-transparent hover:bg-panel-muted/50"
       )}
     >
       {stock.logo ? (
         <img
           src={stock.logo}
           alt=""
-          className="h-9 w-9 shrink-0 rounded-md border border-white/10 bg-white/5 object-contain"
+          className="h-9 w-9 shrink-0 rounded-md border border-white/10 bg-white/5 object-contain pointer-events-none"
           onError={(e) => {
             e.currentTarget.style.display = "none";
             e.currentTarget.nextElementSibling?.classList.remove("hidden");
@@ -118,17 +110,19 @@ function WatchlistListRow({
       ) : null}
       <span
         className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary pointer-events-none",
           stock.logo && "hidden"
         )}
       >
         {stock.symbol.replace("^", "").slice(0, 2)}
       </span>
-      <span className="min-w-0 flex-1">
+      <span className="min-w-0 flex-1 pointer-events-none">
         <span className="block truncate text-sm font-bold text-text-primary">{stock.symbol}</span>
       </span>
-      <RowSparkline stock={stock} />
-      <span className="ml-1 shrink-0">
+      <div className="pointer-events-none">
+        <RowSparkline stock={stock} />
+      </div>
+      <span className="ml-1 shrink-0 pointer-events-none">
         <span
           className={cn(
             "inline-block rounded-lg px-3 py-1 text-sm font-bold text-black",
@@ -182,8 +176,6 @@ export function WatchlistSplitView() {
   const [displayedStocks, setDisplayedStocks] = useState<StockSummary[]>([]);
   const [isListLoading, setIsListLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const dragIndexRef = useRef<number | null>(null);
 
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [detail, setDetail] = useState<DetailPayload | null>(null);
@@ -277,34 +269,16 @@ export function WatchlistSplitView() {
     return () => controller.abort();
   }, [selectedSymbol]);
 
-  // ── Drag to reorder (same behavior as components/Watchlist.tsx, adapted to a vertical list) ──
-  function handleDragStart(index: number) {
-    dragIndexRef.current = index;
-  }
-
-  function handleDragOver(e: React.DragEvent, index: number) {
-    e.preventDefault();
-    setDragOverIndex(index);
-  }
-
-  function handleDrop(index: number) {
-    if (dragIndexRef.current === null || dragIndexRef.current === index) {
-      dragIndexRef.current = null;
-      setDragOverIndex(null);
-      return;
-    }
-    const newStocks = [...displayedStocks];
-    [newStocks[dragIndexRef.current], newStocks[index]] = [newStocks[index], newStocks[dragIndexRef.current]];
-    setDisplayedStocks(newStocks);
-    const newSymbols = newStocks.map((s) => s.symbol);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(newSymbols));
-    dragIndexRef.current = null;
-    setDragOverIndex(null);
-  }
-
-  function handleDragEnd() {
-    dragIndexRef.current = null;
-    setDragOverIndex(null);
+  // ── Reorder via Framer Motion's Reorder (same mechanism as the phone
+  // watchlist's drag-to-reorder). This moves the real row elements and lets
+  // siblings animate out of the way to open space for the dragged row,
+  // instead of the browser's native (and very transparent) HTML5 drag ghost. ──
+  function handleReorder(newSymbolOrder: string[]) {
+    const reordered = newSymbolOrder
+      .map((sym) => displayedStocks.find((s) => s.symbol === sym))
+      .filter((s): s is StockSummary => !!s);
+    setDisplayedStocks(reordered);
+    writeWatchlist(newSymbolOrder);
   }
 
   if (isListLoading) return <EmptyWatchlist isLoading />;
@@ -312,38 +286,42 @@ export function WatchlistSplitView() {
   if (!displayedStocks.length) return <EmptyWatchlist />;
 
   return (
-    <div
-      className="flex w-full"
-      style={{ height: "calc(100dvh - var(--header-height, 0px))" }}
-    >
-      {/* Left: 1/3 — title + list of stocks, styled like the phone watchlist rows */}
-      <div className="flex w-1/3 shrink-0 flex-col border-r border-border-subtle/70 bg-black">
+    <div className="flex w-full" style={{ height: "calc(100dvh - var(--header-height, 0px))" }}>
+      {/* Left: 1/3 — its own rounded, distinctly-shaded card holding the title + list.
+          Background: #0e0e0e dark / #ececec light (see .watchlist-list-panel in globals.css). */}
+      <div className="watchlist-list-panel m-3 flex w-1/3 shrink-0 flex-col overflow-hidden rounded-2xl border border-border-subtle/70">
         <div className="shrink-0 px-6 pb-4 pt-6">
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">Watchlist</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Your Stocks</h1>
         </div>
-        <div className="no-scrollbar flex-1 overflow-y-auto">
-          {displayedStocks.map((stock, index) => (
-            <WatchlistListRow
+        <Reorder.Group
+          as="div"
+          axis="y"
+          values={displayedStocks.map((s) => s.symbol)}
+          onReorder={handleReorder}
+          className="no-scrollbar flex-1 overflow-y-auto pb-2"
+        >
+          {displayedStocks.map((stock) => (
+            <Reorder.Item
               key={stock.symbol}
-              stock={stock}
-              isSelected={stock.symbol === selectedSymbol}
-              isDragOver={dragOverIndex === index}
-              onSelect={() => setSelectedSymbol(stock.symbol)}
-              onDragStart={(e) => {
-                e.dataTransfer.effectAllowed = "move";
-                handleDragStart(index);
-              }}
-              onDragOver={(e) => handleDragOver(e, index)}
-              onDrop={() => handleDrop(index)}
-              onDragEnd={handleDragEnd}
-            />
+              value={stock.symbol}
+              as="div"
+              whileDrag={{ scale: 1.02, boxShadow: "0 12px 30px rgba(0,0,0,0.45)", zIndex: 20 }}
+              transition={{ type: "spring", stiffness: 500, damping: 40 }}
+            >
+              <WatchlistListRow
+                stock={stock}
+                isActive={stock.symbol === selectedSymbol}
+                onSelect={() => setSelectedSymbol(stock.symbol)}
+              />
+            </Reorder.Item>
           ))}
-        </div>
+        </Reorder.Group>
       </div>
 
       {/* Right: 2/3 — the individual stock page for whichever row is selected.
-          Loads in place via /api/stock-detail; no full page reload. */}
+          Keeps the page's normal background. Loads in place via
+          /api/stock-detail; no full page reload. */}
       <div ref={detailPanelRef} className="no-scrollbar relative w-2/3 overflow-y-auto">
         {isDetailLoading ? (
           <PanelLoader label={`Loading ${selectedSymbol ?? "stock"} data`} />
