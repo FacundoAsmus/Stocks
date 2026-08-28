@@ -9,7 +9,7 @@ import { formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { StockSummary } from "@/types/stock";
 import { DesktopStockDetail } from "@/components/DesktopStockDetail";
-import { WatchlistAIChatPanel } from "@/components/desktop/WatchlistAIChatPanel";
+import { StockAIChat } from "@/components/mobile/StockAIChat";
 import { EmptyWatchlist } from "@/components/EmptyWatchlist";
 import { ErrorState } from "@/components/ErrorState";
 import type { getStockDetail } from "@/lib/finnhub";
@@ -402,11 +402,12 @@ export function WatchlistSplitView() {
         </div>
 
         {detail && (
-          <WatchlistAIChatPanel
+          <StockAIChat
             stock={detail.stock}
             currentPrice={detail.currentPrice}
             sentiment={detail.sentiment}
             metrics={detail.metrics}
+            containerRef={detailColumnRef}
           />
         )}
       </div>

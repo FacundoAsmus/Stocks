@@ -1124,9 +1124,21 @@ interface Props {
   onOpenChange?: (open: boolean) => void;
   /** Hide the built-in floating pill trigger — used when an external button opens the chat instead. */
   hideTrigger?: boolean;
+  /**
+   * Desktop watchlist split view: when provided, every bit of this
+   * component that would otherwise measure the full browser window (the
+   * blur backdrop, the message column, and the pill's expanded width)
+   * measures this element's bounding box instead. Since this element is the
+   * right-hand 3/4 detail column — flush with the right and bottom edges of
+   * the window already — the same "expand from a small circle into a full
+   * bar, blur what's behind it" animation plays exactly as it does on
+   * mobile, just confined to that column instead of the whole screen, so it
+   * never covers the 1/4 list on the left.
+   */
+  containerRef?: React.RefObject<HTMLElement | null>;
 }
 
-export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalOpen, onOpenChange, hideTrigger }: Props) {
+export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalOpen, onOpenChange, hideTrigger, containerRef }: Props) {
   const [mounted, setMounted] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = externalOpen !== undefined;
@@ -1143,6 +1155,21 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
   const inputRef    = useRef<HTMLInputElement>(null);
   const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
   const [stockContext, setStockContext] = useState(() => buildStockContext(stock, currentPrice, sentiment, metrics));
+
+  // Desktop reuses one long-lived instance of this component across every
+  // stock the user selects in the split view (mobile instead mounts a fresh
+  // page/instance per stock, so this never ran there before). Reset the
+  // conversation whenever the underlying stock changes; leave `open` alone
+  // so the panel doesn't slam shut just because the user picked a new row.
+  useEffect(() => {
+    setMessages([]);
+    setInput("");
+    setStockContext(buildStockContext(stock, currentPrice, sentiment, metrics));
+    if (open) {
+      buildStockContextAsync(stock, currentPrice, sentiment, metrics).then(ctx => setStockContext(ctx));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stock.symbol]);
 
   // On first open, fetch full context with graph data (async)
   useEffect(() => {
@@ -1163,8 +1190,17 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
 
   // Track visual viewport — only needed on mobile (iOS keyboard shrinking).
   // On desktop (width >= 1024) skip entirely to avoid unnecessary rerenders.
+  // When `containerRef` is given (desktop split view), track THAT element's
+  // box instead of the window — this is what confines the whole chat
+  // experience (backdrop, messages, and the pill's expanded width below) to
+  // the 3/4 detail column instead of the full browser width.
   useEffect(() => {
     function update() {
+      if (containerRef?.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setVp({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+        return;
+      }
       if (window.innerWidth >= 1024) {
         // Desktop: use simple full-window dimensions, no polling needed
         setVp({ top: 0, left: 0, width: window.innerWidth, height: window.innerHeight });
@@ -1177,6 +1213,15 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
       );
     }
     update();
+    if (containerRef?.current) {
+      const ro = new ResizeObserver(update);
+      ro.observe(containerRef.current);
+      window.addEventListener("resize", update);
+      return () => {
+        ro.disconnect();
+        window.removeEventListener("resize", update);
+      };
+    }
     // Only attach expensive visualViewport listeners on mobile
     if (window.innerWidth < 1024) {
       window.visualViewport?.addEventListener("resize", update);
@@ -1188,7 +1233,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
       window.visualViewport?.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
-  }, []);
+  }, [containerRef]);
 
   // Lock body scroll (without jumping to top) only while chat is open
   useEffect(() => {
@@ -1281,6 +1326,10 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
     : open && keyboardInset > 8
       ? `${keyboardInset + 12}px`
       : "calc(env(safe-area-inset-bottom) - 0.5rem)";
+  // Expanded pill width: the full container width (minus side margins) when
+  // confined to the desktop split view's detail column, otherwise the full
+  // viewport width as before on mobile.
+  const pillOpenWidth = containerRef?.current ? `${Math.max(0, vp.width - 32)}px` : "calc(100vw - 2rem)";
 
   if (!mounted) return null;
 
@@ -1388,7 +1437,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
           zIndex: 1002,
           bottom: pillBottom,
           right: open ? "1rem" : "1.25rem",
-          width: open ? "calc(100vw - 2rem)" : "3.5rem",
+          width: open ? pillOpenWidth : "3.5rem",
           height: "3.5rem",
           background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
           backdropFilter: "blur(22px) saturate(160%)",
