@@ -313,32 +313,38 @@ export function WatchlistSplitView() {
 
   return (
     <div
-      className="flex overflow-hidden rounded-2xl border border-border-subtle/70"
-      style={{ height: "calc(100dvh - var(--header-height, 0px) - 13rem)", minHeight: 480 }}
+      className="flex w-full"
+      style={{ height: "calc(100dvh - var(--header-height, 0px))" }}
     >
-      {/* Left: 1/3 — list of stocks, styled like the phone watchlist rows */}
-      <div className="w-1/3 shrink-0 overflow-y-auto border-r border-border-subtle/70 bg-black">
-        {displayedStocks.map((stock, index) => (
-          <WatchlistListRow
-            key={stock.symbol}
-            stock={stock}
-            isSelected={stock.symbol === selectedSymbol}
-            isDragOver={dragOverIndex === index}
-            onSelect={() => setSelectedSymbol(stock.symbol)}
-            onDragStart={(e) => {
-              e.dataTransfer.effectAllowed = "move";
-              handleDragStart(index);
-            }}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDrop={() => handleDrop(index)}
-            onDragEnd={handleDragEnd}
-          />
-        ))}
+      {/* Left: 1/3 — title + list of stocks, styled like the phone watchlist rows */}
+      <div className="flex w-1/3 shrink-0 flex-col border-r border-border-subtle/70 bg-black">
+        <div className="shrink-0 px-6 pb-4 pt-6">
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">Watchlist</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Your Stocks</h1>
+        </div>
+        <div className="no-scrollbar flex-1 overflow-y-auto">
+          {displayedStocks.map((stock, index) => (
+            <WatchlistListRow
+              key={stock.symbol}
+              stock={stock}
+              isSelected={stock.symbol === selectedSymbol}
+              isDragOver={dragOverIndex === index}
+              onSelect={() => setSelectedSymbol(stock.symbol)}
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = "move";
+                handleDragStart(index);
+              }}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDrop={() => handleDrop(index)}
+              onDragEnd={handleDragEnd}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Right: 2/3 — the individual stock page for whichever row is selected.
           Loads in place via /api/stock-detail; no full page reload. */}
-      <div ref={detailPanelRef} className="relative w-2/3 overflow-y-auto">
+      <div ref={detailPanelRef} className="no-scrollbar relative w-2/3 overflow-y-auto">
         {isDetailLoading ? (
           <PanelLoader label={`Loading ${selectedSymbol ?? "stock"} data`} />
         ) : detailError ? (
