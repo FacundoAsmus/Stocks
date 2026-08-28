@@ -192,6 +192,15 @@ export function WatchlistSplitView() {
   // This flag, set for a moment right as any drag ends, lets every row's
   // onSelect ignore that spurious click.
   const justDraggedRef = useRef(false);
+  // Reorder.Group's onReorder fires continuously WHILE dragging (every time
+  // the dragged row crosses another row), not just once on drop. We keep the
+  // list visually reordered live via displayedStocks, but only persist to
+  // localStorage / notify other components once the drag actually ends —
+  // otherwise every mid-drag step round-trips through the
+  // "watchlist-updated" listener below, resets `symbols`, and (because the
+  // fetch used to key off symbol *order*) re-triggers the full watchlist
+  // fetch/loading screen mid-drag, which looked like the page reloading.
+  const pendingOrderRef = useRef<string[] | null>(null);
 
   // ── Load watchlist symbols + summaries (same approach as components/Watchlist.tsx) ──
   useEffect(() => {
@@ -220,7 +229,7 @@ export function WatchlistSplitView() {
     return () => window.removeEventListener("watchlist-preview-symbol", handlePreview);
   }, []);
 
-  const symbolQuery = useMemo(() => symbols.join(","), [symbols]);
+  const symbolQuery = useMemo(() => [...symbols].sort().join(","), [symbols]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -295,13 +304,25 @@ export function WatchlistSplitView() {
   // ── Reorder via Framer Motion's Reorder (same mechanism as the phone
   // watchlist's drag-to-reorder). This moves the real row elements and lets
   // siblings animate out of the way to open space for the dragged row,
-  // instead of the browser's native (and very transparent) HTML5 drag ghost. ──
+  // instead of the browser's native (and very transparent) HTML5 drag ghost.
+  // Called continuously during the drag — updates the visible order only. ──
   function handleReorder(newSymbolOrder: string[]) {
     const reordered = newSymbolOrder
       .map((sym) => displayedStocks.find((s) => s.symbol === sym))
       .filter((s): s is StockSummary => !!s);
     setDisplayedStocks(reordered);
-    writeWatchlist(newSymbolOrder);
+    pendingOrderRef.current = newSymbolOrder;
+  }
+
+  // Called once, when a drag gesture actually ends — this is the only place
+  // that touches localStorage/`symbols`, so it's the only place a reorder
+  // can trigger any downstream effect.
+  function commitReorder() {
+    const finalOrder = pendingOrderRef.current;
+    pendingOrderRef.current = null;
+    if (!finalOrder) return;
+    setSymbols(finalOrder);
+    writeWatchlist(finalOrder);
   }
 
   if (isListLoading) return <EmptyWatchlist isLoading />;
@@ -334,6 +355,7 @@ export function WatchlistSplitView() {
               transition={{ type: "spring", stiffness: 500, damping: 40 }}
               onDragEnd={() => {
                 justDraggedRef.current = true;
+                commitReorder();
                 setTimeout(() => { justDraggedRef.current = false; }, 80);
               }}
             >
