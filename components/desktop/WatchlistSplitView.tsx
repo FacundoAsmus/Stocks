@@ -184,6 +184,14 @@ export function WatchlistSplitView() {
   const [detailError, setDetailError] = useState<string | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const detailColumnRef = useRef<HTMLDivElement>(null);
+  // Framer Motion's Reorder.Item doesn't suppress the native click event
+  // that follows a drag release — if you drop a dragged row on top of
+  // another row, that OTHER row's onClick still fires as a side effect,
+  // which was triggering setSelectedSymbol (looking like the page
+  // "reloading" as the right panel swapped to whatever row you dropped on).
+  // This flag, set for a moment right as any drag ends, lets every row's
+  // onSelect ignore that spurious click.
+  const justDraggedRef = useRef(false);
 
   // ── Load watchlist symbols + summaries (same approach as components/Watchlist.tsx) ──
   useEffect(() => {
@@ -324,11 +332,18 @@ export function WatchlistSplitView() {
               as="div"
               whileDrag={{ scale: 1.02, boxShadow: "0 12px 30px rgba(0,0,0,0.45)", zIndex: 20 }}
               transition={{ type: "spring", stiffness: 500, damping: 40 }}
+              onDragEnd={() => {
+                justDraggedRef.current = true;
+                setTimeout(() => { justDraggedRef.current = false; }, 80);
+              }}
             >
               <WatchlistListRow
                 stock={stock}
                 isActive={stock.symbol === selectedSymbol}
-                onSelect={() => setSelectedSymbol(stock.symbol)}
+                onSelect={() => {
+                  if (justDraggedRef.current) return;
+                  setSelectedSymbol(stock.symbol);
+                }}
               />
             </Reorder.Item>
           ))}
