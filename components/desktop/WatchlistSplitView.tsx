@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Reorder } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
+import { DEFAULT_WATCHLIST } from "@/lib/constants";
 import { SECTOR_ETFS } from "@/lib/etfs";
 import { formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -99,6 +100,7 @@ function WatchlistListRow({
       )}
     >
       {stock.logo ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={stock.logo}
           alt=""
