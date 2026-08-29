@@ -133,6 +133,23 @@ input {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Phone/tablet only (matches the app's lg: breakpoint elsewhere): the page
+   itself scrolls at the html/body level rather than inside a contained div,
+   so this is where the visible native scrollbar comes from. Desktop is left
+   alone — its layouts (e.g. the watchlist split view's own columns) still
+   use normal scrollbars where intended. */
+@media (max-width: 1023px) {
+  html, body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar, body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
 /* Desktop watchlist split view: the 1/3 list card gets its own background,
    distinct from the page/detail-panel background on either side of it. */
 .watchlist-list-panel { background: #0e0e0e; }
