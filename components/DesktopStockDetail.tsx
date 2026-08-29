@@ -7,7 +7,7 @@ import { DesktopEarningsCalendar } from "@/components/desktop/DesktopEarningsCal
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { NewsCard } from "@/components/NewsCard";
 import { PriceChart } from "@/components/PriceChart";
-import { SECTOR_ETFS } from "@/components/market/EtfList";
+import { SECTOR_ETFS } from "@/lib/etfs";
 import type { getStockDetail } from "@/lib/finnhub";
 
 type StockDetail = Awaited<ReturnType<typeof getStockDetail>>;

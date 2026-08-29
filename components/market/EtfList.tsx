@@ -4,31 +4,14 @@ import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
 import { formatPercent } from "@/lib/format";
+import { SECTOR_ETFS, type EtfEntry } from "@/lib/etfs";
 import type { StockSummary } from "@/types/stock";
 
-export type EtfEntry = {
-  symbol: string;
-  name: string;
-  sector: string;
-};
-
-export const SECTOR_ETFS: EtfEntry[] = [
-  { symbol: "SPY",  name: "S&P 500",         sector: "Main Market" },
-  { symbol: "QQQ",  name: "Nasdaq 100",       sector: "Technology" },
-  { symbol: "SOXX", name: "Semiconductors",   sector: "Semis" },
-  { symbol: "XLF",  name: "Financials",       sector: "Finance" },
-  { symbol: "XLE",  name: "Energy",           sector: "Energy" },
-  { symbol: "XLV",  name: "Health Care",      sector: "Healthcare" },
-  { symbol: "XLI",  name: "Industrials",      sector: "Industrials" },
-  { symbol: "XLY",  name: "Consumer Discr.",  sector: "Consumer" },
-  { symbol: "XLP",  name: "Consumer Staples", sector: "Staples" },
-  { symbol: "XLB",  name: "Materials",        sector: "Materials" },
-  { symbol: "XLRE", name: "Real Estate",      sector: "Real Estate" },
-  { symbol: "XLU",  name: "Utilities",        sector: "Utilities" },
-  { symbol: "GLD",  name: "Gold",             sector: "Commodities" },
-  { symbol: "IEF",  name: "7-10yr Treasury",  sector: "Bonds" },
-  { symbol: "DIA",  name: "Dow Jones",        sector: "Dow" },
-];
+// Re-exported for existing client-component consumers
+// (components/mobile/MobileWatchlist.tsx, components/mobile/MobileStockPage.tsx)
+// that already import these from here. Server Components must import
+// directly from "@/lib/etfs" instead — see the comment there.
+export { SECTOR_ETFS, type EtfEntry };
 
 function MiniSparkline({ stock, height = 32 }: { stock: StockSummary; height?: number }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
