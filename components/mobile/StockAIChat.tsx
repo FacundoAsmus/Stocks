@@ -1333,6 +1333,18 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
 
   if (!mounted) return null;
 
+  // This specific instance only exists in the desktop watchlist split view
+  // (that's the only caller that passes `containerRef`). It's rendered via
+  // createPortal straight into <body>, which means it completely ignores
+  // whatever CSS (e.g. the "hidden lg:block" wrapper around its React
+  // ancestor) is trying to hide it with — a portal's output isn't actually
+  // inside that hidden DOM subtree, so the ancestor's `display: none` never
+  // reaches it. That's why the pill was showing up on phone even though the
+  // component that renders it is only meant to exist on desktop. Bailing
+  // out here, in JS, based on the real viewport width, is what actually
+  // prevents it from mounting anything at all on a narrow screen.
+  if (containerRef && !isDesktop) return null;
+
   return createPortal(
     <>
       {/* Backdrop + messages — pinned to the exact visual viewport rectangle */}
