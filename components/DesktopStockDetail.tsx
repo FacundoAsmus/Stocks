@@ -8,6 +8,7 @@ import { MarketSentiment } from "@/components/MarketSentiment";
 import { NewsCard } from "@/components/NewsCard";
 import { PriceChart } from "@/components/PriceChart";
 import { SECTOR_ETFS } from "@/lib/etfs";
+import { cn } from "@/lib/utils";
 import type { getStockDetail } from "@/lib/finnhub";
 
 type StockDetail = Awaited<ReturnType<typeof getStockDetail>>;
@@ -58,12 +59,20 @@ export function DesktopStockDetail({
                   src={stock.profile.logo}
                   alt=""
                   className="h-14 w-14 rounded-md border border-white/10 bg-white/5 object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                    e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                  }}
                 />
-              ) : (
-                <div className="flex h-14 w-14 items-center justify-center rounded-md -muted text-lg font-semibold">
-                  {stock.symbol.replace("^", "").slice(0, 2)}
-                </div>
-              )}
+              ) : null}
+              <span
+                className={cn(
+                  "h-14 w-14 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-lg font-semibold text-text-primary",
+                  stock.profile.logo && "hidden"
+                )}
+              >
+                {isEtf ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
+              </span>
             </div>
             <div>
               <h1 className="text-3xl font-semibold tracking-normal text-text-primary sm:text-4xl">

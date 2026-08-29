@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Reorder } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
-import { DEFAULT_WATCHLIST } from "@/lib/constants";
+import { SECTOR_ETFS } from "@/lib/etfs";
 import { formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { StockSummary } from "@/types/stock";
@@ -115,7 +115,7 @@ function WatchlistListRow({
           stock.logo && "hidden"
         )}
       >
-        {stock.symbol.replace("^", "").slice(0, 2)}
+        {SECTOR_ETFS.some((e) => e.symbol === stock.symbol) ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
       </span>
       <span className="min-w-0 flex-1 pointer-events-none">
         <span className="block truncate text-sm font-bold text-text-primary">{stock.symbol}</span>
