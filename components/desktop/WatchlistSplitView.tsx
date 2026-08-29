@@ -84,10 +84,12 @@ function RowSparkline({ stock }: { stock: StockSummary }) {
 function WatchlistListRow({
   stock,
   isActive,
+  isDragging,
   onSelect
 }: {
   stock: StockSummary;
   isActive: boolean;
+  isDragging: boolean;
   onSelect: () => void;
 }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
@@ -95,8 +97,16 @@ function WatchlistListRow({
     <div
       onClick={onSelect}
       className={cn(
-        "mx-2 my-0.5 flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 transition-colors select-none",
-        isActive ? "border-positive bg-panel-muted" : "border-transparent hover:bg-panel-muted/50"
+        "flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 transition-colors select-none",
+        // While being dragged, always show a solid background regardless of
+        // selected/hover state — otherwise (since an idle, non-selected row
+        // has no background of its own) you could see whatever's behind it
+        // through the row as it moves over its neighbors.
+        isDragging
+          ? "border-transparent bg-panel-muted"
+          : isActive
+            ? "border-positive bg-panel-muted"
+            : "border-transparent hover:bg-panel-muted/50"
       )}
     >
       {stock.logo ? (
@@ -194,6 +204,10 @@ export function WatchlistSplitView() {
   // This flag, set for a moment right as any drag ends, lets every row's
   // onSelect ignore that spurious click.
   const justDraggedRef = useRef(false);
+  // Which row (by symbol) is currently being dragged, if any — used purely
+  // to force a solid background on that row (see WatchlistListRow) so it
+  // never looks transparent while it's lifted above its neighbors.
+  const [draggingSymbol, setDraggingSymbol] = useState<string | null>(null);
   // Reorder.Group's onReorder fires continuously WHILE dragging (every time
   // the dragged row crosses another row), not just once on drop. We keep the
   // list visually reordered live via displayedStocks, but only persist to
@@ -353,10 +367,13 @@ export function WatchlistSplitView() {
               key={stock.symbol}
               value={stock.symbol}
               as="div"
+              className="mx-2 my-0.5 rounded-xl"
               whileDrag={{ scale: 1.02, boxShadow: "0 12px 30px rgba(0,0,0,0.45)", zIndex: 20 }}
               transition={{ type: "spring", stiffness: 500, damping: 40 }}
+              onDragStart={() => setDraggingSymbol(stock.symbol)}
               onDragEnd={() => {
                 justDraggedRef.current = true;
+                setDraggingSymbol(null);
                 commitReorder();
                 setTimeout(() => { justDraggedRef.current = false; }, 80);
               }}
@@ -364,6 +381,7 @@ export function WatchlistSplitView() {
               <WatchlistListRow
                 stock={stock}
                 isActive={stock.symbol === selectedSymbol}
+                isDragging={stock.symbol === draggingSymbol}
                 onSelect={() => {
                   if (justDraggedRef.current) return;
                   setSelectedSymbol(stock.symbol);
