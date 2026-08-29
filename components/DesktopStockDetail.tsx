@@ -122,7 +122,7 @@ export function DesktopStockDetail({
               <h2 className="mt-2 text-2xl font-semibold text-text-primary">Latest headlines</h2>
             </div>
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {stock.news.length ? (
               stock.news.map((article) => <NewsCard key={article.id} article={article} />)
             ) : (
