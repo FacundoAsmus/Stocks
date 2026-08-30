@@ -43,6 +43,12 @@ const MA_COLORS: Record<number, string> = {
   99: "#8b5cf6",  // violet
 };
 
+// Desktop watchlist "Compare" feature: colors in add-order, main stock
+// always first/green regardless of its own price direction (comparison
+// mode is about relative growth, not up/down for its own sake).
+const COMPARE_COLORS = ["#22c55e", "#eab308", "#ef4444", "#06b6d4", "#a855f7", "#ec4899", "#f97316"];
+const MAX_COMPARE_SYMBOLS = 6; // + the main symbol = 7 total
+
 // `windowDays` is a number of *days*, not points — periods have wildly
 // different point granularity (a "5Y" chart's points might each span a
 // week, while "1M" points are daily), so a fixed point-count window would
@@ -248,7 +254,9 @@ export function PriceChart({
   previousClose,
   initialPeriod = "1D",
   heightClassName = "h-[320px]",
-  priceIndent
+  priceIndent,
+  compareSymbols = [],
+  onExitCompare
 }: {
   symbol: string;
   currentPrice: number;
@@ -257,6 +265,14 @@ export function PriceChart({
   initialPeriod?: ChartPeriod;
   heightClassName?: string;
   priceIndent?: string;
+  /** Desktop watchlist "Compare" feature only — additional symbols (up to
+   *  6, for 7 total including the main one) to overlay on the same chart as
+   *  percentage-change lines. Empty/omitted everywhere else (mobile,
+   *  standalone stock page), which keeps this component's default
+   *  single-stock price behavior completely unchanged there. */
+  compareSymbols?: string[];
+  /** Called when the user dismisses compare mode via the "X" button. */
+  onExitCompare?: () => void;
 }) {
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
   const [chartKey, setChartKey]       = useState(0);
@@ -398,6 +414,77 @@ export function PriceChart({
       ma99: mas.get(99)?.[i] ?? undefined,
     }));
   }, [data, period]);
+
+  /* ── Compare mode: fetch each additional symbol's candles for the same
+     period, then build a percentage-change-aligned dataset. ── */
+  const isComparing = compareSymbols.length > 0;
+  const [compareCandles, setCompareCandles] = useState<Record<string, CandlePoint[]>>({});
+
+  useEffect(() => {
+    if (!compareSymbols.length) { setCompareCandles({}); return; }
+    const controller = new AbortController();
+    Promise.all(
+      compareSymbols.map(async (sym) => {
+        try {
+          const res = await fetch(`/api/candles?symbol=${encodeURIComponent(sym)}&period=${period}`, { signal: controller.signal });
+          const payload = await res.json() as { candles?: CandlePoint[] };
+          return [sym, payload.candles ?? []] as const;
+        } catch {
+          return [sym, []] as const;
+        }
+      })
+    ).then(entries => {
+      if (!controller.signal.aborted) setCompareCandles(Object.fromEntries(entries));
+    });
+    return () => controller.abort();
+  }, [compareSymbols, period]);
+
+  // Bump chartKey (replays the left-to-right draw-in for the whole chart)
+  // whenever compare mode is entered, exited, or its symbol set changes.
+  const compareSymbolsKey = compareSymbols.join(",");
+  useEffect(() => {
+    setChartKey(k => k + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compareSymbolsKey]);
+
+  const compareChartData = useMemo(() => {
+    if (!isComparing || !data.length) return null;
+
+    const toPercentSeries = (points: { date: string; close: number }[]) => {
+      const base = points.find(p => p.close != null)?.close;
+      if (!base) return new Map<string, number | null>();
+      const map = new Map<string, number | null>();
+      for (const p of points) {
+        if (p.date === "prev") continue;
+        map.set(p.date.slice(0, 10), (p.close / base - 1) * 100);
+      }
+      return map;
+    };
+
+    const mainDates = data.filter(d => d.date !== "prev").map(d => d.date);
+    const mainPctByDate = toPercentSeries(data);
+    const compareSeries = compareSymbols.map(sym => ({
+      symbol: sym,
+      byDate: toPercentSeries(compareCandles[sym] ?? []),
+    }));
+
+    let lastMain: number | null = null;
+    const lastCompare: Record<string, number | null> = {};
+
+    return mainDates.map(date => {
+      const key = date.slice(0, 10);
+      const mainVal = mainPctByDate.get(key);
+      if (mainVal != null) lastMain = mainVal;
+
+      const point: Record<string, unknown> = { date, mainPct: lastMain };
+      for (const { symbol: sym, byDate } of compareSeries) {
+        const v = byDate.get(key);
+        if (v != null) lastCompare[sym] = v;
+        point[`pct_${sym}`] = lastCompare[sym] ?? null;
+      }
+      return point;
+    });
+  }, [isComparing, data, compareSymbols, compareCandles]);
 
   /* Displayed price and % change — hover overrides live values */
   const displayPrice = hoverPrice ?? currentPrice;
@@ -612,10 +699,14 @@ export function PriceChart({
           >
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              data={chartData}
+              data={isComparing ? (compareChartData ?? []) : chartData}
               margin={{ left: 0, right: 0, top: 8, bottom: 0 }}
             >
-              {/* No Y axis, no grid lines */}
+              {/* No Y axis, no grid lines. In compare mode the domain is
+                  driven by whichever series (main or any added symbol) has
+                  moved furthest — Recharts' auto dataMin/dataMax already
+                  does this correctly since every pct_* field lives in the
+                  same data array. */}
               <CartesianGrid stroke="transparent" />
               <YAxis domain={["dataMin", "dataMax"]} hide />
               <XAxis dataKey="date" hide />
@@ -638,39 +729,79 @@ export function PriceChart({
                 })()}
               />
 
-              <Area
-                type="monotone"
-                dataKey="close"
-                stroke={lineColor}
-                fill="none"
-                strokeWidth={isLongTerm ? 2 : 2.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                dot={false}
-                activeDot={(props: Record<string, unknown>) => {
-                  const { cx, cy } = props as { cx?: number; cy?: number };
-                  const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
-                  if (isTouchDevice) return <g key="no-dot" />;
-                  if (cx == null || cy == null) return <g key="no-dot2" />;
-                  // Update horizontal crosshair position for pro mode
-                  if (proMode && cy !== dotCY) setDotCY(cy);
-                  return <circle key="dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} />;
-                }}
-                isAnimationActive={false}
-              />
+              {!isComparing ? (
+                <>
+                <Area
+                  type="monotone"
+                  dataKey="close"
+                  stroke={lineColor}
+                  fill="none"
+                  strokeWidth={isLongTerm ? 2 : 2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  dot={false}
+                  activeDot={(props: Record<string, unknown>) => {
+                    const { cx, cy } = props as { cx?: number; cy?: number };
+                    const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
+                    if (isTouchDevice) return <g key="no-dot" />;
+                    if (cx == null || cy == null) return <g key="no-dot2" />;
+                    // Update horizontal crosshair position for pro mode
+                    if (proMode && cy !== dotCY) setDotCY(cy);
+                    return <circle key="dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} />;
+                  }}
+                  isAnimationActive={false}
+                />
 
-              {/* ── Moving average overlays ── */}
-              {(MA_AVAILABILITY[period] ?? []).includes(7) && activeMAs.has(7) && (
-                <Line key="ma7" type="monotone" dataKey="ma7" stroke={MA_COLORS[7]} strokeWidth={3}
-                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
-              )}
-              {(MA_AVAILABILITY[period] ?? []).includes(25) && activeMAs.has(25) && (
-                <Line key="ma25" type="monotone" dataKey="ma25" stroke={MA_COLORS[25]} strokeWidth={3}
-                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
-              )}
-              {(MA_AVAILABILITY[period] ?? []).includes(99) && activeMAs.has(99) && (
-                <Line key="ma99" type="monotone" dataKey="ma99" stroke={MA_COLORS[99]} strokeWidth={3}
-                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
+                {/* ── Moving average overlays ── */}
+                {(MA_AVAILABILITY[period] ?? []).includes(7) && activeMAs.has(7) && (
+                  <Line key="ma7" type="monotone" dataKey="ma7" stroke={MA_COLORS[7]} strokeWidth={3}
+                    dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
+                )}
+                {(MA_AVAILABILITY[period] ?? []).includes(25) && activeMAs.has(25) && (
+                  <Line key="ma25" type="monotone" dataKey="ma25" stroke={MA_COLORS[25]} strokeWidth={3}
+                    dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
+                )}
+                {(MA_AVAILABILITY[period] ?? []).includes(99) && activeMAs.has(99) && (
+                  <Line key="ma99" type="monotone" dataKey="ma99" stroke={MA_COLORS[99]} strokeWidth={3}
+                    dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
+                )}
+                </>
+              ) : (
+                <>
+                {/* Main stock is always green in compare mode, regardless of
+                    its own up/down direction — comparison is about relative
+                    growth, not the single-stock red/green convention. */}
+                <Line
+                  key={`main-${chartKey}`}
+                  type="monotone"
+                  dataKey="mainPct"
+                  stroke={COMPARE_COLORS[0]}
+                  strokeWidth={isLongTerm ? 2 : 2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  dot={false}
+                  isAnimationActive
+                  animationDuration={700}
+                  animationEasing="ease-out"
+                  connectNulls
+                />
+                {compareSymbols.map((sym, i) => (
+                  <Line
+                    key={`${sym}-${chartKey}`}
+                    type="monotone"
+                    dataKey={`pct_${sym}`}
+                    stroke={COMPARE_COLORS[(i + 1) % COMPARE_COLORS.length]}
+                    strokeWidth={isLongTerm ? 2 : 2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    dot={false}
+                    isAnimationActive
+                    animationDuration={700}
+                    animationEasing="ease-out"
+                    connectNulls
+                  />
+                ))}
+                </>
               )}
             </ComposedChart>
           </ResponsiveContainer>
@@ -770,9 +901,36 @@ export function PriceChart({
         </div>
       </div>
 
+      {/* ── Compare mode: legend (color → symbol) + exit button ── */}
+      {isComparing && (
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+          <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: COMPARE_COLORS[0] }}>
+            <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: COMPARE_COLORS[0] }} />
+            {symbol}
+          </span>
+          {compareSymbols.map((sym, i) => (
+            <span key={sym} className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: COMPARE_COLORS[(i + 1) % COMPARE_COLORS.length] }}>
+              <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: COMPARE_COLORS[(i + 1) % COMPARE_COLORS.length] }} />
+              {sym}
+            </span>
+          ))}
+          {onExitCompare && (
+            <button
+              type="button"
+              onClick={onExitCompare}
+              aria-label="Exit compare mode"
+              className="flex items-center justify-center h-6 w-6 rounded-full border border-border-subtle text-text-muted transition hover:border-negative hover:text-negative"
+            >
+              <span className="text-sm leading-none">×</span>
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ── Moving average toggles — only shown when at least one MA makes
-          sense for the currently selected period ── */}
-      {displayedMAWindows.length > 0 && (
+          sense for the currently selected period (and never during compare
+          mode, where up to 7 lines are already on screen) ── */}
+      {!isComparing && displayedMAWindows.length > 0 && (
         <>
         <style>{`
           @keyframes ma-btn-pop {

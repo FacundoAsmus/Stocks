@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Search, Clock } from "lucide-react";
 
 import { SECTOR_ETFS } from "@/lib/etfs";
+import { cn } from "@/lib/utils";
 
 const RECENT_KEY = "market-lens-recent-searches";
 const MAX_RECENT = 6;
@@ -153,6 +154,17 @@ export function SearchBar() {
     router.push(`/stock/${encodeURIComponent(cleanSymbol)}`);
   }
 
+  // Watchlist page only: adds a symbol as a comparison overlay on the
+  // currently-displayed chart, instead of replacing it as the main stock.
+  function addToCompare(symbol: string, event: MouseEvent) {
+    event.stopPropagation();
+    const cleanSymbol = symbol.trim().toUpperCase();
+    if (!cleanSymbol) return;
+    window.dispatchEvent(new CustomEvent("watchlist-compare-add-symbol", { detail: cleanSymbol }));
+    setQuery("");
+    setIsOpen(false);
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
   event.preventDefault();
   const cleanQuery = query.trim().toUpperCase();
@@ -196,16 +208,29 @@ export function SearchBar() {
         >
           <p className="px-4 py-2 text-xs uppercase tracking-widest text-text-muted">Recent</p>
           {recentSearches.map((symbol) => (
-            <button
+            <div
               key={symbol}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => navigateToSymbol(symbol)}
-              className="flex w-full items-center gap-3 border-t border-border-subtle/40 px-4 py-3 text-left text-sm transition hover:bg-white/5"
+              onKeyDown={(e) => { if (e.key === "Enter") navigateToSymbol(symbol); }}
+              className="flex w-full items-center gap-3 border-t border-border-subtle/40 px-4 py-3 text-left text-sm transition hover:bg-white/5 cursor-pointer"
             >
               <ResultIcon symbol={symbol} logo={logos[symbol]} />
               <span className="font-semibold text-text-primary">{symbol}</span>
-              <Clock className="ml-auto h-4 w-4 shrink-0 text-text-muted" />
-            </button>
+              {pathname === "/watchlist" && (
+                <button
+                  type="button"
+                  onClick={(e) => addToCompare(symbol, e)}
+                  aria-label={`Compare ${symbol}`}
+                  title={`Compare ${symbol}`}
+                  className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-positive hover:bg-positive/15"
+                >
+                  <span className="text-base leading-none">+</span>
+                </button>
+              )}
+              <Clock className={cn("h-4 w-4 shrink-0 text-text-muted", pathname === "/watchlist" ? "ml-1" : "ml-auto")} />
+            </div>
           ))}
         </div>
       ) : showResults ? (
@@ -214,11 +239,13 @@ export function SearchBar() {
           style={{ background: GLASS_BG, backdropFilter: "blur(22px) saturate(160%)", WebkitBackdropFilter: "blur(22px) saturate(160%)", boxShadow: GLASS_SHADOW }}
         >
           {results.map((result) => (
-            <button
+            <div
               key={`${result.symbol}-${result.description}`}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => navigateToSymbol(result.symbol)}
-              className="flex w-full items-center gap-3 border-t border-border-subtle/40 px-4 py-3 text-left text-sm transition first:border-t-0 hover:bg-white/5"
+              onKeyDown={(e) => { if (e.key === "Enter") navigateToSymbol(result.symbol); }}
+              className="flex w-full items-center gap-3 border-t border-border-subtle/40 px-4 py-3 text-left text-sm transition first:border-t-0 hover:bg-white/5 cursor-pointer"
             >
               <ResultIcon symbol={result.symbol} logo={logos[result.symbol]} />
               <span className="min-w-0 flex-1">
@@ -227,8 +254,20 @@ export function SearchBar() {
                 </span>
                 <span className="block truncate text-text-muted">{result.description}</span>
               </span>
-              <span className="shrink-0 text-xs uppercase text-text-muted">Open</span>
-            </button>
+              {pathname === "/watchlist" ? (
+                <button
+                  type="button"
+                  onClick={(e) => addToCompare(result.symbol, e)}
+                  aria-label={`Compare ${result.symbol}`}
+                  title={`Compare ${result.symbol}`}
+                  className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-positive hover:bg-positive/15"
+                >
+                  <span className="text-base leading-none">+</span>
+                </button>
+              ) : (
+                <span className="shrink-0 text-xs uppercase text-text-muted">Open</span>
+              )}
+            </div>
           ))}
         </div>
       ) : null}
