@@ -729,8 +729,7 @@ export function PriceChart({
                 })()}
               />
 
-              {!isComparing ? (
-                <>
+              {!isComparing && (
                 <Area
                   type="monotone"
                   dataKey="close"
@@ -751,26 +750,26 @@ export function PriceChart({
                   }}
                   isAnimationActive={false}
                 />
+              )}
 
-                {/* ── Moving average overlays ── */}
-                {(MA_AVAILABILITY[period] ?? []).includes(7) && activeMAs.has(7) && (
-                  <Line key="ma7" type="monotone" dataKey="ma7" stroke={MA_COLORS[7]} strokeWidth={3}
-                    dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
-                )}
-                {(MA_AVAILABILITY[period] ?? []).includes(25) && activeMAs.has(25) && (
-                  <Line key="ma25" type="monotone" dataKey="ma25" stroke={MA_COLORS[25]} strokeWidth={3}
-                    dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
-                )}
-                {(MA_AVAILABILITY[period] ?? []).includes(99) && activeMAs.has(99) && (
-                  <Line key="ma99" type="monotone" dataKey="ma99" stroke={MA_COLORS[99]} strokeWidth={3}
-                    dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
-                )}
-                </>
-              ) : (
-                <>
-                {/* Main stock is always green in compare mode, regardless of
-                    its own up/down direction — comparison is about relative
-                    growth, not the single-stock red/green convention. */}
+              {/* ── Moving average overlays (single-stock mode only) ── */}
+              {!isComparing && (MA_AVAILABILITY[period] ?? []).includes(7) && activeMAs.has(7) && (
+                <Line key="ma7" type="monotone" dataKey="ma7" stroke={MA_COLORS[7]} strokeWidth={3}
+                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
+              )}
+              {!isComparing && (MA_AVAILABILITY[period] ?? []).includes(25) && activeMAs.has(25) && (
+                <Line key="ma25" type="monotone" dataKey="ma25" stroke={MA_COLORS[25]} strokeWidth={3}
+                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
+              )}
+              {!isComparing && (MA_AVAILABILITY[period] ?? []).includes(99) && activeMAs.has(99) && (
+                <Line key="ma99" type="monotone" dataKey="ma99" stroke={MA_COLORS[99]} strokeWidth={3}
+                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
+              )}
+
+              {/* Main stock is always green in compare mode, regardless of
+                  its own up/down direction — comparison is about relative
+                  growth, not the single-stock red/green convention. */}
+              {isComparing && (
                 <Line
                   key={`main-${chartKey}`}
                   type="monotone"
@@ -785,24 +784,23 @@ export function PriceChart({
                   animationEasing="ease-out"
                   connectNulls
                 />
-                {compareSymbols.map((sym, i) => (
-                  <Line
-                    key={`${sym}-${chartKey}`}
-                    type="monotone"
-                    dataKey={`pct_${sym}`}
-                    stroke={COMPARE_COLORS[(i + 1) % COMPARE_COLORS.length]}
-                    strokeWidth={isLongTerm ? 2 : 2.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    dot={false}
-                    isAnimationActive
-                    animationDuration={700}
-                    animationEasing="ease-out"
-                    connectNulls
-                  />
-                ))}
-                </>
               )}
+              {isComparing && compareSymbols.map((sym, i) => (
+                <Line
+                  key={`${sym}-${chartKey}`}
+                  type="monotone"
+                  dataKey={`pct_${sym}`}
+                  stroke={COMPARE_COLORS[(i + 1) % COMPARE_COLORS.length]}
+                  strokeWidth={isLongTerm ? 2 : 2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  dot={false}
+                  isAnimationActive
+                  animationDuration={700}
+                  animationEasing="ease-out"
+                  connectNulls
+                />
+              ))}
             </ComposedChart>
           </ResponsiveContainer>
           </div>
