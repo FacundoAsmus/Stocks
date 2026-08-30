@@ -7,8 +7,8 @@ import { DesktopEarningsCalendar } from "@/components/desktop/DesktopEarningsCal
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { NewsCard } from "@/components/NewsCard";
 import { PriceChart } from "@/components/PriceChart";
+import { StockLogo } from "@/components/StockLogo";
 import { SECTOR_ETFS } from "@/lib/etfs";
-import { cn } from "@/lib/utils";
 import type { getStockDetail } from "@/lib/finnhub";
 
 type StockDetail = Awaited<ReturnType<typeof getStockDetail>>;
@@ -53,26 +53,10 @@ export function DesktopStockDetail({
           {/* ── Logo + name row ── */}
           <div className="flex gap-4 items-start">
             <div className="shrink-0">
-              {stock.profile.logo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={stock.profile.logo}
-                  alt=""
-                  className="h-14 w-14 rounded-md border border-white/10 bg-white/5 object-contain"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                  }}
-                />
-              ) : null}
-              <span
-                className={cn(
-                  "h-14 w-14 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-lg font-semibold text-text-primary",
-                  stock.profile.logo && "hidden"
-                )}
-              >
-                {isEtf ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
-              </span>
+              <StockLogo
+                logo={stock.profile.logo}
+                label={isEtf ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
+              />
             </div>
             <div>
               <h1 className="text-3xl font-semibold tracking-normal text-text-primary sm:text-4xl">
