@@ -115,24 +115,15 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         <button
           onClick={handleBack}
           aria-label="Back"
-          className="fixed flex items-center justify-center h-[2.45rem] w-[2.45rem] rounded-full border border-white/25 text-positive overflow-hidden"
+          className="fixed flex items-center justify-center h-[2.45rem] w-[2.45rem] text-positive"
           style={{
             top: "calc(0.75rem + env(safe-area-inset-top))",
             left: "1rem",
             zIndex: 500,
-            background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-            backdropFilter: "blur(22px) saturate(160%)",
-            WebkitBackdropFilter: "blur(22px) saturate(160%)",
-            boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
+            background: "transparent",
           }}
         >
-          {/* Thin specular highlight along the top edge — matching the AI pill's glass sheen */}
-          <div
-            aria-hidden
-            className="absolute top-0 left-[18%] right-[18%] pointer-events-none"
-            style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)" }}
-          />
-          <ChevronLeft className="h-5 w-5 relative" />
+          <ChevronLeft className="h-5 w-5" />
         </button>,
         document.body
       )}
