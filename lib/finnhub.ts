@@ -424,9 +424,23 @@ async function getEarningsSurpriseHistory(symbol: string): Promise<FinnhubEarnin
   return Array.isArray(data) ? data : [];
 }
 
-function periodToQuarter(period: string): { quarter: number; year: number } {
-  const d = new Date(`${period}T00:00:00`);
-  return { quarter: Math.floor(d.getMonth() / 3) + 1, year: d.getFullYear() };
+// Finds the calendar event that this surprise-history quarter almost
+// certainly refers to: the earliest real, dated event on or shortly after
+// the fiscal period-end date. Matching this way — instead of by
+// quarter/year labels — is what avoids the bug below.
+function findEventForPeriod(events: EarningsEvent[], period: string): EarningsEvent | null {
+  const periodMs = new Date(`${period}T00:00:00`).getTime();
+  const maxWindowMs = 1000 * 60 * 60 * 24 * 100; // ~100 days: comfortably covers the real gap between a fiscal quarter's close and the report date
+  let best: EarningsEvent | null = null;
+  let bestDiff = Infinity;
+  for (const e of events) {
+    const diff = new Date(`${e.date}T00:00:00`).getTime() - periodMs;
+    if (diff >= 0 && diff < maxWindowMs && diff < bestDiff) {
+      bestDiff = diff;
+      best = e;
+    }
+  }
+  return best;
 }
 
 // Quarterly earnings dates + EPS/revenue estimate vs. actual. Window: ~13
@@ -439,13 +453,23 @@ function periodToQuarter(period: string): { quarter: number; year: number } {
 // historical actual/estimate values entirely. /stock/earnings is the
 // endpoint Finnhub documents as reliable for historical EPS actual vs.
 // estimate on the free tier, so we fetch both and merge: it backfills EPS
-// on dates the calendar already gave us, and adds whole past quarters the
-// calendar never returned. For quarters only found via /stock/earnings we
-// have no real announcement date (that endpoint only gives the fiscal
-// period-end date), so we place the marker on the period-end date as a
-// best-effort approximation — it can be a few weeks off from the actual
-// report date. Revenue actual/estimate isn't in /stock/earnings at all, so
-// it stays null for any quarter that only came from that source.
+// onto quarters the calendar endpoint already gave us a real date for.
+//
+// /stock/earnings only gives a fiscal PERIOD-END date, never the actual
+// report date — those are reliably weeks apart (e.g. NVIDIA's fiscal Q2
+// ends in July but is reported in late August). This used to match
+// surprise-history rows to calendar events by quarter/year number, and
+// fabricate a brand-new calendar entry dated on the period-end date itself
+// whenever that match failed. For companies whose fiscal year is offset
+// from the calendar year (NVIDIA's fiscal year starts in February), a
+// naive calendar-quarter-from-month calculation labels periods differently
+// than Finnhub's own fiscal quarter numbers, so the match kept failing —
+// producing duplicate entries for the same real quarter, one correctly
+// dated (from the calendar endpoint) and one wrongly dated on the quarter's
+// calendar-end date months earlier (e.g. "Mar 31" showing up as if it were
+// a report date). Matching by nearest real date instead of by
+// quarter/year label fixes that: EPS actual/estimate now only ever attaches
+// to a genuine, already-dated event, and we never invent a date of our own.
 export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent[]> {
   const cleaned = cleanSymbol(symbol);
   const [calendarData, surpriseHistory] = await Promise.all([
@@ -463,33 +487,13 @@ export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent
 
   surpriseHistory.forEach(s => {
     if (s.actual === null && s.estimate === null) return;
-    const { quarter, year } = periodToQuarter(s.period);
-    const match = events.find(e => e.quarter === quarter && e.year === year);
-    if (match) {
-      if (match.epsActual === null)   match.epsActual   = s.actual;
-      if (match.epsEstimate === null) match.epsEstimate = s.estimate;
-    } else {
-      events.push({
-        date: s.period,
-        quarter,
-        year,
-        hour: null,
-        epsEstimate: s.estimate,
-        epsActual: s.actual,
-        revenueEstimate: null,
-        revenueActual: null
-      });
-    }
+    const match = findEventForPeriod(events, s.period);
+    if (!match) return; // No real dated event nearby — don't fabricate one.
+    if (match.epsActual === null)   match.epsActual   = s.actual;
+    if (match.epsEstimate === null) match.epsEstimate = s.estimate;
   });
 
   events.sort((a, b) => a.date.localeCompare(b.date));
-
-  // TEMP DIAGNOSTIC — remove once we've confirmed whether Finnhub's plan
-  // populates estimate/actual fields for this account. Check Vercel logs.
-  console.log(
-    `[earnings] ${cleaned}: ${events.length} events (calendar=${calendarData.earningsCalendar?.length ?? 0}, surpriseHistory=${surpriseHistory.length}) —`,
-    JSON.stringify(events.slice(0, 3))
-  );
 
   return events;
 }
