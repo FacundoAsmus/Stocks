@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, MouseEvent as ReactMouseEvent, useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Search, Clock } from "lucide-react";
 
@@ -156,7 +156,7 @@ export function SearchBar() {
 
   // Watchlist page only: adds a symbol as a comparison overlay on the
   // currently-displayed chart, instead of replacing it as the main stock.
-  function addToCompare(symbol: string, event: MouseEvent) {
+  function addToCompare(symbol: string, event: ReactMouseEvent) {
     event.stopPropagation();
     const cleanSymbol = symbol.trim().toUpperCase();
     if (!cleanSymbol) return;
