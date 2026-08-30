@@ -245,30 +245,6 @@ export function WatchlistSplitView() {
     return () => window.removeEventListener("watchlist-preview-symbol", handlePreview);
   }, []);
 
-  // "Compare" feature: additional symbols overlaid on the current chart as
-  // percentage-change lines. Added via the "+" on search results while on
-  // this page; capped at 6 (7 total including the main stock).
-  const [compareSymbols, setCompareSymbols] = useState<string[]>([]);
-  useEffect(() => {
-    function handleCompareAdd(e: Event) {
-      const symbol = (e as CustomEvent<string>).detail;
-      if (!symbol) return;
-      setCompareSymbols(prev => {
-        if (symbol === selectedSymbol || prev.includes(symbol)) return prev;
-        if (prev.length >= 6) return prev;
-        return [...prev, symbol];
-      });
-    }
-    window.addEventListener("watchlist-compare-add-symbol", handleCompareAdd);
-    return () => window.removeEventListener("watchlist-compare-add-symbol", handleCompareAdd);
-  }, [selectedSymbol]);
-
-  // Switching the main stock exits compare mode — comparing against a stock
-  // that's no longer the one on screen wouldn't make sense.
-  useEffect(() => {
-    setCompareSymbols([]);
-  }, [selectedSymbol]);
-
   const symbolQuery = useMemo(() => [...symbols].sort().join(","), [symbols]);
 
   useEffect(() => {
@@ -440,8 +416,6 @@ export function WatchlistSplitView() {
                 metrics={detail.metrics}
                 chartHeightClassName="h-[320px]"
                 earningsCalendarContainerRef={detailColumnRef}
-                compareSymbols={compareSymbols}
-                onExitCompare={() => setCompareSymbols([])}
               />
             </div>
           ) : null}
