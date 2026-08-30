@@ -35,16 +35,20 @@ function MiniMonthGrid({
 
   return (
     <div className="flex flex-col">
-      <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-positive">{monthLabel}</p>
+      <p className="mb-1.5 text-xs font-bold uppercase tracking-widest text-positive">{monthLabel}</p>
       <div className="grid grid-cols-7 gap-y-0.5">
         {WEEKDAYS.map((d, i) => (
-          <p key={i} className="text-center text-[9px] font-semibold uppercase text-text-muted">{d}</p>
+          <p key={i} className="text-center text-[9px] font-bold uppercase text-text-muted">{d}</p>
         ))}
         {cells.map((day, i) => {
           if (day === null) return <div key={`blank-${i}`} className="h-5" />;
           const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const event = eventsByDate.get(dateStr);
           const isToday = dateStr === today;
+          // Past dates fade to grey, today stays green, and anything still
+          // to come reads as solid/bold primary text — same three-way split
+          // used on the phone version's calendar.
+          const isPast = dateStr < today;
           return (
             <div key={dateStr} className="flex h-5 items-center justify-center">
               {event ? (
@@ -56,7 +60,7 @@ function MiniMonthGrid({
                 </button>
               ) : (
                 <span
-                  className={`text-[9px] ${isToday ? "font-bold text-positive" : "text-text-muted"}`}
+                  className={`text-[9px] font-bold ${isToday ? "text-positive" : isPast ? "text-text-muted" : "text-text-primary"}`}
                 >
                   {day}
                 </span>
@@ -89,6 +93,22 @@ export function DesktopEarningsCalendar({
   const [selected, setSelected] = useState<EarningsEvent | null>(null);
   const today = todayStr();
   const [year, setYear] = useState(() => new Date().getFullYear());
+
+  // Year-back navigation limit: you can only ever go one year behind the
+  // real current year (never two+), and even that one year back is only
+  // reachable during the first 100 days of the current year — once more
+  // than 100 days have passed since Jan 1, last year's calendar is no
+  // longer relevant enough to keep showing, so the earliest reachable year
+  // becomes the current year itself.
+  const minYear = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const daysSinceJan1 = Math.floor(
+      (now.getTime() - new Date(currentYear, 0, 1).getTime()) / (1000 * 60 * 60 * 24)
+    );
+    return daysSinceJan1 < 100 ? currentYear - 1 : currentYear;
+  }, []);
+  const canGoBack = year > minYear;
 
   const eventsByDate = useMemo(() => {
     const m = new Map<string, EarningsEvent>();
@@ -131,13 +151,14 @@ export function DesktopEarningsCalendar({
             <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-positive" />
-                <p className="text-sm font-semibold text-text-primary">Earnings Calendar</p>
+                <p className="text-sm font-bold text-text-primary">Earnings Calendar</p>
               </div>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setYear((y) => y - 1)}
+                  onClick={() => setYear((y) => Math.max(minYear, y - 1))}
                   aria-label="Previous year"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:text-text-primary"
+                  disabled={!canGoBack}
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-text-muted"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
