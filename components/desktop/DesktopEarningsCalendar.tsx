@@ -108,7 +108,12 @@ export function DesktopEarningsCalendar({
     );
     return daysSinceJan1 < 100 ? currentYear - 1 : currentYear;
   }, []);
+  // Forward navigation is capped the same way: never more than one year
+  // ahead of the real current year (e.g. from 2026 you can reach 2027, but
+  // not 2028).
+  const maxYear = useMemo(() => new Date().getFullYear() + 1, []);
   const canGoBack = year > minYear;
+  const canGoForward = year < maxYear;
 
   const eventsByDate = useMemo(() => {
     const m = new Map<string, EarningsEvent>();
@@ -164,9 +169,10 @@ export function DesktopEarningsCalendar({
                 </button>
                 <span className="w-12 text-center text-sm font-bold text-text-primary">{year}</span>
                 <button
-                  onClick={() => setYear((y) => y + 1)}
+                  onClick={() => setYear((y) => Math.min(maxYear, y + 1))}
                   aria-label="Next year"
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:text-text-primary"
+                  disabled={!canGoForward}
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-text-muted"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>

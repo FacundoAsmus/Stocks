@@ -493,22 +493,50 @@ export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent
     .filter(e => e.date)
     .map(e => ({ ...e }));
 
+  // Pass 1: backfill EPS onto real dated events, and learn this symbol's
+  // typical gap between a fiscal period-end and its actual report date from
+  // whichever quarters we have both for.
+  const DAY_MS = 1000 * 60 * 60 * 24;
+  const unmatched: FinnhubEarningsSurprise[] = [];
+  const lagsDays: number[] = [];
+
   surpriseHistory.forEach(s => {
     if (s.actual === null && s.estimate === null) return;
     const match = findEventForPeriod(events, s.period);
     if (match) {
       if (match.epsActual === null)   match.epsActual   = s.actual;
       if (match.epsEstimate === null) match.epsEstimate = s.estimate;
+      const lag = Math.round(
+        (new Date(`${match.date}T00:00:00`).getTime() - new Date(`${s.period}T00:00:00`).getTime()) / DAY_MS
+      );
+      if (lag >= 0) lagsDays.push(lag);
       return;
     }
-    // No real dated event nearby — the calendar endpoint doesn't have this
-    // quarter at all (common for older reports on the free tier). The
-    // fiscal period-end date is an approximation of the true report date
-    // (typically a few weeks early), but showing an approximate date for a
-    // quarter that genuinely happened beats omitting it entirely.
+    unmatched.push(s);
+  });
+
+  // Typical real-world gap for THIS symbol between a period-end and its
+  // actual report date, learned above. Falls back to a generic ~45 days
+  // (most companies report 3–7 weeks after quarter-end) if there aren't any
+  // matched quarters yet to learn from.
+  const avgLagDays = lagsDays.length
+    ? Math.round(lagsDays.reduce((a, b) => a + b, 0) / lagsDays.length)
+    : 45;
+
+  // Pass 2: for quarters the calendar endpoint has no real date for at all,
+  // estimate the report date using that learned gap instead of the raw
+  // period-end date. The two can be many weeks apart — that's exactly what
+  // caused NVIDIA's Q1 to show "Mar 31" when it actually reported May 20:
+  // "Mar 31" is the raw, un-adjusted fiscal period-end, not an estimate of
+  // the report date at all. Using this symbol's own observed ~50-day gap
+  // instead lands within a couple of days of the real date.
+  unmatched.forEach(s => {
     const { quarter, year } = periodToQuarter(s.period);
+    const estimatedDate = new Date(
+      new Date(`${s.period}T00:00:00`).getTime() + avgLagDays * DAY_MS
+    ).toISOString().slice(0, 10);
     events.push({
-      date: s.period,
+      date: estimatedDate,
       quarter,
       year,
       hour: null,
