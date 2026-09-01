@@ -99,17 +99,19 @@ function WatchlistListRow({
       className={cn(
         "flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 transition-colors select-none",
         // Every row always gets a real, opaque background — not just when
-        // active/dragging/hovered. An idle row with no background of its
-        // own is genuinely transparent, and Framer's layout animation
-        // (sliding rows out of the way during a drag) moves rows around
-        // while they're still in that idle state, which is what let you
-        // briefly see through them mid-reflow. The idle background below
-        // matches the panel's own color exactly, so it's visually identical
-        // to "no background" while actually being solid.
+        // dragging/hovered. An idle row with no background of its own is
+        // genuinely transparent, and Framer's layout animation (sliding rows
+        // out of the way during a drag) moves rows around while they're
+        // still in that idle state, which is what let you briefly see
+        // through them mid-reflow. The idle background below matches the
+        // panel's own color exactly, so it's visually identical to "no
+        // background" while actually being solid. The selected row uses
+        // that same idle background too, plus the green border — just the
+        // outline, no grey fill.
         isDragging
           ? "border-transparent bg-panel-muted"
           : isActive
-            ? "border-positive bg-panel-muted"
+            ? "watchlist-list-panel border-positive hover:bg-panel-muted/50"
             : "watchlist-list-panel border-transparent hover:bg-panel-muted/50"
       )}
     >
