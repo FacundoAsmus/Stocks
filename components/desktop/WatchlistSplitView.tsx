@@ -98,15 +98,19 @@ function WatchlistListRow({
       onClick={onSelect}
       className={cn(
         "flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 transition-colors select-none",
-        // While being dragged, always show a solid background regardless of
-        // selected/hover state — otherwise (since an idle, non-selected row
-        // has no background of its own) you could see whatever's behind it
-        // through the row as it moves over its neighbors.
+        // Every row always gets a real, opaque background — not just when
+        // active/dragging/hovered. An idle row with no background of its
+        // own is genuinely transparent, and Framer's layout animation
+        // (sliding rows out of the way during a drag) moves rows around
+        // while they're still in that idle state, which is what let you
+        // briefly see through them mid-reflow. The idle background below
+        // matches the panel's own color exactly, so it's visually identical
+        // to "no background" while actually being solid.
         isDragging
           ? "border-transparent bg-panel-muted"
           : isActive
             ? "border-positive bg-panel-muted"
-            : "border-transparent hover:bg-panel-muted/50"
+            : "watchlist-list-panel border-transparent hover:bg-panel-muted/50"
       )}
     >
       {stock.logo ? (
@@ -368,13 +372,29 @@ export function WatchlistSplitView() {
               value={stock.symbol}
               as="div"
               className="mx-2 my-0.5 rounded-xl"
-              whileDrag={{ scale: 1.02, boxShadow: "0 12px 30px rgba(0,0,0,0.45)", zIndex: 20 }}
+              // Keeping an explicit, persistent z-index tied to our own
+              // `draggingSymbol` state (see below) — not just Framer's
+              // `whileDrag`, which drops back to the default z-index the
+              // instant the pointer is released. This item then keeps
+              // playing a spring layout animation to settle into its new
+              // slot for a little while after that, during which a sibling
+              // that's also still mid-settle could otherwise render on top
+              // of it (plain DOM stacking order, unrelated to which one you
+              // were actually holding) — that's the "other element looks
+              // like it's above" bug. Staying elevated until well after the
+              // spring has settled (see the timeout in onDragEnd below)
+              // fixes it.
+              style={{ position: "relative", zIndex: stock.symbol === draggingSymbol ? 30 : 0 }}
+              whileDrag={{ scale: 1.02, boxShadow: "0 12px 30px rgba(0,0,0,0.45)" }}
               transition={{ type: "spring", stiffness: 500, damping: 40 }}
               onDragStart={() => setDraggingSymbol(stock.symbol)}
               onDragEnd={() => {
                 justDraggedRef.current = true;
-                setDraggingSymbol(null);
                 commitReorder();
+                // Keep this row's elevated z-index + solid background alive
+                // until the settle animation above has had time to finish,
+                // instead of dropping it the instant the pointer lifts.
+                setTimeout(() => { setDraggingSymbol(null); }, 300);
                 setTimeout(() => { justDraggedRef.current = false; }, 80);
               }}
             >
