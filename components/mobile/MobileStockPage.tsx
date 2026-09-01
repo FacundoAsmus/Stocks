@@ -167,11 +167,13 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         <div className="flex flex-col gap-4 px-2 mt-4">
           <MarketSentiment score={sentiment.score} drivers={sentiment.drivers} />
 
-          <AnalystSection
-            recommendations={stock.recommendations}
-            priceTarget={stock.priceTarget}
-            currentPrice={currentPrice}
-          />
+          {!isEtf && (
+            <AnalystSection
+              recommendations={stock.recommendations}
+              priceTarget={stock.priceTarget}
+              currentPrice={currentPrice}
+            />
+          )}
 
           <FundamentalsGrid
             metrics={metrics}

@@ -79,11 +79,13 @@ export function DesktopStockDetail({
 
         <MarketSentiment score={sentiment.score} drivers={sentiment.drivers} />
 
-        <AnalystSection
-          recommendations={stock.recommendations}
-          priceTarget={stock.priceTarget}
-          currentPrice={currentPrice}
-        />
+        {!isEtf && (
+          <AnalystSection
+            recommendations={stock.recommendations}
+            priceTarget={stock.priceTarget}
+            currentPrice={currentPrice}
+          />
+        )}
 
         <FundamentalsGrid
           metrics={metrics}
