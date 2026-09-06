@@ -148,6 +148,9 @@ function MonthGrid({
           const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const event = eventsByDate.get(dateStr);
           const isToday = dateStr === today;
+          // Past dates fade to grey, today stays green, and anything still
+          // to come reads as solid primary text instead of muted grey.
+          const isPast = dateStr < today;
           return (
             <div key={dateStr} className="flex items-center justify-center py-0.5">
               {event ? (
@@ -159,7 +162,7 @@ function MonthGrid({
                 </button>
               ) : (
                 <span className={`h-8 w-8 flex items-center justify-center text-sm ${
-                  isToday ? "text-positive font-bold" : "text-text-muted"
+                  isToday ? "text-positive font-bold" : isPast ? "text-text-muted" : "text-text-primary"
                 }`}>
                   {day}
                 </span>

@@ -156,7 +156,7 @@ export function FundamentalsGrid({
   ];
 
   const ETF_EXCLUDED_LABELS = new Set([
-    "P/E Ratio", "Forward P/E", "PEG", "EPS", "Dividend Yield", "Next Report", "Expected Earnings"
+    "Market Cap", "P/E Ratio", "Forward P/E", "PEG", "EPS", "Dividend Yield", "Next Report", "Expected Earnings"
   ]);
   const visibleItems = isEtf ? items.filter(item => !ETF_EXCLUDED_LABELS.has(item.label)) : items;
 
