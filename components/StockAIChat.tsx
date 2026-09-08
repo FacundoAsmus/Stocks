@@ -228,37 +228,21 @@ export function StockAIChat(props: StockAIChatProps) {
 
           {/* ── Chat message list ─────────────────────────────────────── */}
           <div
-            className="fixed inset-x-0 z-41"
+            ref={scrollRef}
+            className="fixed inset-x-0 z-41 overflow-y-auto"
             style={{
               top: 0,
               bottom: keyboardH > 0
                 ? `calc(${keyboardH}px + 3rem)`
                 : `calc(env(safe-area-inset-bottom) + 3.5rem)`,
-              pointerEvents: "none", // let taps in truly empty margin fall through to backdrop
+              paddingTop: "6rem",
+              paddingBottom: "1rem",
+              paddingLeft: "1rem",
+              paddingRight: "1rem",
+              pointerEvents: "none", // let taps fall through to backdrop
             }}
           >
-            {/* This inner wrapper is the actual scroll container. It needs
-                pointer-events: auto — an element with pointer-events: none
-                can't receive wheel/scroll input at all in most browsers,
-                even when its own children have pointer-events: auto, which
-                is why scrolling silently did nothing before despite
-                bubbles themselves being clickable. */}
-            <div
-              ref={scrollRef}
-              className="h-full overflow-y-auto"
-              style={{
-                // Desktop has no status bar/dynamic island to clear (that's
-                // what the old 6rem was for, copied from the mobile
-                // version) — a small offset for the site header is enough,
-                // and avoids bubbles running into/getting clipped by that
-                // now-unnecessary top margin.
-                paddingTop: "1.5rem",
-                paddingBottom: "1rem",
-                paddingLeft: "1rem",
-                paddingRight: "1rem",
-                pointerEvents: "auto",
-              }}
-            >
+            <div style={{ pointerEvents: "auto" }} /* only message bubbles catch events */>
               {messages.length === 0 && (
                 <div className="flex justify-center mb-4">
                   <span className="text-xs text-white/50 bg-black/40 rounded-full px-3 py-1.5 backdrop-blur-sm">
