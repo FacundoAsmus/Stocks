@@ -129,7 +129,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
             </button>
           </div>
 
-          <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
+          <div ref={scrollRef} className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">
             {messages.length === 0 && (
               <p className="text-sm text-text-muted">
                 Ask anything about {stock.symbol} — price action, fundamentals, news, or analyst sentiment.
