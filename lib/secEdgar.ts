@@ -22,7 +22,6 @@ async function secFetch(url: string): Promise<Response> {
   return fetch(url, {
     headers: {
       "User-Agent": SEC_USER_AGENT,
-      "Accept-Encoding": "gzip, deflate",
     },
     // These endpoints change rarely; let Next.js cache at the fetch layer too.
     next: { revalidate: 60 * 60 * 24 },
@@ -164,7 +163,12 @@ export async function getCompanyDescription(symbol: string): Promise<string | nu
     const description = extractBusinessDescription(html);
     descriptionCache.set(cacheKey, { value: description, expiresAt: Date.now() + DESCRIPTION_CACHE_TTL_MS });
     return description;
-  } catch {
+  } catch (err) {
+    // Logged (not thrown) so a failure for one symbol never breaks the
+    // page, but is still visible in server logs instead of vanishing
+    // completely — this was previously silent, which is part of why this
+    // bug was so hard to track down from the outside.
+    console.error(`[secEdgar] getCompanyDescription(${symbol}) failed:`, err instanceof Error ? err.message : err);
     // Cache the miss too (shorter-lived) so a bad symbol doesn't retry on
     // every page load, but doesn't get stuck forever if it's transient.
     descriptionCache.set(cacheKey, { value: null, expiresAt: Date.now() + 1000 * 60 * 30 });
