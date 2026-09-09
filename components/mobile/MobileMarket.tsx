@@ -108,7 +108,7 @@ function MoversSection({ gainers, losers, etfs }: { gainers: StockSummary[]; los
           <button key={t} onClick={() => setTab(t)}
             className={cn(
               "text-xs font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full transition-colors shrink-0",
-              tab === t ? "bg-positive text-black" : "text-positive"
+              tab === t ? "bg-accent text-black" : "text-accent"
             )}>
             {t === "etf" ? "ETF" : t === "winners" ? "Top Winners" : "Top Losers"}
           </button>
@@ -175,7 +175,7 @@ export function MobileMarket() {
             }}
           />
           <h1 className="text-4xl font-bold text-text-primary">{dayName} {dayNum}{suffix}</h1>
-          <p className={cn("mt-1 text-xs font-semibold uppercase tracking-widest", status.isOpen ? "text-positive" : "text-negative")}>
+          <p className={cn("mt-1 text-xs font-semibold uppercase tracking-widest", status.isOpen ? "text-accent" : "text-negative")}>
             Market {status.label}
           </p>
         </div>
@@ -188,7 +188,7 @@ export function MobileMarket() {
 
         {/* News — always spaced below the list, never overlapping */}
         <div className="mt-8">
-          <p className="px-4 text-xs font-semibold uppercase tracking-widest text-positive mb-3">News</p>
+          <p className="px-4 text-xs font-semibold uppercase tracking-widest text-accent mb-3">News</p>
           <div className="mx-4 flex flex-col gap-3">
             {(data.news ?? []).slice(0, 10).map(a => <NewsRow key={a.id} article={a} />)}
           </div>

@@ -1444,7 +1444,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
           separate bar/card behind it — this IS the input, elongated. */}
       {!hideTrigger && (
       <div
-        className="fixed rounded-full border border-white/25 text-positive overflow-hidden"
+        className="fixed rounded-full border border-white/25 text-accent overflow-hidden"
         style={{
           zIndex: 1002,
           bottom: pillBottom,
@@ -1508,7 +1508,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
               border: "none",
               outline: "none",
               fontSize: 16,
-              caretColor: "#00c805",
+              caretColor: "#adfa1b",
             }}
           />
           {input.trim() ? (
@@ -1518,8 +1518,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
               style={{
                 flexShrink: 0, height: 38, width: 38,
                 borderRadius: "50%",
-                backgroundColor: !loading ? "#00c805" : "rgba(0,200,5,0.18)",
-                color: !loading ? "#000" : "rgba(0,200,5,0.35)",
+                backgroundColor: !loading ? "#adfa1b" : "rgba(173,250,27,0.18)",
+                color: !loading ? "#000" : "rgba(173,250,27,0.35)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 border: "none",
                 cursor: !loading ? "pointer" : "default",
@@ -1535,7 +1535,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
               style={{
                 flexShrink: 0, height: 38, width: 38,
                 borderRadius: "50%",
-                backgroundColor: "#00c805",
+                backgroundColor: "#adfa1b",
                 color: "#000",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 border: "none",
@@ -1553,7 +1553,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
       {/* Controlled mode (e.g. desktop): render just the input row inline where hideTrigger is set and open is true, anchored bottom same as mobile pill would be, so typing still works without the floating circle. */}
       {hideTrigger && open && (
         <div
-          className="fixed rounded-full border border-white/25 text-positive overflow-hidden"
+          className="fixed rounded-full border border-white/25 text-accent overflow-hidden"
           style={{
             zIndex: 1002,
             bottom: pillBottom,
@@ -1579,7 +1579,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               placeholder={`Ask about ${stock.symbol}…`}
               className="text-text-primary placeholder:text-text-muted"
-              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "#00c805" }}
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "#adfa1b" }}
             />
             {input.trim() ? (
               <button
@@ -1588,8 +1588,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 style={{
                   flexShrink: 0, height: 38, width: 38,
                   borderRadius: "50%",
-                  backgroundColor: !loading ? "#00c805" : "rgba(0,200,5,0.18)",
-                  color: !loading ? "#000" : "rgba(0,200,5,0.35)",
+                  backgroundColor: !loading ? "#adfa1b" : "rgba(173,250,27,0.18)",
+                  color: !loading ? "#000" : "rgba(173,250,27,0.35)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   border: "none",
                   cursor: !loading ? "pointer" : "default",
@@ -1604,7 +1604,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 style={{
                   flexShrink: 0, height: 38, width: 38,
                   borderRadius: "50%",
-                  backgroundColor: "#00c805",
+                  backgroundColor: "#adfa1b",
                   color: "#000",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   border: "none",

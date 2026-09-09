@@ -161,7 +161,7 @@ export function MarketFearGreed() {
 
   return (
     <section ref={ref} className="rounded-xl bg-black p-5">
-      <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-4">
+      <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-4">
         Market Sentiment
       </p>
 

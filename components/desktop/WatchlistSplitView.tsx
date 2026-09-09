@@ -111,7 +111,7 @@ function WatchlistListRow({
         isDragging
           ? "border-transparent bg-panel-muted"
           : isActive
-            ? "watchlist-list-panel border-positive hover:bg-panel-muted/50"
+            ? "watchlist-list-panel border-accent hover:bg-panel-muted/50"
             : "watchlist-list-panel border-transparent hover:bg-panel-muted/50"
       )}
     >
@@ -358,7 +358,7 @@ export function WatchlistSplitView() {
           Page background behind it: #ececec in light mode (.watchlist-desktop-root). */}
       <div className="watchlist-list-panel m-3 flex w-[1/4] shrink-0 flex-col overflow-hidden rounded-2xl border border-border-subtle/70">
         <div className="shrink-0 px-6 pb-4 pt-6">
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">Watchlist</p>
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Watchlist</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Your Stocks</h1>
         </div>
         <Reorder.Group

@@ -83,7 +83,7 @@ function SettingsPanel({ closing }: { closing: boolean }) {
       >
         {/* Appearance */}
         <section>
-          <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-3">Appearance</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">Appearance</p>
           <div className="rounded-xl border border-border-subtle bg-panel overflow-hidden divide-y divide-border-subtle">
             {themeOptions.map(opt => (
               <button
@@ -97,7 +97,7 @@ function SettingsPanel({ closing }: { closing: boolean }) {
                 </span>
                 <span className={cn(
                   "h-5 w-5 rounded-full border-2 transition-colors",
-                  theme === opt.value ? "border-positive bg-positive" : "border-border-subtle"
+                  theme === opt.value ? "border-accent bg-accent" : "border-border-subtle"
                 )} />
               </button>
             ))}
@@ -106,7 +106,7 @@ function SettingsPanel({ closing }: { closing: boolean }) {
 
         {/* Pro Mode */}
         <section>
-          <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-3">Pro Mode</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">Pro Mode</p>
           <div className="rounded-xl border border-border-subtle bg-panel overflow-hidden">
             <button
               onClick={toggleProMode}
@@ -117,8 +117,8 @@ function SettingsPanel({ closing }: { closing: boolean }) {
                 <span className="text-xs text-text-muted">Adds a horizontal line at the hovered price to identify floors and ceilings</span>
               </span>
               <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative"
-                style={{ borderColor: proMode ? "var(--color-positive)" : "var(--color-border-subtle)",
-                         backgroundColor: proMode ? "var(--color-positive)" : "var(--color-panel-muted)" }}>
+                style={{ borderColor: proMode ? "var(--color-accent)" : "var(--color-border-subtle)",
+                         backgroundColor: proMode ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
                 <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
                   style={{ left: proMode ? "calc(100% - 1.125rem)" : "0.125rem" }} />
               </span>
@@ -528,7 +528,7 @@ export function MobileNav() {
 
   const iconWrapClass = "relative z-10 flex items-center justify-center transition-colors duration-300";
   function iconClass(active: boolean) {
-    return cn("transition-colors duration-300", active ? "text-black" : "text-positive");
+    return cn("transition-colors duration-300", active ? "text-black" : "text-accent");
   }
 
   return (
@@ -561,7 +561,7 @@ export function MobileNav() {
           {/* Sliding green indicator */}
           <span
             aria-hidden
-            className="absolute left-0 top-0 rounded-full bg-positive transition-transform duration-300 ease-out"
+            className="absolute left-0 top-0 rounded-full bg-accent transition-transform duration-300 ease-out"
             style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE, transform: `translateX(${activeIndex * 3.5}rem)` }}
           />
 

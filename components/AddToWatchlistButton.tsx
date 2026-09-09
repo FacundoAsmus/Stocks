@@ -65,8 +65,8 @@ export function AddToWatchlistButton({
         className={cn(
           "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border p-0 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.12]",
           isSaved
-            ? "border-positive/40 bg-black text-positive"
-            : "border-border-subtle text-text-muted hover:border-positive/50 hover:text-positive"
+            ? "border-accent/40 bg-black text-accent"
+            : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-accent"
         )}
       >
         <Star className="h-4 w-4" fill={isSaved ? "currentColor" : "none"} />

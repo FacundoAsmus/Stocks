@@ -115,7 +115,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         <button
           onClick={handleBack}
           aria-label="Back"
-          className="fixed flex items-center justify-center h-[2.45rem] w-[2.45rem] text-positive"
+          className="fixed flex items-center justify-center h-[2.45rem] w-[2.45rem] text-accent"
           style={{
             top: "calc(0.75rem + env(safe-area-inset-top))",
             left: "1rem",
@@ -191,7 +191,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
 
           {stock.news.length > 0 && (
             <section>
-              <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-3">News</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">News</p>
               <div className="flex flex-col gap-3">
                 {stock.news.slice(0, 8).map(article => (
                   <a key={article.id} href={article.url} target="_blank" rel="noreferrer"

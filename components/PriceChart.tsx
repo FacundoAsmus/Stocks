@@ -534,7 +534,7 @@ export function PriceChart({
         onClick={() => { if (active) return; setPeriod(option); setChartKey(k => k + 1); }}
         className={cn(
           "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition sm:px-3 sm:py-2 sm:text-sm",
-          active ? "bg-positive text-black" : "text-positive hover:text-positive/80"
+          active ? "bg-accent text-black" : "text-accent hover:text-accent/80"
         )}
       >
         {option}

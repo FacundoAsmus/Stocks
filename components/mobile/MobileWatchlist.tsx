@@ -430,7 +430,7 @@ export function MobileWatchlist() {
         />
         <div>
           <h1 className="text-4xl font-bold text-text-primary">Your Stocks</h1>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-accent">Watchlist</p>
         </div>
       </div>
 
