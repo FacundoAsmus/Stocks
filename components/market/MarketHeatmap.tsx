@@ -121,7 +121,7 @@ function LoadingHeatCanvas({ group, width, height }: { group: string; width: num
     let frame = 0;
     const paint = (now: number) => {
       const time = now / 1000;
-      context.fillStyle = "#060708";
+      context.fillStyle = "#342606";
       context.fillRect(0, 0, width, height);
       context.globalCompositeOperation = "lighter";
       for (let index = 0; index < 9; index += 1) {
@@ -224,7 +224,7 @@ export function MarketHeatmap() {
         </div>
       </div>
 
-      <div ref={areaRef} className="relative mx-4 mt-4 min-h-[calc(100dvh-12rem)] flex-1 overflow-hidden rounded-2xl border border-white/10 bg-black" role="tabpanel" aria-live="polite">
+      <div ref={areaRef} className="relative mx-4 mt-4 min-h-[calc(100dvh-12rem)] flex-1 overflow-hidden rounded-2xl border border-white/10 bg-[#342606]" role="tabpanel" aria-live="polite">
         {loading && !stocks.length && <LoadingHeatCanvas group={activeGroup} width={size.width} height={size.height} />}
         {!!previousStocks?.length && isTransitioning && previousRectangles && <HeatCanvas stocks={previousStocks} rectangles={previousRectangles} width={size.width} height={size.height} className="heatmap-fade-out" />}
         {!!stocks.length && !error && <HeatCanvas key={activeGroup} stocks={stocks} rectangles={rectangles} width={size.width} height={size.height} className={isTransitioning ? "heatmap-fade-in" : undefined} />}
