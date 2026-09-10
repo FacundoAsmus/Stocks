@@ -49,36 +49,27 @@ function makeTreemap(items: HeatmapStock[], bounds: Rectangle): Map<string, Rect
 }
 
 function colorForChange(change: number | null): [number, number, number] {
-  // Every tile uses the same continuous scale. ±5% reaches the saturated
-  // endpoint, while smaller moves blend smoothly through the neutral yellow.
-  const value = change ?? 0;
-  const amount = Math.min(1, Math.abs(value) / 5);
-  const neutral: [number, number, number] = [153, 126, 38];
-  const endpoint: [number, number, number] = value < 0 ? [159, 44, 44] : [21, 125, 67];
-  return [
-    Math.round(neutral[0] + (endpoint[0] - neutral[0]) * amount),
-    Math.round(neutral[1] + (endpoint[1] - neutral[1]) * amount),
-    Math.round(neutral[2] + (endpoint[2] - neutral[2]) * amount),
-  ];
+  const intensity = Math.min(1, Math.abs(change ?? 0) / 1.5);
+  if ((change ?? 0) > 0.08) return [0, Math.round(92 + intensity * 108), 5];
+  if ((change ?? 0) < -0.08) return [Math.round(120 + intensity * 135), Math.round(42 - intensity * 18), 3];
+  return [46, 50, 54];
 }
 
-function drawTileFill(
+function drawGlow(
   context: CanvasRenderingContext2D,
   rect: Rectangle,
   color: [number, number, number],
 ) {
+  const radius = Math.max(rect.width, rect.height) * 0.92;
+  const x = rect.x + rect.width / 2;
+  const y = rect.y + rect.height / 2;
   const [r, g, b] = color;
-  // Flat fill is intentionally independent of rectangle size. The small
-  // alpha overlay only softens tile edges; it is not a radial light source.
-  context.fillStyle = `rgb(${r}, ${g}, ${b})`;
-  context.fillRect(rect.x, rect.y, rect.width, rect.height);
-  const edge = context.createLinearGradient(rect.x, rect.y, rect.x, rect.y + rect.height);
-  edge.addColorStop(0, "rgba(0, 0, 0, 0.10)");
-  edge.addColorStop(0.14, "rgba(0, 0, 0, 0)");
-  edge.addColorStop(0.86, "rgba(0, 0, 0, 0)");
-  edge.addColorStop(1, "rgba(0, 0, 0, 0.12)");
-  context.fillStyle = edge;
-  context.fillRect(rect.x, rect.y, rect.width, rect.height);
+  const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+  gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.85)`);
+  gradient.addColorStop(0.48, `rgba(${r}, ${g}, ${b}, 0.42)`);
+  gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+  context.fillStyle = gradient;
+  context.fillRect(rect.x - radius, rect.y - radius, rect.width + radius * 2, rect.height + radius * 2);
 }
 
 function HeatCanvas({
@@ -103,11 +94,15 @@ function HeatCanvas({
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Keep the canvas transparent. During a transition this prevents either
+    // layer's black backdrop from darkening the other layer.
     context.clearRect(0, 0, width, height);
+    context.globalCompositeOperation = "lighter";
     for (const stock of stocks) {
       const rect = rectangles.get(stock.symbol);
-      if (rect) drawTileFill(context, rect, colorForChange(stock.changePercent));
+      if (rect) drawGlow(context, rect, colorForChange(stock.changePercent));
     }
+    context.globalCompositeOperation = "source-over";
   }, [height, rectangles, stocks, width]);
   return <canvas ref={ref} className={cn("absolute inset-0 h-full w-full", className)} aria-hidden="true" />;
 }
@@ -271,7 +266,7 @@ export function MarketHeatmap() {
           </Link>
         )}
       </div>
-      <style>{`@keyframes heatmap-fade-out { from { opacity: 1; } to { opacity: 0; } } @keyframes heatmap-fade-in { from { opacity: 0; } to { opacity: 1; } } .heatmap-fade-out, .heatmap-fade-in { animation: 1200ms cubic-bezier(.4, 0, .2, 1) both; } .heatmap-fade-out { animation-name: heatmap-fade-out; } .heatmap-fade-in { animation-name: heatmap-fade-in; } @media (prefers-reduced-motion: reduce) { .heatmap-tile, .heatmap-fade-out, .heatmap-fade-in { animation: none !important; transition: none !important; } }`}</style>
+      <style>{`@keyframes heatmap-fade-out { 0% { opacity: 1; } 30% { opacity: .95; } 60% { opacity: .75; } 80% { opacity: .3; } 100% { opacity: 0; } } @keyframes heatmap-fade-in { 0% { opacity: 0; } 30% { opacity: .5; } 60% { opacity: .8; } 80% { opacity: .95; } 100% { opacity: 1; } } .heatmap-fade-out, .heatmap-fade-in { animation: 1200ms cubic-bezier(.4, 0, .2, 1) both; } .heatmap-fade-out { animation-name: heatmap-fade-out; } .heatmap-fade-in { animation-name: heatmap-fade-in; } @media (prefers-reduced-motion: reduce) { .heatmap-tile, .heatmap-fade-out, .heatmap-fade-in { animation: none !important; transition: none !important; } }`}</style>
     </section>
   );
 }
