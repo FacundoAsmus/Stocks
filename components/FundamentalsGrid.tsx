@@ -162,7 +162,7 @@ export function FundamentalsGrid({
 
   return (
     <section>
-      <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-accent">Indicators</p>
+      <p className="mb-3 px-5 text-sm font-medium uppercase tracking-[0.18em] text-accent">Indicators</p>
       <div className="grid grid-cols-2 gap-2">
         {visibleItems.map((item) => (
           <div key={item.label} className="rounded-md bg-black p-4">

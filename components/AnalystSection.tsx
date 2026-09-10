@@ -5,6 +5,9 @@ import type { AnalystRecommendation, PriceTarget } from "@/types/stock";
 
 // ── Rolling digit wheel (same mechanic as PriceChart) ────────────────────
 const DIGITS = ["0","1","2","3","4","5","6","7","8","9"];
+// The preceding 9 makes the initial 0 and target 9 adjacent, so 0 → 9
+// rolls one notch backwards rather than racing through every intermediate digit.
+const DIGIT_WHEEL = ["9", ...DIGITS];
 const DIGIT_RATIO: Record<string, number> = {
   "0": 0.62, "1": 0.36, "2": 0.58, "3": 0.58,
   "4": 0.62, "5": 0.58, "6": 0.60, "7": 0.52,
@@ -28,14 +31,14 @@ function RollingDigit({ ch, started }: { ch: string; started: boolean }) {
       <span
         className="flex flex-col"
         style={{
-          transform: started ? `translateY(-${idx * rowPx}px)` : "translateY(0px)",
+          transform: `translateY(-${started ? (ch === "9" ? 0 : (idx + 1) * rowPx) : rowPx}px)`,
           transition: started ? "transform 1.365s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
           willChange: "transform",
         }}
       >
-        {DIGITS.map((d) => (
+        {DIGIT_WHEEL.map((d, index) => (
           <span
-            key={d}
+            key={`${d}-${index}`}
             className="block text-center select-none font-semibold text-2xl text-text-primary leading-none"
             style={{ height: rowPx, lineHeight: `${rowPx}px`, width: slotPx }}
           >
@@ -90,11 +93,22 @@ function AnimatedBar({
   }, [started, targetWidth, delay]);
 
   return (
-    <div className="h-2 overflow-hidden rounded-full bg-panel-muted">
-      <div className={`h-full rounded-full ${colorClass}`} style={{ width: `${width}%` }} />
+    <div className="h-2 rounded-full bg-panel-muted">
+      <div
+        className={`h-full rounded-full ${colorClass} ${BAR_GLOW_CLASSES[colorClass] ?? ""}`}
+        style={{ width: `${width}%` }}
+      />
     </div>
   );
 }
+
+const BAR_GLOW_CLASSES: Record<string, string> = {
+  "bg-emerald-400": "shadow-[0_0_10px_rgba(52,211,153,0.45)]",
+  "bg-lime-400": "shadow-[0_0_10px_rgba(163,230,53,0.45)]",
+  "bg-yellow-400": "shadow-[0_0_10px_rgba(250,204,21,0.45)]",
+  "bg-orange-500": "shadow-[0_0_10px_rgba(249,115,22,0.45)]",
+  "bg-red-600": "shadow-[0_0_10px_rgba(220,38,38,0.45)]",
+};
 
 // ── Main component ────────────────────────────────────────────────────────
 export function AnalystSection({

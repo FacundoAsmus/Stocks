@@ -44,6 +44,8 @@ function barColorForPct(pct: number): string {
 
 // Rolling digit wheel — same mechanic as PriceChart
 const DIGITS = ["0","1","2","3","4","5","6","7","8","9"];
+// The preceding 9 makes the initial 0 and target 9 adjacent on the wheel.
+const DIGIT_WHEEL = ["9", ...DIGITS];
 const DIGIT_RATIO: Record<string, number> = {
   "0": 0.62, "1": 0.36, "2": 0.58, "3": 0.58,
   "4": 0.62, "5": 0.58, "6": 0.60, "7": 0.52,
@@ -67,13 +69,13 @@ function RollingDigit({ ch, started }: { ch: string; started: boolean }) {
       <span
         className="flex flex-col"
         style={{
-          transform: started ? `translateY(-${idx * rowPx}px)` : "translateY(0px)",
+          transform: `translateY(-${started ? (ch === "9" ? 0 : (idx + 1) * rowPx) : rowPx}px)`,
           transition: started ? "transform 1.657s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
           willChange: "transform",
         }}
       >
-        {DIGITS.map((d) => (
-          <span key={d} className="block text-center select-none text-3xl font-bold leading-none" style={{ height: rowPx, lineHeight: `${rowPx}px`, width: slotPx }}>
+        {DIGIT_WHEEL.map((d, index) => (
+          <span key={`${d}-${index}`} className="block text-center select-none text-3xl font-bold leading-none" style={{ height: rowPx, lineHeight: `${rowPx}px`, width: slotPx }}>
             {d}
           </span>
         ))}
@@ -91,6 +93,10 @@ function RollingScore({ score, colorClass, started }: { score: number; colorClas
       ))}
     </span>
   );
+}
+
+function barGlowForPct(pct: number): string {
+  return barColorForPct(pct).replace("rgb(", "rgba(").replace(")", ", 0.42)");
 }
 
 function SentimentBar({ score }: { score: number }) {
@@ -143,12 +149,13 @@ function SentimentBar({ score }: { score: number }) {
       </div>
 
       {/* Track with animated fill + interpolated color */}
-      <div className="h-2 w-full rounded-full bg-panel-muted overflow-hidden">
+      <div className="h-2 w-full rounded-full bg-panel-muted">
         <div
           className="h-full rounded-full"
           style={{
             width: `${animPct}%`,
             backgroundColor: barColorForPct(animPct),
+            boxShadow: `0 0 10px ${barGlowForPct(animPct)}`,
             transition: "none",
           }}
         />

@@ -16,7 +16,7 @@ import type { CompanyNewsArticle } from "@/types/stock";
 export function NewsCard({ article }: { article: CompanyNewsArticle }) {
   return (
     <article
-      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-2xl border border-[#3a3a42] bg-black transition-all duration-300 ease-out hover:border-positive/50 hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]"
+      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-2xl border border-[#3a3a42] bg-black transition-all duration-300 ease-out hover:border-accent hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]"
     >
       <a
         href={article.url}
