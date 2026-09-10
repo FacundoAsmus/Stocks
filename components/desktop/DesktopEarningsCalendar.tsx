@@ -35,7 +35,7 @@ function MiniMonthGrid({
 
   return (
     <div className="flex flex-col">
-      <p className="mb-1.5 text-xs font-bold uppercase tracking-widest text-positive">{monthLabel}</p>
+      <p className="mb-1.5 text-center text-xs font-bold uppercase tracking-widest text-accent">{monthLabel}</p>
       <div className="grid grid-cols-7 gap-y-0.5">
         {WEEKDAYS.map((d, i) => (
           <p key={i} className="text-center text-[9px] font-bold uppercase text-text-muted">{d}</p>
@@ -54,13 +54,13 @@ function MiniMonthGrid({
               {event ? (
                 <button
                   onClick={() => onSelect(event)}
-                  className="flex h-4 w-4 items-center justify-center rounded-full bg-positive text-[9px] font-bold text-black transition active:scale-90"
+                  className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-black transition active:scale-90"
                 >
                   {day}
                 </button>
               ) : (
                 <span
-                  className={`text-[9px] font-bold ${isToday ? "text-positive" : isPast ? "text-text-muted" : "text-text-primary"}`}
+                  className={`text-[9px] font-bold ${isToday ? "text-accent" : isPast ? "text-text-muted" : "text-text-primary"}`}
                 >
                   {day}
                 </span>
@@ -131,7 +131,7 @@ export function DesktopEarningsCalendar({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Earnings calendar"
-        className="flex h-7 w-7 items-center justify-center text-positive active:opacity-60"
+        className="flex h-7 w-7 items-center justify-center text-accent active:opacity-60"
       >
         <CalendarDays className="h-[18px] w-[18px]" />
       </button>
@@ -155,8 +155,8 @@ export function DesktopEarningsCalendar({
           >
             <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
               <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-positive" />
-                <p className="text-sm font-bold text-text-primary">Earnings Calendar</p>
+                <CalendarDays className="h-4 w-4 text-accent" />
+                <p className="text-sm font-bold text-accent">Earnings Calendar</p>
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -179,7 +179,7 @@ export function DesktopEarningsCalendar({
                 <button
                   onClick={() => setOpen(false)}
                   aria-label="Close"
-                  className="ml-1 flex items-center gap-1.5 rounded-lg bg-positive px-3 py-1.5 text-sm font-semibold text-black"
+                  className="ml-1 flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-black"
                 >
                   Close
                 </button>

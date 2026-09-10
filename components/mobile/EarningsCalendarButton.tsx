@@ -84,13 +84,13 @@ export function EarningsDetailCard({
       <div className="flex items-center gap-3 mb-5">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg shrink-0"
+          className="flex items-center gap-1.5 bg-accent text-black text-sm font-semibold px-3 py-1.5 rounded-lg shrink-0"
         >
           <ChevronLeft className="h-4 w-4" />
           Back
         </button>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-positive">Q{event.quarter} {event.year}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent">Q{event.quarter} {event.year}</p>
           <p className="text-sm text-text-muted">{dateLabel}</p>
         </div>
       </div>
@@ -141,7 +141,7 @@ function MonthGrid({
 
   return (
     <div className="mb-6" ref={monthRef} data-current-month={isCurrent || undefined}>
-      <p className="text-sm font-semibold uppercase tracking-widest text-positive mb-2">{monthLabel}</p>
+      <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-accent">{monthLabel}</p>
       <div className="grid grid-cols-7 gap-y-1.5">
         {cells.map((day, i) => {
           if (day === null) return <div key={`blank-${i}`} />;
@@ -156,13 +156,13 @@ function MonthGrid({
               {event ? (
                 <button
                   onClick={() => onSelect(event)}
-                  className="h-8 w-8 rounded-full bg-positive text-black text-sm font-bold flex items-center justify-center active:scale-90 transition"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-bold text-black transition active:scale-90"
                 >
                   {day}
                 </button>
               ) : (
                 <span className={`h-8 w-8 flex items-center justify-center text-sm ${
-                  isToday ? "text-positive font-bold" : isPast ? "text-text-muted" : "text-text-primary"
+                  isToday ? "font-bold text-accent" : isPast ? "text-text-muted" : "text-text-primary"
                 }`}>
                   {day}
                 </span>
@@ -274,7 +274,7 @@ export function EarningsCalendarButton({
         type="button"
         onClick={openCalendar}
         aria-label="Earnings calendar"
-        className="flex items-center justify-center h-7 w-7 text-positive active:opacity-60"
+        className="flex h-7 w-7 items-center justify-center text-accent active:opacity-60"
       >
         <CalendarDays className="h-[18px] w-[18px]" />
       </button>
@@ -297,12 +297,12 @@ export function EarningsCalendarButton({
             <div className="flex items-center gap-3 px-4 pt-4 pb-3 shrink-0">
               <button
                 onClick={closeCalendar}
-                className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
+                className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-black"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Back
               </button>
-              <p className="text-sm font-semibold text-text-primary">Earnings Calendar</p>
+              <p className="text-sm font-semibold text-accent">Earnings Calendar</p>
             </div>
 
             <div className="grid grid-cols-7 px-4 pb-2 shrink-0">
