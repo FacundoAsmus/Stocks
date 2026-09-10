@@ -112,8 +112,7 @@ input {
 }
 
 /* ─── AI two-star loader ───────────────────────────────────────────────── */
-/* The final 200ms of each 1.55s cycle is intentionally still. `alternate`
-   lets the stars pause after each complete position/size swap. */
+/* A continuous diagonal exchange with no held frame between swaps. */
 .ai-star-loader {
   position: relative;
   display: inline-block;
@@ -133,25 +132,25 @@ input {
 .ai-star-loader__star--large {
   top: 2%;
   left: 1%;
-  animation: ai-star-swap-large 1.55s cubic-bezier(0.45, 0, 0.15, 1) infinite alternate;
+  animation: ai-star-swap-large 1.05s cubic-bezier(0.45, 0, 0.15, 1) infinite alternate;
 }
 
 .ai-star-loader__star--small {
   right: 1%;
   bottom: 2%;
-  animation: ai-star-swap-small 1.55s cubic-bezier(0.45, 0, 0.15, 1) infinite alternate;
+  animation: ai-star-swap-small 1.05s cubic-bezier(0.45, 0, 0.15, 1) infinite alternate;
 }
 
 @keyframes ai-star-swap-large {
-  0%, 13% { transform: translate(0, 0) scale(1); opacity: 1; }
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
   50% { transform: translate(34%, 34%) scale(0.81); opacity: 0.88; }
-  87%, 100% { transform: translate(68%, 68%) scale(0.62); opacity: 0.78; }
+  100% { transform: translate(68%, 68%) scale(0.62); opacity: 0.78; }
 }
 
 @keyframes ai-star-swap-small {
-  0%, 13% { transform: translate(0, 0) scale(0.62); opacity: 0.78; }
+  0% { transform: translate(0, 0) scale(0.62); opacity: 0.78; }
   50% { transform: translate(-34%, -34%) scale(0.81); opacity: 0.88; }
-  87%, 100% { transform: translate(-68%, -68%) scale(1); opacity: 1; }
+  100% { transform: translate(-68%, -68%) scale(1); opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
