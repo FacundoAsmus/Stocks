@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   ComposedChart,
@@ -105,32 +105,29 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
 
 
 /* ─── Number-wheel digit ─────────────────────────────────────────────────── */
-// Each digit is a continuous, repeating strip. Keeping a virtual position lets
-// 9 → 0 move one row forward (and 0 → 9 one row back), like a mechanical wheel.
+// A compact two-row wheel: the old and new glyph are the only rows rendered
+// during a transition. This avoids long-strip drift when chart hover updates
+// arrive quickly, while keeping 9 → 0 as a single forward turn.
 // Every wheel column has a fixed width. Besides matching a mechanical counter,
 // this prevents prices with decimals from visibly squeezing as digits change.
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
-const WHEEL_CYCLES_BEFORE = 2;
-const WHEEL_CYCLES_AFTER = 3;
-const WHEEL_DIGITS = Array.from(
-  { length: (WHEEL_CYCLES_BEFORE + WHEEL_CYCLES_AFTER) * DIGIT_CHARS.length },
-  (_, index) => DIGIT_CHARS[index % DIGIT_CHARS.length],
-);
-
 const WHEEL_SLOT_RATIO = 0.62;
 
 function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
   const isDigit = DIGIT_CHARS.includes(ch);
   const idx     = isDigit ? parseInt(ch) : 0;
-  // This is deliberately a virtual (rather than 0–9) position. It gives the
-  // strip room to cross its seam without an abrupt reset.
-  const [wheelPosition, setWheelPosition] = useState(idx);
-  const [isRolling, setIsRolling] = useState(false);
-  const [isRecentering, setIsRecentering] = useState(false);
   const previousDigitRef = useRef(idx);
-  const resetFrameRef = useRef<number | null>(null);
+  const rollIdRef = useRef(0);
+  const [roll, setRoll] = useState<{
+    id: number;
+    from: number;
+    to: number;
+    direction: "up" | "down";
+  } | null>(null);
 
-  useEffect(() => {
+  // Layout effect makes every updated wheel begin together, before the frame
+  // containing the new hovered price is painted.
+  useLayoutEffect(() => {
     if (!isDigit || previousDigitRef.current === idx) return;
 
     const previous = previousDigitRef.current;
@@ -138,13 +135,13 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
     // the wheel. In particular, 9 → 0 is +1 and 0 → 9 is -1.
     const shortestStep = ((idx - previous + 15) % 10) - 5;
     previousDigitRef.current = idx;
-    setWheelPosition((position) => position + shortestStep);
-    setIsRolling(true);
+    setRoll({
+      id: ++rollIdRef.current,
+      from: previous,
+      to: idx,
+      direction: shortestStep >= 0 ? "up" : "down",
+    });
   }, [idx, isDigit]);
-
-  useEffect(() => () => {
-    if (resetFrameRef.current !== null) cancelAnimationFrame(resetFrameRef.current);
-  }, []);
 
   const rowPx     = size === "lg" ? 54 : 32;
   const fontClass = size === "lg"
@@ -163,6 +160,9 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
   }
 
   const slotPx = Math.round(WHEEL_SLOT_RATIO * rowPx);
+  const rollingDigits = roll
+    ? (roll.direction === "up" ? [roll.from, roll.to] : [roll.to, roll.from])
+    : [idx];
 
   return (
     <span
@@ -173,37 +173,27 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
       }}
     >
       <span
+        key={roll?.id ?? "settled"}
         className="flex flex-col"
         style={{
-          transform: `translateY(-${(wheelPosition + WHEEL_CYCLES_BEFORE * 10) * rowPx}px)`,
           // A light blur softens the moving glyph while preserving legibility.
-          filter: isRolling ? "blur(0.45px)" : "blur(0)",
-          // Recentering uses an identical repeated glyph, so it can jump back
-          // to the middle of the strip with no visible motion or seam.
-          transition: isRecentering
-            ? "none"
-            : "transform 1.04s cubic-bezier(0.22, 1, 0.36, 1), filter 120ms ease-out",
+          filter: roll ? "blur(0.45px)" : "blur(0)",
+          animation: roll
+            ? `price-digit-roll-${roll.direction} 280ms cubic-bezier(0.22, 1, 0.36, 1) both`
+            : "none",
           willChange: "transform, filter",
         }}
-        onTransitionEnd={(event) => {
-          if (event.propertyName !== "transform") return;
-          setIsRolling(false);
-          setIsRecentering(true);
-          setWheelPosition(idx);
-          if (resetFrameRef.current !== null) cancelAnimationFrame(resetFrameRef.current);
-          resetFrameRef.current = requestAnimationFrame(() => {
-            setIsRecentering(false);
-            resetFrameRef.current = null;
-          });
+        onAnimationEnd={() => {
+          setRoll((activeRoll) => activeRoll?.id === roll?.id ? null : activeRoll);
         }}
       >
-        {WHEEL_DIGITS.map((d, wheelIndex) => (
+        {rollingDigits.map((digit, digitIndex) => (
           <span
-            key={wheelIndex}
+            key={digitIndex}
             className={cn(fontClass, "block text-center select-none leading-none")}
             style={{ height: rowPx, lineHeight: `${rowPx}px`, width: slotPx }}
           >
-            {d}
+            {digit}
           </span>
         ))}
       </span>
@@ -231,28 +221,40 @@ function WheelPrice({
   let fractionalDigitsSeen = 0;
 
   return (
-    <span className={cn("inline-flex items-end", colorClass)}>
-      {chars.map((ch, index) => {
-        let key: string;
-        if (DIGIT_CHARS.includes(ch)) {
-          if (index < integerEnd) {
-            // Integer wheels stay anchored from the right, so adding a new
-            // thousands/tens digit never turns the decimal point or cents
-            // into a different wheel.
-            key = `integer-${integerDigitCount - 1 - integerDigitsSeen}`;
-            integerDigitsSeen++;
-          } else {
-            key = `fraction-${fractionalDigitsSeen}`;
-            fractionalDigitsSeen++;
-          }
-        } else if (ch === ".") {
-          key = "decimal";
-        } else {
-          key = `symbol-${index}-${ch}`;
+    <>
+      <style>{`
+        @keyframes price-digit-roll-up {
+          from { transform: translateY(0); }
+          to { transform: translateY(-50%); }
         }
-        return <Digit key={key} ch={ch} size={size} />;
-      })}
-    </span>
+        @keyframes price-digit-roll-down {
+          from { transform: translateY(-50%); }
+          to { transform: translateY(0); }
+        }
+      `}</style>
+      <span className={cn("inline-flex items-end", colorClass)}>
+        {chars.map((ch, index) => {
+          let key: string;
+          if (DIGIT_CHARS.includes(ch)) {
+            if (index < integerEnd) {
+              // Integer wheels stay anchored from the right, so adding a new
+              // thousands/tens digit never turns the decimal point or cents
+              // into a different wheel.
+              key = `integer-${integerDigitCount - 1 - integerDigitsSeen}`;
+              integerDigitsSeen++;
+            } else {
+              key = `fraction-${fractionalDigitsSeen}`;
+              fractionalDigitsSeen++;
+            }
+          } else if (ch === ".") {
+            key = "decimal";
+          } else {
+            key = `symbol-${index}-${ch}`;
+          }
+          return <Digit key={key} ch={ch} size={size} />;
+        })}
+      </span>
+    </>
   );
 }
 
