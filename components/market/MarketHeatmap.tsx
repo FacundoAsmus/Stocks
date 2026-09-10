@@ -6,7 +6,7 @@ import type { CSSProperties } from "react";
 
 import { MARKET_HEATMAP_GROUPS } from "@/lib/marketHeatmap";
 import { cn } from "@/lib/utils";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatPercent } from "@/lib/format";
 
 type HeatmapStock = {
   symbol: string;
@@ -55,7 +55,45 @@ function colorForChange(change: number | null): [number, number, number] {
   return [46, 50, 54];
 }
 
-function HeatCanvas({ stocks, rectangles, width, height }: { stocks: HeatmapStock[]; rectangles: Map<string, Rectangle>; width: number; height: number }) {
+function mix(from: number, to: number, progress: number) {
+  return Math.round(from + (to - from) * progress);
+}
+
+function drawGlow(
+  context: CanvasRenderingContext2D,
+  rect: Rectangle,
+  color: [number, number, number],
+  opacity: number,
+) {
+  const radius = Math.max(rect.width, rect.height) * 0.92;
+  const x = rect.x + rect.width / 2;
+  const y = rect.y + rect.height / 2;
+  const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+  const [r, g, b] = color;
+  gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${0.85 * opacity})`);
+  gradient.addColorStop(0.48, `rgba(${r}, ${g}, ${b}, ${0.42 * opacity})`);
+  gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
+  context.fillStyle = gradient;
+  context.fillRect(rect.x - radius, rect.y - radius, rect.width + radius * 2, rect.height + radius * 2);
+}
+
+function HeatCanvas({
+  stocks,
+  rectangles,
+  previousStocks,
+  previousRectangles,
+  isLoading,
+  width,
+  height,
+}: {
+  stocks: HeatmapStock[];
+  rectangles: Map<string, Rectangle>;
+  previousStocks: HeatmapStock[] | null;
+  previousRectangles: Map<string, Rectangle> | null;
+  isLoading: boolean;
+  width: number;
+  height: number;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = ref.current;
@@ -65,24 +103,47 @@ function HeatCanvas({ stocks, rectangles, width, height }: { stocks: HeatmapStoc
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    context.fillStyle = "#060708";
-    context.fillRect(0, 0, width, height);
-    context.globalCompositeOperation = "lighter";
+    const shouldTransition = Boolean(previousStocks && !isLoading);
+    const priorBySymbol = new Map<string, HeatmapStock>(shouldTransition ? previousStocks?.map((stock) => [stock.symbol, stock] as const) ?? [] : []);
+    const currentBySymbol = new Map<string, HeatmapStock>(stocks.map((stock) => [stock.symbol, stock] as const));
+    const symbols = [...new Set([...priorBySymbol.keys(), ...currentBySymbol.keys()])];
+    const startedAt = performance.now();
+    const duration = shouldTransition ? 950 : 0;
+    let frame = 0;
 
-    for (const stock of stocks) {
-      const rect = rectangles.get(stock.symbol);
-      if (!rect) continue;
-      const [r, g, b] = colorForChange(stock.changePercent);
-      const radius = Math.max(rect.width, rect.height) * 0.92;
-      const gradient = context.createRadialGradient(rect.x + rect.width / 2, rect.y + rect.height / 2, 0, rect.x + rect.width / 2, rect.y + rect.height / 2, radius);
-      gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.85)`);
-      gradient.addColorStop(0.48, `rgba(${r}, ${g}, ${b}, 0.42)`);
-      gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`);
-      context.fillStyle = gradient;
-      context.fillRect(rect.x - radius, rect.y - radius, rect.width + radius * 2, rect.height + radius * 2);
-    }
-    context.globalCompositeOperation = "source-over";
-  }, [height, rectangles, stocks, width]);
+    const paint = (now: number) => {
+      const progress = duration ? Math.min(1, (now - startedAt) / duration) : 1;
+      // While the request is in flight the existing colour field stays in
+      // place and only breathes slightly. It is not replaced by a preset map.
+      const drift = isLoading || progress >= 1 ? Math.sin(now / 1800) * 3 : 0;
+      context.fillStyle = "#060708";
+      context.fillRect(0, 0, width, height);
+      context.globalCompositeOperation = "lighter";
+
+      for (const symbol of symbols) {
+        const before = priorBySymbol.get(symbol);
+        const after = currentBySymbol.get(symbol);
+        const fromRect = previousRectangles?.get(symbol);
+        const toRect = rectangles.get(symbol);
+        const start = fromRect ?? toRect;
+        const end = toRect ?? fromRect;
+        if (!start || !end) continue;
+        const beforeColor = colorForChange(before?.changePercent ?? after?.changePercent ?? null);
+        const afterColor = colorForChange(after?.changePercent ?? before?.changePercent ?? null);
+        const rect = {
+          x: start.x + (end.x - start.x) * progress + drift,
+          y: start.y + (end.y - start.y) * progress - drift,
+          width: start.width + (end.width - start.width) * progress,
+          height: start.height + (end.height - start.height) * progress,
+        };
+        drawGlow(context, rect, [mix(beforeColor[0], afterColor[0], progress), mix(beforeColor[1], afterColor[1], progress), mix(beforeColor[2], afterColor[2], progress)], before && after ? 1 : before ? 1 - progress : progress);
+      }
+      context.globalCompositeOperation = "source-over";
+      if (isLoading || !duration || progress < 1) frame = requestAnimationFrame(paint);
+    };
+    frame = requestAnimationFrame(paint);
+    return () => cancelAnimationFrame(frame);
+  }, [height, isLoading, previousRectangles, previousStocks, rectangles, stocks, width]);
   return <canvas ref={ref} className="absolute inset-0 h-full w-full" aria-hidden="true" />;
 }
 
@@ -129,7 +190,8 @@ export function MarketHeatmap() {
   const [activeGroup, setActiveGroup] = useState(MARKET_HEATMAP_GROUPS[0].id);
   const [stocks, setStocks] = useState<HeatmapStock[]>([]);
   const [loading, setLoading] = useState(true);
-  const [settling, setSettling] = useState(false);
+  const [previousStocks, setPreviousStocks] = useState<HeatmapStock[] | null>(null);
+  const [tilesVisible, setTilesVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const areaRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -146,41 +208,45 @@ export function MarketHeatmap() {
 
   useEffect(() => {
     const controller = new AbortController();
-    let settleTimer: number | undefined;
+    let revealTimer: number | undefined;
     setLoading(true);
-    setSettling(false);
+    setTilesVisible(false);
     setError(null);
     fetch(`/api/market-heatmap?group=${encodeURIComponent(activeGroup)}`, { signal: controller.signal })
       .then(async (response) => {
         const payload = await response.json() as { stocks?: HeatmapStock[]; error?: string };
         if (!response.ok) throw new Error(payload.error ?? "Unable to load heatmap.");
+        setPreviousStocks(stocks.length ? stocks : null);
         setStocks(payload.stocks ?? []);
         setLoading(false);
-        setSettling(true);
-        settleTimer = window.setTimeout(() => setSettling(false), 720);
+        // Tiles only fade; the colour field underneath performs the fluid move.
+        revealTimer = window.setTimeout(() => setTilesVisible(true), 220);
       })
       .catch((reason: unknown) => {
         if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "Unable to load heatmap.");
       })
-      .finally(() => { if (!controller.signal.aborted && !settleTimer) setLoading(false); });
+      .finally(() => { if (!controller.signal.aborted && !revealTimer) setLoading(false); });
     return () => {
       controller.abort();
-      if (settleTimer) window.clearTimeout(settleTimer);
+      if (revealTimer) window.clearTimeout(revealTimer);
     };
+  // `stocks` deliberately is not a dependency: it is the exact visual state
+  // held in place while the next section is being requested.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeGroup]);
 
   const selected = MARKET_HEATMAP_GROUPS.find((group) => group.id === activeGroup) ?? MARKET_HEATMAP_GROUPS[0];
   const rectangles = useMemo(() => makeTreemap(stocks, { x: 0, y: 0, width: size.width, height: size.height }), [size, stocks]);
+  const previousRectangles = useMemo(() => previousStocks ? makeTreemap(previousStocks, { x: 0, y: 0, width: size.width, height: size.height }) : null, [previousStocks, size]);
 
   return (
     <section className="relative min-h-dvh overflow-hidden bg-black" aria-labelledby="market-heatmap-title">
-      <div className="absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black via-black/90 to-transparent px-6 pb-14 pt-8">
+      <div className="absolute inset-x-0 top-0 z-20 border-b border-white/10 bg-gradient-to-b from-black via-black/95 to-transparent px-6 pb-14 pt-[max(1.5rem,env(safe-area-inset-top))]">
         <div className="flex items-end justify-between gap-6">
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market map</p>
             <h2 id="market-heatmap-title" className="mt-1 text-3xl font-semibold text-text-primary">{selected.label}</h2>
           </div>
-          <p className="text-sm text-text-muted">Tile size reflects {selected.staticWeights ? "relative fund size" : "market cap"} · colour reflects today’s move</p>
         </div>
         <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Market groups">
         {MARKET_HEATMAP_GROUPS.map((group) => (
@@ -190,36 +256,33 @@ export function MarketHeatmap() {
       </div>
 
       <div ref={areaRef} className="relative min-h-dvh overflow-hidden bg-black" role="tabpanel" aria-live="polite">
-        {loading && <LoadingHeatCanvas group={activeGroup} width={size.width} height={size.height} />}
-        {!loading && !error && <HeatCanvas stocks={stocks} rectangles={rectangles} width={size.width} height={size.height} />}
+        {loading && !stocks.length && <LoadingHeatCanvas group={activeGroup} width={size.width} height={size.height} />}
+        {!!stocks.length && !error && <HeatCanvas stocks={stocks} rectangles={rectangles} previousStocks={previousStocks} previousRectangles={previousRectangles} isLoading={loading} width={size.width} height={size.height} />}
         {!loading && !error && <div className="absolute inset-0">
           {stocks.map((stock) => {
             const rect = rectangles.get(stock.symbol);
             if (!rect) return null;
             const gap = 5;
             const compact = rect.width < 130 || rect.height < 94;
-            const tileStyle: CSSProperties & Record<"--from-x" | "--from-y", string> = {
+            const tileStyle: CSSProperties = {
               left: rect.x + gap,
               top: rect.y + gap,
               width: Math.max(0, rect.width - gap * 2),
               height: Math.max(0, rect.height - gap * 2),
-              "--from-x": `${size.width / 2 - (rect.x + rect.width / 2)}px`,
-              "--from-y": `${size.height / 2 - (rect.y + rect.height / 2)}px`,
-              animation: settling ? "heatmap-tile-arrive 720ms cubic-bezier(0.22, 1, 0.36, 1) both" : undefined,
+              opacity: tilesVisible ? 1 : 0,
             };
             return (
-              <Link key={stock.symbol} href={`/stock/${encodeURIComponent(stock.symbol)}`} className="heatmap-tile absolute flex flex-col justify-between overflow-hidden rounded-lg border border-white/10 bg-black/15 p-3 transition-all duration-200 hover:z-10 hover:bg-black/30 hover:ring-1 hover:ring-white/50" style={tileStyle} aria-label={`${stock.name} (${stock.symbol}), ${formatPercent(stock.changePercent)}`}>
+              <Link key={stock.symbol} href={`/stock/${encodeURIComponent(stock.symbol)}`} className="heatmap-tile absolute flex flex-col overflow-hidden rounded-lg border border-white/10 bg-black/15 p-3 transition-opacity duration-200 hover:z-10 hover:bg-black/30 hover:ring-1 hover:ring-white/50" style={tileStyle} aria-label={`${stock.name} (${stock.symbol}), ${formatPercent(stock.changePercent)}`}>
                 <span className={cn("font-bold tracking-tight text-white", compact ? "text-base" : "text-2xl")}>{stock.symbol}</span>
-                {!compact && <span className="truncate text-sm text-white/70">{stock.name}</span>}
-                <span className={cn("font-semibold", compact ? "text-sm" : "text-lg", (stock.changePercent ?? 0) >= 0 ? "text-[#adfa1b]" : "text-[#ff7560]")}>{formatPercent(stock.changePercent)}</span>
-                {!compact && <span className="text-sm text-white/75">{formatCurrency(stock.price)}</span>}
+                <span className={cn("mt-1 truncate text-white/70", compact ? "text-xs" : "text-sm")}>{stock.name}</span>
+                <span className={cn("mt-auto font-semibold", compact ? "text-sm" : "text-lg", (stock.changePercent ?? 0) >= 0 ? "text-[#adfa1b]" : "text-[#ff7560]")}>{formatPercent(stock.changePercent)}</span>
               </Link>
             );
           })}
         </div>}
         {error && <div className="absolute inset-0 flex items-center justify-center text-sm text-negative">{error}</div>}
       </div>
-      <style>{`@keyframes heatmap-tile-arrive { from { opacity: 0; transform: translate(var(--from-x), var(--from-y)) scale(0.16); } 55% { opacity: 0.92; } to { opacity: 1; transform: translate(0, 0) scale(1); } } @media (prefers-reduced-motion: reduce) { .heatmap-tile { animation: none !important; } }`}</style>
+      <style>{`@media (prefers-reduced-motion: reduce) { .heatmap-tile { transition: none !important; } }`}</style>
     </section>
   );
 }
