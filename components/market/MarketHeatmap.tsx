@@ -75,10 +75,7 @@ function drawGlow(
   rect: Rectangle,
   color: [number, number, number],
 ) {
-  // Radius is based on the tile's area, not its longest side. A visual
-  // radius is a linear measure, so √area keeps the light proportional for
-  // both square tiles and unusually wide/tall treemap tiles.
-  const radius = Math.sqrt(rect.width * rect.height) * 0.95;
+  const radius = Math.max(rect.width, rect.height) * 0.92;
   const x = rect.x + rect.width / 2;
   const y = rect.y + rect.height / 2;
   const [r, g, b] = color;
