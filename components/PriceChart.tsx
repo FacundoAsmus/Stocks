@@ -222,11 +222,36 @@ function WheelPrice({
   colorClass?: string;
 }) {
   const chars = value.split("");
+  const decimalIndex = chars.lastIndexOf(".");
+  const integerEnd = decimalIndex === -1 ? chars.length : decimalIndex;
+  const integerDigitCount = chars
+    .slice(0, integerEnd)
+    .filter((char) => DIGIT_CHARS.includes(char)).length;
+  let integerDigitsSeen = 0;
+  let fractionalDigitsSeen = 0;
+
   return (
     <span className={cn("inline-flex items-end", colorClass)}>
-      {chars.map((ch, i) => (
-        <Digit key={i} ch={ch} size={size} />
-      ))}
+      {chars.map((ch, index) => {
+        let key: string;
+        if (DIGIT_CHARS.includes(ch)) {
+          if (index < integerEnd) {
+            // Integer wheels stay anchored from the right, so adding a new
+            // thousands/tens digit never turns the decimal point or cents
+            // into a different wheel.
+            key = `integer-${integerDigitCount - 1 - integerDigitsSeen}`;
+            integerDigitsSeen++;
+          } else {
+            key = `fraction-${fractionalDigitsSeen}`;
+            fractionalDigitsSeen++;
+          }
+        } else if (ch === ".") {
+          key = "decimal";
+        } else {
+          key = `symbol-${index}-${ch}`;
+        }
+        return <Digit key={key} ch={ch} size={size} />;
+      })}
     </span>
   );
 }
