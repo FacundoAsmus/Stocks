@@ -147,20 +147,26 @@ export async function getCompanyDescription(symbol: string): Promise<string | nu
 
   try {
     const cik = await getCik(symbol);
+    console.log(`[secEdgar] ${symbol}: CIK lookup ->`, cik ?? "NOT FOUND");
     if (!cik) throw new Error("no CIK");
 
     const filing = await findLatestAnnualReport(cik);
+    console.log(`[secEdgar] ${symbol}: latest annual report ->`, filing ?? "NOT FOUND");
     if (!filing) throw new Error("no annual report on file");
 
     const accessionNoDashes = filing.accessionNumber.replace(/-/g, "");
     const cikNoLeadingZeros = String(Number(cik));
     const docUrl = `https://www.sec.gov/Archives/edgar/data/${cikNoLeadingZeros}/${accessionNoDashes}/${filing.primaryDocument}`;
+    console.log(`[secEdgar] ${symbol}: fetching filing document ->`, docUrl);
 
     const docRes = await secFetch(docUrl);
+    console.log(`[secEdgar] ${symbol}: filing fetch status ->`, docRes.status);
     if (!docRes.ok) throw new Error(`filing fetch failed: ${docRes.status}`);
     const html = await docRes.text();
+    console.log(`[secEdgar] ${symbol}: filing HTML length ->`, html.length);
 
     const description = extractBusinessDescription(html);
+    console.log(`[secEdgar] ${symbol}: extracted description ->`, description ? `${description.length} chars` : "NULL (heuristic found nothing)");
     descriptionCache.set(cacheKey, { value: description, expiresAt: Date.now() + DESCRIPTION_CACHE_TTL_MS });
     return description;
   } catch (err) {
