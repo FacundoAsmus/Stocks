@@ -116,9 +116,7 @@ const WHEEL_SLOT_RATIO = 0.62;
 function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
   const isDigit = DIGIT_CHARS.includes(ch);
   const idx     = isDigit ? parseInt(ch) : 0;
-  const latestInputRef = useRef(idx);
-  const displayedDigitRef = useRef(idx);
-  const queuedDigitRef = useRef<number | null>(null);
+  const previousDigitRef = useRef(idx);
   const rollIdRef = useRef(0);
   const [roll, setRoll] = useState<{
     id: number;
@@ -127,31 +125,23 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
     direction: "up" | "down";
   } | null>(null);
 
-  const beginRoll = useCallback((from: number, to: number) => {
-    const shortestStep = ((to - from + 15) % 10) - 5;
-    displayedDigitRef.current = to;
-    setRoll({
-      id: ++rollIdRef.current,
-      from,
-      to,
-      direction: shortestStep >= 0 ? "up" : "down",
-    });
-  }, []);
-
   // Layout effect makes every updated wheel begin together, before the frame
   // containing the new hovered price is painted.
   useLayoutEffect(() => {
-    if (!isDigit || latestInputRef.current === idx) return;
-    latestInputRef.current = idx;
+    if (!isDigit || previousDigitRef.current === idx) return;
 
-    if (roll) {
-      // Hover events can arrive much faster than a pleasing animation. Keep
-      // only the latest target and finish the current turn first.
-      queuedDigitRef.current = idx;
-      return;
-    }
-    beginRoll(displayedDigitRef.current, idx);
-  }, [beginRoll, idx, isDigit, roll]);
+    const previous = previousDigitRef.current;
+    // Normalise into -5…4 so every update takes the shortest route around
+    // the wheel. In particular, 9 → 0 is +1 and 0 → 9 is -1.
+    const shortestStep = ((idx - previous + 15) % 10) - 5;
+    previousDigitRef.current = idx;
+    setRoll({
+      id: ++rollIdRef.current,
+      from: previous,
+      to: idx,
+      direction: shortestStep >= 0 ? "up" : "down",
+    });
+  }, [idx, isDigit]);
 
   const rowPx     = size === "lg" ? 54 : 32;
   const fontClass = size === "lg"
@@ -189,19 +179,12 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
           // A light blur softens the moving glyph while preserving legibility.
           filter: roll ? "blur(0.45px)" : "blur(0)",
           animation: roll
-            ? `price-digit-roll-${roll.direction} 420ms cubic-bezier(0.22, 1, 0.36, 1) both`
+            ? `price-digit-roll-${roll.direction} 280ms cubic-bezier(0.22, 1, 0.36, 1) both`
             : "none",
           willChange: "transform, filter",
         }}
         onAnimationEnd={() => {
-          if (!roll) return;
-          const queuedDigit = queuedDigitRef.current;
-          queuedDigitRef.current = null;
-          if (queuedDigit !== null && queuedDigit !== displayedDigitRef.current) {
-            beginRoll(displayedDigitRef.current, queuedDigit);
-          } else {
-            setRoll(null);
-          }
+          setRoll((activeRoll) => activeRoll?.id === roll?.id ? null : activeRoll);
         }}
       >
         {rollingDigits.map((digit, digitIndex) => (
