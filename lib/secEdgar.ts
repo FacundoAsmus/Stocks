@@ -143,18 +143,10 @@ function extractBusinessSection(html: string): string | null {
   return body;
 }
 
-function sourceExcerpt(source: string): string {
-  const MAX_LEN = 1600;
-  if (source.length <= MAX_LEN) return source;
-  const cut = source.slice(0, MAX_LEN);
-  const lastPeriod = cut.lastIndexOf(". ");
-  return lastPeriod > MAX_LEN * 0.5 ? cut.slice(0, lastPeriod + 1) : `${cut}…`;
-}
-
 /**
  * Summarises filing text only; it has no market data or web-search access.
- * Any failure deliberately returns null so callers can show the source excerpt
- * instead of losing the description entirely.
+ * Any failure deliberately returns null so the UI can communicate that the
+ * generated description is temporarily unavailable.
  */
 async function summarizeBusinessSection(symbol: string, source: string): Promise<string | null> {
   if (!GEMINI_API_KEY) return null;
@@ -229,9 +221,7 @@ export async function getCompanyDescription(symbol: string): Promise<string | nu
     const html = await docRes.text();
 
     const source = extractBusinessSection(html);
-    const description = source
-      ? await summarizeBusinessSection(symbol, source) ?? sourceExcerpt(source)
-      : null;
+    const description = source ? await summarizeBusinessSection(symbol, source) : null;
     descriptionCache.set(cacheKey, { value: description, expiresAt: Date.now() + DESCRIPTION_CACHE_TTL_MS });
     return description;
   } catch (err) {

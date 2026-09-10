@@ -10,6 +10,7 @@ import { AnalystSection } from "@/components/AnalystSection";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { PriceChart } from "@/components/PriceChart";
+import { CompanyDescription } from "@/components/CompanyDescription";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
@@ -210,12 +211,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
             </section>
           )}
 
-          {stock.description && (
-            <section>
-              <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-accent">Description</p>
-              <p className="text-[1.05rem] text-text-primary whitespace-pre-line">{stock.description}</p>
-            </section>
-          )}
+          <CompanyDescription symbol={stock.symbol} />
         </div>
       </div>
     </>

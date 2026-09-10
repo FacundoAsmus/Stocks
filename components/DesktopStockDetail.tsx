@@ -2,6 +2,7 @@ import type { RefObject } from "react";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
+import { CompanyDescription } from "@/components/CompanyDescription";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
 import { DesktopEarningsCalendar } from "@/components/desktop/DesktopEarningsCalendar";
 import { MarketSentiment } from "@/components/MarketSentiment";
@@ -119,12 +120,7 @@ export function DesktopStockDetail({
           </div>
         </section>
 
-        {stock.description && (
-          <section className="px-5">
-            <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-accent">Description</p>
-            <p className="text-[1.05rem] text-text-primary whitespace-pre-line">{stock.description}</p>
-          </section>
-        )}
+        <CompanyDescription symbol={stock.symbol} className="px-5" />
       </div>
     </div>
   );
