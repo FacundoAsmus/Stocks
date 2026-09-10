@@ -157,25 +157,6 @@ input {
   .ai-star-loader__star { animation: none; }
 }
 
-/* Ticker: always animating. Desktop hover pauses it; touch devices ignore hover. */
-.market-ticker {
-  animation: market-ticker 92s linear infinite;
-  transition: filter 420ms ease;
-}
-
-@media (hover: hover) {
-  /* Only on devices that support true hover (desktop/mouse) */
-  .market-ticker:hover {
-    animation-play-state: paused;
-    filter: brightness(1.08);
-  }
-}
-
-@keyframes market-ticker {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 

@@ -257,7 +257,7 @@ export function MarketHeatmap() {
         </div>
       </div>
 
-      <div ref={areaRef} className="relative min-h-[calc(100dvh-10rem)] flex-1 overflow-hidden bg-black" role="tabpanel" aria-live="polite">
+      <div ref={areaRef} className="relative mx-4 mt-4 min-h-[calc(100dvh-12rem)] flex-1 overflow-hidden rounded-t-2xl border border-white/10 bg-black" role="tabpanel" aria-live="polite">
         {loading && !stocks.length && <LoadingHeatCanvas group={activeGroup} width={size.width} height={size.height} />}
         {!!stocks.length && !error && <HeatCanvas stocks={stocks} rectangles={rectangles} previousStocks={previousStocks} previousRectangles={previousRectangles} isLoading={loading} width={size.width} height={size.height} />}
         {!loading && !error && <div className="absolute inset-0">
@@ -283,6 +283,20 @@ export function MarketHeatmap() {
           })}
         </div>}
         {error && <div className="absolute inset-0 flex items-center justify-center text-sm text-negative">{error}</div>}
+      </div>
+      <div className="mx-4 min-h-24 shrink-0 py-4" aria-label="Sector fund">
+        {selected.sectorFund && (
+          <Link
+            href={`/stock/${encodeURIComponent(selected.sectorFund.symbol)}`}
+            className="flex min-h-16 items-center justify-between rounded-b-2xl border border-white/10 bg-panel-muted/70 px-5 transition-colors hover:border-accent/50 hover:bg-panel-muted"
+          >
+            <span>
+              <span className="block text-xs font-medium uppercase tracking-[0.14em] text-text-muted">Sector fund</span>
+              <span className="mt-1 block text-sm text-text-primary">{selected.sectorFund.name}</span>
+            </span>
+            <span className="text-lg font-bold text-accent">{selected.sectorFund.symbol}</span>
+          </Link>
+        )}
       </div>
       <style>{`@media (prefers-reduced-motion: reduce) { .heatmap-tile { transition: none !important; } }`}</style>
     </section>
