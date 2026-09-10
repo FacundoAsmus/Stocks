@@ -85,17 +85,26 @@ export function CompanyDescription({ symbol, className = "" }: { symbol: string;
 
   useEffect(() => {
     const controller = new AbortController();
+    const startedAt = Date.now();
+    const MIN_LOADER_MS = 700;
     setState({ status: "loading", text: "" });
+
+    const finish = (nextState: DescriptionState) => {
+      const remaining = Math.max(0, MIN_LOADER_MS - (Date.now() - startedAt));
+      window.setTimeout(() => {
+        if (!controller.signal.aborted) setState(nextState);
+      }, remaining);
+    };
 
     fetch(`/api/company-description?symbol=${encodeURIComponent(symbol)}`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Description unavailable");
         const body = await response.json() as { description?: string };
         if (!body.description) throw new Error("Description unavailable");
-        setState({ status: "ready", text: body.description });
+        finish({ status: "ready", text: body.description });
       })
       .catch(() => {
-        if (!controller.signal.aborted) setState({ status: "error", text: "" });
+        finish({ status: "error", text: "" });
       });
 
     return () => controller.abort();

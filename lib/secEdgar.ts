@@ -9,7 +9,9 @@ const SEC_USER_AGENT = "Wave form redx2002x2@gmail.com";
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 // Kept separate from the interactive chat model: this inexpensive model only
 // turns an already-sourced filing excerpt into readable company copy.
-const GEMINI_DESCRIPTION_MODEL = "gemini-2.5-flash-lite";
+// This is the Flash-Lite model already configured as the interactive chat's
+// inexpensive fallback, so it is known to be available to the same API key.
+const GEMINI_DESCRIPTION_MODEL = "gemini-3.1-flash-lite";
 const GEMINI_DESCRIPTION_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_DESCRIPTION_MODEL}:generateContent`;
 
 const TICKER_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // company_tickers.json rarely changes
