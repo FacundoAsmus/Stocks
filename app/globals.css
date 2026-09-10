@@ -118,42 +118,40 @@ input {
   position: relative;
   display: inline-block;
   flex: 0 0 auto;
-  /* The same green used by the app's primary positive/AI accents. */
-  color: #00c805;
+  /* AI controls use the shared accent token, not the price-change green. */
+  color: var(--color-accent);
 }
 
 .ai-star-loader__star {
   position: absolute;
   width: 58%;
   height: 58%;
-  filter: drop-shadow(0 0 3px rgba(0, 200, 5, 0.55));
+  filter: drop-shadow(0 0 3px rgba(173, 250, 27, 0.55));
   will-change: transform, opacity;
 }
 
 .ai-star-loader__star--large {
   top: 2%;
   left: 1%;
-  animation: ai-star-swap-large 1.55s cubic-bezier(0.34, 1.36, 0.64, 1) infinite alternate;
+  animation: ai-star-swap-large 1.55s cubic-bezier(0.45, 0, 0.15, 1) infinite alternate;
 }
 
 .ai-star-loader__star--small {
   right: 1%;
   bottom: 2%;
-  animation: ai-star-swap-small 1.55s cubic-bezier(0.34, 1.36, 0.64, 1) infinite alternate;
+  animation: ai-star-swap-small 1.55s cubic-bezier(0.45, 0, 0.15, 1) infinite alternate;
 }
 
 @keyframes ai-star-swap-large {
-  0%, 8% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
-  30% { transform: translate(27%, 67%) scale(0.87) rotate(17deg); opacity: 0.91; }
-  62% { transform: translate(77%, 62%) scale(0.57) rotate(-10deg); opacity: 0.72; }
-  87%, 100% { transform: translate(68%, 68%) scale(0.62) rotate(0deg); opacity: 0.78; }
+  0%, 13% { transform: translate(0, 0) scale(1); opacity: 1; }
+  50% { transform: translate(34%, 34%) scale(0.81); opacity: 0.88; }
+  87%, 100% { transform: translate(68%, 68%) scale(0.62); opacity: 0.78; }
 }
 
 @keyframes ai-star-swap-small {
-  0%, 8% { transform: translate(0, 0) scale(0.62) rotate(0deg); opacity: 0.78; }
-  30% { transform: translate(-27%, -67%) scale(0.87) rotate(-17deg); opacity: 0.91; }
-  62% { transform: translate(-77%, -62%) scale(1.07) rotate(10deg); opacity: 1; }
-  87%, 100% { transform: translate(-68%, -68%) scale(1) rotate(0deg); opacity: 1; }
+  0%, 13% { transform: translate(0, 0) scale(0.62); opacity: 0.78; }
+  50% { transform: translate(-34%, -34%) scale(0.81); opacity: 0.88; }
+  87%, 100% { transform: translate(-68%, -68%) scale(1); opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
