@@ -266,7 +266,7 @@ export function MarketHeatmap() {
           </Link>
         )}
       </div>
-      <style>{`@keyframes heatmap-fade-out { from { opacity: 1; } to { opacity: 0; } } @keyframes heatmap-fade-in { from { opacity: 0; } to { opacity: 1; } } .heatmap-fade-out, .heatmap-fade-in { animation: 1200ms ease-in-out both; } .heatmap-fade-out { animation-name: heatmap-fade-out; } .heatmap-fade-in { animation-name: heatmap-fade-in; } @media (prefers-reduced-motion: reduce) { .heatmap-tile, .heatmap-fade-out, .heatmap-fade-in { animation: none !important; transition: none !important; } }`}</style>
+      <style>{`@keyframes heatmap-fade-out { 0% { opacity: 1; } 46% { opacity: .92; } 70% { opacity: .5; } 100% { opacity: 0; } } @keyframes heatmap-fade-in { 0% { opacity: 0; } 30% { opacity: .46; } 55% { opacity: .92; } 75% { opacity: .82; } 100% { opacity: 1; } } .heatmap-fade-out, .heatmap-fade-in { animation: 1200ms cubic-bezier(.22, .8, .25, 1) both; mix-blend-mode: screen; } .heatmap-fade-out { animation-name: heatmap-fade-out; } .heatmap-fade-in { animation-name: heatmap-fade-in; } @media (prefers-reduced-motion: reduce) { .heatmap-tile, .heatmap-fade-out, .heatmap-fade-in { animation: none !important; transition: none !important; } }`}</style>
     </section>
   );
 }
