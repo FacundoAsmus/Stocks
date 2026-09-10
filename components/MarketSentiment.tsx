@@ -166,7 +166,7 @@ export function MarketSentiment({
 }) {
   return (
     <section className="rounded-xl bg-black p-5">
-      <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-4">
+      <p className="mb-4 text-sm font-medium uppercase tracking-[0.18em] text-accent">
         Stock Sentiment
       </p>
 

@@ -45,7 +45,7 @@ export default async function StockPage({ params }: StockPageProps) {
           The watchlist page itself no longer routes here on desktop; see
           components/desktop/WatchlistSplitView.tsx for that merged view.) */}
       <div className="hidden lg:block">
-        <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-7xl px-4 pt-8 pb-24 sm:px-6 lg:px-8">
           <DesktopStockDetail
             stock={stock}
             currentPrice={currentPrice}

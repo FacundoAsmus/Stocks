@@ -121,8 +121,8 @@ export function DesktopStockDetail({
 
         {stock.description && (
           <section className="px-5">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent">Description</p>
-            <p className="max-w-[65ch] text-sm leading-[1.6] text-text-primary whitespace-pre-line">{stock.description}</p>
+            <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-accent">Description</p>
+            <p className="text-[1.05rem] text-text-primary whitespace-pre-line">{stock.description}</p>
           </section>
         )}
       </div>

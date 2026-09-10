@@ -128,7 +128,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         document.body
       )}
 
-      <div ref={pageRef} className="pb-24" style={{ opacity: 1 }} data-stock-page="">
+      <div ref={pageRef} className="pb-36" style={{ opacity: 1 }} data-stock-page="">
 
         <div className="flex items-center gap-3 px-4 pt-5 pb-3">
           {stock.profile.logo ? (
@@ -212,8 +212,8 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
 
           {stock.description && (
             <section>
-              <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">Description</p>
-              <p className="max-w-[65ch] text-sm text-text-primary leading-[1.6] whitespace-pre-line">{stock.description}</p>
+              <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-accent">Description</p>
+              <p className="text-[1.05rem] text-text-primary whitespace-pre-line">{stock.description}</p>
             </section>
           )}
         </div>
