@@ -50,21 +50,23 @@ function makeTreemap(items: HeatmapStock[], bounds: Rectangle): Map<string, Rect
 
 function colorForChange(change: number | null): [number, number, number] {
   const value = change ?? 0;
-  const red: [number, number, number] = [226, 52, 25];
-  const orange: [number, number, number] = [234, 126, 23];
+  const red: [number, number, number] = [238, 42, 21];
+  const redOrange: [number, number, number] = [225, 80, 20];
+  const orange: [number, number, number] = [235, 137, 18];
   const yellow: [number, number, number] = [215, 186, 22];
-  const green: [number, number, number] = [8, 190, 42];
+  const yellowGreen: [number, number, number] = [113, 188, 26];
+  const green: [number, number, number] = [4, 202, 45];
   const blend = (from: [number, number, number], to: [number, number, number], progress: number): [number, number, number] => [
     Math.round(from[0] + (to[0] - from[0]) * progress),
     Math.round(from[1] + (to[1] - from[1]) * progress),
     Math.round(from[2] + (to[2] - from[2]) * progress),
   ];
 
-  if (value <= -1) return red;
-  if (value < -0.2) return blend(red, orange, (value + 1) / 0.8);
+  if (value <= -2) return red;
+  if (value < -0.2) return blend(red, redOrange, (value + 2) / 1.8);
   if (value < 0) return orange;
   if (value <= 0.2) return yellow;
-  if (value < 1) return blend(yellow, green, (value - 0.2) / 0.8);
+  if (value < 2) return blend(yellowGreen, green, (value - 0.2) / 1.8);
   return green;
 }
 
