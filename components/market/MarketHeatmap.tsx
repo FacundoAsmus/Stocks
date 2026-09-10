@@ -240,8 +240,10 @@ export function MarketHeatmap() {
   const previousRectangles = useMemo(() => previousStocks ? makeTreemap(previousStocks, { x: 0, y: 0, width: size.width, height: size.height }) : null, [previousStocks, size]);
 
   return (
-    <section className="relative min-h-dvh overflow-hidden bg-black" aria-labelledby="market-heatmap-title">
-      <div className="absolute inset-x-0 top-0 z-20 border-b border-white/10 bg-gradient-to-b from-black via-black/95 to-transparent px-6 pb-14 pt-[max(1.5rem,env(safe-area-inset-top))]">
+    <section className="flex min-h-dvh flex-col overflow-hidden bg-black" aria-labelledby="market-heatmap-title">
+      {/* This is a real layout row, rather than an overlay: the map always
+          starts below the title and section buttons. */}
+      <div className="relative z-20 shrink-0 border-b border-white/10 bg-black px-6 pb-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
         <div className="flex items-end justify-between gap-6">
           <div>
             <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market map</p>
@@ -255,7 +257,7 @@ export function MarketHeatmap() {
         </div>
       </div>
 
-      <div ref={areaRef} className="relative min-h-dvh overflow-hidden bg-black" role="tabpanel" aria-live="polite">
+      <div ref={areaRef} className="relative min-h-[calc(100dvh-10rem)] flex-1 overflow-hidden bg-black" role="tabpanel" aria-live="polite">
         {loading && !stocks.length && <LoadingHeatCanvas group={activeGroup} width={size.width} height={size.height} />}
         {!!stocks.length && !error && <HeatCanvas stocks={stocks} rectangles={rectangles} previousStocks={previousStocks} previousRectangles={previousRectangles} isLoading={loading} width={size.width} height={size.height} />}
         {!loading && !error && <div className="absolute inset-0">
