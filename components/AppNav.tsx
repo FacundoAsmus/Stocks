@@ -88,7 +88,7 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
 
       {/* Appearance */}
       <div className="px-4 py-3 border-b border-border-subtle">
-        <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-2">Appearance</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-2">Appearance</p>
         <div className="flex gap-2">
           {themeOptions.map(opt => (
             <button
@@ -97,8 +97,8 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
               className={cn(
                 "flex-1 flex flex-col items-center gap-1.5 rounded-lg p-2.5 border text-xs font-medium transition-all",
                 theme === opt.value
-                  ? "bg-accent/10 border-accent text-accent"
-                  : "border-border-subtle text-text-muted hover:border-accent/40"
+                  ? "bg-positive/10 border-positive text-positive"
+                  : "border-border-subtle text-text-muted hover:border-positive/40"
               )}
             >
               {opt.icon}
@@ -110,7 +110,7 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
 
       {/* Pro Mode */}
       <div className="px-4 py-3">
-        <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-2">Pro Mode</p>
+        <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-2">Pro Mode</p>
         <button
           onClick={toggleProMode}
           className="w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5"
@@ -120,8 +120,8 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
             <span className="text-xs text-text-muted">Adds horizontal line at hovered price level</span>
           </span>
           <span className="shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative"
-            style={{ borderColor: proMode ? "var(--color-accent)" : "var(--color-border-subtle)",
-                     backgroundColor: proMode ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
+            style={{ borderColor: proMode ? "var(--color-positive)" : "var(--color-border-subtle)",
+                     backgroundColor: proMode ? "var(--color-positive)" : "var(--color-panel-muted)" }}>
             <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
               style={{ left: proMode ? "calc(100% - 1.125rem)" : "0.125rem" }} />
           </span>
@@ -165,8 +165,8 @@ export function AppNav() {
             <span className={cn(
               "flex h-10 w-10 items-center justify-center rounded-md border transition-all duration-200",
               isActive
-                ? "border-accent bg-accent text-black"
-                : "border-accent/30 bg-accent/10 text-accent group-hover:border-accent/60"
+                ? "border-positive bg-positive text-black"
+                : "border-positive/30 bg-positive/10 text-positive group-hover:border-positive/60"
             )}>
               {item.icon === "globe"
                 ? <GlobeIcon className="h-5 w-5" />
@@ -189,8 +189,8 @@ export function AppNav() {
           <span className={cn(
             "flex h-10 w-10 items-center justify-center rounded-md border transition-all duration-200",
             settingsOpen
-              ? "border-accent bg-accent text-black"
-              : "border-accent/30 bg-accent/10 text-accent group-hover:border-accent/60"
+              ? "border-positive bg-positive text-black"
+              : "border-positive/30 bg-positive/10 text-positive group-hover:border-positive/60"
           )}>
             <Settings className="h-5 w-5" />
           </span>

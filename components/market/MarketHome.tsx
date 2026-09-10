@@ -202,7 +202,7 @@ function MarketStatusCard() {
   }, []);
   return (
     <div className="flex flex-col justify-center items-end text-right pt-6">
-      <p className={cn("text-4xl font-bold tracking-tight", status.isOpen ? "text-accent" : "text-negative")}>
+      <p className={cn("text-4xl font-bold tracking-tight", status.isOpen ? "text-positive" : "text-negative")}>
         {status.label}
       </p>
       <p className="mt-1 text-sm text-text-muted">{status.subLabel}</p>
@@ -468,8 +468,8 @@ export function MarketHome() {
                 className={cn(
                   "px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-150",
                   activeTab === key
-                    ? "bg-accent text-black"
-                    : "text-accent hover:text-accent/80"
+                    ? "bg-positive text-black"
+                    : "text-positive hover:text-positive/80"
                 )}
               >
                 {TAB_LABELS[key]}
