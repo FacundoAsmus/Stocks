@@ -50,13 +50,22 @@ function makeTreemap(items: HeatmapStock[], bounds: Rectangle): Map<string, Rect
 
 function colorForChange(change: number | null): [number, number, number] {
   const value = change ?? 0;
-  const intensity = Math.min(1, Math.abs(value) / 5);
-  const blend = (from: number, to: number) => Math.round(from + (to - from) * intensity);
+  const red: [number, number, number] = [226, 52, 25];
+  const orange: [number, number, number] = [234, 126, 23];
+  const yellow: [number, number, number] = [215, 186, 22];
+  const green: [number, number, number] = [8, 190, 42];
+  const blend = (from: [number, number, number], to: [number, number, number], progress: number): [number, number, number] => [
+    Math.round(from[0] + (to[0] - from[0]) * progress),
+    Math.round(from[1] + (to[1] - from[1]) * progress),
+    Math.round(from[2] + (to[2] - from[2]) * progress),
+  ];
 
-  // Keep small moves bright and readable: losses begin orange and gains
-  // begin yellow-green, then build naturally into their saturated endpoint.
-  if (value < 0) return [blend(222, 246), blend(149, 43), blend(18, 17)];
-  return [blend(181, 0), blend(185, 214), blend(24, 48)];
+  if (value <= -1) return red;
+  if (value < -0.2) return blend(red, orange, (value + 1) / 0.8);
+  if (value < 0) return orange;
+  if (value <= 0.2) return yellow;
+  if (value < 1) return blend(yellow, green, (value - 0.2) / 0.8);
+  return green;
 }
 
 function drawGlow(
