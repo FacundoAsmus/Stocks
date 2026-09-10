@@ -77,13 +77,6 @@ export function DesktopStockDetail({
           </div>
         </section>
 
-        {stock.description && (
-          <section className="px-5">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-positive">Description</p>
-            <p className="text-sm leading-relaxed text-text-primary whitespace-pre-line">{stock.description}</p>
-          </section>
-        )}
-
         <MarketSentiment score={sentiment.score} drivers={sentiment.drivers} />
 
         {!isEtf && (
@@ -125,6 +118,13 @@ export function DesktopStockDetail({
             )}
           </div>
         </section>
+
+        {stock.description && (
+          <section className="px-5">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-positive">Description</p>
+            <p className="text-sm leading-relaxed text-text-primary whitespace-pre-line">{stock.description}</p>
+          </section>
+        )}
       </div>
     </div>
   );
