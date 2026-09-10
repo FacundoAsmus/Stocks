@@ -120,7 +120,7 @@ export function DesktopStockDetail({
           </div>
         </section>
 
-        <CompanyDescription symbol={stock.symbol} className="px-5" />
+        <CompanyDescription symbol={stock.symbol} className="px-5 pb-32" />
       </div>
     </div>
   );
