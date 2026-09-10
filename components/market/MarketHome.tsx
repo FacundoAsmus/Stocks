@@ -7,7 +7,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { ErrorState } from "@/components/ErrorState";
 import { MarketFearGreed } from "@/components/market/MarketFearGreed";
-import { StockCard } from "@/components/StockCard";
+import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { formatCurrency, formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MarketNewsArticle, StockSummary } from "@/types/stock";
@@ -64,7 +64,7 @@ function MiniSparkline({ stock, className }: { stock: StockSummary; className?: 
   );
 }
 
-function TickerBar({ stocks }: { stocks: StockSummary[] }) {
+export function TickerBar({ stocks }: { stocks: StockSummary[] }) {
   const sectionRef = useRef<HTMLElement>(null);
   const tickerStocks = stocks.length ? [...stocks, ...stocks] : [];
 
@@ -399,7 +399,6 @@ export function MarketHome() {
   const [data, setData] = useState<MarketPayload>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"etfs" | "gainers" | "losers">("etfs");
   const [initialWatchlist] = useState<string[]>(() => readWatchlist());
   const watchlistQuery = useMemo(() => initialWatchlist.join(","), [initialWatchlist]);
 
@@ -427,22 +426,8 @@ export function MarketHome() {
   if (error) return <ErrorState title="Market unavailable" message={error} />;
   if (isLoading) return <LoadingScreen label="Loading market data" />;
 
-  const TAB_LABELS: Record<typeof activeTab, string> = {
-    etfs: "Sector ETFs",
-    gainers: "Top Winners",
-    losers: "Top Losers",
-  };
-
-  const activeStocks = (
-    activeTab === "etfs"    ? data.etfs    :
-    activeTab === "gainers" ? data.gainers :
-                              data.losers
-  ) ?? [];
-
   return (
     <div className="min-h-dvh bg-black">
-      <TickerBar stocks={data.tickerStocks ?? []} />
-
       <div className="px-5 pt-12 pb-16 lg:px-8 flex flex-col gap-12">
 
         {/* Welcome + market status */}
@@ -457,38 +442,7 @@ export function MarketHome() {
         {/* Fear & Greed */}
         <MarketFearGreed />
 
-        {/* Tabbed stock grid: ETFs / Winners / Losers — 3×3 */}
-        <section>
-          {/* Tab selector — pill for active, green text for inactive */}
-          <div className="flex items-center gap-3 mb-6">
-            {(Object.keys(TAB_LABELS) as Array<typeof activeTab>).map((key) => (
-              <button
-                key={key}
-                onClick={() => setActiveTab(key)}
-                className={cn(
-                  "px-4 py-1.5 rounded-full text-sm font-semibold transition-colors duration-150",
-                  activeTab === key
-                    ? "bg-accent text-black"
-                    : "text-accent hover:text-accent/80"
-                )}
-              >
-                {TAB_LABELS[key]}
-              </button>
-            ))}
-          </div>
-
-          {/* 3×3 grid — cards are 90% width, ~80% height of watchlist cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-            {activeStocks.slice(0, 9).map((stock) => (
-              <StockCard
-                key={stock.symbol}
-                stock={stock}
-                minHeightClassName=""
-                style={{ aspectRatio: "1 / 1.35" }}
-              />
-            ))}
-          </div>
-        </section>
+        <MarketHeatmap />
 
         {/* News — full width, bottom of page */}
         <NewsSection articles={(data.news ?? []).slice(4)} />
