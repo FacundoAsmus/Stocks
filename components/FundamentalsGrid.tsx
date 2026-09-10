@@ -72,12 +72,14 @@ export function FundamentalsGrid({
   metrics,
   marketCap,
   currentPrice,
-  earnings = []
+  earnings = [],
+  isEtf = false
 }: {
   metrics?: Record<string, MetricValue>;
   marketCap?: number;
   currentPrice: number;
   earnings?: EarningsEvent[];
+  isEtf?: boolean;
 }) {
   const pe = toNumber(metrics?.peTTM ?? metrics?.peNormalizedAnnual);
   const forwardPe = toNumber(metrics?.forwardPE ?? null);        // ✅ correct Finnhub field
@@ -153,21 +155,29 @@ export function FundamentalsGrid({
     }
   ];
 
+  const ETF_EXCLUDED_LABELS = new Set([
+    "Market Cap", "P/E Ratio", "Forward P/E", "PEG", "EPS", "Dividend Yield", "Next Report", "Expected Earnings"
+  ]);
+  const visibleItems = isEtf ? items.filter(item => !ETF_EXCLUDED_LABELS.has(item.label)) : items;
+
   return (
-    <section className="grid grid-cols-2 gap-2">
-      {items.map((item) => (
-        <div key={item.label} className="rounded-md bg-black p-4">
-          <div className="flex items-center gap-1.5 mb-2">
-            <span className={`h-2 w-2 rounded-full shrink-0 ${
-              item.tone === "positive" ? "bg-positive" :
-              item.tone === "negative" ? "bg-negative" :
-              "bg-text-muted/40"
-            }`} />
-            <p className="text-xs uppercase tracking-[0.12em] text-text-muted truncate">{item.label}</p>
+    <section>
+      <p className="mb-3 px-5 text-sm font-medium uppercase tracking-[0.18em] text-accent">Indicators</p>
+      <div className="grid grid-cols-2 gap-2">
+        {visibleItems.map((item) => (
+          <div key={item.label} className="rounded-md bg-black p-4">
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className={`h-2 w-2 rounded-full shrink-0 ${
+                item.tone === "positive" ? "bg-positive" :
+                item.tone === "negative" ? "bg-negative" :
+                "bg-text-muted/40"
+              }`} />
+              <p className="text-xs uppercase tracking-[0.12em] text-text-muted truncate">{item.label}</p>
+            </div>
+            <p className="text-xl font-semibold text-text-primary">{item.value}</p>
           </div>
-          <p className="text-xl font-semibold text-text-primary">{item.value}</p>
-        </div>
-      ))}
+        ))}
+      </div>
     </section>
   );
 }

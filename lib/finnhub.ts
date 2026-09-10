@@ -16,6 +16,7 @@ import type {
   SymbolSearchResult
 } from "@/types/stock";
 import { MAJOR_INDICES, MARKET_MOVER_FALLBACK_SYMBOLS } from "@/lib/constants";
+import { getCompanyDescription } from "@/lib/secEdgar";
 
 const BASE_URL = "https://finnhub.io/api/v1";
 const YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
@@ -423,6 +424,25 @@ async function getEarningsSurpriseHistory(symbol: string): Promise<FinnhubEarnin
   return Array.isArray(data) ? data : [];
 }
 
+// Finds the calendar event that this surprise-history quarter almost
+// certainly refers to: the earliest real, dated event on or shortly after
+// the fiscal period-end date. Matching this way — instead of by
+// quarter/year labels — is what avoids the bug described below.
+function findEventForPeriod(events: EarningsEvent[], period: string): EarningsEvent | null {
+  const periodMs = new Date(`${period}T00:00:00`).getTime();
+  const maxWindowMs = 1000 * 60 * 60 * 24 * 100; // ~100 days: comfortably covers the real gap between a fiscal quarter's close and the report date
+  let best: EarningsEvent | null = null;
+  let bestDiff = Infinity;
+  for (const e of events) {
+    const diff = new Date(`${e.date}T00:00:00`).getTime() - periodMs;
+    if (diff >= 0 && diff < maxWindowMs && diff < bestDiff) {
+      bestDiff = diff;
+      best = e;
+    }
+  }
+  return best;
+}
+
 function periodToQuarter(period: string): { quarter: number; year: number } {
   const d = new Date(`${period}T00:00:00`);
   return { quarter: Math.floor(d.getMonth() / 3) + 1, year: d.getFullYear() };
@@ -435,16 +455,29 @@ function periodToQuarter(period: string): { quarter: number; year: number } {
 //
 // /calendar/earnings alone is frequently forward-looking-only on Finnhub's
 // free tier — it reliably gives upcoming dates/estimates but often omits
-// historical actual/estimate values entirely. /stock/earnings is the
-// endpoint Finnhub documents as reliable for historical EPS actual vs.
-// estimate on the free tier, so we fetch both and merge: it backfills EPS
-// on dates the calendar already gave us, and adds whole past quarters the
-// calendar never returned. For quarters only found via /stock/earnings we
-// have no real announcement date (that endpoint only gives the fiscal
-// period-end date), so we place the marker on the period-end date as a
-// best-effort approximation — it can be a few weeks off from the actual
-// report date. Revenue actual/estimate isn't in /stock/earnings at all, so
-// it stays null for any quarter that only came from that source.
+// historical rows entirely, not just historical actual/estimate values.
+// /stock/earnings is the endpoint Finnhub documents as reliable for
+// historical EPS actual vs. estimate on the free tier, so we fetch both and
+// merge: it backfills EPS onto quarters the calendar endpoint already gave
+// us a real date for, and — only when the calendar endpoint has nothing
+// for that quarter at all — adds a best-effort entry so an already-happened
+// quarter doesn't just disappear from the calendar.
+//
+// /stock/earnings only ever gives a fiscal PERIOD-END date, never the
+// actual report date — those are reliably weeks apart (e.g. NVIDIA's
+// fiscal Q2 ends in July but is reported in late August). This used to
+// match surprise-history rows to calendar events by quarter/year number,
+// which broke for companies whose fiscal year is offset from the calendar
+// year (NVIDIA's starts in February): a naive calendar-quarter-from-month
+// calculation labels periods differently than Finnhub's own fiscal quarter
+// numbers, so the match kept failing even when a real, correctly-dated
+// event already existed — producing a duplicate entry wrongly dated on the
+// period-end date itself (e.g. "Mar 31" appearing as if it were a report
+// date, right alongside the real one). Matching by nearest real date
+// instead of by quarter/year label fixes that: EPS actual/estimate now
+// prefers attaching to a genuine, already-dated event, and a brand-new
+// entry is only ever created as a last resort, when no real date exists
+// for that quarter anywhere in the calendar data.
 export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent[]> {
   const cleaned = cleanSymbol(symbol);
   const [calendarData, surpriseHistory] = await Promise.all([
@@ -460,35 +493,61 @@ export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent
     .filter(e => e.date)
     .map(e => ({ ...e }));
 
+  // Pass 1: backfill EPS onto real dated events, and learn this symbol's
+  // typical gap between a fiscal period-end and its actual report date from
+  // whichever quarters we have both for.
+  const DAY_MS = 1000 * 60 * 60 * 24;
+  const unmatched: FinnhubEarningsSurprise[] = [];
+  const lagsDays: number[] = [];
+
   surpriseHistory.forEach(s => {
     if (s.actual === null && s.estimate === null) return;
-    const { quarter, year } = periodToQuarter(s.period);
-    const match = events.find(e => e.quarter === quarter && e.year === year);
+    const match = findEventForPeriod(events, s.period);
     if (match) {
       if (match.epsActual === null)   match.epsActual   = s.actual;
       if (match.epsEstimate === null) match.epsEstimate = s.estimate;
-    } else {
-      events.push({
-        date: s.period,
-        quarter,
-        year,
-        hour: null,
-        epsEstimate: s.estimate,
-        epsActual: s.actual,
-        revenueEstimate: null,
-        revenueActual: null
-      });
+      const lag = Math.round(
+        (new Date(`${match.date}T00:00:00`).getTime() - new Date(`${s.period}T00:00:00`).getTime()) / DAY_MS
+      );
+      if (lag >= 0) lagsDays.push(lag);
+      return;
     }
+    unmatched.push(s);
+  });
+
+  // Typical real-world gap for THIS symbol between a period-end and its
+  // actual report date, learned above. Falls back to a generic ~45 days
+  // (most companies report 3–7 weeks after quarter-end) if there aren't any
+  // matched quarters yet to learn from.
+  const avgLagDays = lagsDays.length
+    ? Math.round(lagsDays.reduce((a, b) => a + b, 0) / lagsDays.length)
+    : 45;
+
+  // Pass 2: for quarters the calendar endpoint has no real date for at all,
+  // estimate the report date using that learned gap instead of the raw
+  // period-end date. The two can be many weeks apart — that's exactly what
+  // caused NVIDIA's Q1 to show "Mar 31" when it actually reported May 20:
+  // "Mar 31" is the raw, un-adjusted fiscal period-end, not an estimate of
+  // the report date at all. Using this symbol's own observed ~50-day gap
+  // instead lands within a couple of days of the real date.
+  unmatched.forEach(s => {
+    const { quarter, year } = periodToQuarter(s.period);
+    const estimatedDate = new Date(
+      new Date(`${s.period}T00:00:00`).getTime() + avgLagDays * DAY_MS
+    ).toISOString().slice(0, 10);
+    events.push({
+      date: estimatedDate,
+      quarter,
+      year,
+      hour: null,
+      epsEstimate: s.estimate,
+      epsActual: s.actual,
+      revenueEstimate: null,
+      revenueActual: null
+    });
   });
 
   events.sort((a, b) => a.date.localeCompare(b.date));
-
-  // TEMP DIAGNOSTIC — remove once we've confirmed whether Finnhub's plan
-  // populates estimate/actual fields for this account. Check Vercel logs.
-  console.log(
-    `[earnings] ${cleaned}: ${events.length} events (calendar=${calendarData.earningsCalendar?.length ?? 0}, surpriseHistory=${surpriseHistory.length}) —`,
-    JSON.stringify(events.slice(0, 3))
-  );
 
   return events;
 }
@@ -558,7 +617,7 @@ export async function searchSymbols(query: string) {
   const firstWord = normalizedQuery.split(" ")[0];
   const [response1, response2] = await Promise.all([
     fetchFinnhub<{ result?: SymbolSearchResult[] }>(
-      "/search", { q: query.trim() }, 1000 * 60 * 5
+      "/search", { q: normalizedQuery }, 1000 * 60 * 5
     ).catch(() => ({ result: [] as SymbolSearchResult[] })),
     firstWord !== normalizedQuery
       ? fetchFinnhub<{ result?: SymbolSearchResult[] }>(
@@ -857,14 +916,19 @@ export async function getStockSummary(symbol: string): Promise<StockSummary> {
 
 export async function getStockDetail(symbol: string): Promise<StockDetail> {
   const normalizedSymbol = cleanSymbol(symbol);
-  const [quote, profile, financials, news, recommendations, priceTarget, earnings] = await Promise.all([
+  const [quote, profile, financials, news, recommendations, priceTarget, earnings, description] = await Promise.all([
     getQuote(normalizedSymbol),
     getCompanyProfile(normalizedSymbol).catch(() => ({} as CompanyProfile)),
     getBasicFinancials(normalizedSymbol).catch(() => ({} as BasicFinancials)),
     getCompanyNews(normalizedSymbol).catch(() => []),
     getAnalystRecommendations(normalizedSymbol).catch(() => []),
     getPriceTarget(normalizedSymbol).catch(() => ({} as PriceTarget)),
-    getEarningsCalendar(normalizedSymbol).catch(() => [] as EarningsEvent[])
+    getEarningsCalendar(normalizedSymbol).catch(() => [] as EarningsEvent[]),
+    // SEC EDGAR (10-K/20-F "Item 1. Business" section) — best-effort, never
+    // throws. Returns null for ETFs, very recent IPOs, or anything else
+    // without a matching annual report on file, which the UI treats as
+    // "nothing to show" rather than an error.
+    getCompanyDescription(normalizedSymbol).catch(() => null),
   ]);
 
   console.log("priceTarget:", JSON.stringify(priceTarget));
@@ -881,7 +945,8 @@ export async function getStockDetail(symbol: string): Promise<StockDetail> {
     news: news.slice(0, 8),
     recommendations: recommendations.slice(0, 6),
     priceTarget,
-    earnings
+    earnings,
+    description
   };
 }
 
