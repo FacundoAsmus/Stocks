@@ -18,13 +18,15 @@ function isFresh<T>(entry: CacheEntry<T> | null | undefined): entry is CacheEntr
   return !!entry && entry.expiresAt > Date.now();
 }
 
-async function secFetch(url: string): Promise<Response> {
+async function secFetch(url: string, cache: RequestCache = "force-cache"): Promise<Response> {
   return fetch(url, {
     headers: {
       "User-Agent": SEC_USER_AGENT,
     },
-    // These endpoints change rarely; let Next.js cache at the fetch layer too.
-    next: { revalidate: 60 * 60 * 24 },
+    // Filing documents can exceed Next.js' 2 MB data-cache limit. They are
+    // already retained by the application-level description cache below.
+    cache,
+    ...(cache === "force-cache" ? { next: { revalidate: 60 * 60 * 24 } } : {}),
   });
 }
 
@@ -98,32 +100,32 @@ function extractBusinessDescription(html: string): string | null {
     .replace(/\s+/g, " ")
     .trim();
 
-  // Find the START of the actual narrative "Item 1. Business" section, not
-  // its appearance in a table of contents (ToC mentions are usually
-  // immediately followed by a page number and very little other text
-  // before the next "Item" — real section starts have substantial prose
-  // after them, so we look for a match that's followed by a long run of
-  // text before the next "Item").
+  // Find every occurrence of the "Item 1. Business" heading, then pick the
+  // one that's actually followed by a substantial run of text before the
+  // next "Item 1A". A real Business section runs thousands of characters;
+  // a table-of-contents entry is followed by only a few dozen characters
+  // before Item 1A appears again.
   const itemStartPattern = /item\s*1\.{0,1}\s*business/gi;
+  const item1APattern = /item\s*1a\.{0,1}\s*risk\s*factors/i;
+  const MIN_SECTION_LEN = 800;
+
   let bodyStart = -1;
+  let bodyEnd = -1;
   let match: RegExpExecArray | null;
   while ((match = itemStartPattern.exec(text))) {
-    const after = text.slice(match.index + match[0].length, match.index + match[0].length + 400);
-    // Real section bodies have real sentences shortly after the heading;
-    // ToC entries are typically just whitespace/digits/dots before the next heading.
-    if (/[a-z]{20,}/i.test(after)) {
-      bodyStart = match.index + match[0].length;
+    const start = match.index + match[0].length;
+    const endMatch = item1APattern.exec(text.slice(start));
+    const gapLen = endMatch ? endMatch.index : text.length - start;
+    if (gapLen >= MIN_SECTION_LEN) {
+      bodyStart = start;
+      bodyEnd = endMatch ? start + endMatch.index : text.length;
       break;
     }
   }
   if (bodyStart === -1) return null;
 
-  const rest = text.slice(bodyStart);
-  const endMatch = /item\s*1a\.{0,1}\s*risk\s*factors/i.exec(rest);
-  let body = endMatch ? rest.slice(0, endMatch.index) : rest.slice(0, 4000);
-
-  body = body.trim();
-  if (body.length < 100) return null; // too short to be a real description
+  let body = text.slice(bodyStart, bodyEnd).trim();
+  if (body.length < MIN_SECTION_LEN) return null;
 
   // Trim to a reasonable paragraph length, ending on a sentence boundary.
   const MAX_LEN = 1600;
@@ -147,26 +149,20 @@ export async function getCompanyDescription(symbol: string): Promise<string | nu
 
   try {
     const cik = await getCik(symbol);
-    console.log(`[secEdgar] ${symbol}: CIK lookup ->`, cik ?? "NOT FOUND");
     if (!cik) throw new Error("no CIK");
 
     const filing = await findLatestAnnualReport(cik);
-    console.log(`[secEdgar] ${symbol}: latest annual report ->`, filing ?? "NOT FOUND");
     if (!filing) throw new Error("no annual report on file");
 
     const accessionNoDashes = filing.accessionNumber.replace(/-/g, "");
     const cikNoLeadingZeros = String(Number(cik));
     const docUrl = `https://www.sec.gov/Archives/edgar/data/${cikNoLeadingZeros}/${accessionNoDashes}/${filing.primaryDocument}`;
-    console.log(`[secEdgar] ${symbol}: fetching filing document ->`, docUrl);
 
-    const docRes = await secFetch(docUrl);
-    console.log(`[secEdgar] ${symbol}: filing fetch status ->`, docRes.status);
+    const docRes = await secFetch(docUrl, "no-store");
     if (!docRes.ok) throw new Error(`filing fetch failed: ${docRes.status}`);
     const html = await docRes.text();
-    console.log(`[secEdgar] ${symbol}: filing HTML length ->`, html.length);
 
     const description = extractBusinessDescription(html);
-    console.log(`[secEdgar] ${symbol}: extracted description ->`, description ? `${description.length} chars` : "NULL (heuristic found nothing)");
     descriptionCache.set(cacheKey, { value: description, expiresAt: Date.now() + DESCRIPTION_CACHE_TTL_MS });
     return description;
   } catch (err) {
