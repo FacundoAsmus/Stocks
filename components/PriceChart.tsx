@@ -107,8 +107,8 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
 /* ─── Number-wheel digit ─────────────────────────────────────────────────── */
 // Each digit is a continuous, repeating strip. Keeping a virtual position lets
 // 9 → 0 move one row forward (and 0 → 9 one row back), like a mechanical wheel.
-// Width per digit is set via CSS `ch` units scoped to each size, which gives
-// natural variable spacing (1 narrower than 8) without any JS measurement loop.
+// Every wheel column has a fixed width. Besides matching a mechanical counter,
+// this prevents prices with decimals from visibly squeezing as digits change.
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
 const WHEEL_CYCLES_BEFORE = 2;
 const WHEEL_CYCLES_AFTER = 3;
@@ -117,13 +117,7 @@ const WHEEL_DIGITS = Array.from(
   (_, index) => DIGIT_CHARS[index % DIGIT_CHARS.length],
 );
 
-// Proportional widths as a fraction of rowPx (measured from Inter at text-5xl/text-2xl).
-// "1" is naturally narrow; "0","4","8" are wide. These ratios stay correct at any px size.
-const DIGIT_RATIO: Record<string, number> = {
-  "0": 0.62, "1": 0.36, "2": 0.58, "3": 0.58,
-  "4": 0.62, "5": 0.58, "6": 0.60, "7": 0.52,
-  "8": 0.62, "9": 0.60,
-};
+const WHEEL_SLOT_RATIO = 0.62;
 
 function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
   const isDigit = DIGIT_CHARS.includes(ch);
@@ -132,7 +126,9 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
   // strip room to cross its seam without an abrupt reset.
   const [wheelPosition, setWheelPosition] = useState(idx);
   const [isRolling, setIsRolling] = useState(false);
+  const [isRecentering, setIsRecentering] = useState(false);
   const previousDigitRef = useRef(idx);
+  const resetFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!isDigit || previousDigitRef.current === idx) return;
@@ -145,6 +141,10 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
     setWheelPosition((position) => position + shortestStep);
     setIsRolling(true);
   }, [idx, isDigit]);
+
+  useEffect(() => () => {
+    if (resetFrameRef.current !== null) cancelAnimationFrame(resetFrameRef.current);
+  }, []);
 
   const rowPx     = size === "lg" ? 54 : 32;
   const fontClass = size === "lg"
@@ -162,7 +162,7 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
     );
   }
 
-  const slotPx = Math.round((DIGIT_RATIO[ch] ?? 0.62) * rowPx);
+  const slotPx = Math.round(WHEEL_SLOT_RATIO * rowPx);
 
   return (
     <span
@@ -170,7 +170,6 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
       style={{
         height: rowPx,
         width: slotPx,
-        transition: "width 1.04s cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
       <span
@@ -179,11 +178,23 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
           transform: `translateY(-${(wheelPosition + WHEEL_CYCLES_BEFORE * 10) * rowPx}px)`,
           // A light blur softens the moving glyph while preserving legibility.
           filter: isRolling ? "blur(0.45px)" : "blur(0)",
-          transition: "transform 1.04s cubic-bezier(0.22, 1, 0.36, 1), filter 120ms ease-out",
+          // Recentering uses an identical repeated glyph, so it can jump back
+          // to the middle of the strip with no visible motion or seam.
+          transition: isRecentering
+            ? "none"
+            : "transform 1.04s cubic-bezier(0.22, 1, 0.36, 1), filter 120ms ease-out",
           willChange: "transform, filter",
         }}
         onTransitionEnd={(event) => {
-          if (event.propertyName === "transform") setIsRolling(false);
+          if (event.propertyName !== "transform") return;
+          setIsRolling(false);
+          setIsRecentering(true);
+          setWheelPosition(idx);
+          if (resetFrameRef.current !== null) cancelAnimationFrame(resetFrameRef.current);
+          resetFrameRef.current = requestAnimationFrame(() => {
+            setIsRecentering(false);
+            resetFrameRef.current = null;
+          });
         }}
       >
         {WHEEL_DIGITS.map((d, wheelIndex) => (
