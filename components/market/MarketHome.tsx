@@ -1,20 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
-import { LoadingScreen } from "@/components/EmptyWatchlist";
-import { ErrorState } from "@/components/ErrorState";
-import { MarketFearGreed } from "@/components/market/MarketFearGreed";
 import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 import { formatCurrency, formatDateTime, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MarketNewsArticle, StockSummary } from "@/types/stock";
 
-const STORAGE_KEY = "market-lens-watchlist";
-
-type MarketPayload = {
+export type MarketPayload = {
   tickerStocks?: StockSummary[];
   gainers?: StockSummary[];
   losers?: StockSummary[];
@@ -22,16 +17,6 @@ type MarketPayload = {
   news?: MarketNewsArticle[];
   error?: string;
 };
-
-function readWatchlist() {
-  if (typeof window === "undefined") return [];
-  try {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored ? (JSON.parse(stored) as string[]) : [];
-  } catch {
-    return [];
-  }
-}
 
 // ─── Ticker bar ───────────────────────────────────────────────────────────
 function MiniSparkline({ stock, className }: { stock: StockSummary; className?: string }) {
@@ -177,7 +162,7 @@ function getMarketStatus(now: Date) {
   return { isOpen: false, label: isHoliday ? "Holiday" : "Closed", subLabel: `Opens ${nextOpen(et)}` };
 }
 
-function WelcomeHero() {
+export function WelcomeHero() {
   const now = new Date();
   const dayName   = now.toLocaleDateString("en-US", { weekday: "long" });
   const dayNum    = now.getDate();
@@ -194,7 +179,7 @@ function WelcomeHero() {
   );
 }
 
-function MarketStatusCard() {
+export function MarketStatusCard() {
   const [status, setStatus] = useState(() => getMarketStatus(new Date()));
   useEffect(() => {
     const id = setInterval(() => setStatus(getMarketStatus(new Date())), 60_000);
@@ -211,7 +196,7 @@ function MarketStatusCard() {
 }
 
 // ─── Featured news teaser — big story + 3 smaller, above Fear & Greed ──────
-function FeaturedNews({ articles }: { articles: MarketNewsArticle[] }) {
+export function FeaturedNews({ articles }: { articles: MarketNewsArticle[] }) {
   const [hero, ...rest] = articles.slice(0, 4);
   const secondary = rest.slice(0, 3);
 
@@ -280,7 +265,7 @@ function FeaturedNews({ articles }: { articles: MarketNewsArticle[] }) {
 }
 
 // ─── News section ─────────────────────────────────────────────────────────
-function NewsSection({ articles }: { articles: MarketNewsArticle[] }) {
+export function NewsSection({ articles }: { articles: MarketNewsArticle[] }) {
   const [hero, ...rest] = articles.slice(0, 9);
 
   if (!articles.length) return (
@@ -396,57 +381,7 @@ function NewsSection({ articles }: { articles: MarketNewsArticle[] }) {
 
 // ─── Root component ────────────────────────────────────────────────────────
 export function MarketHome() {
-  const [data, setData] = useState<MarketPayload>({});
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [initialWatchlist] = useState<string[]>(() => readWatchlist());
-  const watchlistQuery = useMemo(() => initialWatchlist.join(","), [initialWatchlist]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function loadMarket() {
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`/api/market?watchlist=${encodeURIComponent(watchlistQuery)}`, { signal: controller.signal });
-        const payload = (await response.json()) as MarketPayload;
-        if (!response.ok) throw new Error(payload.error ?? "Unable to load market data.");
-        setData(payload);
-      } catch (loadError) {
-        if (!controller.signal.aborted)
-          setError(loadError instanceof Error ? loadError.message : "Unable to load market data.");
-      } finally {
-        if (!controller.signal.aborted) setIsLoading(false);
-      }
-    }
-    loadMarket();
-    return () => controller.abort();
-  }, [watchlistQuery]);
-
-  if (error) return <ErrorState title="Market unavailable" message={error} />;
-  if (isLoading) return <LoadingScreen label="Loading market data" />;
-
   return (
-    <div className="min-h-dvh bg-black">
-      <div className="px-5 pt-12 pb-16 lg:px-8 flex flex-col gap-12">
-
-        {/* Welcome + market status */}
-        <div className="grid grid-cols-[auto_1fr] gap-6 items-start">
-          <WelcomeHero />
-          <MarketStatusCard />
-        </div>
-
-        {/* Featured news */}
-        <FeaturedNews articles={data.news ?? []} />
-
-        {/* Fear & Greed */}
-        <MarketFearGreed />
-
-        <MarketHeatmap />
-
-        {/* News — full width, bottom of page */}
-        <NewsSection articles={(data.news ?? []).slice(4)} />
-      </div>
-    </div>
+    <main className="min-h-dvh bg-black"><MarketHeatmap /></main>
   );
 }
