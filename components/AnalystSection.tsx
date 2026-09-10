@@ -143,7 +143,7 @@ export function AnalystSection({
     <section ref={ref} className="rounded-md bg-black p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-positive">Analysts</p>
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Analysts</p>
           <h2 className="mt-2 text-2xl font-semibold text-text-primary">Recommendations</h2>
         </div>
         {priceTarget.lastUpdated ? (

@@ -212,8 +212,8 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
 
           {stock.description && (
             <section>
-              <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-3">Description</p>
-              <p className="text-sm text-text-primary leading-relaxed whitespace-pre-line">{stock.description}</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">Description</p>
+              <p className="max-w-[65ch] text-sm text-text-primary leading-[1.6] whitespace-pre-line">{stock.description}</p>
             </section>
           )}
         </div>
