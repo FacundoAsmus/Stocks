@@ -112,43 +112,48 @@ input {
 }
 
 /* ─── AI two-star loader ───────────────────────────────────────────────── */
-/* The final 500ms of each 2.5s cycle is intentionally still. `alternate`
+/* The final 200ms of each 1.55s cycle is intentionally still. `alternate`
    lets the stars pause after each complete position/size swap. */
 .ai-star-loader {
   position: relative;
   display: inline-block;
   flex: 0 0 auto;
-  color: var(--color-positive);
+  /* The same green used by the app's primary positive/AI accents. */
+  color: #00c805;
 }
 
 .ai-star-loader__star {
   position: absolute;
   width: 58%;
   height: 58%;
-  filter: drop-shadow(0 0 3px rgba(0, 200, 5, 0.4));
+  filter: drop-shadow(0 0 3px rgba(0, 200, 5, 0.55));
   will-change: transform, opacity;
 }
 
 .ai-star-loader__star--large {
   top: 2%;
   left: 1%;
-  animation: ai-star-swap-large 2.5s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
+  animation: ai-star-swap-large 1.55s cubic-bezier(0.34, 1.36, 0.64, 1) infinite alternate;
 }
 
 .ai-star-loader__star--small {
   right: 1%;
   bottom: 2%;
-  animation: ai-star-swap-small 2.5s cubic-bezier(0.65, 0, 0.35, 1) infinite alternate;
+  animation: ai-star-swap-small 1.55s cubic-bezier(0.34, 1.36, 0.64, 1) infinite alternate;
 }
 
 @keyframes ai-star-swap-large {
-  0%, 20% { transform: translate(0, 0) scale(1); opacity: 1; }
-  80%, 100% { transform: translate(68%, 68%) scale(0.62); opacity: 0.72; }
+  0%, 8% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+  30% { transform: translate(27%, 67%) scale(0.87) rotate(17deg); opacity: 0.91; }
+  62% { transform: translate(77%, 62%) scale(0.57) rotate(-10deg); opacity: 0.72; }
+  87%, 100% { transform: translate(68%, 68%) scale(0.62) rotate(0deg); opacity: 0.78; }
 }
 
 @keyframes ai-star-swap-small {
-  0%, 20% { transform: translate(0, 0) scale(0.62); opacity: 0.72; }
-  80%, 100% { transform: translate(-68%, -68%) scale(1); opacity: 1; }
+  0%, 8% { transform: translate(0, 0) scale(0.62) rotate(0deg); opacity: 0.78; }
+  30% { transform: translate(-27%, -67%) scale(0.87) rotate(-17deg); opacity: 0.91; }
+  62% { transform: translate(-77%, -62%) scale(1.07) rotate(10deg); opacity: 1; }
+  87%, 100% { transform: translate(-68%, -68%) scale(1) rotate(0deg); opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {
