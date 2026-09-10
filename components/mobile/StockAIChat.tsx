@@ -1309,8 +1309,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
 
   const bgBubbleAI    = isLightMode ? "rgba(255,255,255,0.72)" : "rgba(0,0,0,0.72)";
   const bubbleBorderUser = isLightMode ? "rgba(0,0,0,0.14)"    : "rgba(255,255,255,0.16)";
-  const bubbleBorderAI   = "rgba(0,200,5,0.55)";
-  const bubbleGlowAI     = "0 0 10px rgba(0,200,5,0.35), 0 0 2px rgba(0,200,5,0.5)";
+  const bubbleBorderAI   = "color-mix(in srgb, var(--color-accent) 55%, transparent)";
+  const bubbleGlowAI     = "0 0 10px color-mix(in srgb, var(--color-accent) 35%, transparent), 0 0 2px color-mix(in srgb, var(--color-accent) 50%, transparent)";
   const textColor     = isLightMode ? "#1a1a1e"             : "#f0f0f2";
 
   const vpW = vp.width  || (typeof window !== "undefined" ? window.innerWidth  : 0);

@@ -365,7 +365,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
       {/* The pill — same element morphs from a small circle into the search
           bar, identical geometry/easing/timing to the AI chat pill. */}
       <div
-        className="fixed lg:hidden rounded-full border border-white/25 text-positive overflow-hidden"
+        className="fixed lg:hidden overflow-hidden rounded-full border border-white/25 text-accent"
         style={{
           zIndex: 1002,
           bottom: pillBottom,
@@ -421,7 +421,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
             onChange={e => setQuery(e.target.value)}
             placeholder="Search stocks…"
             className="text-text-primary placeholder:text-text-muted"
-            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "#00c805" }}
+            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "var(--color-accent)" }}
           />
           <button
             onClick={handleDismiss}
@@ -429,7 +429,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
             style={{
               flexShrink: 0, height: 38, width: 38,
               borderRadius: "50%",
-              backgroundColor: "#00c805",
+              backgroundColor: "var(--color-accent)",
               color: "#000",
               display: "flex", alignItems: "center", justifyContent: "center",
               border: "none",

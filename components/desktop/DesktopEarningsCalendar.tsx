@@ -90,6 +90,7 @@ export function DesktopEarningsCalendar({
   containerRef?: RefObject<HTMLElement | null>;
 }) {
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [selected, setSelected] = useState<EarningsEvent | null>(null);
   const today = todayStr();
   const [year, setYear] = useState(() => new Date().getFullYear());
@@ -125,11 +126,20 @@ export function DesktopEarningsCalendar({
 
   const portalTarget = containerRef?.current ?? (typeof document !== "undefined" ? document.body : null);
 
+  function closeCalendar() {
+    if (closing) return;
+    setClosing(true);
+    window.setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+    }, 240);
+  }
+
   return (
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => { setClosing(false); setOpen(true); }}
         aria-label="Earnings calendar"
         className="flex h-7 w-7 items-center justify-center text-accent active:opacity-60"
       >
@@ -140,14 +150,16 @@ export function DesktopEarningsCalendar({
         <div
           className={containerRef ? "absolute inset-0 z-[9999] flex items-center justify-center p-6" : "fixed inset-0 z-[9999] flex items-center justify-center p-6"}
           style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
-          onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeCalendar(); }}
         >
           <div
             className="earnings-detail-glass flex w-full flex-col overflow-hidden rounded-2xl border border-white/25 shadow-2xl"
             style={{
               maxWidth: "min(880px, 100%)",
               maxHeight: "100%",
-              animation: "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both",
+              animation: closing
+                ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards"
+                : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both",
               backdropFilter: "blur(28px) saturate(160%)",
               WebkitBackdropFilter: "blur(28px) saturate(160%)",
               boxShadow: "0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)"
@@ -177,7 +189,7 @@ export function DesktopEarningsCalendar({
                   <ChevronRight className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => setOpen(false)}
+                  onClick={closeCalendar}
                   aria-label="Close"
                   className="ml-1 flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-black"
                 >
@@ -217,6 +229,10 @@ export function DesktopEarningsCalendar({
         @keyframes desktopCalendarRise {
           from { transform: scale(0.94); opacity: 0; }
           to   { transform: scale(1);    opacity: 1; }
+        }
+        @keyframes desktopCalendarSink {
+          from { transform: scale(1);    opacity: 1; }
+          to   { transform: scale(0.94); opacity: 0; }
         }
         .earnings-detail-glass {
           background: linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.35));
