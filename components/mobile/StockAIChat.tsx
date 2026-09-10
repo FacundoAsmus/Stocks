@@ -6,6 +6,7 @@ import { Send, Sparkles, X } from "lucide-react";
 import { Area, AreaChart, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { formatEarningsForAIContext } from "@/lib/earnings";
+import { AIStarLoader } from "@/components/AIStarLoader";
 import type { CandlePoint, StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
@@ -1424,15 +1425,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 backgroundColor: bgBubbleAI,
                 border: `1px solid ${bubbleBorderAI}`,
                 boxShadow: bubbleGlowAI,
-                display: "flex", gap: 7, alignItems: "center",
+                display: "flex", alignItems: "center",
               }}>
-                {[0, 1, 2].map(i => (
-                  <span key={i} style={{
-                    display: "block", height: 7, width: 7,
-                    borderRadius: "50%", backgroundColor: "#00c805",
-                    animation: `aiDot 1.2s ${i * 0.2}s ease-in-out infinite`,
-                  }} />
-                ))}
+                <AIStarLoader size="md" />
               </div>
             </div>
           )}
@@ -1619,10 +1614,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
       )}
 
       <style>{`
-        @keyframes aiDot {
-          0%, 80%, 100% { transform: scale(0.5); opacity: 0.3; }
-          40%            { transform: scale(1);   opacity: 1;   }
-        }
         @keyframes aiCursor {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0; }

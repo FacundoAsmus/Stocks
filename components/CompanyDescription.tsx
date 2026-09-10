@@ -1,45 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AIStarLoader } from "@/components/AIStarLoader";
 
 type DescriptionState =
   | { status: "loading"; text: "" }
   | { status: "ready"; text: string }
   | { status: "error"; text: "" };
 
-function ChartLoader() {
+function DescriptionLoader() {
   return (
     <div className="flex h-20 items-center justify-center" aria-label="Loading description" role="status">
-      <style>{`
-        @keyframes description-candle-breathe {
-          0%, 100% { transform: scaleY(.52); opacity: .32; }
-          50% { transform: scaleY(1); opacity: 1; }
-        }
-        @keyframes description-wick-breathe {
-          0%, 100% { transform: scaleY(.45); opacity: .3; }
-          50% { transform: scaleY(1); opacity: 1; }
-        }
-        .description-candle-1 { animation: description-candle-breathe 1.8s ease-in-out infinite; transform-origin: bottom; }
-        .description-candle-2 { animation: description-candle-breathe 1.8s ease-in-out infinite -.6s; transform-origin: bottom; }
-        .description-candle-3 { animation: description-candle-breathe 1.8s ease-in-out infinite -1.2s; transform-origin: bottom; }
-        .description-wick-1 { animation: description-wick-breathe 1.8s ease-in-out infinite; transform-origin: bottom; }
-        .description-wick-2 { animation: description-wick-breathe 1.8s ease-in-out infinite -.6s; transform-origin: bottom; }
-        .description-wick-3 { animation: description-wick-breathe 1.8s ease-in-out infinite -1.2s; transform-origin: bottom; }
-      `}</style>
-      <div className="flex items-end gap-[5px]">
-        <div className="flex flex-col items-center gap-[2px]">
-          <div className="description-wick-1 h-1.5 w-[2px] rounded-full bg-positive/50" />
-          <div className="description-candle-1 h-4 w-3.5 rounded-sm bg-positive/50" />
-        </div>
-        <div className="flex flex-col items-center gap-[2px]">
-          <div className="description-wick-2 h-2 w-[2px] rounded-full bg-positive/70" />
-          <div className="description-candle-2 h-6 w-3.5 rounded-sm bg-positive/70" />
-        </div>
-        <div className="flex flex-col items-center gap-[2px]">
-          <div className="description-wick-3 h-2.5 w-[2px] rounded-full bg-positive" />
-          <div className="description-candle-3 h-8 w-3.5 rounded-sm bg-positive" />
-        </div>
-      </div>
+      <AIStarLoader size="lg" label="Creating AI summary" />
     </div>
   );
 }
@@ -113,7 +85,7 @@ export function CompanyDescription({ symbol, className = "" }: { symbol: string;
   return (
     <section className={className}>
       <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-accent">Description</p>
-      {state.status === "loading" && <ChartLoader />}
+      {state.status === "loading" && <DescriptionLoader />}
       {state.status === "ready" && <RevealedText text={state.text} />}
       {state.status === "error" && <p className="text-[1.05rem] text-text-muted">Descriptions are not avaliable right now</p>}
     </section>

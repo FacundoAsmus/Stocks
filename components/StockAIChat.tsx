@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Sparkles, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AIStarLoader } from "@/components/AIStarLoader";
 import type { StockDetail } from "@/types/stock";
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -278,11 +279,8 @@ export function StockAIChat(props: StockAIChatProps) {
                     <span className="h-6 w-6 rounded-full bg-positive flex items-center justify-center shrink-0 mr-2 mt-0.5">
                       <Sparkles className="h-3 w-3 text-black" />
                     </span>
-                    <div className="bg-black/80 border border-white/10 backdrop-blur-md rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5 items-center">
-                      {[0, 1, 2].map(i => (
-                        <span key={i} className="h-1.5 w-1.5 rounded-full bg-white/50"
-                          style={{ animation: `dot-bounce 1.2s ${i * 0.2}s infinite ease-in-out` }} />
-                      ))}
+                    <div className="bg-black/80 border border-white/10 backdrop-blur-md rounded-2xl rounded-bl-sm px-4 py-3 flex items-center">
+                      <AIStarLoader size="md" />
                     </div>
                   </div>
                 )}
@@ -325,10 +323,6 @@ export function StockAIChat(props: StockAIChatProps) {
         @keyframes bubbleIn {
           from { opacity: 0; transform: scale(0.94) translateY(6px); }
           to   { opacity: 1; transform: scale(1)    translateY(0);   }
-        }
-        @keyframes dot-bounce {
-          0%, 80%, 100% { transform: scaleY(1);   opacity: 0.5; }
-          40%            { transform: scaleY(1.6); opacity: 1;   }
         }
       `}</style>
     </>

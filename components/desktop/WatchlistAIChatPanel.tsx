@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Send, Sparkles, X } from "lucide-react";
 
 import { buildStockContextAsync } from "@/components/mobile/StockAIChat";
+import { AIStarLoader } from "@/components/AIStarLoader";
 import { cn } from "@/lib/utils";
 import type { StockDetail } from "@/types/stock";
 
@@ -146,7 +147,11 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
                 {m.text}
               </div>
             ))}
-            {loading && <div className="self-start text-sm text-text-muted">Thinking…</div>}
+            {loading && (
+              <div className="self-start rounded-xl border border-positive/40 px-3 py-2">
+                <AIStarLoader size="md" />
+              </div>
+            )}
           </div>
 
           <div className="flex shrink-0 items-center gap-2 border-t border-white/10 p-3">
