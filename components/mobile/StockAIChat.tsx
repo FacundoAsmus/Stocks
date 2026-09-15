@@ -1382,13 +1382,20 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
             bottom: `calc(${pillBottom} + 4.5rem)`,
             overflowY: "auto",
             overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-y",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "flex-end",
+            // A bottom-justified flex scroll container lets overflowing
+            // messages escape above its scroll range. Start at the top so
+            // the complete conversation stays reachable by scrolling.
+            justifyContent: "flex-start",
+            minHeight: 0,
             gap: 12,
             padding: "16px 14px 8px",
           }}
           onClick={onEmptyAreaClick}
+          onWheel={(event) => event.stopPropagation()}
           onTouchStart={onEmptyAreaTouchStart}
           onTouchEnd={onEmptyAreaTouchEnd}
         >

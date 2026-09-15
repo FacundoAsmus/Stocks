@@ -149,7 +149,9 @@ export function DesktopEarningsCalendar({
       {open && portalTarget && createPortal(
         <div
           className={containerRef ? "absolute inset-0 z-[9999] flex items-center justify-center p-6" : "fixed inset-0 z-[9999] flex items-center justify-center p-6"}
-          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
+          // Match the AI chat backdrop: blur the underlying panel without
+          // laying a dark tint over it, so light mode stays bright.
+          style={{ background: "transparent", backdropFilter: "blur(3px) brightness(0.97)", WebkitBackdropFilter: "blur(3px) brightness(0.97)" }}
           onClick={(e) => { if (e.target === e.currentTarget) closeCalendar(); }}
         >
           <div
@@ -217,7 +219,7 @@ export function DesktopEarningsCalendar({
       {selected && portalTarget && createPortal(
         <div
           className={containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}
-          style={{ background: "rgba(0,0,0,0.2)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)" }}
+          style={{ background: "transparent", backdropFilter: "blur(3px) brightness(0.97)", WebkitBackdropFilter: "blur(3px) brightness(0.97)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
         >
           <EarningsDetailCard event={selected} earnings={earnings} onBack={() => setSelected(null)} />
