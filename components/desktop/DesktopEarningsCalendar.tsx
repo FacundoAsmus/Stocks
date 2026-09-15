@@ -151,7 +151,7 @@ export function DesktopEarningsCalendar({
           className={containerRef ? "absolute inset-0 z-[9999] flex items-center justify-center p-6" : "fixed inset-0 z-[9999] flex items-center justify-center p-6"}
           // Match the AI chat backdrop: blur the underlying panel without
           // laying a dark tint over it, so light mode stays bright.
-          style={{ background: "transparent", backdropFilter: "blur(3px) brightness(0.97)", WebkitBackdropFilter: "blur(3px) brightness(0.97)" }}
+          style={{ background: "transparent", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
           onClick={(e) => { if (e.target === e.currentTarget) closeCalendar(); }}
         >
           <div
@@ -162,8 +162,8 @@ export function DesktopEarningsCalendar({
               animation: closing
                 ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards"
                 : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both",
-              backdropFilter: "blur(28px) saturate(160%)",
-              WebkitBackdropFilter: "blur(28px) saturate(160%)",
+              backdropFilter: "blur(34px) saturate(160%)",
+              WebkitBackdropFilter: "blur(34px) saturate(160%)",
               boxShadow: "0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)"
             }}
           >
@@ -219,7 +219,7 @@ export function DesktopEarningsCalendar({
       {selected && portalTarget && createPortal(
         <div
           className={containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}
-          style={{ background: "transparent", backdropFilter: "blur(3px) brightness(0.97)", WebkitBackdropFilter: "blur(3px) brightness(0.97)" }}
+          style={{ background: "transparent", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
         >
           <EarningsDetailCard event={selected} earnings={earnings} onBack={() => setSelected(null)} />
@@ -243,9 +243,11 @@ export function DesktopEarningsCalendar({
           background: linear-gradient(155deg, rgba(255,255,255,0.72), rgba(255,255,255,0.58) 40%, rgba(255,255,255,0.42));
         }
         html.light-mode .earnings-detail-glass,
-        html.light-mode .earnings-detail-glass .text-text-primary,
-        html.light-mode .earnings-detail-glass .text-text-muted {
+        html.light-mode .earnings-detail-glass .text-text-primary {
           color: #000;
+        }
+        html.light-mode .earnings-detail-glass .text-text-muted {
+          color: #6e6e80;
         }
       `}</style>
     </>

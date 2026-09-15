@@ -1309,6 +1309,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
   }
 
   const bgBubbleAI    = isLightMode ? "rgba(255,255,255,0.72)" : "rgba(0,0,0,0.72)";
+  const chatControlGlass = isLightMode ? "rgba(255,255,255,0.28)" : "rgba(8,8,12,0.28)";
   const bubbleBorderUser = isLightMode ? "rgba(0,0,0,0.14)"    : "rgba(255,255,255,0.16)";
   const bubbleBorderAI   = "color-mix(in srgb, var(--color-accent) 55%, transparent)";
   const bubbleGlowAI     = "0 0 10px color-mix(in srgb, var(--color-accent) 35%, transparent), 0 0 2px color-mix(in srgb, var(--color-accent) 50%, transparent)";
@@ -1362,8 +1363,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
         <div
           style={{
             position: "absolute", inset: 0,
-            backdropFilter:       open ? "blur(3px) brightness(0.97)" : "none",
-            WebkitBackdropFilter: open ? "blur(3px) brightness(0.97)" : "none",
+            zIndex: 0,
+            backdropFilter:       open ? "blur(12px) brightness(0.97)" : "none",
+            WebkitBackdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
             transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
             transform: "translateZ(0)",
             WebkitTransform: "translateZ(0)",
@@ -1375,8 +1377,10 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
         {/* Messages — scrollable, tapping blank space (not a bubble) dismisses */}
         <div
           ref={scrollRef}
+          className="ai-chat-messages"
           style={{
             position: "absolute",
+            zIndex: 1,
             left: 0, right: 0,
             top: "max(3rem, calc(env(safe-area-inset-top) + 1rem))",
             bottom: `calc(${pillBottom} + 4.5rem)`,
@@ -1453,9 +1457,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
           right: open ? "1rem" : "1.25rem",
           width: open ? pillOpenWidth : "3.5rem",
           height: "3.5rem",
-          background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-          backdropFilter: "blur(22px) saturate(160%)",
-          WebkitBackdropFilter: "blur(22px) saturate(160%)",
+          background: chatControlGlass,
+          backdropFilter: "blur(30px) saturate(160%)",
+          WebkitBackdropFilter: "blur(30px) saturate(160%)",
           boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
           transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
         }}
@@ -1563,9 +1567,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
             width: "calc(100vw - 2rem)",
             maxWidth: "480px",
             height: "3.5rem",
-            background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-            backdropFilter: "blur(22px) saturate(160%)",
-            WebkitBackdropFilter: "blur(22px) saturate(160%)",
+            background: chatControlGlass,
+            backdropFilter: "blur(30px) saturate(160%)",
+            WebkitBackdropFilter: "blur(30px) saturate(160%)",
             boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
           }}
         >

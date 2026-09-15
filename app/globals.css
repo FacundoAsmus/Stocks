@@ -160,6 +160,10 @@ input {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Keep AI chat fully scrollable without exposing a native scrollbar. */
+.ai-chat-messages::-webkit-scrollbar { display: none; }
+.ai-chat-messages { -ms-overflow-style: none; scrollbar-width: none; }
+
 /* Phone/tablet only (matches the app's lg: breakpoint elsewhere): the page
    itself scrolls at the html/body level rather than inside a contained div,
    so this is where the visible native scrollbar comes from. Desktop is left
