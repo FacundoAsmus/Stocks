@@ -13,8 +13,6 @@ import { DesktopStockDetail } from "@/components/DesktopStockDetail";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
 import { EmptyWatchlist } from "@/components/EmptyWatchlist";
 import { ErrorState } from "@/components/ErrorState";
-import { AppNav } from "@/components/AppNav";
-import { SearchBar } from "@/components/SearchBar";
 import type { getStockDetail } from "@/lib/finnhub";
 
 const STORAGE_KEY = "market-lens-watchlist";
@@ -354,23 +352,14 @@ export function WatchlistSplitView() {
   if (!displayedStocks.length) return <EmptyWatchlist />;
 
   return (
-    <div className="watchlist-desktop-root flex min-h-dvh w-full">
-      {/* Left: 1/4 — reaches the top of the viewport and owns the page's
-          navigation, search, and watchlist title.
+    <div className="watchlist-desktop-root flex w-full" style={{ height: "calc(100dvh - var(--header-height, 0px))" }}>
+      {/* Left: 1/4 — its own rounded, distinctly-shaded card holding the title + list.
           Background: #0e0e0e dark / #ffffff light (see .watchlist-list-panel in globals.css).
           Page background behind it: #ececec in light mode (.watchlist-desktop-root). */}
-      <div className="watchlist-list-panel mb-3 mr-3 flex w-[1/4] shrink-0 flex-col overflow-hidden rounded-br-2xl border-b border-r border-border-subtle/70">
-        <div className="shrink-0 px-6 pb-4 pt-5">
-          <div className="flex justify-end">
-            <AppNav variant="watchlist-nav" />
-          </div>
-          <div className="mt-4">
-            <SearchBar />
-          </div>
-          <div className="mt-5">
-            <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Watchlist</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Your Stocks</h1>
-          </div>
+      <div className="watchlist-list-panel m-3 flex w-[1/4] shrink-0 flex-col overflow-hidden rounded-2xl border border-border-subtle/70">
+        <div className="shrink-0 px-6 pb-4 pt-6">
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Watchlist</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Your Stocks</h1>
         </div>
         <Reorder.Group
           as="div"
@@ -432,10 +421,7 @@ export function WatchlistSplitView() {
           full height) so the AI panel and the earnings-calendar sheet — both
           absolutely positioned against it — are confined to this column no
           matter how far the inner content is scrolled. */}
-      <div ref={detailColumnRef} className="relative w-3/4 min-h-dvh">
-        <div className="absolute right-6 top-5 z-30">
-          <AppNav variant="watchlist-settings" />
-        </div>
+      <div ref={detailColumnRef} className="relative w-3/4 h-full">
         <div ref={detailPanelRef} className="no-scrollbar relative h-full overflow-y-auto">
           {isDetailLoading ? (
             <PanelLoader label={`Loading ${selectedSymbol ?? "stock"} data`} />
