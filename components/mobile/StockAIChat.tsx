@@ -1374,7 +1374,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
           onClick={handleDismiss}
         />
 
-        {/* Messages — scrollable, tapping blank space (not a bubble) dismisses */}
+        {/* Messages occupy the full overlay. Padding reserves comfortable
+            resting room for the app edge and input pill, but does not create
+            invisible clipping strips above or below the conversation. */}
         <div
           ref={scrollRef}
           className="ai-chat-messages"
@@ -1382,8 +1384,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
             position: "absolute",
             zIndex: 1,
             left: 0, right: 0,
-            top: "max(3rem, calc(env(safe-area-inset-top) + 1rem))",
-            bottom: `calc(${pillBottom} + 4.5rem)`,
+            top: 0,
+            bottom: 0,
             overflowY: "auto",
             overscrollBehavior: "contain",
             WebkitOverflowScrolling: "touch",
@@ -1396,7 +1398,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
             justifyContent: "flex-start",
             minHeight: 0,
             gap: 12,
-            padding: "16px 14px 8px",
+            padding: "64px 14px 112px",
           }}
           onClick={onEmptyAreaClick}
           onWheel={(event) => event.stopPropagation()}
