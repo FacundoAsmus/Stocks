@@ -177,14 +177,13 @@ input {
   }
 }
 
-/* Desktop watchlist split view: the 1/3 list card gets its own background,
+/* Desktop watchlist split view: the 1/4 list card gets its own background,
    distinct from the page/detail-panel background on either side of it. */
 .watchlist-list-panel { background: #0e0e0e; }
-html.light-mode .watchlist-list-panel { background: #ffffff; }
+html.light-mode .watchlist-list-panel { background: #ececec; }
 /* Desktop watchlist page only: swap the overall page background in light
-   mode (the list panel itself is white per the rule above, so it still
-   reads as a distinct card against this slightly darker page backdrop). */
-html.light-mode .watchlist-desktop-root { background: #ececec; }
+   mode: the detail panel is pure white and the list panel is a soft grey. */
+html.light-mode .watchlist-desktop-root { background: #ffffff; }
 /* Desktop watchlist page only: the star/add-to-watchlist button, news
    cards, stock sentiment, analyst recommendations, and the fundamentals
    ("market indicator") tiles all use the shared .bg-black class, which
@@ -192,7 +191,7 @@ html.light-mode .watchlist-desktop-root { background: #ececec; }
    Within this page specifically, match them to the page background
    instead of standing out as white cards. Scoped to .watchlist-desktop-root
    so this has no effect on mobile or any other desktop page. */
-html.light-mode .watchlist-desktop-root .bg-black { background-color: #ececec !important; }
+html.light-mode .watchlist-desktop-root .bg-black { background-color: #ffffff !important; }
 
 /* ─── Mobile page slide transitions ─────────────────────────────────────── */
 /* Slide the CURRENT page out — the loading skeleton will slide in with it  */

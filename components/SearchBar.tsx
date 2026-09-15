@@ -192,7 +192,7 @@ export function SearchBar() {
       {showRecent ? (
         <div
           className="absolute mt-2 w-full overflow-hidden rounded-2xl border border-white/25"
-          style={{ background: GLASS_BG, backdropFilter: "blur(22px) saturate(160%)", WebkitBackdropFilter: "blur(22px) saturate(160%)", boxShadow: GLASS_SHADOW }}
+          style={{ background: GLASS_BG, backdropFilter: "blur(24px) saturate(160%)", WebkitBackdropFilter: "blur(24px) saturate(160%)", boxShadow: GLASS_SHADOW }}
         >
           <p className="px-4 py-2 text-xs uppercase tracking-widest text-text-muted">Recent</p>
           {recentSearches.map((symbol) => (
@@ -211,7 +211,7 @@ export function SearchBar() {
       ) : showResults ? (
         <div
           className="absolute mt-2 w-full overflow-hidden rounded-2xl border border-white/25"
-          style={{ background: GLASS_BG, backdropFilter: "blur(22px) saturate(160%)", WebkitBackdropFilter: "blur(22px) saturate(160%)", boxShadow: GLASS_SHADOW }}
+          style={{ background: GLASS_BG, backdropFilter: "blur(24px) saturate(160%)", WebkitBackdropFilter: "blur(24px) saturate(160%)", boxShadow: GLASS_SHADOW }}
         >
           {results.map((result) => (
             <button

@@ -266,6 +266,7 @@ function CrosshairTooltip({
   period,
   onHover,
   isTouching,
+  hideBubble = false,
 }: {
   active?: boolean;
   payload?: { value: number }[];
@@ -273,6 +274,7 @@ function CrosshairTooltip({
   period: ChartPeriod;
   onHover: (price: number | null, date: string | null) => void;
   isTouching?: boolean;
+  hideBubble?: boolean;
 }) {
   const price = payload?.[0]?.value ?? null;
   const date  = label ?? null;
@@ -291,7 +293,7 @@ function CrosshairTooltip({
   // On touch devices, hide the bubble when finger is lifted (isTouching=false).
   // On desktop (mouse), always show when active.
   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
-  const showBubble = active && price !== null && date && (!isTouchDevice || isTouching);
+  const showBubble = !hideBubble && active && price !== null && date && (!isTouchDevice || isTouching);
 
   if (!showBubble) return null;
 
@@ -318,7 +320,8 @@ export function PriceChart({
   previousClose,
   initialPeriod = "1D",
   heightClassName = "h-[320px]",
-  priceIndent
+  priceIndent,
+  hideCursorDateTooltip = false
 }: {
   symbol: string;
   currentPrice: number;
@@ -327,6 +330,7 @@ export function PriceChart({
   initialPeriod?: ChartPeriod;
   heightClassName?: string;
   priceIndent?: string;
+  hideCursorDateTooltip?: boolean;
 }) {
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
   const [chartKey, setChartKey]       = useState(0);
@@ -704,7 +708,12 @@ export function PriceChart({
                 content={(() => {
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return <></>;
-                  return <CrosshairTooltip period={period} onHover={onHover} isTouching={isTouching} />;
+                  return <CrosshairTooltip
+                    period={period}
+                    onHover={onHover}
+                    isTouching={isTouching}
+                    hideBubble={hideCursorDateTooltip}
+                  />;
                 })()}
               />
 
@@ -801,7 +810,7 @@ export function PriceChart({
                   }}
                 />
                 {/* Date bubble — flip to left side if too close to right edge */}
-                {hoverDate && (
+                {!hideCursorDateTooltip && hoverDate && (
                   <div
                     className="absolute top-2 rounded-md border border-white/25 px-2.5 py-1.5 text-xs text-text-muted"
                     style={{

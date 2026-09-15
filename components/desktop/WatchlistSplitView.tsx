@@ -438,6 +438,7 @@ export function WatchlistSplitView() {
                 metrics={detail.metrics}
                 chartHeightClassName="h-[320px]"
                 earningsCalendarContainerRef={detailColumnRef}
+                hideCursorDateTooltip
               />
             </div>
           ) : null}

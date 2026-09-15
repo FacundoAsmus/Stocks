@@ -26,6 +26,8 @@ interface DesktopStockDetailProps {
    *  full viewport. Left undefined on the standalone stock page, where
    *  full-viewport is correct. */
   earningsCalendarContainerRef?: RefObject<HTMLElement | null>;
+  /** Hides the cursor-following date bubble in the compact watchlist detail panel. */
+  hideCursorDateTooltip?: boolean;
 }
 
 // This is the exact "Desktop stock page" content that used to live inline in
@@ -38,7 +40,8 @@ export function DesktopStockDetail({
   sentiment,
   metrics,
   chartHeightClassName = "h-[384px]",
-  earningsCalendarContainerRef
+  earningsCalendarContainerRef,
+  hideCursorDateTooltip = false
 }: DesktopStockDetailProps) {
   // ETFs don't file earnings reports the way individual companies do — same
   // check the mobile stock page already uses to hide the calendar button and
@@ -74,6 +77,7 @@ export function DesktopStockDetail({
               currentChangePercent={stock.quote.dp ?? 0}
               previousClose={stock.quote.pc ?? undefined}
               heightClassName={chartHeightClassName}
+              hideCursorDateTooltip={hideCursorDateTooltip}
             />
           </div>
         </section>
