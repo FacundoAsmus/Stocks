@@ -111,7 +111,7 @@ function WatchlistListRow({
         isDragging
           ? "border-transparent bg-panel-muted"
           : isActive
-            ? "watchlist-list-panel border-accent hover:bg-panel-muted/50"
+            ? "watchlist-list-panel watchlist-list-selected border-accent hover:bg-panel-muted/50"
             : "watchlist-list-panel border-transparent hover:bg-panel-muted/50"
       )}
     >

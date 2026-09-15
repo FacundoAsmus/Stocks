@@ -193,6 +193,25 @@ html.light-mode .watchlist-desktop-root { background: #ffffff; }
    so this has no effect on mobile or any other desktop page. */
 html.light-mode .watchlist-desktop-root .bg-black { background-color: #ffffff !important; }
 
+/* The desktop watchlist toolbar stays visibly translucent in light mode;
+   the general light-theme header rule above is intentionally more opaque. */
+.watchlist-toolbar {
+  background-color: rgba(5, 5, 7, 0.5) !important;
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+html.light-mode .watchlist-toolbar {
+  background-color: rgba(255, 255, 255, 0.58) !important;
+}
+
+/* Search results use the same opaque-enough glass layer as the toolbar, so
+   content behind them is softened instead of showing through sharply. */
+.search-results-glass { background: rgba(12, 12, 15, 0.78); }
+html.light-mode .search-results-glass { background: rgba(255, 255, 255, 0.78); }
+
+/* Keep the chosen item distinct without leaving the neutral white palette. */
+html.light-mode .watchlist-list-selected { background-color: #d9d9dc !important; }
+
 /* ─── Mobile page slide transitions ─────────────────────────────────────── */
 /* Slide the CURRENT page out — the loading skeleton will slide in with it  */
 @keyframes slideOutLeft {

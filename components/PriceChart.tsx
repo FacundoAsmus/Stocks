@@ -837,15 +837,9 @@ export function PriceChart({
       </div>
 
       {/* ── Period selector — centred below chart ────────────────────── */}
-      <div className="mt-4 flex justify-center">
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center justify-center">
-            {SHORT_PERIODS.map((o) => <PeriodButton key={o} option={o} />)}
-          </div>
-          <div className="mx-1 h-px bg-border-subtle" />
-          <div className="flex items-center justify-center">
-            {LONG_PERIODS.map((o) => <PeriodButton key={o} option={o} />)}
-          </div>
+      <div className="mt-4 flex justify-center overflow-x-auto">
+        <div className="flex flex-nowrap items-center justify-center whitespace-nowrap">
+          {[...SHORT_PERIODS, ...LONG_PERIODS].map((o) => <PeriodButton key={o} option={o} />)}
         </div>
       </div>
 

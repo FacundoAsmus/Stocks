@@ -28,7 +28,7 @@ export function SiteHeader() {
   return (
     <header
       ref={headerRef}
-      className={`sticky top-0 z-40 hidden lg:block ${isWatchlist ? "border-b border-transparent bg-background/50 backdrop-blur-xl" : "border-b border-border-subtle/70 bg-background/86 backdrop-blur-xl"}`}
+      className={`sticky top-0 z-40 hidden lg:block ${isWatchlist ? "watchlist-toolbar border-b border-transparent bg-background/50 backdrop-blur-xl" : "border-b border-border-subtle/70 bg-background/86 backdrop-blur-xl"}`}
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
         <AppNav variant={isWatchlist ? "links" : "full"} />
