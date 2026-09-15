@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 import { AppNav } from "@/components/AppNav";
 import { SearchBar } from "@/components/SearchBar";
 
 export function SiteHeader() {
   const headerRef = useRef<HTMLElement>(null);
+  const pathname = usePathname();
 
   // Publish the header's real rendered height as a CSS var so anything
   // sticky below it (e.g. the market ticker bar) can pin flush underneath
@@ -21,6 +23,11 @@ export function SiteHeader() {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  // The desktop watchlist owns its controls so its left column can run all
+  // the way to the top edge and its settings control can live in the detail
+  // column. Every other desktop page keeps the shared site header.
+  if (pathname === "/watchlist") return null;
 
   return (
     <header

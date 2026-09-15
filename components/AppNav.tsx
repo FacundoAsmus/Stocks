@@ -143,7 +143,12 @@ const navItems = [
   { href: "/watchlist", label: "Watchlist", icon: "list" as const },
 ] as const;
 
-export function AppNav() {
+type AppNavProps = {
+  /** Desktop watchlist places navigation and settings in separate columns. */
+  variant?: "header" | "watchlist-nav" | "watchlist-settings";
+};
+
+export function AppNav({ variant = "header" }: AppNavProps) {
   const pathname     = usePathname();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -152,18 +157,20 @@ export function AppNav() {
     applyTheme(getStoredTheme());
   }, []);
 
-  return (
-    <nav className="flex items-center gap-4 relative">
-      {navItems.map((item) => {
+  const navButtons = navItems.map((item) => {
         const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
-            className="group flex items-center gap-2 text-base font-semibold text-text-primary transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04]"
+            className={cn(
+              "group flex items-center gap-2 text-base font-semibold text-text-primary transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04]",
+              variant === "watchlist-nav" && "rounded-full border border-border-subtle/70 bg-panel px-3 py-1.5 text-sm shadow-sm"
+            )}
           >
             <span className={cn(
               "flex h-10 w-10 items-center justify-center rounded-md border transition-all duration-200",
+              variant === "watchlist-nav" && "h-7 w-7 rounded-full border-0",
               isActive
                 ? "border-accent bg-accent text-black"
                 : "border-accent/30 bg-accent/10 text-accent group-hover:border-accent/60"
@@ -176,28 +183,47 @@ export function AppNav() {
             <span>{item.label}</span>
           </Link>
         );
-      })}
+      });
+
+  const settingsButton = (
+    <div className="relative">
+      <button
+        onClick={() => setSettingsOpen(o => !o)}
+        aria-label="Settings"
+        className={cn(
+          "group flex items-center gap-2 text-base font-semibold text-text-primary transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04]",
+          variant === "watchlist-settings" && "rounded-full border border-border-subtle/70 bg-panel p-2 shadow-sm"
+        )}
+      >
+        <span className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-md border transition-all duration-200",
+          variant === "watchlist-settings" && "h-7 w-7 rounded-full border-0",
+          settingsOpen
+            ? "border-accent bg-accent text-black"
+            : "border-accent/30 bg-accent/10 text-accent group-hover:border-accent/60"
+        )}>
+          <Settings className="h-5 w-5" />
+        </span>
+        {variant !== "watchlist-settings" && <span>Settings</span>}
+      </button>
+      {settingsOpen && <DesktopSettingsPanel onClose={() => setSettingsOpen(false)} />}
+    </div>
+  );
+
+  if (variant === "watchlist-nav") {
+    return <nav aria-label="Watchlist navigation" className="flex items-center gap-2">{navButtons}</nav>;
+  }
+
+  if (variant === "watchlist-settings") {
+    return <nav aria-label="Watchlist settings">{settingsButton}</nav>;
+  }
+
+  return (
+    <nav className="flex items-center gap-4 relative">
+      {navButtons}
 
       {/* Settings button */}
-      <div className="relative">
-        <button
-          onClick={() => setSettingsOpen(o => !o)}
-          className={cn(
-            "group flex items-center gap-2 text-base font-semibold text-text-primary transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04]"
-          )}
-        >
-          <span className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-md border transition-all duration-200",
-            settingsOpen
-              ? "border-accent bg-accent text-black"
-              : "border-accent/30 bg-accent/10 text-accent group-hover:border-accent/60"
-          )}>
-            <Settings className="h-5 w-5" />
-          </span>
-          <span>Settings</span>
-        </button>
-        {settingsOpen && <DesktopSettingsPanel onClose={() => setSettingsOpen(false)} />}
-      </div>
+      {settingsButton}
     </nav>
   );
 }
