@@ -837,8 +837,18 @@ export function PriceChart({
       </div>
 
       {/* ── Period selector — centred below chart ────────────────────── */}
-      <div className="mt-4 flex justify-center overflow-x-auto">
-        <div className="flex flex-nowrap items-center justify-center whitespace-nowrap">
+      <div className="mt-4 flex justify-center">
+        {/* Phone only: years (1Y/2Y/5Y/ALL) on their own row below the rest */}
+        <div className="flex flex-col items-center gap-1.5 lg:hidden">
+          <div className="flex flex-nowrap items-center justify-center whitespace-nowrap overflow-x-auto">
+            {SHORT_PERIODS.map((o) => <PeriodButton key={o} option={o} />)}
+          </div>
+          <div className="flex flex-nowrap items-center justify-center whitespace-nowrap overflow-x-auto">
+            {LONG_PERIODS.map((o) => <PeriodButton key={o} option={o} />)}
+          </div>
+        </div>
+        {/* Desktop: unchanged, single row */}
+        <div className="hidden lg:flex flex-nowrap items-center justify-center whitespace-nowrap overflow-x-auto">
           {[...SHORT_PERIODS, ...LONG_PERIODS].map((o) => <PeriodButton key={o} option={o} />)}
         </div>
       </div>
