@@ -218,7 +218,8 @@ export function PriceChart({
   previousClose,
   initialPeriod = "1D",
   heightClassName = "h-[320px]",
-  priceIndent
+  priceIndent,
+  hideCursorDateTooltip = false
 }: {
   symbol: string;
   currentPrice: number;
@@ -227,6 +228,8 @@ export function PriceChart({
   initialPeriod?: ChartPeriod;
   heightClassName?: string;
   priceIndent?: string;
+  /** Hide the cursor-following date labels in compact chart layouts. */
+  hideCursorDateTooltip?: boolean;
 }) {
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
   const [chartKey, setChartKey]       = useState(0);
@@ -465,7 +468,7 @@ export function PriceChart({
           <WheelPrice value={pctStr} size="sm" colorClass={pctColor} />
         </div>
         <p className="mt-2 text-sm text-text-muted">
-          {hoverDate ? tooltipLabel(hoverDate, period) : "Current price"}
+          {!hideCursorDateTooltip && hoverDate ? tooltipLabel(hoverDate, period) : "Current price"}
         </p>
       </div>
 
@@ -548,6 +551,7 @@ export function PriceChart({
                 content={(() => {
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return <></>;
+                  if (hideCursorDateTooltip) return <></>;
                   return <CrosshairTooltip period={period} onHover={onHover} isTouching={isTouching} />;
                 })()}
               />
@@ -631,7 +635,7 @@ export function PriceChart({
                   }}
                 />
                 {/* Date bubble — flip to left side if too close to right edge */}
-                {hoverDate && (
+                {!hideCursorDateTooltip && hoverDate && (
                   <div
                     className="absolute top-2 rounded-md border border-positive/60 bg-black/90 px-2.5 py-1.5 text-xs text-text-muted shadow-lg shadow-positive/10 backdrop-blur-sm"
                     style={{
