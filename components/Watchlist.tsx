@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
 import type { StockSummary } from "@/types/stock";
@@ -32,12 +33,18 @@ export function Watchlist() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
   const dragIndexRef = useRef<number | null>(null);
+  const displayedSymbolsRef = useRef<string[]>([]);
 
   useEffect(() => {
     setSymbols(readWatchlist());
     function handleStorage() {
-      setSymbols(readWatchlist());
+      const nextSymbols = readWatchlist();
+      // Preserve the final card long enough for its exit animation; without
+      // this, an empty-list render would unmount the grid before it can shrink.
+      setIsRemoving(displayedSymbolsRef.current.some((symbol) => !nextSymbols.includes(symbol)));
+      setSymbols(nextSymbols);
     }
     window.addEventListener("watchlist-updated", handleStorage);
     window.addEventListener("storage", handleStorage);
@@ -85,6 +92,10 @@ export function Watchlist() {
       .filter((s): s is StockSummary => !!s);
     setDisplayedStocks(ordered);
   }, [stocks, symbols]);
+
+  useEffect(() => {
+    displayedSymbolsRef.current = displayedStocks.map((stock) => stock.symbol);
+  }, [displayedStocks]);
 
   const sentimentColor = useMemo(() => {
     if (stocks.length === 0) return "transparent";
@@ -137,9 +148,12 @@ export function Watchlist() {
     setDragOverIndex(null);
   }
 
-  if (isLoading) return <EmptyWatchlist isLoading />;
+  // Do not replace an already rendered grid with a loading screen when a star
+  // is toggled. Keeping these cards mounted lets AnimatePresence finish the
+  // exit animation and prevents the page from appearing to reload.
+  if (isLoading && !displayedStocks.length && !isRemoving) return <EmptyWatchlist isLoading />;
   if (error) return <ErrorState title="Watchlist unavailable" message={error} />;
-  if (!displayedStocks.length) return <EmptyWatchlist />;
+  if (!displayedStocks.length && !isRemoving) return <EmptyWatchlist />;
 
   return (
     <div className="relative min-h-dvh">
@@ -152,9 +166,20 @@ export function Watchlist() {
       />
       <div className="relative z-10 p-8">
         <section className="grid grid-cols-2 gap-3 px-2 sm:gap-6 sm:px-4 md:grid-cols-2 xl:grid-cols-3 justify-center items-stretch w-full auto-rows-fr">
-                  {displayedStocks.map((stock, index) => (
-                    <div
+                  <AnimatePresence initial={false} onExitComplete={() => setIsRemoving(false)}>
+                    {displayedStocks.map((stock, index) => (
+                    <motion.div
                       key={stock.symbol}
+                      layout="position"
+                      initial={{ opacity: 0, scale: 0.92, y: 18 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.88, y: -12 }}
+                      transition={{
+                        layout: { duration: 0.32, ease: [0.16, 1, 0.3, 1] },
+                        opacity: { duration: 0.2 },
+                        scale: { duration: 0.26, ease: [0.16, 1, 0.3, 1] },
+                        y: { duration: 0.26, ease: [0.16, 1, 0.3, 1] }
+                      }}
                       draggable
                       onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; handleDragStart(index); }}
                       onDragOver={(e) => handleDragOver(e, index)}
@@ -165,8 +190,9 @@ export function Watchlist() {
                       }`}
                     >
                       <StockCard stock={stock} />
-                    </div>
+                    </motion.div>
                   ))}
+                  </AnimatePresence>
                 </section>
       </div>
     </div>

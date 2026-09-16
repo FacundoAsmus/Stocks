@@ -67,14 +67,11 @@ function SettingsPanel({ closing }: { closing: boolean }) {
 
   return (
     <div
-      className={cn("fixed inset-0 z-50 flex flex-col bg-black", closing && "page-slide-right")}
+      className={cn("fixed inset-0 z-20 flex flex-col bg-black", closing && "page-slide-right")}
     >
       {/* Fixed header with blur */}
-      <div
-        className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border-subtle px-4 pb-4"
-        style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
-      >
-        <h2 className="text-4xl font-bold text-text-primary">Settings</h2>
+      <div className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border-subtle px-4 pt-14 pb-4">
+        <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
       </div>
 
       <div
@@ -83,7 +80,7 @@ function SettingsPanel({ closing }: { closing: boolean }) {
       >
         {/* Appearance */}
         <section>
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">Appearance</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-3">Appearance</p>
           <div className="rounded-xl border border-border-subtle bg-panel overflow-hidden divide-y divide-border-subtle">
             {themeOptions.map(opt => (
               <button
@@ -97,7 +94,7 @@ function SettingsPanel({ closing }: { closing: boolean }) {
                 </span>
                 <span className={cn(
                   "h-5 w-5 rounded-full border-2 transition-colors",
-                  theme === opt.value ? "border-accent bg-accent" : "border-border-subtle"
+                  theme === opt.value ? "border-positive bg-positive" : "border-border-subtle"
                 )} />
               </button>
             ))}
@@ -106,7 +103,7 @@ function SettingsPanel({ closing }: { closing: boolean }) {
 
         {/* Pro Mode */}
         <section>
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">Pro Mode</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-positive mb-3">Pro Mode</p>
           <div className="rounded-xl border border-border-subtle bg-panel overflow-hidden">
             <button
               onClick={toggleProMode}
@@ -117,8 +114,8 @@ function SettingsPanel({ closing }: { closing: boolean }) {
                 <span className="text-xs text-text-muted">Adds a horizontal line at the hovered price to identify floors and ceilings</span>
               </span>
               <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative"
-                style={{ borderColor: proMode ? "var(--color-accent)" : "var(--color-border-subtle)",
-                         backgroundColor: proMode ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
+                style={{ borderColor: proMode ? "var(--color-positive)" : "var(--color-border-subtle)",
+                         backgroundColor: proMode ? "var(--color-positive)" : "var(--color-panel-muted)" }}>
                 <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
                   style={{ left: proMode ? "calc(100% - 1.125rem)" : "0.125rem" }} />
               </span>
@@ -194,21 +191,16 @@ function MobileSearchPill({ origin }: { origin: string }) {
         const data = await res.json() as { results?: Array<{ symbol: string; description: string }> };
         const newResults = (data.results ?? []).slice(0, 8).map(r => ({ symbol: r.symbol, name: r.description }));
         setResults(newResults);
-
-        // Logos are a nice-to-have enrichment, not the search result itself —
-        // a failure here (rate limit, a bad symbol in the batch, a network
-        // blip) must never clear the real results that already loaded above.
+        // Fetch logos in batch for the result symbols
         if (newResults.length) {
-          try {
-            const symbols = newResults.map(r => r.symbol).join(",");
-            const stockRes = await fetch(`/api/stocks?symbols=${encodeURIComponent(symbols)}`, { signal: controller.signal });
-            const stockData = await stockRes.json() as { stocks?: Array<{ symbol: string; logo?: string }> };
-            const logoMap: Record<string, string> = {};
-            for (const s of stockData.stocks ?? []) {
-              if (s.logo) logoMap[s.symbol] = s.logo;
-            }
-            if (!controller.signal.aborted) setLogos(logoMap);
-          } catch { /* logos are optional — results above stay intact either way */ }
+          const symbols = newResults.map(r => r.symbol).join(",");
+          const stockRes = await fetch(`/api/stocks?symbols=${encodeURIComponent(symbols)}`, { signal: controller.signal });
+          const stockData = await stockRes.json() as { stocks?: Array<{ symbol: string; logo?: string }> };
+          const logoMap: Record<string, string> = {};
+          for (const s of stockData.stocks ?? []) {
+            if (s.logo) logoMap[s.symbol] = s.logo;
+          }
+          if (!controller.signal.aborted) setLogos(logoMap);
         }
       } catch { if (!controller.signal.aborted) setResults([]); }
       finally { if (!controller.signal.aborted) setLoading(false); }
@@ -253,7 +245,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
   const keyboardInset = Math.max(0, winH - vpH - vp.top);
   const pillBottom = open && keyboardInset > 8
     ? `${keyboardInset + 12}px`
-    : "calc(env(safe-area-inset-bottom) - 0.5rem)";
+    : "calc(1.25rem + env(safe-area-inset-bottom))";
 
   const showDropdown = open && (loading || results.length > 0 || query.trim().length > 0);
 
@@ -287,7 +279,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
           (closest match) renders nearest the bar via column-reverse. */}
       {showDropdown && (
         <div
-          className="fixed lg:hidden rounded-2xl border border-white/25"
+          className="fixed lg:hidden rounded-2xl bg-black/40 backdrop-blur-md border border-white/20"
           style={{
             zIndex: 1001,
             right: "1rem",
@@ -300,10 +292,6 @@ function MobileSearchPill({ origin }: { origin: string }) {
             opacity: open ? 1 : 0,
             transform: open ? "translateY(0)" : "translateY(8px)",
             transition: "opacity 0.22s ease, transform 0.22s ease",
-            background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-            backdropFilter: "blur(22px) saturate(160%)",
-            WebkitBackdropFilter: "blur(22px) saturate(160%)",
-            boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
           }}
           onClick={onEmptyAreaClick}
           onTouchStart={onEmptyAreaTouchStart}
@@ -337,22 +325,18 @@ function MobileSearchPill({ origin }: { origin: string }) {
                     backgroundColor: "var(--color-panel-muted)",
                     objectFit: "contain",
                   }}
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    const sib = e.currentTarget.nextElementSibling as HTMLElement | null;
-                    if (sib) sib.style.display = "flex";
-                  }}
                 />
-              ) : null}
-              <span style={{
-                display: logos[r.symbol] ? "none" : "flex", alignItems: "center", justifyContent: "center",
-                height: 40, width: 40, borderRadius: 10, flexShrink: 0,
-                border: "1px solid var(--color-border-subtle)",
-                backgroundColor: "var(--color-panel-muted)",
-                fontSize: 11, fontWeight: 700, color: "var(--color-text-primary)",
-              }}>
-                {r.symbol.replace("^", "").slice(0, 2)}
-              </span>
+              ) : (
+                <span style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  height: 40, width: 40, borderRadius: 10, flexShrink: 0,
+                  border: "1px solid var(--color-border-subtle)",
+                  backgroundColor: "var(--color-panel-muted)",
+                  fontSize: 11, fontWeight: 700, color: "var(--color-text-primary)",
+                }}>
+                  {r.symbol.replace("^", "").slice(0, 2)}
+                </span>
+              )}
               <span style={{ minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>{r.symbol}</span>
                 <span style={{ display: "block", fontSize: 12, color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
@@ -365,29 +349,16 @@ function MobileSearchPill({ origin }: { origin: string }) {
       {/* The pill — same element morphs from a small circle into the search
           bar, identical geometry/easing/timing to the AI chat pill. */}
       <div
-        className="fixed lg:hidden overflow-hidden rounded-full border border-white/25 text-accent"
+        className="fixed lg:hidden rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-positive overflow-hidden"
         style={{
           zIndex: 1002,
           bottom: pillBottom,
           right: open ? "1rem" : "1.25rem",
           width: open ? "calc(100vw - 2rem)" : "3.5rem",
           height: "3.5rem",
-          background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-          backdropFilter: "blur(22px) saturate(160%)",
-          WebkitBackdropFilter: "blur(22px) saturate(160%)",
-          boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
           transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
         }}
       >
-        {/* Thin specular highlight along the top edge — matching the AI pill's glass sheen */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute", top: 0, left: "8%", right: "8%", height: 1,
-            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
-            pointerEvents: "none",
-          }}
-        />
         {/* Closed state: search icon */}
         <button
           onClick={() => setOpen(true)}
@@ -421,7 +392,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
             onChange={e => setQuery(e.target.value)}
             placeholder="Search stocks…"
             className="text-text-primary placeholder:text-text-muted"
-            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "var(--color-accent)" }}
+            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "#00c805" }}
           />
           <button
             onClick={handleDismiss}
@@ -429,7 +400,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
             style={{
               flexShrink: 0, height: 38, width: 38,
               borderRadius: "50%",
-              backgroundColor: "var(--color-accent)",
+              backgroundColor: "#00c805",
               color: "#000",
               display: "flex", alignItems: "center", justifyContent: "center",
               border: "none",
@@ -528,7 +499,7 @@ export function MobileNav() {
 
   const iconWrapClass = "relative z-10 flex items-center justify-center transition-colors duration-300";
   function iconClass(active: boolean) {
-    return cn("transition-colors duration-300", active ? "text-black" : "text-accent");
+    return cn("transition-colors duration-300", active ? "text-black" : "text-positive");
   }
 
   return (
@@ -539,29 +510,17 @@ export function MobileNav() {
           green indicator behind the active section. Height-matched to the
           search pill so everything along the bottom bar lines up. */}
       <nav
-        className="fixed bottom-0 inset-x-0 z-[60] flex lg:hidden items-center justify-start px-5 pointer-events-none"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 0.5rem)", paddingTop: "1rem" }}
+        className="fixed bottom-0 inset-x-0 z-40 flex lg:hidden items-center justify-start px-5 pointer-events-none"
+        style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))", paddingTop: "1rem" }}
       >
         <div
-          className="relative flex items-center rounded-full border border-white/25 overflow-hidden pointer-events-auto"
-          style={{
-            height: BUBBLE_SIZE,
-            background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-            backdropFilter: "blur(22px) saturate(160%)",
-            WebkitBackdropFilter: "blur(22px) saturate(160%)",
-            boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
-          }}
+          className="relative flex items-center rounded-full bg-black/40 backdrop-blur-md border border-white/20 overflow-hidden pointer-events-auto"
+          style={{ height: BUBBLE_SIZE }}
         >
-          {/* Thin specular highlight along the top edge — matching the AI pill's glass sheen */}
-          <div
-            aria-hidden
-            className="absolute top-0 left-[8%] right-[8%] pointer-events-none"
-            style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)" }}
-          />
           {/* Sliding green indicator */}
           <span
             aria-hidden
-            className="absolute left-0 top-0 rounded-full bg-accent transition-transform duration-300 ease-out"
+            className="absolute left-0 top-0 rounded-full bg-positive transition-transform duration-300 ease-out"
             style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE, transform: `translateX(${activeIndex * 3.5}rem)` }}
           />
 

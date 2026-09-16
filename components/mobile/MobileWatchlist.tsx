@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Reorder, useDragControls } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { Star } from "lucide-react";
 
 import { LoadingScreen } from "@/components/EmptyWatchlist";
-import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { formatPercent } from "@/lib/format";
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -44,20 +43,14 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
     ? [{ close: yesterdayClose, time: 0 }, ...stock.sparkline]
     : [{ time: 0, close: yesterdayClose }, { time: 1, close: currentPrice }];
   return (
-    <div className="h-10 w-20 shrink-0 pointer-events-none">
+    <div className="h-10 w-20 shrink-0">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ left: 0, right: 0, top: 2, bottom: 2 }}>
           <YAxis domain={["dataMin", "dataMax"]} hide width={0} />
-          <Area
-            type="monotone"
-            dataKey="close"
+          <Area type="monotone" dataKey="close"
             stroke={isPos ? "#00c805" : "#ff3003"}
-            fill="transparent"
-            strokeWidth={2}
-            strokeLinecap="round"
-            dot={false}
-            isAnimationActive={false}
-          />
+            fill="transparent" strokeWidth={2}
+            strokeLinecap="round" dot={false} isAnimationActive={false} />
         </AreaChart>
       </ResponsiveContainer>
     </div>
@@ -68,35 +61,21 @@ function RowContent({ stock }: { stock: StockSummary }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
   return (
     <>
-      {stock.logo ? (
-        <img
-          src={stock.logo}
-          alt=""
-          className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0 pointer-events-none"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-            e.currentTarget.nextElementSibling?.classList.remove("hidden");
-          }}
-        />
-      ) : null}
-      <span className={cn(
-        "h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold shrink-0 pointer-events-none",
-        stock.logo && "hidden",
-        SECTOR_ETFS.some(e => e.symbol === stock.symbol) ? "text-text-primary" : "text-text-primary"
-      )}>
-        {SECTOR_ETFS.some(e => e.symbol === stock.symbol) ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
-      </span>
-      <span className="flex-1 min-w-0 pointer-events-none">
+      {stock.logo
+        ? <img src={stock.logo} alt="" className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
+        : <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
+            {stock.symbol.replace("^", "").slice(0, 2)}
+          </span>
+      }
+      <span className="flex-1 min-w-0">
         <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
       </span>
       <MiniSparkline stock={stock} />
-      <span className="ml-3 shrink-0 pointer-events-none">
-        <span
-          className={cn(
-            "inline-block text-sm font-bold text-black px-3 py-1 rounded-lg",
-            isPos ? "bg-positive" : "bg-negative"
-          )}
-        >
+      <span className="ml-3 shrink-0">
+        <span className={cn(
+          "inline-block text-sm font-bold text-black px-3 py-1 rounded-lg",
+          isPos ? "bg-positive" : "bg-negative"
+        )}>
           {formatPercent(stock.changePercent)}
         </span>
       </span>
@@ -106,6 +85,8 @@ function RowContent({ stock }: { stock: StockSummary }) {
 
 const REVEAL_WIDTH = 76;
 const OVERDRAG_MAX = 28;
+const LONG_PRESS_MS = 450;
+const MOVE_CANCEL_PX = 14; // movement before the long-press timer fires cancels it — generous enough to tolerate natural hand tremor while holding still
 
 function withResistance(raw: number) {
   if (raw >= -REVEAL_WIDTH) return raw;
@@ -116,201 +97,169 @@ function withResistance(raw: number) {
 
 const SETTLE_TRANSITION = "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
 
-function WatchlistRow({
-  stock,
-  onRemove,
-}: {
-  stock: StockSummary;
-  onRemove: (s: string) => void;
-}) {
-  const router = useRouter();
-  const innerRef = useRef<HTMLDivElement>(null);
+// One row. Reordering itself (the vertical drag + smooth reflow of
+// siblings) is entirely delegated to Framer Motion's Reorder.Item — it's
+// only *activated* after our own long-press timer fires, via dragControls,
+// so a quick tap or a horizontal swipe never accidentally starts a drag.
+// The horizontal swipe-to-reveal-delete gesture stays hand-rolled (Framer's
+// Reorder locks the drag axis to "y", so it doesn't touch this at all).
+function WatchlistRow({ stock, onRemove }: { stock: StockSummary; onRemove: (s: string) => void }) {
+  const rowRef    = useRef<HTMLDivElement>(null);
+  const innerRef  = useRef<HTMLAnchorElement>(null);
   const dragControls = useDragControls();
 
-  const dragXRef = useRef(0);
-  const revealedRef = useRef(false);
-  const startRef = useRef<{ x: number; y: number; startDragX: number; decided: boolean } | null>(null);
-
-  // Long press refs & state
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  const pointerStartPos = useRef<{ x: number; y: number } | null>(null);
-  const activePointerEvent = useRef<PointerEvent | null>(null);
-
-  const [isDragging, setIsDragging] = useState(false);
-  const isDraggingRef = useRef(false);
+  const dragXRef       = useRef(0);
+  const revealedRef    = useRef(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+  const startRef = useRef<{
+    x: number; y: number; startDragX: number;
+    decided: boolean; isH: boolean;
+  } | null>(null);
 
   function applyX(x: number, animate: boolean) {
     const el = innerRef.current;
     if (!el) return;
     el.style.transition = animate ? SETTLE_TRANSITION : "none";
-    el.style.transform = `translateX(${x}px)`;
+    el.style.transform  = `translateX(${x}px)`;
   }
 
   function close() {
-    dragXRef.current = 0;
+    dragXRef.current    = 0;
     revealedRef.current = false;
     applyX(0, true);
   }
 
-  // Non-passive Touch listener to intercept scroll when reorder activates
-  useEffect(() => {
-    function preventTouchScroll(e: TouchEvent) {
-      if (isDraggingRef.current) {
-        if (e.cancelable) e.preventDefault();
-      }
+  function clearLongPress() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
     }
+  }
 
-    window.addEventListener("touchmove", preventTouchScroll, { passive: false });
-    return () => {
-      window.removeEventListener("touchmove", preventTouchScroll);
-    };
-  }, []);
-
-  // Handle horizontal swipe-to-delete & long-press reorder
   useEffect(() => {
-    const el = innerRef.current;
+    const el = rowRef.current;
     if (!el) return;
-
-    function clearTimer() {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current);
-        longPressTimer.current = null;
-      }
-    }
 
     function onPointerDown(e: PointerEvent) {
       if (e.pointerType === "mouse" && e.button !== 0) return;
-
-      startRef.current = { x: e.clientX, y: e.clientY, startDragX: dragXRef.current, decided: false };
-      pointerStartPos.current = { x: e.clientX, y: e.clientY };
-      activePointerEvent.current = e;
-
-      clearTimer();
-
-      // Trigger drag reorder after holding for 250ms
-      longPressTimer.current = setTimeout(() => {
-        if (navigator.vibrate) {
-          try {
-            navigator.vibrate(20);
-          } catch {
-            /* ignore */
-          }
-        }
-
-        isDraggingRef.current = true;
-        setIsDragging(true);
-
-        if (activePointerEvent.current) {
-          dragControls.start(activePointerEvent.current, { snapToCursor: false });
-        }
-      }, 250);
+      startRef.current = {
+        x: e.clientX, y: e.clientY, startDragX: dragXRef.current,
+        decided: false, isH: false,
+      };
+      longPressFired.current = false;
+      clearLongPress();
+      // Only offer drag-to-reorder from a row's resting position (not mid-swipe).
+      if (dragXRef.current === 0) {
+        longPressTimer.current = setTimeout(() => {
+          longPressTimer.current = null;
+          longPressFired.current = true;
+          startRef.current = null; // stop any swipe-gesture bookkeeping
+          if (navigator.vibrate) { try { navigator.vibrate(10); } catch { /* ignore */ } }
+          // Lock out native scrolling on this row for the duration of the
+          // drag — otherwise touch-action: pan-y (needed so ordinary
+          // scrolling still works the rest of the time) lets the browser
+          // keep treating vertical finger movement as "scroll the page"
+          // even after Framer takes over, and the browser wins that race.
+          if (el) el.style.touchAction = "none";
+          // Hand off to Framer Motion — it takes pointer capture from here
+          // and drives the drag + sibling reflow itself.
+          dragControls.start(e, { snapToCursor: false });
+        }, LONG_PRESS_MS);
+      }
     }
 
     function onPointerMove(e: PointerEvent) {
-      activePointerEvent.current = e;
+      if (longPressFired.current) return; // Framer owns the gesture now
 
-      if (isDraggingRef.current) {
-        if (e.cancelable) e.preventDefault();
-        return;
-      }
-
-      // If finger moves > 6px before 250ms, cancel long press
-      if (pointerStartPos.current) {
-        const dx = Math.abs(e.clientX - pointerStartPos.current.x);
-        const dy = Math.abs(e.clientY - pointerStartPos.current.y);
-        if (dx > 6 || dy > 6) {
-          clearTimer();
-        }
-      }
-
-      // Horizontal swipe reveal handling
       const start = startRef.current;
       if (!start) return;
       const dx = e.clientX - start.x;
       const dy = e.clientY - start.y;
 
       if (!start.decided) {
-        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        if (Math.abs(dx) < MOVE_CANCEL_PX && Math.abs(dy) < MOVE_CANCEL_PX) return; // wait for intent — tolerate natural hand tremor while holding still
         start.decided = true;
-        if (Math.abs(dx) <= Math.abs(dy) * 1.15) {
+        start.isH     = Math.abs(dx) > Math.abs(dy) * 1.15; // slight bias toward "this is a scroll", the more common gesture
+        clearLongPress(); // real movement — this isn't a long-press-and-hold
+
+        if (!start.isH) {
+          // Vertical intent: this is an ordinary scroll. `touch-action: pan-y`
+          // on the row means the browser has been handling this natively —
+          // with full native momentum — the whole time, so there's nothing
+          // for us to do here; just stop tracking it as a possible swipe.
           startRef.current = null;
           return;
         }
       }
 
-      if (e.cancelable) e.preventDefault();
-      const raw = start.startDragX + dx;
+      if (!start.isH) return;
+
+      // Horizontal swipe-to-reveal: override the browser's default (which
+      // would otherwise fight us) only for this axis.
+      e.preventDefault();
+      e.stopPropagation();
+
+      const raw  = start.startDragX + dx;
       const next = raw > 0 ? 0 : withResistance(raw);
       dragXRef.current = next;
       applyX(next, false);
     }
 
     function onPointerEnd() {
-      clearTimer();
-      activePointerEvent.current = null;
+      clearLongPress();
 
-      if (!startRef.current) return;
+      if (longPressFired.current) {
+        longPressFired.current = false;
+        if (el) el.style.touchAction = "pan-y";
+        return; // Framer handles the rest of its own gesture lifecycle
+      }
+
+      if (!startRef.current?.isH) { startRef.current = null; return; }
       const shouldReveal = dragXRef.current < -REVEAL_WIDTH / 2;
-      const target = shouldReveal ? -REVEAL_WIDTH : 0;
-      dragXRef.current = target;
+      const target       = shouldReveal ? -REVEAL_WIDTH : 0;
+      dragXRef.current   = target;
       revealedRef.current = shouldReveal;
       applyX(target, true);
-      startRef.current = null;
+      startRef.current    = null;
     }
 
-    el.addEventListener("pointerdown", onPointerDown, { passive: true });
-    el.addEventListener("pointermove", onPointerMove, { passive: false });
-    el.addEventListener("pointerup", onPointerEnd, { passive: true });
-    el.addEventListener("pointercancel", onPointerEnd, { passive: true });
+    el.addEventListener("pointerdown",   onPointerDown, { passive: true });
+    el.addEventListener("pointermove",   onPointerMove, { passive: false });
+    el.addEventListener("pointerup",     onPointerEnd,  { passive: true });
+    el.addEventListener("pointercancel", onPointerEnd,  { passive: true });
 
     return () => {
-      clearTimer();
-      el.removeEventListener("pointerdown", onPointerDown);
-      el.removeEventListener("pointermove", onPointerMove);
-      el.removeEventListener("pointerup", onPointerEnd);
+      clearLongPress();
+      el.removeEventListener("pointerdown",   onPointerDown);
+      el.removeEventListener("pointermove",   onPointerMove);
+      el.removeEventListener("pointerup",     onPointerEnd);
       el.removeEventListener("pointercancel", onPointerEnd);
     };
   }, [dragControls]);
 
   useEffect(() => {
-    function onScroll() {
-      if (revealedRef.current) close();
-    }
+    function onScroll() { if (revealedRef.current) close(); }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleDragEnd = () => {
-    isDraggingRef.current = false;
-    setIsDragging(false);
-  };
-
   return (
     <Reorder.Item
       value={stock.symbol}
-      as="div"
       dragListener={false}
       dragControls={dragControls}
-      className="relative overflow-hidden rounded-2xl border-b border-border-subtle/70 last:border-0 bg-black select-none"
-      whileDrag={{
-        scale: 1.03,
-        boxShadow: "0 16px 40px rgba(0,0,0,0.55)",
-        zIndex: 50,
-      }}
+      as="div"
+      className="relative overflow-hidden border-b border-border-subtle/70 last:border-0 bg-black"
+      style={{ touchAction: "pan-y", WebkitTouchCallout: "none" }}
+      whileDrag={{ scale: 1.03, boxShadow: "0 16px 40px rgba(0,0,0,0.55)", zIndex: 10 }}
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
-      onDragEnd={handleDragEnd}
-      style={{
-        touchAction: isDragging ? "none" : "pan-y",
-        WebkitUserSelect: "none",
-        WebkitTouchCallout: "none",
-      }}
+      onDragEnd={() => { if (rowRef.current) rowRef.current.style.touchAction = "pan-y"; }}
     >
-      <div className="relative">
-        <div
-          className="absolute inset-y-0 right-0 flex items-center justify-center"
-          style={{ width: REVEAL_WIDTH }}
-        >
+      <div ref={rowRef}>
+        {/* Swipe-revealed remove button */}
+        <div className="absolute inset-y-0 right-0 flex items-center justify-center" style={{ width: REVEAL_WIDTH }}>
           <button
             onClick={() => onRemove(stock.symbol)}
             aria-label={`Remove ${stock.symbol}`}
@@ -320,9 +269,11 @@ function WatchlistRow({
           </button>
         </div>
 
-        <div
+        <Link
           ref={innerRef}
-          className="flex items-center gap-1 pl-4 pr-4 py-3.5 bg-black"
+          href={`/stock/${stock.symbol}`}
+          onClick={(e) => { if (revealedRef.current) { e.preventDefault(); close(); } }}
+          className="flex items-center gap-3 px-4 py-3.5 bg-black active:bg-panel-muted"
           style={{
             transform: "translateX(0px)",
             willChange: "transform",
@@ -332,20 +283,8 @@ function WatchlistRow({
           }}
           suppressHydrationWarning
         >
-          <div
-            className="flex items-center gap-3 flex-1 min-w-0 cursor-grab active:cursor-grabbing"
-            onClick={() => {
-              if (isDragging) return;
-              if (revealedRef.current) {
-                close();
-                return;
-              }
-              router.push(`/stock/${stock.symbol}`);
-            }}
-          >
-            <RowContent stock={stock} />
-          </div>
-        </div>
+          <RowContent stock={stock} />
+        </Link>
       </div>
     </Reorder.Item>
   );
@@ -353,14 +292,12 @@ function WatchlistRow({
 
 export function MobileWatchlist() {
   const [symbols, setSymbols] = useState<string[]>([]);
-  const [stocks, setStocks] = useState<Map<string, StockSummary>>(new Map());
+  const [stocks, setStocks]   = useState<Map<string, StockSummary>>(new Map());
   const [loading, setLoading] = useState(true);
-  const fetchedRef = useRef<Set<string>>(new Set());
+  const fetchedRef            = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    function sync() {
-      setSymbols(readWatchlist());
-    }
+    function sync() { setSymbols(readWatchlist()); }
     sync();
     window.addEventListener("watchlist-updated", sync);
     window.addEventListener("storage", sync);
@@ -371,67 +308,53 @@ export function MobileWatchlist() {
   }, []);
 
   useEffect(() => {
-    const missing = symbols.filter((s) => !fetchedRef.current.has(s));
-    if (!missing.length) {
-      setLoading(false);
-      return;
-    }
+    const missing = symbols.filter(s => !fetchedRef.current.has(s));
+    if (!missing.length) { setLoading(false); return; }
     const ctrl = new AbortController();
     setLoading(true);
     fetch(`/api/market?watchlist=${missing.join(",")}`, { signal: ctrl.signal })
-      .then((r) => r.json() as Promise<{ tickerStocks?: StockSummary[] }>)
-      .then((d) => {
+      .then(r => r.json() as Promise<{ tickerStocks?: StockSummary[] }>)
+      .then(d => {
         const fetched = d.tickerStocks ?? [];
-        fetched.forEach((s) => fetchedRef.current.add(s.symbol));
-        setStocks((prev) => {
+        fetched.forEach(s => fetchedRef.current.add(s.symbol));
+        setStocks(prev => {
           const next = new Map(prev);
-          fetched.forEach((s) => next.set(s.symbol, s));
+          fetched.forEach(s => next.set(s.symbol, s));
           return next;
         });
       })
       .catch(() => {})
-      .finally(() => {
-        if (!ctrl.signal.aborted) setLoading(false);
-      });
+      .finally(() => { if (!ctrl.signal.aborted) setLoading(false); });
     return () => ctrl.abort();
   }, [symbols]);
 
   function handleRemove(symbol: string) {
-    const updated = symbols.filter((s) => s !== symbol);
+    const updated = symbols.filter(s => s !== symbol);
     setSymbols(updated);
     writeWatchlist(updated);
   }
 
   function handleReorder(newOrder: string[]) {
+    // Guard: only commit if every currently-tracked symbol is accounted for
+    // (i.e. nothing is still mid-fetch) — avoids silently dropping a symbol
+    // that hasn't loaded into `stocks` yet.
     if (newOrder.length !== symbols.length) return;
     setSymbols(newOrder);
     writeWatchlist(newOrder);
   }
 
-  const orderedStocks = symbols.map((s) => stocks.get(s)).filter(Boolean) as StockSummary[];
+  const orderedStocks = symbols.map(s => stocks.get(s)).filter(Boolean) as StockSummary[];
 
   if (loading && !orderedStocks.length) return <LoadingScreen label="Loading your watchlist" />;
 
   return (
     <div className="pb-24">
       <div
-        className="sticky top-0 z-30 px-4 pb-4 flex items-end justify-between gap-3"
+        className="sticky top-0 z-30 px-4 pb-4"
         style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
       >
-        <div
-          className="absolute inset-x-0 top-0 -z-10 pointer-events-none"
-          style={{
-            height: "calc(100% + 3.6rem)",
-            backdropFilter: "blur(14px)",
-            WebkitBackdropFilter: "blur(14px)",
-            maskImage: "linear-gradient(to bottom, black, transparent)",
-            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
-          }}
-        />
-        <div>
-          <h1 className="text-4xl font-bold text-text-primary">Your Stocks</h1>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-accent">Watchlist</p>
-        </div>
+        <p className="text-xs font-semibold uppercase tracking-widest text-positive">Watchlist</p>
+        <h1 className="mt-1 text-2xl font-bold text-text-primary">Your Stocks</h1>
       </div>
 
       {orderedStocks.length === 0 ? (
@@ -443,11 +366,11 @@ export function MobileWatchlist() {
         <Reorder.Group
           as="div"
           axis="y"
-          values={orderedStocks.map((s) => s.symbol)}
+          values={orderedStocks.map(s => s.symbol)}
           onReorder={handleReorder}
-          className="mx-2 mt-[0.95rem] rounded-xl bg-black"
+          className="mx-4 mt-6 rounded-xl bg-black"
         >
-          {orderedStocks.map((stock) => (
+          {orderedStocks.map(stock => (
             <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} />
           ))}
         </Reorder.Group>

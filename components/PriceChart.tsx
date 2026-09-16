@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
-  ComposedChart,
+  AreaChart,
   CartesianGrid,
-  Line,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -20,59 +19,6 @@ import type { CandlePoint, ChartPeriod } from "@/types/stock";
 const SHORT_PERIODS: ChartPeriod[] = ["1D", "1W", "1M", "2M", "3M", "5M", "6M"];
 const LONG_PERIODS:  ChartPeriod[] = ["1Y", "2Y", "5Y", "ALL"];
 const LONG_TERM_SET  = new Set<ChartPeriod>(["1Y", "2Y", "5Y", "ALL"]);
-
-// Which moving averages make sense to offer for a given period — a moving
-// average that's much longer than the visible window just renders as a
-// flat, uninformative line, so it's hidden rather than shown broken.
-const MA_AVAILABILITY: Record<ChartPeriod, number[]> = {
-  "1D": [],
-  "1W": [7],
-  "1M": [7, 25],
-  "2M": [7, 25],
-  "3M": [7, 25, 99],
-  "5M": [7, 25, 99],
-  "6M": [7, 25, 99],
-  "1Y": [7, 25, 99],
-  "2Y": [7, 25, 99],
-  "5Y": [7, 25, 99],
-  "ALL": [7, 25, 99],
-};
-const MA_COLORS: Record<number, string> = {
-  7: "#f59e0b",   // orange-yellowish
-  25: "#ec4899",  // pink
-  99: "#8b5cf6",  // violet
-};
-
-// `windowDays` is a number of *days*, not points — periods have wildly
-// different point granularity (a "5Y" chart's points might each span a
-// week, while "1M" points are daily), so a fixed point-count window would
-// mean very different real time spans depending on the period. Using a
-// time-based sliding window keeps "MA(99)" meaning the same thing — the
-// trailing 99 days — regardless of how coarse the underlying data is.
-function computeMA(points: CandlePoint[], windowDays: number): (number | null)[] {
-  const DAY_MS = 24 * 60 * 60 * 1000;
-  const result: (number | null)[] = new Array(points.length).fill(null);
-  if (!points.length) return result;
-
-  const time = (p: CandlePoint) => new Date(p.date === "prev" ? Date.now() : p.date).getTime();
-  const firstTime = time(points[0]);
-
-  let start = 0;
-  let sum = 0;
-  for (let i = 0; i < points.length; i++) {
-    sum += points[i].close;
-    const endTime = time(points[i]);
-    const windowStart = endTime - windowDays * DAY_MS;
-    while (start < i && time(points[start]) < windowStart) {
-      sum -= points[start].close;
-      start++;
-    }
-    const count = i - start + 1;
-    const hasFullWindow = (endTime - firstTime) >= windowDays * DAY_MS;
-    result[i] = hasFullWindow && count > 0 ? sum / count : null;
-  }
-  return result;
-}
 
 /* ─── Date label for tooltip crosshair ──────────────────────────────────── */
 function tooltipLabel(dateStr: string, period: ChartPeriod): string {
@@ -105,29 +51,36 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
 
 
 /* ─── Number-wheel digit ─────────────────────────────────────────────────── */
-// A compact two-row wheel: the old and new glyph are the only rows rendered
-// during a transition. This avoids long-strip drift when chart hover updates
-// arrive quickly, while keeping 9 → 0 as a single forward turn.
-// Every wheel column has a fixed width. Besides matching a mechanical counter,
-// this prevents prices with decimals from visibly squeezing as digits change.
+// Each digit is a continuous, repeating strip. Keeping a virtual position lets
+// 9 → 0 move one row forward (and 0 → 9 one row back), like a mechanical wheel.
+// Width per digit is set via CSS `ch` units scoped to each size, which gives
+// natural variable spacing (1 narrower than 8) without any JS measurement loop.
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
-const WHEEL_SLOT_RATIO = 0.62;
+const WHEEL_CYCLES_BEFORE = 2;
+const WHEEL_CYCLES_AFTER = 3;
+const WHEEL_DIGITS = Array.from(
+  { length: (WHEEL_CYCLES_BEFORE + WHEEL_CYCLES_AFTER) * DIGIT_CHARS.length },
+  (_, index) => DIGIT_CHARS[index % DIGIT_CHARS.length],
+);
+
+// Proportional widths as a fraction of rowPx (measured from Inter at text-5xl/text-2xl).
+// "1" is naturally narrow; "0","4","8" are wide. These ratios stay correct at any px size.
+const DIGIT_RATIO: Record<string, number> = {
+  "0": 0.62, "1": 0.36, "2": 0.58, "3": 0.58,
+  "4": 0.62, "5": 0.58, "6": 0.60, "7": 0.52,
+  "8": 0.62, "9": 0.60,
+};
 
 function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
   const isDigit = DIGIT_CHARS.includes(ch);
   const idx     = isDigit ? parseInt(ch) : 0;
+  // This is deliberately a virtual (rather than 0–9) position. It gives the
+  // strip room to cross its seam without an abrupt reset.
+  const [wheelPosition, setWheelPosition] = useState(idx);
+  const [isRolling, setIsRolling] = useState(false);
   const previousDigitRef = useRef(idx);
-  const rollIdRef = useRef(0);
-  const [roll, setRoll] = useState<{
-    id: number;
-    from: number;
-    to: number;
-    direction: "up" | "down";
-  } | null>(null);
 
-  // Layout effect makes every updated wheel begin together, before the frame
-  // containing the new hovered price is painted.
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!isDigit || previousDigitRef.current === idx) return;
 
     const previous = previousDigitRef.current;
@@ -135,12 +88,8 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
     // the wheel. In particular, 9 → 0 is +1 and 0 → 9 is -1.
     const shortestStep = ((idx - previous + 15) % 10) - 5;
     previousDigitRef.current = idx;
-    setRoll({
-      id: ++rollIdRef.current,
-      from: previous,
-      to: idx,
-      direction: shortestStep >= 0 ? "up" : "down",
-    });
+    setWheelPosition((position) => position + shortestStep);
+    setIsRolling(true);
   }, [idx, isDigit]);
 
   const rowPx     = size === "lg" ? 54 : 32;
@@ -159,10 +108,7 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
     );
   }
 
-  const slotPx = Math.round(WHEEL_SLOT_RATIO * rowPx);
-  const rollingDigits = roll
-    ? (roll.direction === "up" ? [roll.from, roll.to] : [roll.to, roll.from])
-    : [idx];
+  const slotPx = Math.round((DIGIT_RATIO[ch] ?? 0.62) * rowPx);
 
   return (
     <span
@@ -170,30 +116,29 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
       style={{
         height: rowPx,
         width: slotPx,
+        transition: "width 1.04s cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
       <span
-        key={roll?.id ?? "settled"}
         className="flex flex-col"
         style={{
+          transform: `translateY(-${(wheelPosition + WHEEL_CYCLES_BEFORE * 10) * rowPx}px)`,
           // A light blur softens the moving glyph while preserving legibility.
-          filter: roll ? "blur(0.45px)" : "blur(0)",
-          animation: roll
-            ? `price-digit-roll-${roll.direction} 280ms cubic-bezier(0.22, 1, 0.36, 1) both`
-            : "none",
+          filter: isRolling ? "blur(0.45px)" : "blur(0)",
+          transition: "transform 1.04s cubic-bezier(0.22, 1, 0.36, 1), filter 120ms ease-out",
           willChange: "transform, filter",
         }}
-        onAnimationEnd={() => {
-          setRoll((activeRoll) => activeRoll?.id === roll?.id ? null : activeRoll);
+        onTransitionEnd={(event) => {
+          if (event.propertyName === "transform") setIsRolling(false);
         }}
       >
-        {rollingDigits.map((digit, digitIndex) => (
+        {WHEEL_DIGITS.map((d, wheelIndex) => (
           <span
-            key={digitIndex}
+            key={wheelIndex}
             className={cn(fontClass, "block text-center select-none leading-none")}
             style={{ height: rowPx, lineHeight: `${rowPx}px`, width: slotPx }}
           >
-            {digit}
+            {d}
           </span>
         ))}
       </span>
@@ -212,49 +157,12 @@ function WheelPrice({
   colorClass?: string;
 }) {
   const chars = value.split("");
-  const decimalIndex = chars.lastIndexOf(".");
-  const integerEnd = decimalIndex === -1 ? chars.length : decimalIndex;
-  const integerDigitCount = chars
-    .slice(0, integerEnd)
-    .filter((char) => DIGIT_CHARS.includes(char)).length;
-  let integerDigitsSeen = 0;
-  let fractionalDigitsSeen = 0;
-
   return (
-    <>
-      <style>{`
-        @keyframes price-digit-roll-up {
-          from { transform: translateY(0); }
-          to { transform: translateY(-50%); }
-        }
-        @keyframes price-digit-roll-down {
-          from { transform: translateY(-50%); }
-          to { transform: translateY(0); }
-        }
-      `}</style>
-      <span className={cn("inline-flex items-end", colorClass)}>
-        {chars.map((ch, index) => {
-          let key: string;
-          if (DIGIT_CHARS.includes(ch)) {
-            if (index < integerEnd) {
-              // Integer wheels stay anchored from the right, so adding a new
-              // thousands/tens digit never turns the decimal point or cents
-              // into a different wheel.
-              key = `integer-${integerDigitCount - 1 - integerDigitsSeen}`;
-              integerDigitsSeen++;
-            } else {
-              key = `fraction-${fractionalDigitsSeen}`;
-              fractionalDigitsSeen++;
-            }
-          } else if (ch === ".") {
-            key = "decimal";
-          } else {
-            key = `symbol-${index}-${ch}`;
-          }
-          return <Digit key={key} ch={ch} size={size} />;
-        })}
-      </span>
-    </>
+    <span className={cn("inline-flex items-end", colorClass)}>
+      {chars.map((ch, i) => (
+        <Digit key={i} ch={ch} size={size} />
+      ))}
+    </span>
   );
 }
 
@@ -266,7 +174,6 @@ function CrosshairTooltip({
   period,
   onHover,
   isTouching,
-  hideBubble = false,
 }: {
   active?: boolean;
   payload?: { value: number }[];
@@ -274,7 +181,6 @@ function CrosshairTooltip({
   period: ChartPeriod;
   onHover: (price: number | null, date: string | null) => void;
   isTouching?: boolean;
-  hideBubble?: boolean;
 }) {
   const price = payload?.[0]?.value ?? null;
   const date  = label ?? null;
@@ -293,20 +199,12 @@ function CrosshairTooltip({
   // On touch devices, hide the bubble when finger is lifted (isTouching=false).
   // On desktop (mouse), always show when active.
   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
-  const showBubble = !hideBubble && active && price !== null && date && (!isTouchDevice || isTouching);
+  const showBubble = active && price !== null && date && (!isTouchDevice || isTouching);
 
   if (!showBubble) return null;
 
   return (
-    <div
-      className="rounded-md border border-white/25 px-2.5 py-1.5 text-xs text-text-muted pointer-events-none"
-      style={{
-        background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-        backdropFilter: "blur(22px) saturate(160%)",
-        WebkitBackdropFilter: "blur(22px) saturate(160%)",
-        boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
-      }}
-    >
+    <div className="rounded-md border border-positive/60 bg-black/90 px-2.5 py-1.5 text-xs text-text-muted shadow-lg shadow-positive/10 backdrop-blur-sm pointer-events-none">
       {tooltipLabel(date, period)}
     </div>
   );
@@ -320,8 +218,7 @@ export function PriceChart({
   previousClose,
   initialPeriod = "1D",
   heightClassName = "h-[320px]",
-  priceIndent,
-  hideCursorDateTooltip = false
+  priceIndent
 }: {
   symbol: string;
   currentPrice: number;
@@ -330,7 +227,6 @@ export function PriceChart({
   initialPeriod?: ChartPeriod;
   heightClassName?: string;
   priceIndent?: string;
-  hideCursorDateTooltip?: boolean;
 }) {
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
   const [chartKey, setChartKey]       = useState(0);
@@ -341,43 +237,6 @@ export function PriceChart({
   const [hoverPrice, setHoverPrice]   = useState<number | null>(null);
   const [hoverDate,  setHoverDate]    = useState<string | null>(null);
   const [priceVisible, setPriceVisible] = useState(true);
-  const [activeMAs, setActiveMAs] = useState<Set<number>>(new Set());
-
-  // Buttons currently rendered (includes ones mid-exit-animation) and which
-  // of those are actively exiting — kept mounted a bit longer than
-  // MA_AVAILABILITY[period] itself so the shrink-out animation can play
-  // instead of the button just vanishing instantly.
-  const [displayedMAWindows, setDisplayedMAWindows] = useState<number[]>(MA_AVAILABILITY[period] ?? []);
-  const [exitingMAWindows, setExitingMAWindows] = useState<Set<number>>(new Set());
-
-  // If the period changes to one that doesn't support a currently-active MA
-  // (e.g. switching from 1M to 1W drops MA(25)), drop it rather than leave
-  // it toggled on with nothing shown.
-  useEffect(() => {
-    const allowed = MA_AVAILABILITY[period] ?? [];
-    setActiveMAs(prev => {
-      const next = new Set([...prev].filter(w => allowed.includes(w)));
-      return next.size === prev.size ? prev : next;
-    });
-
-    setDisplayedMAWindows(prev => {
-      const removed = prev.filter(w => !allowed.includes(w));
-      const added   = allowed.filter(w => !prev.includes(w));
-      if (removed.length) {
-        setExitingMAWindows(ex => new Set([...ex, ...removed]));
-        setTimeout(() => {
-          setExitingMAWindows(ex => {
-            const n = new Set(ex);
-            removed.forEach(w => n.delete(w));
-            return n;
-          });
-          setDisplayedMAWindows(cur => cur.filter(w => !removed.includes(w)));
-        }, 320);
-      }
-      if (!added.length && !removed.length) return prev;
-      return [...prev, ...added];
-    });
-  }, [period]);
   const [proMode, setProMode]         = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
   );
@@ -453,25 +312,6 @@ export function PriceChart({
 
   const hasData    = data.length > 1;
   const isLongTerm = LONG_TERM_SET.has(period);
-
-  // Merge in MA fields for whichever windows are both available for this
-  // period and currently toggled on. Only computed when needed.
-  const chartData = useMemo(() => {
-    const allowed = MA_AVAILABILITY[period] ?? [];
-    if (!allowed.length) return data;
-    // Compute every MA available for this period regardless of whether it's
-    // currently toggled on — this array must stay referentially stable
-    // across activeMAs changes, or Recharts treats the whole chart's data
-    // as "changed" and replays every line's draw animation, not just the
-    // one that was actually toggled.
-    const mas = new Map(allowed.map(w => [w, computeMA(data, w)]));
-    return data.map((d, i) => ({
-      ...d,
-      ma7:  mas.get(7)?.[i]  ?? undefined,
-      ma25: mas.get(25)?.[i] ?? undefined,
-      ma99: mas.get(99)?.[i] ?? undefined,
-    }));
-  }, [data, period]);
 
   /* Displayed price and % change — hover overrides live values */
   const displayPrice = hoverPrice ?? currentPrice;
@@ -605,10 +445,10 @@ export function PriceChart({
     return (
       <button
         type="button"
-        onClick={() => { if (active) return; setPeriod(option); setChartKey(k => k + 1); }}
+        onClick={() => { setPeriod(option); setChartKey(k => k + 1); }}
         className={cn(
           "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition sm:px-3 sm:py-2 sm:text-sm",
-          active ? "bg-accent text-black" : "text-accent hover:text-accent/80"
+          active ? "bg-positive text-black" : "text-positive hover:text-positive/80"
         )}
       >
         {option}
@@ -636,7 +476,7 @@ export function PriceChart({
         onMouseLeave={() => { setDotCY(null); clearHover(); }}
       >
         {isLoading ? (
-          <div className="flex h-full flex-col items-center justify-center gap-5">
+          <div className="flex h-full flex-col items-center justify-center gap-5 rounded-md border border-dashed border-border-subtle">
             <style>{`
               @keyframes chart-candle-breathe { 0%,100%{transform:scaleY(0.6)} 50%{transform:scaleY(1.4)} }
               @keyframes chart-wick-breathe   { 0%,100%{opacity:0.25;transform:scaleY(0.7)} 50%{opacity:0.9;transform:scaleY(1.3)} }
@@ -685,8 +525,8 @@ export function PriceChart({
             style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both", width: "100%", height: "100%" }}
           >
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={chartData}
+            <AreaChart
+              data={data}
               margin={{ left: 0, right: 0, top: 8, bottom: 0 }}
             >
               {/* No Y axis, no grid lines */}
@@ -708,12 +548,7 @@ export function PriceChart({
                 content={(() => {
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return <></>;
-                  return <CrosshairTooltip
-                    period={period}
-                    onHover={onHover}
-                    isTouching={isTouching}
-                    hideBubble={hideCursorDateTooltip}
-                  />;
+                  return <CrosshairTooltip period={period} onHover={onHover} isTouching={isTouching} />;
                 })()}
               />
 
@@ -737,21 +572,7 @@ export function PriceChart({
                 }}
                 isAnimationActive={false}
               />
-
-              {/* ── Moving average overlays ── */}
-              {(MA_AVAILABILITY[period] ?? []).includes(7) && activeMAs.has(7) && (
-                <Line key="ma7" type="monotone" dataKey="ma7" stroke={MA_COLORS[7]} strokeWidth={3}
-                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
-              )}
-              {(MA_AVAILABILITY[period] ?? []).includes(25) && activeMAs.has(25) && (
-                <Line key="ma25" type="monotone" dataKey="ma25" stroke={MA_COLORS[25]} strokeWidth={3}
-                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
-              )}
-              {(MA_AVAILABILITY[period] ?? []).includes(99) && activeMAs.has(99) && (
-                <Line key="ma99" type="monotone" dataKey="ma99" stroke={MA_COLORS[99]} strokeWidth={3}
-                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
-              )}
-            </ComposedChart>
+            </AreaChart>
           </ResponsiveContainer>
           </div>
 
@@ -810,16 +631,12 @@ export function PriceChart({
                   }}
                 />
                 {/* Date bubble — flip to left side if too close to right edge */}
-                {!hideCursorDateTooltip && hoverDate && (
+                {hoverDate && (
                   <div
-                    className="absolute top-2 rounded-md border border-white/25 px-2.5 py-1.5 text-xs text-text-muted"
+                    className="absolute top-2 rounded-md border border-positive/60 bg-black/90 px-2.5 py-1.5 text-xs text-text-muted shadow-lg shadow-positive/10 backdrop-blur-sm"
                     style={{
                       left: xPct > 65 ? undefined : `calc(${xPct}% + 10px)`,
                       right: xPct > 65 ? `calc(${100 - xPct}% + 10px)` : undefined,
-                      background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-                      backdropFilter: "blur(22px) saturate(160%)",
-                      WebkitBackdropFilter: "blur(22px) saturate(160%)",
-                      boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
                     }}
                   >
                     {tooltipLabel(hoverDate, period)}
@@ -838,70 +655,16 @@ export function PriceChart({
 
       {/* ── Period selector — centred below chart ────────────────────── */}
       <div className="mt-4 flex justify-center">
-        {/* Phone only: years (1Y/2Y/5Y/ALL) on their own row below the rest */}
-        <div className="flex flex-col items-center gap-1.5 lg:hidden">
-          <div className="flex flex-nowrap items-center justify-center whitespace-nowrap overflow-x-auto">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center justify-center">
             {SHORT_PERIODS.map((o) => <PeriodButton key={o} option={o} />)}
           </div>
-          <div className="flex flex-nowrap items-center justify-center whitespace-nowrap overflow-x-auto">
+          <div className="mx-1 h-px bg-border-subtle" />
+          <div className="flex items-center justify-center">
             {LONG_PERIODS.map((o) => <PeriodButton key={o} option={o} />)}
           </div>
         </div>
-        {/* Desktop: unchanged, single row */}
-        <div className="hidden lg:flex flex-nowrap items-center justify-center whitespace-nowrap overflow-x-auto">
-          {[...SHORT_PERIODS, ...LONG_PERIODS].map((o) => <PeriodButton key={o} option={o} />)}
-        </div>
       </div>
-
-      {/* ── Moving average toggles — only shown when at least one MA makes
-          sense for the currently selected period ── */}
-      {displayedMAWindows.length > 0 && (
-        <>
-        <style>{`
-          @keyframes ma-btn-pop {
-            from { transform: scale(0); opacity: 0; }
-            to   { transform: scale(1); opacity: 1; }
-          }
-          @keyframes ma-btn-pop-out {
-            from { transform: scale(1); opacity: 1; }
-            to   { transform: scale(0); opacity: 0; }
-          }
-        `}</style>
-        <div className="mt-3 flex items-center justify-center gap-2">
-          {displayedMAWindows.map((window) => {
-            const active   = activeMAs.has(window);
-            const exiting  = exitingMAWindows.has(window);
-            const color    = MA_COLORS[window];
-            return (
-              <button
-                key={window}
-                type="button"
-                disabled={exiting}
-                onClick={() => {
-                  setActiveMAs(prev => {
-                    const next = new Set(prev);
-                    if (next.has(window)) next.delete(window); else next.add(window);
-                    return next;
-                  });
-                }}
-                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition border"
-                style={{
-                  ...(active
-                    ? { borderColor: color, backgroundColor: `${color}22`, color }
-                    : { borderColor: "var(--color-border-subtle)", color: "var(--color-text-muted)" }),
-                  animation: exiting
-                    ? "ma-btn-pop-out 0.32s cubic-bezier(0.4, 0, 1, 1) both"
-                    : "ma-btn-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both",
-                }}
-              >
-                <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                MA({window})
-              </button>
-            );
-          })}
-        </div>
-        </>
-      )}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { RefObject } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft } from "lucide-react";
 
@@ -16,7 +15,7 @@ import {
 } from "@/lib/earnings";
 import type { EarningsEvent } from "@/types/stock";
 
-export const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
+const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
 function fmtRevenue(value: number | null) {
   return value !== null ? `$${formatCompact(value)}` : "N/A";
@@ -59,7 +58,7 @@ function StatBlock({
   );
 }
 
-export function EarningsDetailCard({
+function EarningsDetailCard({
   event, earnings, onBack
 }: { event: EarningsEvent; earnings: EarningsEvent[]; onBack: () => void }) {
   const reported = isReported(event);
@@ -71,10 +70,11 @@ export function EarningsDetailCard({
 
   return (
     <div
-      className="earnings-detail-glass w-full rounded-2xl p-5 shadow-2xl"
+      className="w-full rounded-2xl p-5 shadow-2xl"
       style={{
         maxWidth: "min(380px, calc(100vw - 2rem))",
         animation: "detailFadeIn 0.18s ease both",
+        background: "linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.35))",
         backdropFilter: "blur(22px) saturate(160%)",
         WebkitBackdropFilter: "blur(22px) saturate(160%)",
         boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 0 1px rgba(255,255,255,0.05)"
@@ -84,13 +84,13 @@ export function EarningsDetailCard({
       <div className="flex items-center gap-3 mb-5">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 bg-accent text-black text-sm font-semibold px-3 py-1.5 rounded-lg shrink-0"
+          className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg shrink-0"
         >
           <ChevronLeft className="h-4 w-4" />
           Back
         </button>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent">Q{event.quarter} {event.year}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-positive">Q{event.quarter} {event.year}</p>
           <p className="text-sm text-text-muted">{dateLabel}</p>
         </div>
       </div>
@@ -141,28 +141,25 @@ function MonthGrid({
 
   return (
     <div className="mb-6" ref={monthRef} data-current-month={isCurrent || undefined}>
-      <p className="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-accent">{monthLabel}</p>
+      <p className="text-sm font-semibold uppercase tracking-widest text-positive mb-2">{monthLabel}</p>
       <div className="grid grid-cols-7 gap-y-1.5">
         {cells.map((day, i) => {
           if (day === null) return <div key={`blank-${i}`} />;
           const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
           const event = eventsByDate.get(dateStr);
           const isToday = dateStr === today;
-          // Past dates fade to grey, today stays green, and anything still
-          // to come reads as solid primary text instead of muted grey.
-          const isPast = dateStr < today;
           return (
             <div key={dateStr} className="flex items-center justify-center py-0.5">
               {event ? (
                 <button
                   onClick={() => onSelect(event)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-bold text-black transition active:scale-90"
+                  className="h-8 w-8 rounded-full bg-positive text-black text-sm font-bold flex items-center justify-center active:scale-90 transition"
                 >
                   {day}
                 </button>
               ) : (
                 <span className={`h-8 w-8 flex items-center justify-center text-sm ${
-                  isToday ? "font-bold text-accent" : isPast ? "text-text-muted" : "text-text-primary"
+                  isToday ? "text-positive font-bold" : "text-text-muted"
                 }`}>
                   {day}
                 </span>
@@ -176,17 +173,7 @@ function MonthGrid({
 }
 
 // ─── Trigger button + calendar overlay + detail popup ──────────────────────
-export function EarningsCalendarButton({
-  earnings,
-  containerRef
-}: {
-  earnings: EarningsEvent[];
-  /** When provided, the calendar sheet is confined to this element's bounds
-   *  (e.g. the right-hand 3/4 column of the watchlist split view) instead of
-   *  covering the full viewport. The element must have `position: relative`
-   *  (or similar) so absolutely-positioned children resolve against it. */
-  containerRef?: RefObject<HTMLElement | null>;
-}) {
+export function EarningsCalendarButton({ earnings }: { earnings: EarningsEvent[] }) {
   const [open, setOpen]         = useState(false);
   const [closing, setClosing]   = useState(false);
   const [selected, setSelected] = useState<EarningsEvent | null>(null);
@@ -257,16 +244,11 @@ export function EarningsCalendarButton({
     setTimeout(() => { setOpen(false); setClosing(false); }, 300);
   }
 
-  // Sheet is anchored to the bottom of its box at 88% tall — express the
-  // button's tap point as a transform-origin relative to the sheet's own
-  // box, so the open animation visibly grows out from the button. When
-  // constrained to a container, "its box" is that container; otherwise
-  // it's the viewport.
-  const boxHeight = containerRef?.current?.clientHeight
-    ?? (typeof window !== "undefined" ? window.innerHeight : 0);
-  const sheetTop = boxHeight * 0.12;
+  // Sheet is anchored to the bottom of the viewport at 88vh tall — express
+  // the button's tap point as a transform-origin relative to the sheet's own
+  // box, so the open animation visibly grows out from the button.
+  const sheetTop = typeof window !== "undefined" ? window.innerHeight * 0.12 : 0;
   const transformOrigin = `${origin.x}px ${origin.y - sheetTop}px`;
-  const portalTarget = containerRef?.current ?? (typeof document !== "undefined" ? document.body : null);
 
   return (
     <>
@@ -274,20 +256,21 @@ export function EarningsCalendarButton({
         type="button"
         onClick={openCalendar}
         aria-label="Earnings calendar"
-        className="flex h-7 w-7 items-center justify-center text-accent active:opacity-60"
+        className="flex items-center justify-center h-7 w-7 text-positive active:opacity-60"
       >
         <CalendarDays className="h-[18px] w-[18px]" />
       </button>
 
-      {open && portalTarget && createPortal(
+      {open && typeof document !== "undefined" && createPortal(
         <div
-          className={containerRef ? "absolute inset-0 z-[9999] flex items-end justify-center" : "fixed inset-0 z-[9999] flex items-end justify-center"}
+          className="fixed inset-0 z-[9999] flex items-end justify-center"
           style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
         >
           <div
-            className="w-full rounded-t-2xl border-t border-border-subtle flex flex-col bg-black"
+            className="w-full rounded-t-2xl border-t border-border-subtle flex flex-col"
             style={{
-              height: containerRef ? "88%" : "88vh",
+              height: "88vh",
+              backgroundColor: "#000000",
               transformOrigin,
               animation: closing
                 ? "calendarSink 0.3s cubic-bezier(0.4,0,1,1) forwards"
@@ -297,12 +280,12 @@ export function EarningsCalendarButton({
             <div className="flex items-center gap-3 px-4 pt-4 pb-3 shrink-0">
               <button
                 onClick={closeCalendar}
-                className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-black"
+                className="flex items-center gap-1.5 bg-positive text-black text-sm font-semibold px-3 py-1.5 rounded-lg"
               >
                 <ChevronLeft className="h-4 w-4" />
                 Back
               </button>
-              <p className="text-sm font-semibold text-accent">Earnings Calendar</p>
+              <p className="text-sm font-semibold text-text-primary">Earnings Calendar</p>
             </div>
 
             <div className="grid grid-cols-7 px-4 pb-2 shrink-0">
@@ -329,18 +312,18 @@ export function EarningsCalendarButton({
             </div>
           </div>
         </div>,
-        portalTarget
+        document.body
       )}
 
-      {selected && portalTarget && createPortal(
+      {selected && typeof document !== "undefined" && createPortal(
         <div
-          className={containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}
+          className="fixed inset-0 z-[10000] flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.2)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
         >
           <EarningsDetailCard event={selected} earnings={earnings} onBack={() => setSelected(null)} />
         </div>,
-        portalTarget
+        document.body
       )}
 
       <style>{`
@@ -355,17 +338,6 @@ export function EarningsCalendarButton({
         @keyframes detailFadeIn {
           from { opacity: 0; transform: scale(0.96) translateY(6px); }
           to   { opacity: 1; transform: scale(1)    translateY(0);   }
-        }
-        .earnings-detail-glass {
-          background: linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.35));
-        }
-        html.light-mode .earnings-detail-glass {
-          background: linear-gradient(155deg, rgba(255,255,255,0.72), rgba(255,255,255,0.58) 40%, rgba(255,255,255,0.42));
-        }
-        html.light-mode .earnings-detail-glass,
-        html.light-mode .earnings-detail-glass .text-text-primary,
-        html.light-mode .earnings-detail-glass .text-text-muted {
-          color: #000;
         }
       `}</style>
     </>
