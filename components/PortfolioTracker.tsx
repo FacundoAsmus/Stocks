@@ -389,12 +389,23 @@ function PositionRow({
     <div className="border-b border-border-subtle/70 last:border-0 group">
       <div className="flex items-center gap-3 px-5 py-4">
         <Link href={`/stock/${position.ticker}`} className="flex items-center gap-3 flex-1 min-w-0">
-          {stock?.logo
-            ? <img src={stock.logo} alt="" className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0" />
-            : <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
-                {position.ticker.replace("^", "").slice(0, 2)}
-              </span>
-          }
+          {stock?.logo ? (
+            <img
+              src={stock.logo}
+              alt=""
+              className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                e.currentTarget.nextElementSibling?.classList.remove("hidden");
+              }}
+            />
+          ) : null}
+          <span className={cn(
+            "h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0",
+            stock?.logo && "hidden"
+          )}>
+            {position.ticker.replace("^", "").slice(0, 2)}
+          </span>
           <span className="flex-1 min-w-0">
             <span className="block text-sm font-bold text-text-primary">{position.ticker}</span>
             <span className="block text-xs text-text-muted truncate">{position.companyName}</span>

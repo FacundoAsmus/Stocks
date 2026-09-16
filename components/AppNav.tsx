@@ -143,7 +143,12 @@ const navItems = [
   { href: "/watchlist", label: "Watchlist", icon: "list" as const },
 ] as const;
 
-export function AppNav() {
+type AppNavProps = {
+  /** Lets the watchlist header place Settings beside its search field. */
+  variant?: "full" | "links" | "settings";
+};
+
+export function AppNav({ variant = "full" }: AppNavProps) {
   const pathname     = usePathname();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -152,21 +157,24 @@ export function AppNav() {
     applyTheme(getStoredTheme());
   }, []);
 
-  return (
-    <nav className="flex items-center gap-4 relative">
-      {navItems.map((item) => {
+  const links = navItems.map((item) => {
         const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
         return (
           <Link
             key={item.href}
             href={item.href}
-            className="group flex items-center gap-2 text-base font-semibold text-text-primary transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04]"
+            className={cn(
+              "group flex items-center gap-2 text-base font-semibold text-text-primary transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04]",
+              variant === "links" && "rounded-full border border-transparent px-3 py-1.5 hover:border-white/20"
+            )}
           >
             <span className={cn(
               "flex h-10 w-10 items-center justify-center rounded-md border transition-all duration-200",
+              variant === "links" && "h-7 w-7 rounded-full border-0",
+              variant === "links" && isActive && "scale-[1.2]",
               isActive
                 ? "border-accent bg-accent text-black"
-                : "border-accent/30 bg-accent/10 text-accent group-hover:border-accent/60"
+                : "border-transparent bg-transparent text-accent group-hover:border-transparent"
             )}>
               {item.icon === "globe"
                 ? <GlobeIcon className="h-5 w-5" />
@@ -176,28 +184,48 @@ export function AppNav() {
             <span>{item.label}</span>
           </Link>
         );
-      })}
+      });
+
+  const settings = (
+    <div className="relative">
+      <button
+        onClick={() => setSettingsOpen(o => !o)}
+        aria-label="Settings"
+        className={cn(
+          "group flex items-center gap-2 text-base font-semibold text-text-primary transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04]",
+          variant === "settings" && "h-11 w-11 items-center justify-center rounded-full border border-transparent bg-transparent backdrop-blur-xl hover:border-white/20"
+        )}
+      >
+        <span className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-md border transition-all duration-200",
+          variant === "settings" && "h-8 w-8 rounded-full border-0",
+          variant === "settings" && settingsOpen && "scale-[1.2]",
+          settingsOpen
+            ? "border-accent bg-accent text-black"
+            : "border-transparent bg-transparent text-accent group-hover:border-transparent"
+        )}>
+          <Settings className="h-5 w-5" />
+        </span>
+        {variant !== "settings" && <span>Settings</span>}
+      </button>
+      {settingsOpen && <DesktopSettingsPanel onClose={() => setSettingsOpen(false)} />}
+    </div>
+  );
+
+  if (variant === "links") {
+    return <nav className="flex items-center gap-4 relative">{links}</nav>;
+  }
+
+  if (variant === "settings") {
+    return <nav aria-label="Settings">{settings}</nav>;
+  }
+
+  return (
+    <nav className="flex items-center gap-4 relative">
+      {links}
 
       {/* Settings button */}
-      <div className="relative">
-        <button
-          onClick={() => setSettingsOpen(o => !o)}
-          className={cn(
-            "group flex items-center gap-2 text-base font-semibold text-text-primary transition-all duration-200 hover:-translate-y-1 hover:scale-[1.04]"
-          )}
-        >
-          <span className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-md border transition-all duration-200",
-            settingsOpen
-              ? "border-accent bg-accent text-black"
-              : "border-accent/30 bg-accent/10 text-accent group-hover:border-accent/60"
-          )}>
-            <Settings className="h-5 w-5" />
-          </span>
-          <span>Settings</span>
-        </button>
-        {settingsOpen && <DesktopSettingsPanel onClose={() => setSettingsOpen(false)} />}
-      </div>
+      {settings}
     </nav>
   );
 }

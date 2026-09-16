@@ -1,6 +1,15 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { DM_Sans } from "next/font/google";
+
+// Re-declaring with the exact same config as layout.tsx: next/font dedupes
+// identical calls into the same generated class at build time, so this
+// resolves to the app's real font — it just makes it explicit here rather
+// than relying on inheriting body's className, which isn't guaranteed to
+// already be attached when this renders as a route-level Suspense fallback
+// (app/loading.tsx, app/stock/[symbol]/loading.tsx) during a fast transition.
+const dmSans = DM_Sans({ subsets: ["latin"] });
 
 export function EmptyWatchlist({ isLoading = false }: { isLoading?: boolean }) {
   if (isLoading) return <LoadingScreen />;
@@ -106,7 +115,7 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50" role="status" aria-label={label}>
+    <div className={`fixed inset-0 z-50 ${dmSans.className}`} role="status" aria-label={label}>
       <canvas ref={canvasRef} className="block h-full w-full" />
 
       {/* Bigger version of the chart's own candle-breathing loader */}

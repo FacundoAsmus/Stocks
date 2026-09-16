@@ -4,31 +4,14 @@ import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
 import { formatPercent } from "@/lib/format";
+import { SECTOR_ETFS, type EtfEntry } from "@/lib/etfs";
 import type { StockSummary } from "@/types/stock";
 
-export type EtfEntry = {
-  symbol: string;
-  name: string;
-  sector: string;
-};
-
-export const SECTOR_ETFS: EtfEntry[] = [
-  { symbol: "SPY",  name: "S&P 500",         sector: "Main Market" },
-  { symbol: "QQQ",  name: "Nasdaq 100",       sector: "Technology" },
-  { symbol: "SOXX", name: "Semiconductors",   sector: "Semis" },
-  { symbol: "XLF",  name: "Financials",       sector: "Finance" },
-  { symbol: "XLE",  name: "Energy",           sector: "Energy" },
-  { symbol: "XLV",  name: "Health Care",      sector: "Healthcare" },
-  { symbol: "XLI",  name: "Industrials",      sector: "Industrials" },
-  { symbol: "XLY",  name: "Consumer Discr.",  sector: "Consumer" },
-  { symbol: "XLP",  name: "Consumer Staples", sector: "Staples" },
-  { symbol: "XLB",  name: "Materials",        sector: "Materials" },
-  { symbol: "XLRE", name: "Real Estate",      sector: "Real Estate" },
-  { symbol: "XLU",  name: "Utilities",        sector: "Utilities" },
-  { symbol: "GLD",  name: "Gold",             sector: "Commodities" },
-  { symbol: "IEF",  name: "7-10yr Treasury",  sector: "Bonds" },
-  { symbol: "DIA",  name: "Dow Jones",        sector: "Dow" },
-];
+// Re-exported for existing client-component consumers
+// (components/mobile/MobileWatchlist.tsx, components/mobile/MobileStockPage.tsx)
+// that already import these from here. Server Components must import
+// directly from "@/lib/etfs" instead — see the comment there.
+export { SECTOR_ETFS, type EtfEntry };
 
 function MiniSparkline({ stock, height = 32 }: { stock: StockSummary; height?: number }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
@@ -75,8 +58,8 @@ export function EtfRow({ etfs }: { etfs: StockSummary[] }) {
             className="group grid grid-cols-[34px_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(120px,1.5fr)_minmax(92px,auto)] items-center gap-3 rounded-md border border-transparent border-b-border-subtle/70 px-4 py-3 transition-all duration-200 hover:-translate-y-1 hover:border-positive/50 hover:bg-panel-muted/75 hover:shadow-2xl hover:shadow-black/25 hover:z-10 relative"
           >
             <Link href={`/stock/${etf.symbol}`} aria-label={`Open ${etf.symbol}`}>
-              <span className="flex h-8 w-8 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-[10px] font-bold text-text-primary">
-                {etf.symbol.slice(0, 2)}
+              <span className="flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary">
+                ETF
               </span>
             </Link>
             <Link href={`/stock/${etf.symbol}`} className="min-w-0">
@@ -113,7 +96,7 @@ export function EtfMobileList({ etfs }: { etfs: StockSummary[] }) {
   const etfMap = new Map(etfs.map(e => [e.symbol, e]));
 
   return (
-    <div className="mx-4 rounded-xl bg-black overflow-hidden">
+    <div className="mx-2 rounded-xl bg-black overflow-hidden">
       {SECTOR_ETFS.map((etf, i) => {
         const stock = etfMap.get(etf.symbol);
         const isPos = (stock?.changePercent ?? 0) >= 0;
@@ -128,8 +111,8 @@ export function EtfMobileList({ etfs }: { etfs: StockSummary[] }) {
           >
             {/* Symbol + name */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <span className="h-8 w-8 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-[10px] font-bold text-text-primary shrink-0">
-                {etf.symbol.slice(0, 2)}
+              <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
+                ETF
               </span>
               <div className="min-w-0">
                 <span className="block text-sm font-bold text-text-primary">{etf.symbol}</span>
