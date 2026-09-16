@@ -20,6 +20,7 @@ const DESCRIPTION_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // filings/description
 type CacheEntry<T> = { value: T; expiresAt: number };
 const tickerMapCache: { entry: CacheEntry<Map<string, string>> | null } = { entry: null };
 const descriptionCache = new Map<string, CacheEntry<string | null>>();
+const indicatorCache = new Map<string, CacheEntry<FilingIndicator[]>>();
 
 function isFresh<T>(entry: CacheEntry<T> | null | undefined): entry is CacheEntry<T> {
   return !!entry && entry.expiresAt > Date.now();
@@ -57,6 +58,104 @@ async function getTickerMap(): Promise<Map<string, string>> {
 async function getCik(symbol: string): Promise<string | null> {
   const map = await getTickerMap();
   return map.get(symbol.toUpperCase().replace(/^\^/, "")) ?? null;
+}
+
+type CompanyConceptResponse = {
+  units?: Record<string, Array<{
+    form?: string;
+    fp?: string;
+    filed?: string;
+    end?: string;
+    start?: string;
+    val?: number;
+  }>>;
+};
+
+export type FilingIndicator = {
+  year: number;
+  capex: number | null;
+  researchAndDevelopment: number | null;
+  freeCashFlow: number | null;
+};
+
+const CAPEX_CONCEPT = "PaymentsToAcquirePropertyPlantAndEquipment";
+const OPERATING_CASH_FLOW_CONCEPT = "NetCashProvidedByUsedInOperatingActivities";
+const R_AND_D_CONCEPTS = [
+  "ResearchAndDevelopmentExpense",
+  "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost"
+];
+
+async function getAnnualConceptValues(cik: string, concept: string): Promise<Map<number, number>> {
+  const response = await secFetch(
+    `https://data.sec.gov/api/xbrl/companyconcept/CIK${cik}/us-gaap/${concept}.json`
+  );
+  // Not every company reports every standard concept (especially R&D), which
+  // is expected and should leave that chart row unavailable rather than fail.
+  if (!response.ok) return new Map();
+
+  const payload = await response.json() as CompanyConceptResponse;
+  const entries = payload.units?.USD ?? [];
+  const annual = new Map<number, { value: number; filed: string }>();
+
+  for (const entry of entries) {
+    if (entry.form !== "10-K" || entry.fp !== "FY" || typeof entry.val !== "number" || !entry.end) continue;
+    const year = Number(entry.end.slice(0, 4));
+    if (!Number.isInteger(year)) continue;
+    const existing = annual.get(year);
+    // Amendments/duplicate contexts can produce several values for one year;
+    // prefer the most recently filed annual fact.
+    if (!existing || (entry.filed ?? "") > existing.filed) {
+      annual.set(year, { value: entry.val, filed: entry.filed ?? "" });
+    }
+  }
+
+  return new Map([...annual].map(([year, entry]) => [year, entry.value]));
+}
+
+/**
+ * Returns up to four annual SEC XBRL comparisons. CapEx is an outflow reported
+ * as a positive number by the cash-flow taxonomy, so free cash flow is CFO −
+ * CapEx. Missing R&D is normal for companies that do not tag that concept.
+ */
+export async function getFilingIndicators(symbol: string): Promise<FilingIndicator[]> {
+  const cacheKey = symbol.toUpperCase();
+  const cached = indicatorCache.get(cacheKey);
+  if (isFresh(cached)) return cached.value;
+
+  try {
+    const cik = await getCik(symbol);
+    if (!cik) return [];
+
+    const [capex, operatingCashFlow, ...researchAndDevelopmentCandidates] = await Promise.all([
+      getAnnualConceptValues(cik, CAPEX_CONCEPT),
+      getAnnualConceptValues(cik, OPERATING_CASH_FLOW_CONCEPT),
+      ...R_AND_D_CONCEPTS.map((concept) => getAnnualConceptValues(cik, concept))
+    ]);
+    const researchAndDevelopment = researchAndDevelopmentCandidates.find((values) => values.size > 0) ?? new Map<number, number>();
+    const years = [...new Set([
+      ...capex.keys(),
+      ...operatingCashFlow.keys(),
+      ...researchAndDevelopment.keys()
+    ])].sort((a, b) => b - a).slice(0, 4).sort((a, b) => a - b);
+
+    const indicators = years.map((year) => {
+      const annualCapex = capex.get(year) ?? null;
+      const annualOperatingCashFlow = operatingCashFlow.get(year) ?? null;
+      return {
+        year,
+        capex: annualCapex,
+        researchAndDevelopment: researchAndDevelopment.get(year) ?? null,
+        freeCashFlow: annualCapex !== null && annualOperatingCashFlow !== null
+          ? annualOperatingCashFlow - annualCapex
+          : null
+      };
+    });
+    indicatorCache.set(cacheKey, { value: indicators, expiresAt: Date.now() + 1000 * 60 * 60 * 24 });
+    return indicators;
+  } catch (error) {
+    console.error(`[secEdgar] getFilingIndicators(${symbol}) failed:`, error instanceof Error ? error.message : error);
+    return [];
+  }
 }
 
 type SubmissionsResponse = {

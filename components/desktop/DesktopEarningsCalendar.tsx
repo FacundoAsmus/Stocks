@@ -1,13 +1,119 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { RefObject } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { todayStr } from "@/lib/earnings";
+import { formatCompact } from "@/lib/format";
 import { EarningsDetailCard, WEEKDAYS } from "@/components/mobile/EarningsCalendarButton";
 import type { EarningsEvent } from "@/types/stock";
+
+type FilingIndicator = {
+  year: number;
+  capex: number | null;
+  researchAndDevelopment: number | null;
+  freeCashFlow: number | null;
+};
+
+type IndicatorKey = "capex" | "researchAndDevelopment" | "freeCashFlow";
+
+function AnnualIndicatorBars({
+  title,
+  field,
+  indicators
+}: {
+  title: string;
+  field: IndicatorKey;
+  indicators: FilingIndicator[];
+}) {
+  const availableValues = indicators
+    .map((indicator) => indicator[field])
+    .filter((value): value is number => value !== null);
+  const scale = Math.max(...availableValues.map((value) => Math.abs(value)), 1);
+
+  return (
+    <section>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted">{title}</p>
+      {availableValues.length ? (
+        <div className="flex h-32 items-end gap-3 border-b border-border-subtle px-2">
+          {indicators.map((indicator) => {
+            const value = indicator[field];
+            const height = value === null ? 0 : Math.max((Math.abs(value) / scale) * 100, 5);
+            const isNegative = (value ?? 0) < 0;
+            return (
+              <div key={indicator.year} className="group relative flex h-full flex-1 flex-col justify-end">
+                {value !== null && (
+                  <div className="pointer-events-none absolute bottom-[calc(100%+0.5rem)] left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-positive/70 bg-black px-2 py-1 text-xs font-semibold text-positive opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                    ${formatCompact(value)}
+                  </div>
+                )}
+                <div className="flex flex-1 items-end justify-center">
+                  <div
+                    className={`w-full max-w-9 rounded-t-sm transition-opacity group-hover:opacity-80 ${isNegative ? "bg-negative" : "bg-positive"}`}
+                    style={{ height: `${height}%` }}
+                    aria-label={value === null ? `${indicator.year}: unavailable` : `${indicator.year}: $${formatCompact(value)}`}
+                  />
+                </div>
+                <span className="pt-1.5 text-center text-[10px] font-medium text-text-muted">{indicator.year}</span>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="rounded-md border border-dashed border-border-subtle px-3 py-5 text-center text-xs text-text-muted">
+          This company has not reported this indicator in a standard SEC XBRL tag.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function DesktopEarningsDetail({
+  event,
+  earnings,
+  symbol,
+  onBack
+}: {
+  event: EarningsEvent;
+  earnings: EarningsEvent[];
+  symbol: string;
+  onBack: () => void;
+}) {
+  const [indicators, setIndicators] = useState<FilingIndicator[] | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setIndicators(null);
+    fetch(`/api/filing-indicators?symbol=${encodeURIComponent(symbol)}`, { signal: controller.signal })
+      .then((response) => response.ok ? response.json() as Promise<{ indicators?: FilingIndicator[] }> : { indicators: [] })
+      .then((data) => { if (!controller.signal.aborted) setIndicators(data.indicators ?? []); })
+      .catch(() => { if (!controller.signal.aborted) setIndicators([]); });
+    return () => controller.abort();
+  }, [symbol]);
+
+  return (
+    <div className="earnings-detail-glass w-full overflow-y-auto rounded-2xl p-5 shadow-2xl" style={{ maxWidth: "min(680px, calc(100vw - 2rem))", maxHeight: "calc(100vh - 2rem)" }} onClick={(e) => e.stopPropagation()}>
+      <EarningsDetailCard event={event} earnings={earnings} onBack={onBack} />
+      <div className="mt-5 border-t border-white/10 pt-5">
+        <p className="text-xs font-semibold uppercase tracking-widest text-accent">Indicators</p>
+        <p className="mt-1 text-xs text-text-muted">Annual SEC filing comparison · hover a bar for the reported value</p>
+        {indicators === null ? (
+          <p className="py-10 text-center text-sm text-text-muted">Loading SEC filing data…</p>
+        ) : indicators.length ? (
+          <div className="mt-5 space-y-6">
+            <AnnualIndicatorBars title="CapEx" field="capex" indicators={indicators} />
+            <AnnualIndicatorBars title="R&D" field="researchAndDevelopment" indicators={indicators} />
+            <AnnualIndicatorBars title="Free cash flow" field="freeCashFlow" indicators={indicators} />
+          </div>
+        ) : (
+          <p className="mt-5 rounded-md border border-dashed border-border-subtle px-3 py-7 text-center text-sm text-text-muted">Annual SEC filing indicators are unavailable for this symbol.</p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ─── One month, sized to sit 4-across in a year grid (not full-width like
 // the phone version's single-column month) ─────────────────────────────────
@@ -81,9 +187,11 @@ function MiniMonthGrid({
 // the phone's single-column list you scroll through month by month.
 export function DesktopEarningsCalendar({
   earnings,
+  symbol,
   containerRef
 }: {
   earnings: EarningsEvent[];
+  symbol: string;
   /** Confines the overlay to this element's bounds (the watchlist split
    *  view's right-hand column) instead of the full viewport. Falls back to
    *  document.body on the standalone stock page. */
@@ -222,7 +330,7 @@ export function DesktopEarningsCalendar({
           style={{ background: "transparent", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
         >
-          <EarningsDetailCard event={selected} earnings={earnings} onBack={() => setSelected(null)} />
+          <DesktopEarningsDetail event={selected} earnings={earnings} symbol={symbol} onBack={() => setSelected(null)} />
         </div>,
         portalTarget
       )}
