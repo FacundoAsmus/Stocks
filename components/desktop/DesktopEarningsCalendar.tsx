@@ -83,7 +83,9 @@ function QuarterMetricChart({
                   <div
                     className={`absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm ${
                       isEstimate
-                        ? "border border-accent bg-accent/15"
+                        ? selected
+                          ? "border border-accent bg-accent/15"
+                          : "border border-accent/70 bg-accent/15 opacity-45"
                         : selected
                           ? "border-2 border-accent"
                           : ""

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
+  Bar,
   ComposedChart,
   CartesianGrid,
   Line,
@@ -452,6 +453,7 @@ export function PriceChart({
   }, [period, reloadNonce, symbol]);
 
   const hasData    = data.length > 1;
+  const hasVolume  = data.some((point) => typeof point.volume === "number" && point.volume > 0);
   const isLongTerm = LONG_TERM_SET.has(period);
 
   // Merge in MA fields for whichever windows are both available for this
@@ -852,6 +854,22 @@ export function PriceChart({
           {[...SHORT_PERIODS, ...LONG_PERIODS].map((o) => <PeriodButton key={o} option={o} />)}
         </div>
       </div>
+
+      {/* ── Compact volume chart — shares the selected price timeframe ── */}
+      {hasVolume && (
+        <section className="mt-3" aria-label="Trading volume">
+          <p className="mb-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">Volume</p>
+          <div className="h-20 sm:h-24">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={chartData} margin={{ left: 0, right: 0, top: 2, bottom: 0 }}>
+                <XAxis dataKey="date" hide />
+                <YAxis hide domain={[0, "dataMax"]} />
+                <Bar dataKey="volume" fill={lineColor} fillOpacity={0.45} radius={[2, 2, 0, 0]} isAnimationActive animationDuration={500} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
 
       {/* ── Moving average toggles — only shown when at least one MA makes
           sense for the currently selected period ── */}

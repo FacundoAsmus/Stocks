@@ -40,7 +40,7 @@ export function DesktopStockDetail({
   currentPrice,
   sentiment,
   metrics,
-  chartHeightClassName = "h-[384px]",
+  chartHeightClassName = "h-[461px]",
   earningsCalendarContainerRef,
   hideCursorDateTooltip = false
 }: DesktopStockDetailProps) {
