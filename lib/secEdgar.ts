@@ -78,7 +78,15 @@ export type FilingIndicator = {
   freeCashFlow: number | null;
 };
 
-const CAPEX_CONCEPT = "PaymentsToAcquirePropertyPlantAndEquipment";
+// CapEx is not tagged consistently across industries, so resolve the first
+// standard concept that has annual facts for this company rather than relying
+// on a single manufacturing-oriented tag.
+const CAPEX_CONCEPTS = [
+  "PaymentsToAcquirePropertyPlantAndEquipment",
+  "PaymentsForCapitalImprovements",
+  "PaymentsToExploreAndDevelopOilAndGasProperties",
+  "PaymentsToAcquireProductiveAssets"
+];
 const OPERATING_CASH_FLOW_CONCEPT = "NetCashProvidedByUsedInOperatingActivities";
 const R_AND_D_CONCEPTS = [
   "ResearchAndDevelopmentExpense",
@@ -126,11 +134,12 @@ export async function getFilingIndicators(symbol: string): Promise<FilingIndicat
     const cik = await getCik(symbol);
     if (!cik) return [];
 
-    const [capex, operatingCashFlow, ...researchAndDevelopmentCandidates] = await Promise.all([
-      getAnnualConceptValues(cik, CAPEX_CONCEPT),
+    const [capexCandidates, operatingCashFlow, ...researchAndDevelopmentCandidates] = await Promise.all([
+      Promise.all(CAPEX_CONCEPTS.map((concept) => getAnnualConceptValues(cik, concept))),
       getAnnualConceptValues(cik, OPERATING_CASH_FLOW_CONCEPT),
       ...R_AND_D_CONCEPTS.map((concept) => getAnnualConceptValues(cik, concept))
     ]);
+    const capex = capexCandidates.find((values) => values.size > 0) ?? new Map<number, number>();
     const researchAndDevelopment = researchAndDevelopmentCandidates.find((values) => values.size > 0) ?? new Map<number, number>();
     const years = [...new Set([
       ...capex.keys(),
