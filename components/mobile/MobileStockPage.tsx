@@ -162,6 +162,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
             currentChangePercent={stock.quote.dp ?? 0}
             previousClose={stock.quote.pc ?? undefined}
             heightClassName="h-[260px]"
+            hideCursorDateTooltip
           />
         </div>
 
