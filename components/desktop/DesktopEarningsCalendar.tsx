@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { RefObject } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
@@ -44,6 +44,12 @@ function QuarterMetricChart({
   events: EarningsEvent[];
   selectedDate: string;
 }) {
+  const [animated, setAnimated] = useState(false);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setAnimated(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
   const points = events.map((event) => {
     const actual = metric === "revenue" ? event.revenueActual : event.epsActual;
     const estimate = metric === "revenue" ? event.revenueEstimate : event.epsEstimate;
@@ -70,21 +76,26 @@ function QuarterMetricChart({
               <div key={event.date} className="group relative border-l border-border-subtle first:border-l-0">
                 {value !== null && (
                   <div className="pointer-events-none absolute left-1/2 top-2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-accent/70 bg-black px-2 py-1 text-xs font-semibold text-accent opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                    {formattedValue}
+                    {isEstimate ? `Expected ${formattedValue}` : formattedValue}
                   </div>
                 )}
                 {value !== null && (
                   <div
                     className={`absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm ${
-                      selected ? "bg-accent" : isEstimate ? "border border-accent/70 bg-accent/15 opacity-45" : ""
+                      isEstimate
+                        ? "border border-accent bg-accent/15"
+                        : selected
+                          ? "border-2 border-accent"
+                          : ""
                     }`}
                     style={{
                       ...(negative ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }),
-                      height: `${height}%`,
-                      ...(!selected && !isEstimate ? {
+                      height: animated ? `${height}%` : "0%",
+                      ...(!isEstimate ? {
                         backgroundColor: sentimentColorForHeight(percentage),
                         boxShadow: `0 0 10px ${sentimentColorForHeight(percentage).replace("rgb(", "rgba(").replace(")", ", 0.42)")}`
-                      } : {})
+                      } : {}),
+                      transition: "height 1.657s cubic-bezier(0.22, 1, 0.36, 1)"
                     }}
                     aria-label={`${event.year} Q${event.quarter}: ${formattedValue}${isEstimate ? " estimate" : " actual"}`}
                   />
