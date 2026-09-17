@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
-  Bar,
   ComposedChart,
   CartesianGrid,
   Line,
@@ -43,6 +42,76 @@ const MA_COLORS: Record<number, string> = {
   25: "#ec4899",  // pink
   99: "#8b5cf6",  // violet
 };
+
+const MAX_VOLUME_BARS = 240;
+
+type VolumeBucket = { volume: number };
+
+// Long ranges can contain thousands of candles. The volume panel is a visual
+// overview, so combine adjacent candles into a bounded number of buckets.
+// This keeps rendering work stable without hiding any period of history.
+function buildVolumeBuckets(points: CandlePoint[]): VolumeBucket[] {
+  const volumes = points
+    .map((point) => point.volume)
+    .filter((volume): volume is number => typeof volume === "number" && volume > 0);
+  if (volumes.length <= MAX_VOLUME_BARS) return volumes.map((volume) => ({ volume }));
+
+  const bucketSize = Math.ceil(volumes.length / MAX_VOLUME_BARS);
+  const buckets: VolumeBucket[] = [];
+  for (let start = 0; start < volumes.length; start += bucketSize) {
+    buckets.push({ volume: volumes.slice(start, start + bucketSize).reduce((sum, volume) => sum + volume, 0) });
+  }
+  return buckets;
+}
+
+function VolumeChartCanvas({ buckets }: { buckets: VolumeBucket[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    function draw(progress = 1) {
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      if (!width || !height) return;
+      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(width * pixelRatio);
+      canvas.height = Math.round(height * pixelRatio);
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      context.clearRect(0, 0, width, height);
+
+      const maxVolume = Math.max(...buckets.map((bucket) => bucket.volume), 1);
+      const step = width / buckets.length;
+      const barWidth = Math.max(1, step * 0.72);
+      context.fillStyle = "rgba(0, 200, 5, 0.15)";
+      buckets.forEach((bucket, index) => {
+        const barHeight = Math.max(1, (bucket.volume / maxVolume) * height * progress);
+        const x = index * step + (step - barWidth) / 2;
+        context.fillRect(x, height - barHeight, barWidth, barHeight);
+      });
+    }
+
+    const startedAt = performance.now();
+    let animationFrame = 0;
+    function animate(now: number) {
+      const progress = Math.min(1, (now - startedAt) / 500);
+      draw(progress);
+      if (progress < 1) animationFrame = requestAnimationFrame(animate);
+    }
+    const observer = new ResizeObserver(() => draw());
+    observer.observe(canvas);
+    animationFrame = requestAnimationFrame(animate);
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(animationFrame);
+    };
+  }, [buckets]);
+
+  return <canvas ref={canvasRef} className="block h-full w-full" aria-hidden />;
+}
 
 // `windowDays` is a number of *days*, not points — periods have wildly
 // different point granularity (a "5Y" chart's points might each span a
@@ -462,6 +531,7 @@ export function PriceChart({
 
   const hasData    = data.length > 1;
   const hasVolume  = data.some((point) => typeof point.volume === "number" && point.volume > 0);
+  const volumeBuckets = useMemo(() => buildVolumeBuckets(data), [data]);
   const isLongTerm = LONG_TERM_SET.has(period);
 
   // Merge in MA fields for whichever windows are both available for this
@@ -512,9 +582,20 @@ export function PriceChart({
   const [isTouching, setIsTouching] = useState(false);
   // touchOverlay: the computed X% and Y% for the custom dot/crosshair overlay (touch only)
   const [touchOverlay, setTouchOverlay] = useState<{ xPct: number; yPct: number } | null>(null);
-  // Unlike the price tooltip (which snaps to the nearest data point), the
-  // volume guide tracks the pointer's exact horizontal position.
-  const [volumeCrosshairPercent, setVolumeCrosshairPercent] = useState<number | null>(null);
+  const volumeCrosshairRef = useRef<HTMLDivElement>(null);
+
+  // This is deliberately a direct DOM update: pointer movement should never
+  // cause React to redraw a price chart or hundreds of volume bars.
+  const positionVolumeCrosshair = useCallback((percentage: number | null) => {
+    const line = volumeCrosshairRef.current;
+    if (!line) return;
+    if (percentage === null) {
+      line.style.display = "none";
+      return;
+    }
+    line.style.display = "block";
+    line.style.left = `${Math.max(0, Math.min(100, percentage))}%`;
+  }, []);
   // dotCY: active dot's Y pixel inside the SVG, used to draw the pro-mode horizontal crosshair
   const [dotCY, setDotCY] = useState<number | null>(null);
 
@@ -528,11 +609,11 @@ export function PriceChart({
     suppressRef.current = true;
     setIsTouching(false);
     setTouchOverlay(null);
-    setVolumeCrosshairPercent(null);
+    positionVolumeCrosshair(null);
     setHoverPrice(null);
     setHoverDate(null);
     requestAnimationFrame(() => requestAnimationFrame(() => { suppressRef.current = false; }));
-  }, []);
+  }, [positionVolumeCrosshair]);
 
   // dataRef always holds the latest data so touch handlers (attached once) can read it
   const dataRef = useRef<CandlePoint[]>([]);
@@ -565,7 +646,7 @@ export function PriceChart({
       setHoverPrice(pt.close);
       setHoverDate(pt.date);
       setTouchOverlay({ xPct, yPct });
-      setVolumeCrosshairPercent(xPct * 100);
+      positionVolumeCrosshair(xPct * 100);
       requestAnimationFrame(() => { suppressRef.current = false; });
     };
 
@@ -613,7 +694,7 @@ export function PriceChart({
         blockScrollRef.current = null;
       }
     };
-  }, [clearHover]);
+  }, [clearHover, positionVolumeCrosshair]);
 
   function PeriodButton({ option }: { option: ChartPeriod }) {
     const active = period === option;
@@ -650,7 +731,7 @@ export function PriceChart({
         className={cn(heightClassName, "relative")}
         onMouseMove={(event) => {
           const bounds = event.currentTarget.getBoundingClientRect();
-          setVolumeCrosshairPercent(((event.clientX - bounds.left) / bounds.width) * 100);
+          positionVolumeCrosshair(((event.clientX - bounds.left) / bounds.width) * 100);
         }}
         onMouseLeave={() => { setDotCY(null); clearHover(); }}
       >
@@ -859,20 +940,13 @@ export function PriceChart({
       {showVolumeChart && hasVolume && (
         <section className="mt-0" aria-label="Trading volume">
           <div className="relative h-20 sm:h-24">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
-                <XAxis dataKey="date" hide />
-                <YAxis hide domain={[0, "dataMax"]} />
-                <Bar dataKey="volume" fill="#00c805" fillOpacity={0.15} radius={[2, 2, 0, 0]} isAnimationActive animationDuration={500} />
-              </ComposedChart>
-            </ResponsiveContainer>
-            {volumeCrosshairPercent !== null && (
-              <div
-                className="pointer-events-none absolute inset-y-0 w-px"
-                aria-hidden
-                style={{ left: `${volumeCrosshairPercent}%`, background: "rgba(128,128,128,0.4)" }}
-              />
-            )}
+            <VolumeChartCanvas buckets={volumeBuckets} />
+            <div
+              ref={volumeCrosshairRef}
+              className="pointer-events-none absolute inset-y-0 hidden w-px"
+              aria-hidden
+              style={{ background: "rgba(128,128,128,0.4)" }}
+            />
           </div>
         </section>
       )}
