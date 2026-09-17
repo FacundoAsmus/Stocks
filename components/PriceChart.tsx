@@ -90,7 +90,7 @@ function VolumeChartCanvas({ buckets }: { buckets: VolumeBucket[] }) {
       const maxVolume = Math.max(...buckets.map((bucket) => bucket.volume), 1);
       const step = width / buckets.length;
       const barWidth = Math.max(1, step * 0.72);
-      context.fillStyle = "rgba(0, 200, 5, 0.15)";
+      context.fillStyle = "rgba(0, 200, 5, 0.24)";
       buckets.forEach((bucket, index) => {
         const barHeight = Math.max(1, (bucket.volume / maxVolume) * height * progress);
         const x = index * step + (step - barWidth) / 2;
@@ -734,6 +734,10 @@ export function PriceChart({
         ref={chartRef}
         className={cn(heightClassName, "relative")}
         onMouseMove={(event) => {
+          // Phones retain the direct pointer position used by their custom
+          // touch/hover treatment. Desktop is updated from Recharts below,
+          // so both guides use the exact same snapped chart coordinate.
+          if (window.matchMedia("(min-width: 1024px)").matches) return;
           const bounds = event.currentTarget.getBoundingClientRect();
           positionVolumeCrosshair(((event.clientX - bounds.left) / bounds.width) * 100);
         }}
@@ -792,6 +796,12 @@ export function PriceChart({
             <ComposedChart
               data={chartData}
               margin={{ left: 0, right: 0, top: 8, bottom: 0 }}
+              onMouseMove={(state) => {
+                if (!window.matchMedia("(min-width: 1024px)").matches) return;
+                const x = (state as { activeCoordinate?: { x?: number } }).activeCoordinate?.x;
+                const width = chartRef.current?.getBoundingClientRect().width;
+                if (x !== undefined && width) positionVolumeCrosshair((x / width) * 100);
+              }}
             >
               {/* No Y axis, no grid lines */}
               <CartesianGrid stroke="transparent" />
