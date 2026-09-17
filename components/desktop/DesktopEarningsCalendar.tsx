@@ -6,8 +6,133 @@ import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { todayStr } from "@/lib/earnings";
-import { EarningsDetailCard, WEEKDAYS } from "@/components/mobile/EarningsCalendarButton";
+import { formatCompact, formatCurrency } from "@/lib/format";
+import { WEEKDAYS } from "@/components/mobile/EarningsCalendarButton";
 import type { EarningsEvent } from "@/types/stock";
+
+type QuarterMetric = "revenue" | "eps";
+
+function sentimentColorForHeight(percentage: number) {
+  const stops: [number, [number, number, number]][] = [
+    [0, [220, 38, 38]], [25, [249, 115, 22]], [50, [250, 204, 21]],
+    [75, [163, 230, 53]], [100, [52, 211, 153]]
+  ];
+  let low = stops[0];
+  let high = stops[stops.length - 1];
+  for (let index = 0; index < stops.length - 1; index += 1) {
+    if (percentage >= stops[index][0] && percentage <= stops[index + 1][0]) {
+      low = stops[index];
+      high = stops[index + 1];
+      break;
+    }
+  }
+  const progress = (percentage - low[0]) / (high[0] - low[0] || 1);
+  const red = Math.round(low[1][0] + (high[1][0] - low[1][0]) * progress);
+  const green = Math.round(low[1][1] + (high[1][1] - low[1][1]) * progress);
+  const blue = Math.round(low[1][2] + (high[1][2] - low[1][2]) * progress);
+  return `rgb(${red}, ${green}, ${blue})`;
+}
+
+function QuarterMetricChart({
+  title,
+  metric,
+  events,
+  selectedDate
+}: {
+  title: string;
+  metric: QuarterMetric;
+  events: EarningsEvent[];
+  selectedDate: string;
+}) {
+  const points = events.map((event) => {
+    const actual = metric === "revenue" ? event.revenueActual : event.epsActual;
+    const estimate = metric === "revenue" ? event.revenueEstimate : event.epsEstimate;
+    return { event, actual, estimate, value: actual ?? estimate, isEstimate: event.date > todayStr() };
+  });
+  const values = points.map((point) => point.value).filter((value): value is number => value !== null);
+  const maximum = Math.max(...values.map((value) => Math.abs(value)), 1);
+  const hasNegative = values.some((value) => value < 0);
+  const baseline = hasNegative ? "45%" : "14%";
+
+  return (
+    <section>
+      <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
+      <div className="relative h-56 border-y border-border-subtle">
+        <div className="absolute inset-x-0 border-t border-border-subtle" style={{ top: baseline }} aria-hidden />
+        <div className="grid h-full grid-flow-col auto-cols-fr">
+          {points.map(({ event, value, isEstimate }) => {
+            const percentage = value === null ? 0 : (Math.abs(value) / maximum) * 100;
+            const height = value === null ? 0 : Math.max(percentage * (hasNegative ? 0.4 : 0.78), 3);
+            const negative = (value ?? 0) < 0;
+            const selected = event.date === selectedDate;
+            const formattedValue = metric === "revenue" ? `$${formatCompact(value)}` : formatCurrency(value);
+            return (
+              <div key={event.date} className="group relative border-l border-border-subtle first:border-l-0">
+                {value !== null && (
+                  <div className="pointer-events-none absolute left-1/2 top-2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-accent/70 bg-black px-2 py-1 text-xs font-semibold text-accent opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                    {formattedValue}
+                  </div>
+                )}
+                {value !== null && (
+                  <div
+                    className={`absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm ${
+                      selected ? "bg-accent" : isEstimate ? "border border-accent/70 bg-accent/15 opacity-45" : ""
+                    }`}
+                    style={{
+                      ...(negative ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }),
+                      height: `${height}%`,
+                      ...(!selected && !isEstimate ? {
+                        backgroundColor: sentimentColorForHeight(percentage),
+                        boxShadow: `0 0 10px ${sentimentColorForHeight(percentage).replace("rgb(", "rgba(").replace(")", ", 0.42)")}`
+                      } : {})
+                    }}
+                    aria-label={`${event.year} Q${event.quarter}: ${formattedValue}${isEstimate ? " estimate" : " actual"}`}
+                  />
+                )}
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold text-accent">Q{event.quarter}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function DesktopQuarterDetail({
+  event,
+  earnings,
+  onBack
+}: {
+  event: EarningsEvent;
+  earnings: EarningsEvent[];
+  onBack: () => void;
+}) {
+  const dateLabel = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" })
+    .format(new Date(`${event.date}T00:00:00`));
+  const sorted = [...earnings].sort((a, b) => a.date.localeCompare(b.date));
+  const selectedIndex = Math.max(0, sorted.findIndex((item) => item.date === event.date));
+  const chartEvents = sorted.slice(Math.max(0, selectedIndex - 4), selectedIndex + 5);
+
+  return (
+    <div className="earnings-detail-glass w-full overflow-y-auto rounded-2xl p-5 shadow-2xl" style={{ maxWidth: "min(680px, calc(100vw - 2rem))", maxHeight: "calc(100vh - 2rem)" }} onClick={(click) => click.stopPropagation()}>
+      <div className="mb-5 flex items-center gap-3">
+        <button onClick={onBack} className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-black">
+          <ChevronLeft className="h-4 w-4" />
+          Back
+        </button>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent">Q{event.quarter} {event.year}</p>
+          <p className="text-sm text-text-muted">{dateLabel}</p>
+        </div>
+      </div>
+      <div className="space-y-8 border-t border-white/10 pt-5">
+        <QuarterMetricChart title="Earnings (Revenue)" metric="revenue" events={chartEvents} selectedDate={event.date} />
+        <QuarterMetricChart title="EPS" metric="eps" events={chartEvents} selectedDate={event.date} />
+      </div>
+    </div>
+  );
+}
 
 // ─── One month, sized to sit 4-across in a year grid (not full-width like
 // the phone version's single-column month) ─────────────────────────────────
@@ -225,7 +350,7 @@ export function DesktopEarningsCalendar({
           style={{ background: "transparent", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
         >
-          <EarningsDetailCard event={selected} earnings={earnings} onBack={() => setSelected(null)} />
+          <DesktopQuarterDetail event={selected} earnings={earnings} onBack={() => setSelected(null)} />
         </div>,
         portalTarget
       )}
