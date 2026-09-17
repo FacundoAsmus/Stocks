@@ -101,7 +101,7 @@ export function DesktopStockDetail({
           isEtf={isEtf}
         />
 
-        {!isEtf && !earningsCalendarContainerRef && <FilingIndicators symbol={stock.symbol} />}
+        {!isEtf && <FilingIndicators symbol={stock.symbol} />}
 
         {!isEtf && (
           <div className="flex justify-end -mt-2">

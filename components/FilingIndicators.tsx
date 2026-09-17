@@ -63,8 +63,8 @@ function AnnualIndicatorChart({
   return (
     <section>
       <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
-      <div className="relative h-44 border-y border-accent/40">
-        <div className="absolute inset-x-0 top-[45%] border-t border-accent/60" aria-hidden />
+      <div className="relative h-56 border-y border-border-subtle">
+        <div className="absolute inset-x-0 top-[45%] border-t border-border-subtle" aria-hidden />
         <div className="grid h-full grid-flow-col auto-cols-fr">
           {indicators.map((indicator) => {
             const value = indicator[field];
@@ -75,7 +75,7 @@ function AnnualIndicatorChart({
             const negative = (value ?? 0) < 0;
             const color = sentimentColorForHeight(percentage);
             return (
-              <div key={indicator.year} className="group relative border-l border-accent/25 first:border-l-0">
+              <div key={indicator.year} className="group relative border-l border-border-subtle first:border-l-0">
                 {value !== null && (
                   <div className="pointer-events-none absolute left-1/2 top-2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-accent/70 bg-black px-2 py-1 text-xs font-semibold text-accent opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
                     ${formatCompact(value)}
