@@ -111,6 +111,7 @@ export function FundamentalsGrid({
       tone: "neutral",
       note: "Company Size"
     },
+    { label: "Beta", value: formatNumber(beta), ...ratioTone(beta, 0.8, 1.4) },
     {
       label: "P/E Ratio",
       value: pe !== null ? formatNumber(pe) : eps !== null && eps < 0 ? "Loss-making" : "N/A",
@@ -136,11 +137,10 @@ export function FundamentalsGrid({
       tone: eps && eps > 0 ? "positive" : "negative",
       note: eps && eps > 0 ? "Profitable" : "Watch Earnings"
     },
-    { label: "Dividend Yield", value: formatPercent(dividendYield), ...dividendTone(dividendYield) },
-    { label: "Beta", value: formatNumber(beta), ...ratioTone(beta, 0.8, 1.4) },
-    { label: "52W High", value: formatCurrency(high52), ...highLowTone(currentPrice, high52, "high") },
     { label: "52W Low", value: formatCurrency(low52), ...highLowTone(currentPrice, low52, "low") },
+    { label: "52W High", value: formatCurrency(high52), ...highLowTone(currentPrice, high52, "high") },
     { label: "Avg. Volume", value: formatCompact(volume ? volume * 1_000_000 : null), tone: "neutral", note: "10 Day Avg." },
+    { label: "Dividend Yield", value: formatPercent(dividendYield), ...dividendTone(dividendYield) },
     {
       label: "Next Report",
       value: nextReport ? formatReportDate(nextReport.date) : "N/A",

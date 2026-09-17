@@ -140,7 +140,10 @@ export function FilingIndicators({ symbol }: { symbol: string }) {
     return () => observer.disconnect();
   }, []);
 
-  if (indicators !== null && indicators.length === 0) return null;
+  const hasAnyChart = indicators?.some((indicator) =>
+    indicator.capex !== null || indicator.researchAndDevelopment !== null || indicator.freeCashFlow !== null
+  );
+  if (indicators !== null && !hasAnyChart) return null;
 
   return (
     <section ref={sectionRef} className="mt-6 rounded-xl bg-black p-5">
@@ -148,9 +151,15 @@ export function FilingIndicators({ symbol }: { symbol: string }) {
         <p className="py-10 text-center text-sm text-text-muted">Loading SEC filing data…</p>
       ) : (
         <div className="space-y-8">
-          <AnnualIndicatorChart title="CapEx" field="capex" indicators={indicators} started={started} />
-          <AnnualIndicatorChart title="R&D" field="researchAndDevelopment" indicators={indicators} started={started} />
-          <AnnualIndicatorChart title="Free cash flow" field="freeCashFlow" indicators={indicators} started={started} />
+          {indicators.some((indicator) => indicator.capex !== null) && (
+            <AnnualIndicatorChart title="CapEx" field="capex" indicators={indicators} started={started} />
+          )}
+          {indicators.some((indicator) => indicator.researchAndDevelopment !== null) && (
+            <AnnualIndicatorChart title="R&D" field="researchAndDevelopment" indicators={indicators} started={started} />
+          )}
+          {indicators.some((indicator) => indicator.freeCashFlow !== null) && (
+            <AnnualIndicatorChart title="Free cash flow" field="freeCashFlow" indicators={indicators} started={started} />
+          )}
         </div>
       )}
     </section>
