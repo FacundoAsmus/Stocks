@@ -4,6 +4,7 @@ import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
 import { CompanyDescription } from "@/components/CompanyDescription";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
+import { FilingIndicators } from "@/components/FilingIndicators";
 import { DesktopEarningsCalendar } from "@/components/desktop/DesktopEarningsCalendar";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { NewsCard } from "@/components/NewsCard";
@@ -100,9 +101,11 @@ export function DesktopStockDetail({
           isEtf={isEtf}
         />
 
+        {!isEtf && !earningsCalendarContainerRef && <FilingIndicators symbol={stock.symbol} />}
+
         {!isEtf && (
           <div className="flex justify-end -mt-2">
-            <DesktopEarningsCalendar symbol={stock.symbol} earnings={stock.earnings} containerRef={earningsCalendarContainerRef} />
+            <DesktopEarningsCalendar earnings={stock.earnings} containerRef={earningsCalendarContainerRef} />
           </div>
         )}
 
