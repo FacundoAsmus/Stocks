@@ -105,7 +105,7 @@ export function DesktopStockDetail({
 
         {!isEtf && (
           <div className="flex justify-end -mt-2">
-            <DesktopEarningsCalendar earnings={stock.earnings} containerRef={earningsCalendarContainerRef} />
+            <DesktopEarningsCalendar symbol={stock.symbol} earnings={stock.earnings} containerRef={earningsCalendarContainerRef} />
           </div>
         )}
 
