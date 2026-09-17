@@ -4,7 +4,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import {
   Area,
   Bar,
-  Cell,
   ComposedChart,
   CartesianGrid,
   Line,
@@ -484,21 +483,6 @@ export function PriceChart({
     }));
   }, [data, period]);
 
-  // Volume bars inherit the direction of their matching price candle: green
-  // for an up period (buying pressure), red for a down period (selling
-  // pressure). The first point has no prior close to compare against.
-  const volumeChartData = useMemo(() => chartData.map((point, index) => ({
-    ...point,
-    volumeTone: index === 0 || point.close >= chartData[index - 1].close
-      ? "#00c805"
-      : "#ff3003"
-  })), [chartData]);
-  const volumeCrosshairLeft = useMemo(() => {
-    if (!hoverDate || chartData.length < 2) return null;
-    const index = chartData.findIndex((point) => point.date === hoverDate);
-    return index < 0 ? null : `${(index / (chartData.length - 1)) * 100}%`;
-  }, [chartData, hoverDate]);
-
   /* Displayed price and % change — hover overrides live values */
   const displayPrice = hoverPrice ?? currentPrice;
   const startPrice   = hasData ? data[0].close : currentPrice;
@@ -528,6 +512,9 @@ export function PriceChart({
   const [isTouching, setIsTouching] = useState(false);
   // touchOverlay: the computed X% and Y% for the custom dot/crosshair overlay (touch only)
   const [touchOverlay, setTouchOverlay] = useState<{ xPct: number; yPct: number } | null>(null);
+  // Unlike the price tooltip (which snaps to the nearest data point), the
+  // volume guide tracks the pointer's exact horizontal position.
+  const [volumeCrosshairPercent, setVolumeCrosshairPercent] = useState<number | null>(null);
   // dotCY: active dot's Y pixel inside the SVG, used to draw the pro-mode horizontal crosshair
   const [dotCY, setDotCY] = useState<number | null>(null);
 
@@ -541,6 +528,7 @@ export function PriceChart({
     suppressRef.current = true;
     setIsTouching(false);
     setTouchOverlay(null);
+    setVolumeCrosshairPercent(null);
     setHoverPrice(null);
     setHoverDate(null);
     requestAnimationFrame(() => requestAnimationFrame(() => { suppressRef.current = false; }));
@@ -577,6 +565,7 @@ export function PriceChart({
       setHoverPrice(pt.close);
       setHoverDate(pt.date);
       setTouchOverlay({ xPct, yPct });
+      setVolumeCrosshairPercent(xPct * 100);
       requestAnimationFrame(() => { suppressRef.current = false; });
     };
 
@@ -659,6 +648,10 @@ export function PriceChart({
       <div
         ref={chartRef}
         className={cn(heightClassName, "relative")}
+        onMouseMove={(event) => {
+          const bounds = event.currentTarget.getBoundingClientRect();
+          setVolumeCrosshairPercent(((event.clientX - bounds.left) / bounds.width) * 100);
+        }}
         onMouseLeave={() => { setDotCY(null); clearHover(); }}
       >
         {isLoading ? (
@@ -864,28 +857,20 @@ export function PriceChart({
 
       {/* ── Compact volume chart — shares the selected price timeframe ── */}
       {showVolumeChart && hasVolume && (
-        <section className="mt-3" aria-label="Trading volume">
+        <section className="mt-0" aria-label="Trading volume">
           <div className="relative h-20 sm:h-24">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={volumeChartData} margin={{ left: 0, right: 0, top: 2, bottom: 0 }}>
+              <ComposedChart data={chartData} margin={{ left: 0, right: 0, top: 0, bottom: 0 }}>
                 <XAxis dataKey="date" hide />
                 <YAxis hide domain={[0, "dataMax"]} />
-                <Bar dataKey="volume" radius={[2, 2, 0, 0]} isAnimationActive animationDuration={500}>
-                  {volumeChartData.map((point) => (
-                    <Cell
-                      key={point.date}
-                      fill={point.volumeTone}
-                      fillOpacity={0.45}
-                    />
-                  ))}
-                </Bar>
+                <Bar dataKey="volume" fill="#00c805" fillOpacity={0.15} radius={[2, 2, 0, 0]} isAnimationActive animationDuration={500} />
               </ComposedChart>
             </ResponsiveContainer>
-            {volumeCrosshairLeft && (
+            {volumeCrosshairPercent !== null && (
               <div
                 className="pointer-events-none absolute inset-y-0 w-px"
                 aria-hidden
-                style={{ left: volumeCrosshairLeft, background: "rgba(128,128,128,0.4)" }}
+                style={{ left: `${volumeCrosshairPercent}%`, background: "rgba(128,128,128,0.4)" }}
               />
             )}
           </div>
