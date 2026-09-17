@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { formatCompact } from "@/lib/format";
+import { WheelPrice } from "@/components/PriceChart";
 
 type FilingIndicator = {
   year: number;
@@ -48,7 +49,10 @@ function AnnualIndicatorChart({
   started: boolean;
 }) {
   const [animated, setAnimated] = useState(false);
+  const [hoveredValue, setHoveredValue] = useState<number | null>(null);
   const values = indicators.map((indicator) => indicator[field]);
+  const latestValue = [...values].reverse().find((value): value is number => value !== null) ?? null;
+  const displayedValue = hoveredValue ?? latestValue;
   const maxMagnitude = Math.max(...values.filter((value): value is number => value !== null).map((value) => Math.abs(value)), 1);
   const maxPositive = Math.max(...values.filter((value): value is number => value !== null && value >= 0), 1);
   const maxNegative = Math.max(...values.filter((value): value is number => value !== null && value < 0).map((value) => Math.abs(value)), 1);
@@ -67,6 +71,9 @@ function AnnualIndicatorChart({
   return (
     <section>
       <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
+      <div className="mb-5 text-text-primary">
+        <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" />
+      </div>
       <div className="relative h-64 border-y border-border-subtle">
         <div className="absolute inset-x-0 border-t border-border-subtle" style={{ top: baseline }} aria-hidden />
         <div className="grid h-full grid-flow-col auto-cols-fr">
@@ -86,12 +93,12 @@ function AnnualIndicatorChart({
                 : 50 + (value / maxPositive) * 50;
             const color = sentimentColorForHeight(sentimentPosition);
             return (
-              <div key={indicator.year} className="group relative border-l border-border-subtle first:border-l-0">
-                {value !== null && (
-                  <div className="pointer-events-none absolute left-1/2 top-2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-accent/70 bg-black px-2 py-1 text-xs font-semibold text-accent opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                    ${formatCompact(value)}
-                  </div>
-                )}
+              <div
+                key={indicator.year}
+                className="relative border-l border-border-subtle first:border-l-0"
+                onMouseEnter={() => { if (value !== null) setHoveredValue(value); }}
+                onMouseLeave={() => setHoveredValue(null)}
+              >
                 <div
                   className="absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm"
                   style={{

@@ -8,6 +8,7 @@ import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { todayStr } from "@/lib/earnings";
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { WEEKDAYS } from "@/components/mobile/EarningsCalendarButton";
+import { WheelPrice } from "@/components/PriceChart";
 import type { EarningsEvent } from "@/types/stock";
 
 type QuarterMetric = "revenue" | "eps";
@@ -45,6 +46,7 @@ function QuarterMetricChart({
   selectedDate: string;
 }) {
   const [animated, setAnimated] = useState(false);
+  const [hoveredValue, setHoveredValue] = useState<number | null>(null);
   useEffect(() => {
     const frame = requestAnimationFrame(() => setAnimated(true));
     return () => cancelAnimationFrame(frame);
@@ -56,6 +58,8 @@ function QuarterMetricChart({
     return { event, actual, estimate, value: actual ?? estimate, isEstimate: event.date > todayStr() };
   });
   const values = points.map((point) => point.value).filter((value): value is number => value !== null);
+  const latestValue = [...points].reverse().find((point) => point.value !== null)?.value ?? null;
+  const displayedValue = hoveredValue ?? latestValue;
   const maximum = Math.max(...values.map((value) => Math.abs(value)), 1);
   const hasNegative = values.some((value) => value < 0);
   const baseline = hasNegative ? "45%" : "14%";
@@ -63,6 +67,9 @@ function QuarterMetricChart({
   return (
     <section>
       <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
+      <div className="mb-5 text-text-primary">
+        <WheelPrice value={displayedValue === null ? "N/A" : metric === "revenue" ? `$${formatCompact(displayedValue)}` : formatCurrency(displayedValue)} size="xs" />
+      </div>
       <div className="relative h-56 border-y border-border-subtle">
         <div className="absolute inset-x-0 border-t border-border-subtle" style={{ top: baseline }} aria-hidden />
         <div className="grid h-full grid-flow-col auto-cols-fr">
@@ -73,12 +80,12 @@ function QuarterMetricChart({
             const selected = event.date === selectedDate;
             const formattedValue = metric === "revenue" ? `$${formatCompact(value)}` : formatCurrency(value);
             return (
-              <div key={event.date} className="group relative border-l border-border-subtle first:border-l-0">
-                {value !== null && (
-                  <div className="pointer-events-none absolute left-1/2 top-2 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-accent/70 bg-black px-2 py-1 text-xs font-semibold text-accent opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                    {isEstimate ? `Expected ${formattedValue}` : formattedValue}
-                  </div>
-                )}
+              <div
+                key={event.date}
+                className="relative border-l border-border-subtle first:border-l-0"
+                onMouseEnter={() => { if (value !== null) setHoveredValue(value); }}
+                onMouseLeave={() => setHoveredValue(null)}
+              >
                 {value !== null && (
                   <div
                     className={`absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm ${

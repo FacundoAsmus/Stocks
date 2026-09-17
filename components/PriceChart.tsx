@@ -187,7 +187,7 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
 const WHEEL_SLOT_RATIO = 0.62;
 
-function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
+function Digit({ ch, size = "lg" }: { ch: string; size?: "xs" | "sm" | "lg" }) {
   const isDigit = DIGIT_CHARS.includes(ch);
   const idx     = isDigit ? parseInt(ch) : 0;
   const previousDigitRef = useRef(idx);
@@ -217,10 +217,12 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
     });
   }, [idx, isDigit]);
 
-  const rowPx     = size === "lg" ? 54 : 32;
+  const rowPx     = size === "lg" ? 54 : size === "sm" ? 32 : 22;
   const fontClass = size === "lg"
     ? "text-5xl font-semibold text-text-primary"
-    : "text-2xl font-medium";
+    : size === "sm"
+      ? "text-2xl font-medium"
+      : "text-xs font-medium";
 
   if (!isDigit) {
     return (
@@ -276,13 +278,13 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "sm" | "lg" }) {
 }
 
 /* ─── Animated price display (wheels for digits, static for $ . , + - %) ── */
-function WheelPrice({
+export function WheelPrice({
   value,
   size = "lg",
   colorClass,
 }: {
   value: string;
-  size?: "sm" | "lg";
+  size?: "xs" | "sm" | "lg";
   colorClass?: string;
 }) {
   const chars = value.split("");
