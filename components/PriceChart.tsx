@@ -493,6 +493,11 @@ export function PriceChart({
       ? "#00c805"
       : "#ff3003"
   })), [chartData]);
+  const volumeCrosshairLeft = useMemo(() => {
+    if (!hoverDate || chartData.length < 2) return null;
+    const index = chartData.findIndex((point) => point.date === hoverDate);
+    return index < 0 ? null : `${(index / (chartData.length - 1)) * 100}%`;
+  }, [chartData, hoverDate]);
 
   /* Displayed price and % change — hover overrides live values */
   const displayPrice = hoverPrice ?? currentPrice;
@@ -857,7 +862,37 @@ export function PriceChart({
         )}
       </div>
 
-      {/* ── Period selector — centred below chart ────────────────────── */}
+      {/* ── Compact volume chart — shares the selected price timeframe ── */}
+      {showVolumeChart && hasVolume && (
+        <section className="mt-3" aria-label="Trading volume">
+          <div className="relative h-20 sm:h-24">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={volumeChartData} margin={{ left: 0, right: 0, top: 2, bottom: 0 }}>
+                <XAxis dataKey="date" hide />
+                <YAxis hide domain={[0, "dataMax"]} />
+                <Bar dataKey="volume" radius={[2, 2, 0, 0]} isAnimationActive animationDuration={500}>
+                  {volumeChartData.map((point) => (
+                    <Cell
+                      key={point.date}
+                      fill={point.volumeTone}
+                      fillOpacity={0.45}
+                    />
+                  ))}
+                </Bar>
+              </ComposedChart>
+            </ResponsiveContainer>
+            {volumeCrosshairLeft && (
+              <div
+                className="pointer-events-none absolute inset-y-0 w-px"
+                aria-hidden
+                style={{ left: volumeCrosshairLeft, background: "rgba(128,128,128,0.4)" }}
+              />
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── Period selector — centred below charts ───────────────────── */}
       <div className="mt-4 flex justify-center">
         {/* Phone only: years (1Y/2Y/5Y/ALL) on their own row below the rest */}
         <div className="flex flex-col items-center gap-1.5 lg:hidden">
@@ -873,30 +908,6 @@ export function PriceChart({
           {[...SHORT_PERIODS, ...LONG_PERIODS].map((o) => <PeriodButton key={o} option={o} />)}
         </div>
       </div>
-
-      {/* ── Compact volume chart — shares the selected price timeframe ── */}
-      {showVolumeChart && hasVolume && (
-        <section className="mt-3" aria-label="Trading volume">
-          <p className="mb-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">Volume</p>
-          <div className="h-20 sm:h-24">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={volumeChartData} margin={{ left: 0, right: 0, top: 2, bottom: 0 }}>
-                <XAxis dataKey="date" hide />
-                <YAxis hide domain={[0, "dataMax"]} />
-                <Bar dataKey="volume" radius={[2, 2, 0, 0]} isAnimationActive animationDuration={500}>
-                  {volumeChartData.map((point) => (
-                    <Cell
-                      key={point.date}
-                      fill={point.volumeTone}
-                      fillOpacity={hoverDate === point.date ? 1 : 0.45}
-                    />
-                  ))}
-                </Bar>
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-      )}
 
       {/* ── Moving average toggles — only shown when at least one MA makes
           sense for the currently selected period ── */}
