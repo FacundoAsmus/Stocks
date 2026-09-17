@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import {
   Area,
   Bar,
+  Cell,
   ComposedChart,
   CartesianGrid,
   Line,
@@ -475,6 +476,16 @@ export function PriceChart({
     }));
   }, [data, period]);
 
+  // Volume bars inherit the direction of their matching price candle: green
+  // for an up period (buying pressure), red for a down period (selling
+  // pressure). The first point has no prior close to compare against.
+  const volumeChartData = useMemo(() => chartData.map((point, index) => ({
+    ...point,
+    volumeTone: index === 0 || point.close >= chartData[index - 1].close
+      ? "#00c805"
+      : "#ff3003"
+  })), [chartData]);
+
   /* Displayed price and % change — hover overrides live values */
   const displayPrice = hoverPrice ?? currentPrice;
   const startPrice   = hasData ? data[0].close : currentPrice;
@@ -861,10 +872,18 @@ export function PriceChart({
           <p className="mb-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">Volume</p>
           <div className="h-20 sm:h-24">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ left: 0, right: 0, top: 2, bottom: 0 }}>
+              <ComposedChart data={volumeChartData} margin={{ left: 0, right: 0, top: 2, bottom: 0 }}>
                 <XAxis dataKey="date" hide />
                 <YAxis hide domain={[0, "dataMax"]} />
-                <Bar dataKey="volume" fill={lineColor} fillOpacity={0.45} radius={[2, 2, 0, 0]} isAnimationActive animationDuration={500} />
+                <Bar dataKey="volume" radius={[2, 2, 0, 0]} isAnimationActive animationDuration={500}>
+                  {volumeChartData.map((point) => (
+                    <Cell
+                      key={point.date}
+                      fill={point.volumeTone}
+                      fillOpacity={hoverDate === point.date ? 1 : 0.45}
+                    />
+                  ))}
+                </Bar>
               </ComposedChart>
             </ResponsiveContainer>
           </div>
