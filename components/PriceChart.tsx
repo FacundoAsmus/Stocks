@@ -68,17 +68,17 @@ function VolumeChartCanvas({ buckets }: { buckets: VolumeBucket[] }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const canvasElement = canvasRef.current;
+    if (!canvasElement) return;
 
     function draw(progress = 1) {
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
+      const width = canvasElement.clientWidth;
+      const height = canvasElement.clientHeight;
       if (!width || !height) return;
       const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.round(width * pixelRatio);
-      canvas.height = Math.round(height * pixelRatio);
-      const context = canvas.getContext("2d");
+      canvasElement.width = Math.round(width * pixelRatio);
+      canvasElement.height = Math.round(height * pixelRatio);
+      const context = canvasElement.getContext("2d");
       if (!context) return;
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       context.clearRect(0, 0, width, height);
@@ -102,7 +102,7 @@ function VolumeChartCanvas({ buckets }: { buckets: VolumeBucket[] }) {
       if (progress < 1) animationFrame = requestAnimationFrame(animate);
     }
     const observer = new ResizeObserver(() => draw());
-    observer.observe(canvas);
+    observer.observe(canvasElement);
     animationFrame = requestAnimationFrame(animate);
     return () => {
       observer.disconnect();
