@@ -383,16 +383,24 @@ export function PriceChart({
   const [proMode, setProMode]         = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
   );
+  const [showVolumeChart, setShowVolumeChart] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("pro-volume-chart") !== "0" : true
+  );
 
   // Keep proMode in sync across tabs and after settings toggle
   useEffect(() => {
     function sync() {
       setProMode(localStorage.getItem("pro-mode") === "1");
     }
+    function syncVolumeChart() {
+      setShowVolumeChart(localStorage.getItem("pro-volume-chart") !== "0");
+    }
     window.addEventListener("pro-mode-changed", sync);
+    window.addEventListener("pro-volume-chart-changed", syncVolumeChart);
     window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener("pro-mode-changed", sync);
+      window.removeEventListener("pro-volume-chart-changed", syncVolumeChart);
       window.removeEventListener("storage", sync);
     };
   }, []);
@@ -867,7 +875,7 @@ export function PriceChart({
       </div>
 
       {/* ── Compact volume chart — shares the selected price timeframe ── */}
-      {hasVolume && (
+      {showVolumeChart && hasVolume && (
         <section className="mt-3" aria-label="Trading volume">
           <p className="mb-1 text-center text-[10px] font-semibold uppercase tracking-[0.18em] text-text-muted">Volume</p>
           <div className="h-20 sm:h-24">

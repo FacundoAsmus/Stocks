@@ -45,6 +45,9 @@ function SettingsPanel({ closing }: { closing: boolean }) {
   const [proMode, setProMode] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
   );
+  const [showVolumeChart, setShowVolumeChart] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("pro-volume-chart") !== "0" : true
+  );
 
   function changeTheme(t: Theme) {
     setTheme(t);
@@ -57,6 +60,13 @@ function SettingsPanel({ closing }: { closing: boolean }) {
     setProMode(next);
     localStorage.setItem("pro-mode", next ? "1" : "0");
     window.dispatchEvent(new Event("pro-mode-changed"));
+  }
+
+  function toggleVolumeChart() {
+    const next = !showVolumeChart;
+    setShowVolumeChart(next);
+    localStorage.setItem("pro-volume-chart", next ? "1" : "0");
+    window.dispatchEvent(new Event("pro-volume-chart-changed"));
   }
 
   const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
@@ -121,6 +131,21 @@ function SettingsPanel({ closing }: { closing: boolean }) {
                          backgroundColor: proMode ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
                 <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
                   style={{ left: proMode ? "calc(100% - 1.125rem)" : "0.125rem" }} />
+              </span>
+            </button>
+            <button
+              onClick={toggleVolumeChart}
+              className="w-full flex items-center justify-between px-4 py-3.5 text-left border-t border-border-subtle"
+            >
+              <span className="flex flex-col gap-0.5">
+                <span className="text-sm text-text-primary font-medium">Volume chart</span>
+                <span className="text-xs text-text-muted">Shows trading volume below the timeframes</span>
+              </span>
+              <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative"
+                style={{ borderColor: showVolumeChart ? "var(--color-accent)" : "var(--color-border-subtle)",
+                         backgroundColor: showVolumeChart ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
+                <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
+                  style={{ left: showVolumeChart ? "calc(100% - 1.125rem)" : "0.125rem" }} />
               </span>
             </button>
           </div>
