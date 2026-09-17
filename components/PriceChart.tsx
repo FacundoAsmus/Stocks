@@ -222,7 +222,7 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "xs" | "sm" | "lg" }) {
     ? "text-5xl font-semibold text-text-primary"
     : size === "sm"
       ? "text-2xl font-medium"
-      : "text-xs font-medium";
+      : "text-xs font-semibold text-text-primary";
 
   if (!isDigit) {
     return (

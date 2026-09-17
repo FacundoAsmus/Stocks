@@ -59,7 +59,11 @@ function QuarterMetricChart({
   });
   const values = points.map((point) => point.value).filter((value): value is number => value !== null);
   const latestValue = [...points].reverse().find((point) => point.value !== null)?.value ?? null;
-  const displayedValue = hoveredValue ?? latestValue;
+  // The report card opens for one specific quarter. Keep that quarter's
+  // number in view by default, even when the chart also includes newer
+  // scheduled quarters; hovering a bar temporarily overrides it.
+  const selectedQuarterValue = points.find((point) => point.event.date === selectedDate)?.value ?? latestValue;
+  const displayedValue = hoveredValue ?? selectedQuarterValue;
   const maximum = Math.max(...values.map((value) => Math.abs(value)), 1);
   const hasNegative = values.some((value) => value < 0);
   const baseline = hasNegative ? "45%" : "14%";
