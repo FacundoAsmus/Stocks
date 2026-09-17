@@ -50,6 +50,10 @@ function AnnualIndicatorChart({
   const [animated, setAnimated] = useState(false);
   const values = indicators.map((indicator) => indicator[field]);
   const maxMagnitude = Math.max(...values.filter((value): value is number => value !== null).map((value) => Math.abs(value)), 1);
+  const maxPositive = Math.max(...values.filter((value): value is number => value !== null && value >= 0), 1);
+  const maxNegative = Math.max(...values.filter((value): value is number => value !== null && value < 0).map((value) => Math.abs(value)), 1);
+  const hasNegativeValues = values.some((value) => (value ?? 0) < 0);
+  const baseline = hasNegativeValues ? "45%" : "14%";
 
   useEffect(() => {
     if (!started) {
@@ -63,17 +67,24 @@ function AnnualIndicatorChart({
   return (
     <section>
       <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
-      <div className="relative h-56 border-y border-border-subtle">
-        <div className="absolute inset-x-0 top-[45%] border-t border-border-subtle" aria-hidden />
+      <div className="relative h-64 border-y border-border-subtle">
+        <div className="absolute inset-x-0 border-t border-border-subtle" style={{ top: baseline }} aria-hidden />
         <div className="grid h-full grid-flow-col auto-cols-fr">
           {indicators.map((indicator) => {
             const value = indicator[field];
             const percentage = value === null ? 0 : (Math.abs(value) / maxMagnitude) * 100;
-            // Reserve the lower 15% for year labels. Negative values grow
-            // below the baseline rather than being drawn as positive bars.
-            const height = value === null ? 0 : Math.max(percentage * 0.4, 3);
+            // Only charts containing a negative value reserve a lower half.
+            // Positive-only metrics can therefore use almost the full height.
+            const height = value === null ? 0 : Math.max(percentage * (hasNegativeValues ? 0.4 : 0.78), 3);
             const negative = (value ?? 0) < 0;
-            const color = sentimentColorForHeight(percentage);
+            // Shift the sentiment scale around zero: negative values run
+            // red→orange, zero is yellow, and positive values run lime→green.
+            const sentimentPosition = value === null
+              ? 50
+              : value < 0
+                ? 50 - (Math.abs(value) / maxNegative) * 50
+                : 50 + (value / maxPositive) * 50;
+            const color = sentimentColorForHeight(sentimentPosition);
             return (
               <div key={indicator.year} className="group relative border-l border-border-subtle first:border-l-0">
                 {value !== null && (
@@ -82,9 +93,9 @@ function AnnualIndicatorChart({
                   </div>
                 )}
                 <div
-                  className="absolute left-1/2 w-3/5 max-w-10 -translate-x-1/2 rounded-sm"
+                  className="absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm"
                   style={{
-                    ...(negative ? { top: "45%" } : { bottom: "55%" }),
+                    ...(negative ? { top: baseline } : { bottom: hasNegativeValues ? "55%" : baseline }),
                     height: animated ? `${height}%` : "0%",
                     backgroundColor: color,
                     boxShadow: `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}`,
@@ -133,7 +144,6 @@ export function FilingIndicators({ symbol }: { symbol: string }) {
 
   return (
     <section ref={sectionRef} className="mt-6 rounded-xl bg-black p-5">
-      <p className="mb-5 text-sm font-medium uppercase tracking-[0.18em] text-accent">Annual Indicators</p>
       {indicators === null ? (
         <p className="py-10 text-center text-sm text-text-muted">Loading SEC filing data…</p>
       ) : (
