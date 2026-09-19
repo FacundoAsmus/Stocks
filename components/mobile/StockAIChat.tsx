@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Send, Sparkles, X } from "lucide-react";
-import { Area, AreaChart, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Area, ComposedChart, Line, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { formatEarningsForAIContext } from "@/lib/earnings";
 import { AIStarLoader } from "@/components/AIStarLoader";
@@ -60,7 +60,10 @@ const DATA_KEYS = [
 ] as const;
 type DataKey = typeof DATA_KEYS[number];
 
-const GRAPH_TYPES = ["price:1D","price:1W","price:1M","price:3M","price:5M","price:6M","price:1Y","price:2Y","price:5Y","price:ALL","analyst","sentiment","targets"] as const;
+const GRAPH_TYPES = [
+  "price:1D", "price:1W", "price:1M", "price:3M", "price:5M", "price:6M", "price:1Y", "price:2Y", "price:5Y", "price:ALL",
+  "ma7", "ma25", "ma99", "capex", "rnd", "freeCashFlow", "earnings", "eps", "analyst", "sentiment", "targets",
+] as const;
 type GraphType = typeof GRAPH_TYPES[number];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -254,8 +257,9 @@ function DataPill({ dataKey, ctx }: { dataKey: DataKey; ctx: GraphCtx }) {
       maxWidth: "100%",
       padding: "8px 14px",
       borderRadius: 999,
-      border: `1px solid ${color}55`,
+      border: `2px solid ${color}`,
       backgroundColor: pillBg,
+      boxShadow: `0 0 10px ${color}70`,
       opacity: mounted ? 1 : 0,
       transform: mounted ? "translateY(0) scale(1)" : "translateY(4px) scale(0.96)",
       transition: "opacity 0.22s ease, transform 0.22s ease",
@@ -289,7 +293,8 @@ function GraphShimmer() {
 // ÷ height) lands in roughly this range across normal desktop widths — this
 // is the ratio we match here so the AI's inline graph doesn't look stretched
 // on wide chat panels.
-const GRAPH_TARGET_ASPECT_RATIO = 3.2;
+const DESKTOP_GRAPH_ASPECT_RATIO = 3.2;
+const MOBILE_GRAPH_ASPECT_RATIO = 1.46;
 
 function GraphFrame({ title, ready, tall, children }: { title: string; ready: boolean; children: React.ReactNode; isLightMode?: boolean; tall?: boolean }) {
   const measureRef = useRef<HTMLDivElement>(null);
@@ -306,7 +311,10 @@ function GraphFrame({ title, ready, tall, children }: { title: string; ready: bo
     const measure = () => {
       const width = el.getBoundingClientRect().width;
       if (!width) return;
-      const proportional = width / GRAPH_TARGET_ASPECT_RATIO;
+      // Match the desktop watchlist chart on large screens and the taller
+      // individual-stock chart on phones.
+      const ratio = window.innerWidth < 1024 ? MOBILE_GRAPH_ASPECT_RATIO : DESKTOP_GRAPH_ASPECT_RATIO;
+      const proportional = width / ratio;
       setHeight(Math.min(maxHeight, Math.max(minHeight, proportional)));
     };
     measure();
@@ -320,10 +328,10 @@ function GraphFrame({ title, ready, tall, children }: { title: string; ready: bo
       width: "100%",
       maxWidth: "100%",
       boxSizing: "border-box",
-      padding: "4px 0 8px",
+      padding: "0 0 4px",
       overflow: "hidden",
     }}>
-      <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "#00c805", marginBottom: 8 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-accent)", margin: "0 0 4px" }}>
         {title}
       </p>
       <div style={{ position: "relative", height, width: "100%" }}>
@@ -359,13 +367,13 @@ function GraphSentiment({ ctx }: { ctx: GraphCtx }) {
   const color = sentimentColor(score);
   return (
     <GraphFrame title="Sentiment Score" ready={ready} isLightMode={isLightMode}>
-      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", height: "100%", gap: 4 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
           <span style={{ fontSize: 28, fontWeight: 700, color }}>{score}</span>
           <span style={{ fontSize: 13, color: "#9a9aa2" }}>/ 100</span>
         </div>
         <div style={{ height: 8, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${pct}%`, backgroundColor: color, transition: "width 0.8s cubic-bezier(0.22,1,0.36,1)", borderRadius: 999 }} />
+          <div style={{ height: "100%", width: `${pct}%`, backgroundColor: color, boxShadow: `0 0 10px ${color}70`, transition: "width 0.8s cubic-bezier(0.22,1,0.36,1)", borderRadius: 999 }} />
         </div>
       </div>
     </GraphFrame>
@@ -408,11 +416,12 @@ function GraphAnalyst({ ctx }: { ctx: GraphCtx }) {
                   height: "100%",
                   width: `${progress * Math.max((count / total) * 100, count ? 4 : 0)}%`,
                   backgroundColor: color,
+                  boxShadow: `0 0 10px ${color}70`,
                   transition: "width 0.8s cubic-bezier(0.22,1,0.36,1)",
                   borderRadius: 999,
                 }} />
               </div>
-              <span style={{ fontSize: 11, width: 16, textAlign: "right", color: "#f0f0f2", flexShrink: 0 }}>{count}</span>
+              <span style={{ fontSize: 11, width: 16, textAlign: "right", color: isLightMode ? "#000" : "#f0f0f2", flexShrink: 0 }}>{count}</span>
             </div>
           ))}
         </div>
@@ -516,7 +525,25 @@ function markLabelRenderer(text: string, xSide: "left" | "right", ySide: "above"
   return MarkLabel;
 }
 
-function GraphPrice({ ctx, period = "1M", annotations }: { ctx: GraphCtx; period?: string; annotations?: Annotation[] }) {
+const MA_COLORS: Record<number, string> = { 7: "#f59e0b", 25: "#ec4899", 99: "#8b5cf6" };
+
+function computeMovingAverage(points: CandlePoint[], windowDays: number): (number | null)[] {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const result: (number | null)[] = new Array(points.length).fill(null);
+  if (!points.length) return result;
+  const firstTime = points[0].time * 1000;
+  let start = 0;
+  let sum = 0;
+  for (let i = 0; i < points.length; i += 1) {
+    sum += points[i].close;
+    const windowStart = points[i].time * 1000 - windowDays * dayMs;
+    while (start < i && points[start].time * 1000 < windowStart) sum -= points[start++].close;
+    result[i] = points[i].time * 1000 - firstTime >= windowDays * dayMs ? sum / (i - start + 1) : null;
+  }
+  return result;
+}
+
+function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphCtx; period?: string; annotations?: Annotation[]; maWindow?: 7 | 25 | 99 }) {
   const [ready, setReady] = useState(false);
   const [points, setPoints] = useState<CandlePoint[] | null>(null);
   const [failed, setFailed] = useState(false);
@@ -574,15 +601,19 @@ function GraphPrice({ ctx, period = "1M", annotations }: { ctx: GraphCtx; period
   }
   const priceSpan = Math.max(priceDomainMax - priceDomainMin, 0.0001);
 
+  const chartPoints = maWindow && points
+    ? points.map((point, index) => ({ ...point, movingAverage: computeMovingAverage(points, maWindow)[index] ?? undefined }))
+    : points;
+
   return (
-    <GraphFrame title={`Price — ${periodLabel[period] ?? period}`} ready={ready} isLightMode={isLightMode} tall={hasAnnotations}>
+    <GraphFrame title={maWindow ? `Price — ${periodLabel[period] ?? period} · MA ${maWindow}` : `Price — ${periodLabel[period] ?? period}`} ready={ready} isLightMode={isLightMode} tall={hasAnnotations}>
       {failed || !points?.length ? (
         <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
           Price history unavailable.
         </div>
       ) : (
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={points} margin={{ top: hasAnnotations ? 14 : 4, right: 4, bottom: 0, left: 4 }}>
+          <ComposedChart data={chartPoints ?? []} margin={{ top: hasAnnotations ? 14 : 4, right: 4, bottom: 0, left: 4 }}>
             <defs>
               <linearGradient id="miniAiChartFill" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={lineColor} stopOpacity={0.22} />
@@ -592,6 +623,9 @@ function GraphPrice({ ctx, period = "1M", annotations }: { ctx: GraphCtx; period
             <XAxis dataKey="date" hide />
             <YAxis domain={["dataMin", "dataMax"]} hide />
             <Area type="monotone" dataKey="close" stroke={lineColor} fill="url(#miniAiChartFill)" strokeWidth={2} dot={false} isAnimationActive={false} />
+            {maWindow && (
+              <Line type="monotone" dataKey="movingAverage" stroke={MA_COLORS[maWindow]} strokeWidth={2.5} dot={false} activeDot={false} connectNulls isAnimationActive={false} />
+            )}
 
             {annotations?.filter((a): a is RegionAnnotation => a.type === "region").map((a, i) => {
               const x1 = nearestCandleDate(points, a.start);
@@ -675,7 +709,7 @@ function GraphPrice({ ctx, period = "1M", annotations }: { ctx: GraphCtx; period
                 />
               );
             })}
-          </AreaChart>
+          </ComposedChart>
         </ResponsiveContainer>
       )}
     </GraphFrame>
@@ -723,12 +757,102 @@ function NewsCard({ index, ctx }: { index: number; ctx: GraphCtx }) {
   );
 }
 
+type FilingIndicator = { year: number; capex: number | null; researchAndDevelopment: number | null; freeCashFlow: number | null };
+type FilingMetric = "capex" | "researchAndDevelopment" | "freeCashFlow";
+
+function indicatorColor(percentage: number) {
+  const stops: [number, [number, number, number]][] = [[0, [220, 38, 38]], [25, [249, 115, 22]], [50, [250, 204, 21]], [75, [163, 230, 53]], [100, [52, 211, 153]]];
+  const highIndex = stops.findIndex(([stop]) => percentage <= stop);
+  const high = stops[Math.max(1, highIndex === -1 ? stops.length - 1 : highIndex)];
+  const low = stops[stops.indexOf(high) - 1];
+  const progress = (percentage - low[0]) / (high[0] - low[0] || 1);
+  return `rgb(${Math.round(low[1][0] + (high[1][0] - low[1][0]) * progress)}, ${Math.round(low[1][1] + (high[1][1] - low[1][1]) * progress)}, ${Math.round(low[1][2] + (high[1][2] - low[1][2]) * progress)})`;
+}
+
+function GraphFilingMetric({ ctx, title, field }: { ctx: GraphCtx; title: string; field: FilingMetric }) {
+  const [ready, setReady] = useState(false);
+  const [indicators, setIndicators] = useState<FilingIndicator[] | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/filing-indicators?symbol=${encodeURIComponent(ctx.stock.symbol)}`, { signal: controller.signal })
+      .then(res => res.ok ? res.json() as Promise<{ indicators?: FilingIndicator[] }> : { indicators: [] })
+      .then(data => { if (!controller.signal.aborted) setIndicators(data.indicators ?? []); })
+      .catch(() => { if (!controller.signal.aborted) setIndicators([]); })
+      .finally(() => { if (!controller.signal.aborted) setReady(true); });
+    return () => controller.abort();
+  }, [ctx.stock.symbol]);
+
+  const values = indicators?.map(item => item[field]) ?? [];
+  const max = Math.max(...values.filter((value): value is number => value !== null).map(value => Math.abs(value)), 1);
+  const hasNegative = values.some(value => (value ?? 0) < 0);
+  const baseline = hasNegative ? "45%" : "14%";
+  return (
+    <GraphFrame title={title} ready={ready} tall>
+      {!indicators?.some(item => item[field] !== null) ? <div style={{ display: "flex", alignItems: "center", height: "100%", color: "#9a9aa2", fontSize: 13 }}>SEC filing data unavailable.</div> : (
+        <div style={{ position: "relative", height: "100%", borderTop: "1px solid var(--color-border-subtle)", borderBottom: "1px solid var(--color-border-subtle)" }}>
+          <div style={{ position: "absolute", left: 0, right: 0, top: baseline, borderTop: "1px solid var(--color-border-subtle)" }} />
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${indicators.length}, minmax(0, 1fr))`, height: "100%" }}>
+            {indicators.map(item => {
+              const value = item[field];
+              const percentage = value === null ? 0 : Math.abs(value) / max * 100;
+              const height = value === null ? 0 : Math.max(percentage * (hasNegative ? 0.4 : 0.78), 3);
+              const color = indicatorColor(value === null ? 50 : value < 0 ? 50 - Math.abs(value) / max * 50 : 50 + value / max * 50);
+              return <div key={item.year} style={{ position: "relative", borderLeft: "1px solid var(--color-border-subtle)" }} title={value === null ? `${item.year}: unavailable` : `${item.year}: $${formatCompact(value)}`}>
+                {value !== null && <div style={{ position: "absolute", left: "37.5%", width: "25%", maxWidth: 20, borderRadius: 2, ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: `${height}%`, backgroundColor: color, boxShadow: `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` }} />}
+                <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", fontSize: 10, fontWeight: 600, color: "var(--color-accent)" }}>{item.year}</span>
+              </div>;
+            })}
+          </div>
+        </div>
+      )}
+    </GraphFrame>
+  );
+}
+
+function GraphEarningsMetric({ ctx, metric, title }: { ctx: GraphCtx; metric: "revenue" | "eps"; title: string }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => { const timer = setTimeout(() => setReady(true), 550); return () => clearTimeout(timer); }, []);
+  const points = [...ctx.stock.earnings].sort((a, b) => a.date.localeCompare(b.date)).slice(-8).map(event => ({ event, value: metric === "revenue" ? event.revenueActual ?? event.revenueEstimate : event.epsActual ?? event.epsEstimate, estimate: event.date >= new Date().toISOString().slice(0, 10) }));
+  const values = points.map(point => point.value).filter((value): value is number => value !== null);
+  const maximum = Math.max(...values.map(value => Math.abs(value)), 1);
+  const hasNegative = values.some(value => value < 0);
+  const baseline = hasNegative ? "45%" : "14%";
+  return (
+    <GraphFrame title={title} ready={ready} tall>
+      {!values.length ? <div style={{ display: "flex", alignItems: "center", height: "100%", color: "#9a9aa2", fontSize: 13 }}>Earnings data unavailable.</div> : (
+        <div style={{ position: "relative", height: "100%", borderTop: "1px solid var(--color-border-subtle)", borderBottom: "1px solid var(--color-border-subtle)" }}>
+          <div style={{ position: "absolute", left: 0, right: 0, top: baseline, borderTop: "1px solid var(--color-border-subtle)" }} />
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))`, height: "100%" }}>
+            {points.map(({ event, value, estimate }) => {
+              const height = value === null ? 0 : Math.max(Math.abs(value) / maximum * (hasNegative ? 40 : 78), 3);
+              const color = indicatorColor(value === null ? 50 : value < 0 ? 50 - Math.abs(value) / maximum * 50 : 50 + value / maximum * 50);
+              const label = metric === "revenue" ? `$${formatCompact(value)}` : formatCurrency(value);
+              return <div key={event.date} style={{ position: "relative", borderLeft: "1px solid var(--color-border-subtle)" }} title={`Q${event.quarter} ${event.year}: ${label}${estimate ? " estimate" : " actual"}`}>
+                {value !== null && <div style={{ position: "absolute", left: "37.5%", width: "25%", maxWidth: 20, borderRadius: 2, ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: `${height}%`, backgroundColor: estimate ? "rgba(173,250,27,0.15)" : color, border: estimate ? "1px solid var(--color-accent)" : undefined, boxShadow: estimate ? undefined : `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` }} />}
+                <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", fontSize: 10, fontWeight: 600, color: "var(--color-accent)" }}>Q{event.quarter}</span>
+              </div>;
+            })}
+          </div>
+        </div>
+      )}
+    </GraphFrame>
+  );
+}
+
 function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; annotations?: Annotation[]; ctx: GraphCtx }) {
   if (graphType.startsWith("price")) {
     const period = graphType.includes(":") ? graphType.split(":")[1] : "1M";
     return <GraphPrice ctx={ctx} period={period} annotations={annotations} />;
   }
   switch (graphType) {
+    case "ma7": return <GraphPrice ctx={ctx} period="1Y" maWindow={7} />;
+    case "ma25": return <GraphPrice ctx={ctx} period="1Y" maWindow={25} />;
+    case "ma99": return <GraphPrice ctx={ctx} period="1Y" maWindow={99} />;
+    case "capex": return <GraphFilingMetric ctx={ctx} title="CapEx" field="capex" />;
+    case "rnd": return <GraphFilingMetric ctx={ctx} title="R&D" field="researchAndDevelopment" />;
+    case "freeCashFlow": return <GraphFilingMetric ctx={ctx} title="Free Cash Flow" field="freeCashFlow" />;
+    case "earnings": return <GraphEarningsMetric ctx={ctx} metric="revenue" title="Earnings (Revenue)" />;
+    case "eps": return <GraphEarningsMetric ctx={ctx} metric="eps" title="EPS" />;
     case "analyst":   return <GraphAnalyst ctx={ctx} />;
     case "sentiment": return <GraphSentiment ctx={ctx} />;
     case "targets":   return <GraphTargets ctx={ctx} />;
