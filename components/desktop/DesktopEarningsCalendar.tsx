@@ -75,7 +75,11 @@ function QuarterMetricChart({
         <WheelPrice value={displayedValue === null ? "N/A" : metric === "revenue" ? `$${formatCompact(displayedValue)}` : formatCurrency(displayedValue)} size="xs" />
       </div>
       <div className="relative h-56 border-y border-border-subtle">
-        <div className="absolute inset-x-0 border-t border-border-subtle" style={{ top: baseline }} aria-hidden />
+        <div
+          className="absolute inset-x-0 border-t border-border-subtle"
+          style={hasNegative ? { top: baseline } : { bottom: baseline }}
+          aria-hidden
+        />
         <div className="grid h-full grid-flow-col auto-cols-fr">
           {points.map(({ event, value, isEstimate }) => {
             const percentage = value === null ? 0 : (Math.abs(value) / maximum) * 100;

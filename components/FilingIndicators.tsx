@@ -75,7 +75,11 @@ function AnnualIndicatorChart({
         <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" />
       </div>
       <div className="relative h-64 border-y border-border-subtle">
-        <div className="absolute inset-x-0 border-t border-border-subtle" style={{ top: baseline }} aria-hidden />
+        <div
+          className="absolute inset-x-0 border-t border-border-subtle"
+          style={hasNegativeValues ? { top: baseline } : { bottom: baseline }}
+          aria-hidden
+        />
         <div className="grid h-full grid-flow-col auto-cols-fr">
           {indicators.map((indicator) => {
             const value = indicator[field];

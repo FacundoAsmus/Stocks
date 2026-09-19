@@ -790,7 +790,7 @@ function GraphFilingMetric({ ctx, title, field }: { ctx: GraphCtx; title: string
     <GraphFrame title={title} ready={ready} tall>
       {!indicators?.some(item => item[field] !== null) ? <div style={{ display: "flex", alignItems: "center", height: "100%", color: "#9a9aa2", fontSize: 13 }}>SEC filing data unavailable.</div> : (
         <div style={{ position: "relative", height: "100%", borderTop: "1px solid var(--color-border-subtle)", borderBottom: "1px solid var(--color-border-subtle)" }}>
-          <div style={{ position: "absolute", left: 0, right: 0, top: baseline, borderTop: "1px solid var(--color-border-subtle)" }} />
+          <div style={{ position: "absolute", left: 0, right: 0, ...(hasNegative ? { top: baseline } : { bottom: baseline }), borderTop: "1px solid var(--color-border-subtle)" }} />
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${indicators.length}, minmax(0, 1fr))`, height: "100%" }}>
             {indicators.map(item => {
               const value = item[field];
@@ -821,7 +821,7 @@ function GraphEarningsMetric({ ctx, metric, title }: { ctx: GraphCtx; metric: "r
     <GraphFrame title={title} ready={ready} tall>
       {!values.length ? <div style={{ display: "flex", alignItems: "center", height: "100%", color: "#9a9aa2", fontSize: 13 }}>Earnings data unavailable.</div> : (
         <div style={{ position: "relative", height: "100%", borderTop: "1px solid var(--color-border-subtle)", borderBottom: "1px solid var(--color-border-subtle)" }}>
-          <div style={{ position: "absolute", left: 0, right: 0, top: baseline, borderTop: "1px solid var(--color-border-subtle)" }} />
+          <div style={{ position: "absolute", left: 0, right: 0, ...(hasNegative ? { top: baseline } : { bottom: baseline }), borderTop: "1px solid var(--color-border-subtle)" }} />
           <div style={{ display: "grid", gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))`, height: "100%" }}>
             {points.map(({ event, value, estimate }) => {
               const height = value === null ? 0 : Math.max(Math.abs(value) / maximum * (hasNegative ? 40 : 78), 3);
