@@ -551,8 +551,11 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
   const [failed, setFailed] = useState(false);
   const [hoverPrice, setHoverPrice] = useState<number | null>(null);
   const [dotCY, setDotCY] = useState<number | null>(null);
+  const [isTouching, setIsTouching] = useState(false);
+  const [touchOverlay, setTouchOverlay] = useState<{ xPct: number; yPct: number } | null>(null);
   const [proMode, setProMode] = useState(() => typeof window !== "undefined" && localStorage.getItem("pro-mode") === "1");
   const chartRef = useRef<HTMLDivElement>(null);
+  const blockScrollRef = useRef<((event: TouchEvent) => void) | null>(null);
   const { isLightMode } = ctx;
 
   const periodLabel: Record<string, string> = {
@@ -595,6 +598,52 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
     return () => { window.removeEventListener("pro-mode-changed", sync); window.removeEventListener("storage", sync); };
   }, []);
 
+  // Mirror the individual phone chart: a finger locks page scrolling for the
+  // duration of the gesture and drives its own snapped crosshair/dot overlay.
+  useEffect(() => {
+    const element = chartRef.current;
+    if (!element || !points?.length) return;
+    const updateFromClientX = (clientX: number) => {
+      const rect = element.getBoundingClientRect();
+      const xPct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const index = Math.round(xPct * (points.length - 1));
+      const point = points[Math.max(0, Math.min(points.length - 1, index))];
+      const prices = points.map(item => item.close);
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      setHoverPrice(point.close);
+      setTouchOverlay({ xPct, yPct: max === min ? 0.5 : 1 - (point.close - min) / (max - min) });
+    };
+    const endTouch = () => {
+      document.removeEventListener("touchmove", moveTouch);
+      document.removeEventListener("touchend", endTouch);
+      document.removeEventListener("touchcancel", endTouch);
+      if (blockScrollRef.current) {
+        document.removeEventListener("touchmove", blockScrollRef.current);
+        blockScrollRef.current = null;
+      }
+      setIsTouching(false);
+      setTouchOverlay(null);
+      setHoverPrice(null);
+    };
+    const moveTouch = (event: TouchEvent) => updateFromClientX(event.touches[0].clientX);
+    const startTouch = (event: TouchEvent) => {
+      setIsTouching(true);
+      updateFromClientX(event.touches[0].clientX);
+      document.addEventListener("touchmove", moveTouch, { passive: true });
+      document.addEventListener("touchend", endTouch);
+      document.addEventListener("touchcancel", endTouch);
+      const block = (moveEvent: TouchEvent) => moveEvent.preventDefault();
+      blockScrollRef.current = block;
+      document.addEventListener("touchmove", block, { passive: false });
+    };
+    element.addEventListener("touchstart", startTouch, { passive: true });
+    return () => {
+      element.removeEventListener("touchstart", startTouch);
+      endTouch();
+    };
+  }, [points]);
+
   const positive = !points || points.length < 2 ? true : points[points.length - 1].close >= points[0].close;
   const lineColor = positive ? "#00c805" : "#ff3003";
   const hasAnnotations = !!annotations?.length;
@@ -626,7 +675,7 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
           Price history unavailable.
         </div>
       ) : (
-        <div ref={chartRef} style={{ position: "relative", height: "100%" }} onMouseLeave={() => { setHoverPrice(null); setDotCY(null); }}>
+        <div ref={chartRef} style={{ position: "relative", height: "100%" }} onMouseLeave={() => { if (!isTouching) { setHoverPrice(null); setDotCY(null); } }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartPoints ?? []} margin={{ top: hasAnnotations ? 14 : 4, right: 4, bottom: 0, left: 4 }}>
             <defs>
@@ -638,14 +687,14 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
             <XAxis dataKey="date" hide />
             <YAxis domain={["dataMin", "dataMax"]} hide />
             <Tooltip
-              cursor={{ stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 }}
+              cursor={typeof window !== "undefined" && "ontouchstart" in window ? false : { stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 }}
               content={<></>}
             />
             <Area
               type="monotone" dataKey="close" stroke={lineColor} fill="url(#miniAiChartFill)" strokeWidth={2} dot={false} isAnimationActive={false}
               activeDot={(props: Record<string, unknown>) => {
                 const { cx, cy, payload } = props as { cx?: number; cy?: number; payload?: CandlePoint };
-                if (cx == null || cy == null || !payload) return <g />;
+                if (cx == null || cy == null || !payload || (typeof window !== "undefined" && "ontouchstart" in window)) return <g />;
                 if (hoverPrice !== payload.close) setHoverPrice(payload.close);
                 if (proMode && dotCY !== cy) setDotCY(cy);
                 return <circle cx={cx} cy={cy} r={4} fill={lineColor} stroke={isLightMode ? "#fff" : "#000"} strokeWidth={1.5} />;
@@ -740,6 +789,17 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
           </ComposedChart>
         </ResponsiveContainer>
         {proMode && dotCY !== null && <div aria-hidden style={{ position: "absolute", left: 0, right: 0, top: dotCY, height: 1, background: "rgba(128,128,128,0.5)", pointerEvents: "none" }} />}
+        {isTouching && touchOverlay && (() => {
+          const xPct = touchOverlay.xPct * 100;
+          const chartMarginTopPx = hasAnnotations ? 14 : 4;
+          const height = chartRef.current?.getBoundingClientRect().height ?? 1;
+          const dotTopPct = ((chartMarginTopPx + touchOverlay.yPct * (height - chartMarginTopPx)) / height) * 100;
+          return <div className="absolute inset-0 pointer-events-none" aria-hidden>
+            <div data-crosshair-v="" style={{ position: "absolute", left: `${xPct}%`, top: 0, bottom: 0, width: 1, background: "rgba(128,128,128,0.5)" }} />
+            {proMode && <div data-crosshair-h="" style={{ position: "absolute", left: 0, right: 0, top: `${dotTopPct}%`, height: 1, background: "rgba(128,128,128,0.5)" }} />}
+            <div style={{ position: "absolute", left: `${xPct}%`, top: `${dotTopPct}%`, width: 12, height: 12, transform: "translate(-50%, -50%)", borderRadius: "50%", border: `2px solid ${isLightMode ? "#fff" : "#000"}`, background: lineColor }} />
+          </div>;
+        })()}
         </div>
       )}
     </GraphFrame>
