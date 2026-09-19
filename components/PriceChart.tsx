@@ -418,6 +418,11 @@ export function PriceChart({
   const [hoverDate,  setHoverDate]    = useState<string | null>(null);
   const [priceVisible, setPriceVisible] = useState(true);
   const [activeMAs, setActiveMAs] = useState<Set<number>>(new Set());
+  // Pre-chart candles are fetched only after an MA is selected. They seed the
+  // calculation but are never included in `data`, so the chart's timeframe
+  // and volume panel stay exactly as the user selected.
+  const [maHistory, setMaHistory] = useState<CandlePoint[]>([]);
+  const [maHistoryWindow, setMaHistoryWindow] = useState(0);
 
   // Buttons currently rendered (includes ones mid-exit-animation) and which
   // of those are actively exiting — kept mounted a bit longer than
@@ -488,6 +493,8 @@ export function PriceChart({
       setHoverPrice(null);
       setHoverDate(null);
       setPriceVisible(false);
+      setMaHistory([]);
+      setMaHistoryWindow(0);
       try {
         const res = await fetch(
           `/api/candles?symbol=${encodeURIComponent(symbol)}&period=${period}`,
@@ -535,6 +542,35 @@ export function PriceChart({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, reloadNonce, symbol]);
 
+  // Fetch only the missing lead-in data when an MA is switched on. A larger
+  // selected MA replaces a smaller cached window; switching an MA off never
+  // causes another request.
+  const requiredMAHistoryDays = activeMAs.size ? Math.max(...activeMAs) : 0;
+  useEffect(() => {
+    if (!requiredMAHistoryDays || !data.length || maHistoryWindow >= requiredMAHistoryDays) return;
+
+    const controller = new AbortController();
+    const firstVisibleTime = data[0].time;
+    async function loadMAHistory() {
+      try {
+        const res = await fetch(
+          `/api/candles?symbol=${encodeURIComponent(symbol)}&period=${period}&before=${firstVisibleTime}&historyDays=${requiredMAHistoryDays}`,
+          { signal: controller.signal }
+        );
+        const payload = (await res.json()) as { candles?: CandlePoint[] };
+        if (!res.ok) return;
+        if (!controller.signal.aborted) {
+          setMaHistory((payload.candles ?? []).filter((point) => point.time < firstVisibleTime));
+          setMaHistoryWindow(requiredMAHistoryDays);
+        }
+      } catch {
+        // The price chart remains usable if its optional MA lead-in fails.
+      }
+    }
+    loadMAHistory();
+    return () => controller.abort();
+  }, [data, maHistoryWindow, period, requiredMAHistoryDays, symbol]);
+
   const hasData    = data.length > 1;
   const hasVolume  = data.some((point) => typeof point.volume === "number" && point.volume > 0);
   const volumeBuckets = useMemo(() => buildVolumeBuckets(data), [data]);
@@ -543,21 +579,26 @@ export function PriceChart({
   // Merge in MA fields for whichever windows are both available for this
   // period and currently toggled on. Only computed when needed.
   const chartData = useMemo(() => {
-    const allowed = MA_AVAILABILITY[period] ?? [];
-    if (!allowed.length) return data;
-    // Compute every MA available for this period regardless of whether it's
-    // currently toggled on — this array must stay referentially stable
-    // across activeMAs changes, or Recharts treats the whole chart's data
-    // as "changed" and replays every line's draw animation, not just the
-    // one that was actually toggled.
-    const mas = new Map(allowed.map(w => [w, computeMA(data, w)]));
-    return data.map((d, i) => ({
+    if (!activeMAs.size) return data;
+    // Calculate over the hidden lead-in candles plus the visible range, then
+    // map results back onto only the visible points.
+    const calculationPoints = [...maHistory, ...data]
+      .sort((a, b) => a.time - b.time)
+      .filter((point, index, points) => index === 0 || points[index - 1].time !== point.time);
+    const mas = new Map([...activeMAs].map(w => [w, computeMA(calculationPoints, w)]));
+    const maValuesByTime = new Map(
+      calculationPoints.map((point, index) => [
+        point.time,
+        { ma7: mas.get(7)?.[index], ma25: mas.get(25)?.[index], ma99: mas.get(99)?.[index] },
+      ])
+    );
+    return data.map((d) => ({
       ...d,
-      ma7:  mas.get(7)?.[i]  ?? undefined,
-      ma25: mas.get(25)?.[i] ?? undefined,
-      ma99: mas.get(99)?.[i] ?? undefined,
+      ma7:  maValuesByTime.get(d.time)?.ma7  ?? undefined,
+      ma25: maValuesByTime.get(d.time)?.ma25 ?? undefined,
+      ma99: maValuesByTime.get(d.time)?.ma99 ?? undefined,
     }));
-  }, [data, period]);
+  }, [activeMAs, data, maHistory]);
 
   /* Displayed price and % change — hover overrides live values */
   const displayPrice = hoverPrice ?? currentPrice;

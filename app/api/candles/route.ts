@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getStockCandles } from "@/lib/finnhub";
+import { getStockCandleHistory, getStockCandles } from "@/lib/finnhub";
 import type { ChartPeriod } from "@/types/stock";
 
 const PERIODS: ChartPeriod[] = ["1D", "1W", "1M", "2M", "3M", "5M", "6M", "1Y", "2Y", "5Y", "ALL"];
@@ -9,6 +9,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get("symbol")?.trim().toUpperCase();
   const period = searchParams.get("period")?.toUpperCase() as ChartPeriod | null;
+  const beforeParam = searchParams.get("before");
+  const historyDaysParam = searchParams.get("historyDays");
+  const before = beforeParam === null ? null : Number(beforeParam);
+  const historyDays = historyDaysParam === null ? null : Number(historyDaysParam);
 
   if (!symbol) {
     return NextResponse.json({ error: "A stock symbol is required." }, { status: 400 });
@@ -19,6 +23,15 @@ export async function GET(request: Request) {
   }
 
   try {
+    if (beforeParam !== null || historyDaysParam !== null) {
+      if (before === null || !Number.isFinite(before) || before <= 0 || historyDays === null || !Number.isInteger(historyDays) || historyDays < 1 || historyDays > 99) {
+        return NextResponse.json({ error: "A valid history window is required." }, { status: 400 });
+      }
+
+      const candles = await getStockCandleHistory(symbol, period, before, historyDays);
+      return NextResponse.json({ candles });
+    }
+
     const candles = await getStockCandles(symbol, period);
 
     if (!candles.length) {

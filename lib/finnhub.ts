@@ -732,13 +732,27 @@ function toYahooSymbol(symbol: string) {
   return aliases[normalizedSymbol] ?? normalizedSymbol.replace(".", "-");
 }
 
-async function fetchYahooCandles(symbol: string, period: ChartPeriod): Promise<CandlePoint[]> {
+async function fetchYahooCandles(
+  symbol: string,
+  period: ChartPeriod,
+  historyBefore?: number,
+  historyDays?: number
+): Promise<CandlePoint[]> {
   const yahooSymbol = toYahooSymbol(symbol);
   const url = new URL(`${YAHOO_CHART_BASE_URL}/${encodeURIComponent(yahooSymbol)}`);
-  url.searchParams.set("range", periodToYahooRange(period));
+  if (historyBefore !== undefined && historyDays !== undefined) {
+    // Include a small calendar buffer for weekends and market holidays. The
+    // client discards this buffer; it is only used to seed a full MA window.
+    url.searchParams.set("period1", String(Math.floor(historyBefore - (historyDays + 7) * 86_400)));
+    url.searchParams.set("period2", String(Math.ceil(historyBefore)));
+  } else {
+    url.searchParams.set("range", periodToYahooRange(period));
+  }
   url.searchParams.set("interval", periodToYahooInterval(period));
 
-  const cacheKey = `yahoo:${yahooSymbol}:${period}`;
+  const cacheKey = historyBefore === undefined
+    ? `yahoo:${yahooSymbol}:${period}`
+    : `yahoo:${yahooSymbol}:${period}:before:${historyBefore}:days:${historyDays}`;
   const cached = memoryCache.get(cacheKey) as CacheEntry<CandlePoint[]> | undefined;
 
   if (cached && cached.expiresAt > Date.now()) {
@@ -856,6 +870,28 @@ export async function getStockCandles(symbol: string, period: ChartPeriod = "3M"
   }
 
   return [];
+}
+
+// Returns only candles immediately preceding a chart's first visible candle.
+// This is deliberately separate from getStockCandles so normal chart loads
+// do not fetch any data that is needed solely for a moving-average overlay.
+export async function getStockCandleHistory(
+  symbol: string,
+  period: ChartPeriod,
+  before: number,
+  days: number
+): Promise<CandlePoint[]> {
+  const normalizedSymbol = cleanSymbol(symbol);
+  try {
+    return (await fetchYahooCandles(normalizedSymbol, period, before, days))
+      .filter((point) => point.time < before);
+  } catch {
+    // Yahoo is the normal source because it preserves the chart's interval.
+    // A daily Finnhub fallback still gives the MA a usable seed if Yahoo is
+    // temporarily unavailable.
+    const fallback = await getCandles(normalizedSymbol, "D", days + 7);
+    return fallback.filter((point) => point.time < before);
+  }
 }
 
 export async function getCandles(symbol: string, resolution: "D" | "W", days: number) {
