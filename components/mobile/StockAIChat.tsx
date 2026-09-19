@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Send, Sparkles, X } from "lucide-react";
-import { Area, ComposedChart, Line, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, XAxis, YAxis } from "recharts";
+import { Area, ComposedChart, Line, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { formatEarningsForAIContext } from "@/lib/earnings";
 import { AIStarLoader } from "@/components/AIStarLoader";
+import { WheelPrice } from "@/components/PriceChart";
 import type { CandlePoint, StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
@@ -296,7 +297,7 @@ function GraphShimmer() {
 const DESKTOP_GRAPH_ASPECT_RATIO = 3.2;
 const MOBILE_GRAPH_ASPECT_RATIO = 1.46;
 
-function GraphFrame({ title, ready, tall, children }: { title: string; ready: boolean; children: React.ReactNode; isLightMode?: boolean; tall?: boolean }) {
+function GraphFrame({ title, value, ready, tall, children }: { title: string; value?: string; ready: boolean; children: React.ReactNode; isLightMode?: boolean; tall?: boolean }) {
   const measureRef = useRef<HTMLDivElement>(null);
   const minHeight = tall ? 150 : 108;
   const maxHeight = tall ? 260 : 220;
@@ -334,6 +335,7 @@ function GraphFrame({ title, ready, tall, children }: { title: string; ready: bo
       <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-accent)", margin: "0 0 4px" }}>
         {title}
       </p>
+      {value && <div style={{ marginBottom: 6, color: "var(--color-text-primary)", lineHeight: 1 }}><WheelPrice value={value} size="xs" /></div>}
       <div style={{ position: "relative", height, width: "100%" }}>
         {!ready && <GraphShimmer />}
         <div style={{ height: "100%", width: "100%", opacity: ready ? 1 : 0, transition: "opacity 0.25s ease" }}>
@@ -547,6 +549,10 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
   const [ready, setReady] = useState(false);
   const [points, setPoints] = useState<CandlePoint[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [hoverPrice, setHoverPrice] = useState<number | null>(null);
+  const [dotCY, setDotCY] = useState<number | null>(null);
+  const [proMode, setProMode] = useState(() => typeof window !== "undefined" && localStorage.getItem("pro-mode") === "1");
+  const chartRef = useRef<HTMLDivElement>(null);
   const { isLightMode } = ctx;
 
   const periodLabel: Record<string, string> = {
@@ -582,6 +588,13 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
     return () => { cancelled = true; };
   }, [ctx.stock.symbol, period, ctx.stock.quote.pc]);
 
+  useEffect(() => {
+    const sync = () => setProMode(localStorage.getItem("pro-mode") === "1");
+    window.addEventListener("pro-mode-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => { window.removeEventListener("pro-mode-changed", sync); window.removeEventListener("storage", sync); };
+  }, []);
+
   const positive = !points || points.length < 2 ? true : points[points.length - 1].close >= points[0].close;
   const lineColor = positive ? "#00c805" : "#ff3003";
   const hasAnnotations = !!annotations?.length;
@@ -604,14 +617,16 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
   const chartPoints = maWindow && points
     ? points.map((point, index) => ({ ...point, movingAverage: computeMovingAverage(points, maWindow)[index] ?? undefined }))
     : points;
+  const displayedPrice = hoverPrice ?? points?.[points.length - 1]?.close ?? null;
 
   return (
-    <GraphFrame title={maWindow ? `Price — ${periodLabel[period] ?? period} · MA ${maWindow}` : `Price — ${periodLabel[period] ?? period}`} ready={ready} isLightMode={isLightMode} tall={hasAnnotations}>
+    <GraphFrame title={maWindow ? `Price — ${periodLabel[period] ?? period} · MA ${maWindow}` : `Price — ${periodLabel[period] ?? period}`} value={formatCurrency(displayedPrice)} ready={ready} isLightMode={isLightMode} tall={hasAnnotations}>
       {failed || !points?.length ? (
         <div style={{ display: "flex", alignItems: "center", height: "100%", fontSize: 13, color: "#9a9aa2" }}>
           Price history unavailable.
         </div>
       ) : (
+        <div ref={chartRef} style={{ position: "relative", height: "100%" }} onMouseLeave={() => { setHoverPrice(null); setDotCY(null); }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartPoints ?? []} margin={{ top: hasAnnotations ? 14 : 4, right: 4, bottom: 0, left: 4 }}>
             <defs>
@@ -622,7 +637,20 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
             </defs>
             <XAxis dataKey="date" hide />
             <YAxis domain={["dataMin", "dataMax"]} hide />
-            <Area type="monotone" dataKey="close" stroke={lineColor} fill="url(#miniAiChartFill)" strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Tooltip
+              cursor={{ stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 }}
+              content={<></>}
+            />
+            <Area
+              type="monotone" dataKey="close" stroke={lineColor} fill="url(#miniAiChartFill)" strokeWidth={2} dot={false} isAnimationActive={false}
+              activeDot={(props: Record<string, unknown>) => {
+                const { cx, cy, payload } = props as { cx?: number; cy?: number; payload?: CandlePoint };
+                if (cx == null || cy == null || !payload) return <g />;
+                if (hoverPrice !== payload.close) setHoverPrice(payload.close);
+                if (proMode && dotCY !== cy) setDotCY(cy);
+                return <circle cx={cx} cy={cy} r={4} fill={lineColor} stroke={isLightMode ? "#fff" : "#000"} strokeWidth={1.5} />;
+              }}
+            />
             {maWindow && (
               <Line type="monotone" dataKey="movingAverage" stroke={MA_COLORS[maWindow]} strokeWidth={2.5} dot={false} activeDot={false} connectNulls isAnimationActive={false} />
             )}
@@ -711,6 +739,8 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
             })}
           </ComposedChart>
         </ResponsiveContainer>
+        {proMode && dotCY !== null && <div aria-hidden style={{ position: "absolute", left: 0, right: 0, top: dotCY, height: 1, background: "rgba(128,128,128,0.5)", pointerEvents: "none" }} />}
+        </div>
       )}
     </GraphFrame>
   );
@@ -772,6 +802,7 @@ function indicatorColor(percentage: number) {
 function GraphFilingMetric({ ctx, title, field }: { ctx: GraphCtx; title: string; field: FilingMetric }) {
   const [ready, setReady] = useState(false);
   const [indicators, setIndicators] = useState<FilingIndicator[] | null>(null);
+  const [hoveredValue, setHoveredValue] = useState<number | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     fetch(`/api/filing-indicators?symbol=${encodeURIComponent(ctx.stock.symbol)}`, { signal: controller.signal })
@@ -784,10 +815,11 @@ function GraphFilingMetric({ ctx, title, field }: { ctx: GraphCtx; title: string
 
   const values = indicators?.map(item => item[field]) ?? [];
   const max = Math.max(...values.filter((value): value is number => value !== null).map(value => Math.abs(value)), 1);
+  const latestValue = [...values].reverse().find((value): value is number => value !== null) ?? null;
   const hasNegative = values.some(value => (value ?? 0) < 0);
   const baseline = hasNegative ? "45%" : "14%";
   return (
-    <GraphFrame title={title} ready={ready} tall>
+    <GraphFrame title={title} value={hoveredValue === null ? (latestValue === null ? "N/A" : `$${formatCompact(latestValue)}`) : `$${formatCompact(hoveredValue)}`} ready={ready} tall>
       {!indicators?.some(item => item[field] !== null) ? <div style={{ display: "flex", alignItems: "center", height: "100%", color: "#9a9aa2", fontSize: 13 }}>SEC filing data unavailable.</div> : (
         <div style={{ position: "relative", height: "100%", borderTop: "1px solid var(--color-border-subtle)", borderBottom: "1px solid var(--color-border-subtle)" }}>
           <div style={{ position: "absolute", left: 0, right: 0, ...(hasNegative ? { top: baseline } : { bottom: baseline }), borderTop: "1px solid var(--color-border-subtle)" }} />
@@ -797,7 +829,7 @@ function GraphFilingMetric({ ctx, title, field }: { ctx: GraphCtx; title: string
               const percentage = value === null ? 0 : Math.abs(value) / max * 100;
               const height = value === null ? 0 : Math.max(percentage * (hasNegative ? 0.4 : 0.78), 3);
               const color = indicatorColor(value === null ? 50 : value < 0 ? 50 - Math.abs(value) / max * 50 : 50 + value / max * 50);
-              return <div key={item.year} style={{ position: "relative", borderLeft: "1px solid var(--color-border-subtle)" }} title={value === null ? `${item.year}: unavailable` : `${item.year}: $${formatCompact(value)}`}>
+              return <div key={item.year} style={{ position: "relative", borderLeft: "1px solid var(--color-border-subtle)", cursor: value === null ? "default" : "pointer" }} onMouseEnter={() => { if (value !== null) setHoveredValue(value); }} onMouseLeave={() => setHoveredValue(null)} title={value === null ? `${item.year}: unavailable` : `${item.year}: $${formatCompact(value)}`}>
                 {value !== null && <div style={{ position: "absolute", left: "37.5%", width: "25%", maxWidth: 20, borderRadius: 2, ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: `${height}%`, backgroundColor: color, boxShadow: `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` }} />}
                 <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", fontSize: 10, fontWeight: 600, color: "var(--color-accent)" }}>{item.year}</span>
               </div>;
@@ -811,14 +843,16 @@ function GraphFilingMetric({ ctx, title, field }: { ctx: GraphCtx; title: string
 
 function GraphEarningsMetric({ ctx, metric, title }: { ctx: GraphCtx; metric: "revenue" | "eps"; title: string }) {
   const [ready, setReady] = useState(false);
+  const [hoveredValue, setHoveredValue] = useState<number | null>(null);
   useEffect(() => { const timer = setTimeout(() => setReady(true), 550); return () => clearTimeout(timer); }, []);
   const points = [...ctx.stock.earnings].sort((a, b) => a.date.localeCompare(b.date)).slice(-8).map(event => ({ event, value: metric === "revenue" ? event.revenueActual ?? event.revenueEstimate : event.epsActual ?? event.epsEstimate, estimate: event.date >= new Date().toISOString().slice(0, 10) }));
   const values = points.map(point => point.value).filter((value): value is number => value !== null);
   const maximum = Math.max(...values.map(value => Math.abs(value)), 1);
+  const latestValue = [...points].reverse().find((point): point is typeof point & { value: number } => point.value !== null)?.value ?? null;
   const hasNegative = values.some(value => value < 0);
   const baseline = hasNegative ? "45%" : "14%";
   return (
-    <GraphFrame title={title} ready={ready} tall>
+    <GraphFrame title={title} value={hoveredValue === null ? (latestValue === null ? "N/A" : metric === "revenue" ? `$${formatCompact(latestValue)}` : formatCurrency(latestValue)) : metric === "revenue" ? `$${formatCompact(hoveredValue)}` : formatCurrency(hoveredValue)} ready={ready} tall>
       {!values.length ? <div style={{ display: "flex", alignItems: "center", height: "100%", color: "#9a9aa2", fontSize: 13 }}>Earnings data unavailable.</div> : (
         <div style={{ position: "relative", height: "100%", borderTop: "1px solid var(--color-border-subtle)", borderBottom: "1px solid var(--color-border-subtle)" }}>
           <div style={{ position: "absolute", left: 0, right: 0, ...(hasNegative ? { top: baseline } : { bottom: baseline }), borderTop: "1px solid var(--color-border-subtle)" }} />
@@ -827,7 +861,7 @@ function GraphEarningsMetric({ ctx, metric, title }: { ctx: GraphCtx; metric: "r
               const height = value === null ? 0 : Math.max(Math.abs(value) / maximum * (hasNegative ? 40 : 78), 3);
               const color = indicatorColor(value === null ? 50 : value < 0 ? 50 - Math.abs(value) / maximum * 50 : 50 + value / maximum * 50);
               const label = metric === "revenue" ? `$${formatCompact(value)}` : formatCurrency(value);
-              return <div key={event.date} style={{ position: "relative", borderLeft: "1px solid var(--color-border-subtle)" }} title={`Q${event.quarter} ${event.year}: ${label}${estimate ? " estimate" : " actual"}`}>
+              return <div key={event.date} style={{ position: "relative", borderLeft: "1px solid var(--color-border-subtle)", cursor: value === null ? "default" : "pointer" }} onMouseEnter={() => { if (value !== null) setHoveredValue(value); }} onMouseLeave={() => setHoveredValue(null)} title={`Q${event.quarter} ${event.year}: ${label}${estimate ? " estimate" : " actual"}`}>
                 {value !== null && <div style={{ position: "absolute", left: "37.5%", width: "25%", maxWidth: 20, borderRadius: 2, ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: `${height}%`, backgroundColor: estimate ? "rgba(173,250,27,0.15)" : color, border: estimate ? "1px solid var(--color-accent)" : undefined, boxShadow: estimate ? undefined : `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` }} />}
                 <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", fontSize: 10, fontWeight: 600, color: "var(--color-accent)" }}>Q{event.quarter}</span>
               </div>;
