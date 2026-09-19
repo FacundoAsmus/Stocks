@@ -418,11 +418,20 @@ export function PriceChart({
   const [hoverDate,  setHoverDate]    = useState<string | null>(null);
   const [priceVisible, setPriceVisible] = useState(true);
   const [activeMAs, setActiveMAs] = useState<Set<number>>(new Set());
+  const activeMAsRef = useRef(activeMAs);
+  // A line is eligible to animate only when it was just enabled (or its
+  // period was reloaded). Keeping this per-window prevents one new MA from
+  // replaying the already visible MA lines.
+  const [pendingMAAnimations, setPendingMAAnimations] = useState<Set<number>>(new Set());
   // Pre-chart candles are fetched only after an MA is selected. They seed the
   // calculation but are never included in `data`, so the chart's timeframe
   // and volume panel stay exactly as the user selected.
   const [maHistory, setMaHistory] = useState<CandlePoint[]>([]);
   const [maHistoryWindow, setMaHistoryWindow] = useState(0);
+
+  useEffect(() => {
+    activeMAsRef.current = activeMAs;
+  }, [activeMAs]);
 
   // Buttons currently rendered (includes ones mid-exit-animation) and which
   // of those are actively exiting — kept mounted a bit longer than
@@ -562,6 +571,9 @@ export function PriceChart({
         if (!controller.signal.aborted) {
           setMaHistory((payload.candles ?? []).filter((point) => point.time < firstVisibleTime));
           setMaHistoryWindow(requiredMAHistoryDays);
+          // A time-scale change starts with a fresh visible chart and then
+          // mounts enabled MAs once their matching lead-in data is ready.
+          setPendingMAAnimations((previous) => new Set([...previous, ...activeMAsRef.current]));
         }
       } catch {
         // The price chart remains usable if its optional MA lead-in fails.
@@ -917,15 +929,24 @@ export function PriceChart({
               {/* ── Moving average overlays ── */}
               {(MA_AVAILABILITY[period] ?? []).includes(7) && renderedMAs.has(7) && (
                 <Line key="ma7" type="monotone" dataKey="ma7" stroke={MA_COLORS[7]} strokeWidth={3}
-                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
+                  dot={false} activeDot={false} isAnimationActive={pendingMAAnimations.has(7)} animationDuration={700} animationEasing="ease-out" connectNulls
+                  onAnimationEnd={() => setPendingMAAnimations((previous) => {
+                    const next = new Set(previous); next.delete(7); return next;
+                  })} />
               )}
               {(MA_AVAILABILITY[period] ?? []).includes(25) && renderedMAs.has(25) && (
                 <Line key="ma25" type="monotone" dataKey="ma25" stroke={MA_COLORS[25]} strokeWidth={3}
-                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
+                  dot={false} activeDot={false} isAnimationActive={pendingMAAnimations.has(25)} animationDuration={700} animationEasing="ease-out" connectNulls
+                  onAnimationEnd={() => setPendingMAAnimations((previous) => {
+                    const next = new Set(previous); next.delete(25); return next;
+                  })} />
               )}
               {(MA_AVAILABILITY[period] ?? []).includes(99) && renderedMAs.has(99) && (
                 <Line key="ma99" type="monotone" dataKey="ma99" stroke={MA_COLORS[99]} strokeWidth={3}
-                  dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
+                  dot={false} activeDot={false} isAnimationActive={pendingMAAnimations.has(99)} animationDuration={700} animationEasing="ease-out" connectNulls
+                  onAnimationEnd={() => setPendingMAAnimations((previous) => {
+                    const next = new Set(previous); next.delete(99); return next;
+                  })} />
               )}
             </ComposedChart>
           </ResponsiveContainer>
@@ -1069,6 +1090,12 @@ export function PriceChart({
                 type="button"
                 disabled={exiting}
                 onClick={() => {
+                  const willEnable = !activeMAs.has(window);
+                  setPendingMAAnimations((previous) => {
+                    const next = new Set(previous);
+                    if (willEnable) next.add(window); else next.delete(window);
+                    return next;
+                  });
                   setActiveMAs(prev => {
                     const next = new Set(prev);
                     if (next.has(window)) next.delete(window); else next.add(window);
