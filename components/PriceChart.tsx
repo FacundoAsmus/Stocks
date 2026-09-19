@@ -55,7 +55,7 @@ function CandlestickShape(props: Record<string, unknown>) {
     x?: number; y?: number; width?: number; height?: number; payload?: CandlePoint;
   };
   const close = payload?.close;
-  if (!payload || !Number.isFinite(close) || close === 0 || !height) return null;
+  if (!payload || typeof close !== "number" || !Number.isFinite(close) || close === 0 || !height) return null;
 
   const open = payload.open ?? close;
   const high = payload.high ?? Math.max(open, close);
