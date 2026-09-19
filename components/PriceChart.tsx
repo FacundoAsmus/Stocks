@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
+  Bar,
   ComposedChart,
   CartesianGrid,
   Line,
@@ -46,6 +47,42 @@ const MA_COLORS: Record<number, string> = {
 const MAX_VOLUME_BARS = 240;
 
 type VolumeBucket = { volume: number };
+
+// Recharts has no built-in OHLC series, so each Bar supplies the categorical
+// x-position while this shape draws the body and wick from the candle fields.
+function CandlestickShape(props: Record<string, unknown>) {
+  const { x = 0, y = 0, width = 0, height = 0, payload } = props as {
+    x?: number; y?: number; width?: number; height?: number; payload?: CandlePoint;
+  };
+  const close = payload?.close;
+  if (!payload || !Number.isFinite(close) || close === 0 || !height) return null;
+
+  const open = payload.open ?? close;
+  const high = payload.high ?? Math.max(open, close);
+  const low = payload.low ?? Math.min(open, close);
+  // A Bar's height spans from the close to its zero baseline. That gives us
+  // the current pixel-per-price ratio without coupling this shape to chart
+  // internals or a particular responsive size.
+  const pixelsPerPrice = Math.abs(height / close);
+  const closeY = y;
+  const priceY = (price: number) => closeY + (close - price) * pixelsPerPrice;
+  const openY = priceY(open);
+  const highY = priceY(high);
+  const lowY = priceY(low);
+  const rising = close >= open;
+  const color = rising ? "#00c805" : "#ff3003";
+  const bodyTop = Math.min(openY, closeY);
+  const bodyHeight = Math.max(Math.abs(openY - closeY), 1);
+  const bodyWidth = Math.max(1, Math.min(width * 0.62, 12));
+  const centerX = x + width / 2;
+
+  return (
+    <g>
+      <line x1={centerX} x2={centerX} y1={highY} y2={lowY} stroke={color} strokeWidth={1} />
+      <rect x={centerX - bodyWidth / 2} y={bodyTop} width={bodyWidth} height={bodyHeight} fill={color} />
+    </g>
+  );
+}
 
 // Long ranges can contain thousands of candles. The volume panel is a visual
 // overview, so combine adjacent candles into a bounded number of buckets.
@@ -474,6 +511,9 @@ export function PriceChart({
   const [showVolumeChart, setShowVolumeChart] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-volume-chart") !== "0" : true
   );
+  const [useCandlesticks, setUseCandlesticks] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("chart-style") === "candles" : false
+  );
 
   // Keep proMode in sync across tabs and after settings toggle
   useEffect(() => {
@@ -483,12 +523,17 @@ export function PriceChart({
     function syncVolumeChart() {
       setShowVolumeChart(localStorage.getItem("pro-volume-chart") !== "0");
     }
+    function syncChartStyle() {
+      setUseCandlesticks(localStorage.getItem("chart-style") === "candles");
+    }
     window.addEventListener("pro-mode-changed", sync);
     window.addEventListener("pro-volume-chart-changed", syncVolumeChart);
+    window.addEventListener("chart-style-changed", syncChartStyle);
     window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener("pro-mode-changed", sync);
       window.removeEventListener("pro-volume-chart-changed", syncVolumeChart);
+      window.removeEventListener("chart-style-changed", syncChartStyle);
       window.removeEventListener("storage", sync);
     };
   }, []);
@@ -598,14 +643,17 @@ export function PriceChart({
   // Keep the price graph's vertical scale independent from indicators. An MA
   // can leave this range, but it must never compress or stretch stock prices.
   const priceYDomain = useMemo<[number, number]>(() => {
-    const prices = data.map((point) => point.close).filter(Number.isFinite);
+    const prices = data.flatMap((point) => useCandlesticks
+      ? [point.low ?? point.close, point.high ?? point.close]
+      : [point.close]
+    ).filter(Number.isFinite);
     if (!prices.length) return [0, 1];
     const low = Math.min(...prices);
     const high = Math.max(...prices);
     if (low !== high) return [low, high];
     const padding = Math.max(Math.abs(low) * 0.01, 1);
     return [low - padding, high + padding];
-  }, [data]);
+  }, [data, useCandlesticks]);
 
   // Merge in MA fields for whichever windows are both available for this
   // period and currently toggled on. Only computed when needed.
@@ -905,6 +953,9 @@ export function PriceChart({
                 })()}
               />
 
+              {useCandlesticks ? (
+                <Bar dataKey="close" shape={<CandlestickShape />} isAnimationActive={false} />
+              ) : (
               <Area
                 type="monotone"
                 dataKey="close"
@@ -925,6 +976,7 @@ export function PriceChart({
                 }}
                 isAnimationActive={false}
               />
+              )}
 
               {/* ── Moving average overlays ── */}
               {(MA_AVAILABILITY[period] ?? []).includes(7) && renderedMAs.has(7) && (

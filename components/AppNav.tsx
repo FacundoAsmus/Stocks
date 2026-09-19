@@ -48,6 +48,9 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
   const [showVolumeChart, setShowVolumeChart] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-volume-chart") !== "0" : true
   );
+  const [useCandlesticks, setUseCandlesticks] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("chart-style") === "candles" : false
+  );
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -75,6 +78,13 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
     setShowVolumeChart(next);
     localStorage.setItem("pro-volume-chart", next ? "1" : "0");
     window.dispatchEvent(new Event("pro-volume-chart-changed"));
+  }
+
+  function toggleCandlesticks() {
+    const next = !useCandlesticks;
+    setUseCandlesticks(next);
+    localStorage.setItem("chart-style", next ? "candles" : "line");
+    window.dispatchEvent(new Event("chart-style-changed"));
   }
 
   const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
@@ -149,6 +159,21 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
                      backgroundColor: showVolumeChart ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
             <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
               style={{ left: showVolumeChart ? "calc(100% - 1.125rem)" : "0.125rem" }} />
+          </span>
+        </button>
+        <button
+          onClick={toggleCandlesticks}
+          className="mt-2 w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5"
+        >
+          <span className="flex flex-col gap-0.5 text-left">
+            <span className="text-sm text-text-primary font-medium">Candlestick chart</span>
+            <span className="text-xs text-text-muted">Shows open, high, low, and close for each interval</span>
+          </span>
+          <span className="shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative"
+            style={{ borderColor: useCandlesticks ? "var(--color-accent)" : "var(--color-border-subtle)",
+                     backgroundColor: useCandlesticks ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
+            <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
+              style={{ left: useCandlesticks ? "calc(100% - 1.125rem)" : "0.125rem" }} />
           </span>
         </button>
       </div>
