@@ -63,7 +63,7 @@ type DataKey = typeof DATA_KEYS[number];
 
 const GRAPH_TYPES = [
   "price:1D", "price:1W", "price:1M", "price:3M", "price:5M", "price:6M", "price:1Y", "price:2Y", "price:5Y", "price:ALL",
-  "ma7", "ma25", "ma99", "capex", "rnd", "freeCashFlow", "earnings", "eps", "analyst", "sentiment", "targets",
+  "ma7", "ma25", "ma99", "volume", "capex", "rnd", "freeCashFlow", "earnings", "eps", "analyst", "sentiment", "targets",
 ] as const;
 type GraphType = typeof GRAPH_TYPES[number];
 
@@ -933,6 +933,34 @@ function GraphEarningsMetric({ ctx, metric, title }: { ctx: GraphCtx; metric: "r
   );
 }
 
+function GraphVolume({ ctx }: { ctx: GraphCtx }) {
+  const [ready, setReady] = useState(false);
+  const [points, setPoints] = useState<CandlePoint[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/candles?symbol=${encodeURIComponent(ctx.stock.symbol)}&period=1M`, { signal: controller.signal })
+      .then(res => res.ok ? res.json() as Promise<{ candles?: CandlePoint[] }> : { candles: [] })
+      .then(data => { if (!controller.signal.aborted) setPoints(data.candles ?? []); })
+      .catch(() => { if (!controller.signal.aborted) setPoints([]); })
+      .finally(() => { if (!controller.signal.aborted) setReady(true); });
+    return () => controller.abort();
+  }, [ctx.stock.symbol]);
+  const volumes = points.map(point => point.volume ?? 0).filter(volume => volume > 0);
+  const average = volumes.length ? volumes.reduce((sum, volume) => sum + volume, 0) / volumes.length : null;
+  const maximum = Math.max(...volumes, 1);
+  return <GraphFrame title="Volume — 1 Month" value={average === null ? "N/A" : formatCompact(average)} ready={ready}>
+    {!volumes.length ? <div style={{ display: "flex", alignItems: "center", height: "100%", color: "#9a9aa2", fontSize: 13 }}>Volume data unavailable.</div> : (
+      <div style={{ display: "flex", alignItems: "end", gap: 1, height: "100%" }} aria-label="One month of trading volume">
+        {points.map((point, index) => {
+          const volume = point.volume ?? 0;
+          const up = point.close >= (point.open ?? point.close);
+          return <div key={`${point.time}-${index}`} style={{ flex: 1, minWidth: 1, height: `${Math.max(2, volume / maximum * 100)}%`, background: up ? "rgba(0,200,5,0.24)" : "rgba(255,70,58,0.22)" }} />;
+        })}
+      </div>
+    )}
+  </GraphFrame>;
+}
+
 function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; annotations?: Annotation[]; ctx: GraphCtx }) {
   if (graphType.startsWith("price")) {
     const period = graphType.includes(":") ? graphType.split(":")[1] : "1M";
@@ -942,6 +970,7 @@ function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; an
     case "ma7": return <GraphPrice ctx={ctx} period="1Y" maWindow={7} />;
     case "ma25": return <GraphPrice ctx={ctx} period="1Y" maWindow={25} />;
     case "ma99": return <GraphPrice ctx={ctx} period="1Y" maWindow={99} />;
+    case "volume": return <GraphVolume ctx={ctx} />;
     case "capex": return <GraphFilingMetric ctx={ctx} title="CapEx" field="capex" />;
     case "rnd": return <GraphFilingMetric ctx={ctx} title="R&D" field="researchAndDevelopment" />;
     case "freeCashFlow": return <GraphFilingMetric ctx={ctx} title="Free Cash Flow" field="freeCashFlow" />;

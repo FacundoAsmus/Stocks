@@ -39,6 +39,7 @@ Guidelines:
   • [[graph:TYPE]] — a small chart. TYPE must be exactly one of:
       price:1D (today), price:1W (1 week), price:1M (1 month), price:3M (3 months), price:5M (5 months), price:6M (6 months), price:1Y (1 year), price:2Y (2 years), price:5Y (5 years), price:ALL (all-time),
       ma7 (one-year price chart with the 7-day moving average), ma25 (one-year price chart with the 25-day moving average), ma99 (one-year price chart with the 99-day moving average),
+      volume (non-interactive one-month trading-volume bars, with average daily volume),
       capex (annual capital-expenditure bars from SEC filings), rnd (annual research-and-development bars from SEC filings), freeCashFlow (annual free-cash-flow bars from SEC filings),
       earnings (quarterly revenue bars), eps (quarterly earnings-per-share bars),
       analyst (analyst buy/hold/sell breakdown), sentiment (this app's computed sentiment score), targets (analyst price target range vs. current price).

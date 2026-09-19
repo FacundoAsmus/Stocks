@@ -5,60 +5,14 @@ import type { RefObject } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft } from "lucide-react";
 
-import { formatCompact, formatCurrency, formatPercent } from "@/lib/format";
+import { formatCompact, formatCurrency } from "@/lib/format";
 import { WheelPrice } from "@/components/PriceChart";
 import {
-  epsSurprisePct,
-  expectedEpsGrowthPct,
-  expectedRevenueGrowthPct,
-  isReported,
-  revenueSurprisePct,
   todayStr
 } from "@/lib/earnings";
 import type { EarningsEvent } from "@/types/stock";
 
 export const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
-
-function fmtRevenue(value: number | null) {
-  return value !== null ? `$${formatCompact(value)}` : "N/A";
-}
-
-function toneOf(pct: number | null): "positive" | "negative" | "neutral" {
-  if (pct === null) return "neutral";
-  return pct >= 0 ? "positive" : "negative";
-}
-
-// ─── One quarter's detail card ──────────────────────────────────────────────
-function StatBlock({
-  title, primaryLabel, primaryValue, secondaryLabel, secondaryValue, tone
-}: {
-  title: string;
-  primaryLabel: string;
-  primaryValue: string;
-  secondaryLabel: string;
-  secondaryValue: string;
-  tone: "positive" | "negative" | "neutral";
-}) {
-  return (
-    <div className="px-0.5 py-2.5">
-      <p className="text-xs uppercase tracking-wider text-text-muted mb-2">{title}</p>
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <p className="text-xs text-text-muted">{primaryLabel}</p>
-          <p className="text-lg font-semibold text-text-primary">{primaryValue}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-text-muted">{secondaryLabel}</p>
-          <p className={`text-lg font-semibold ${
-            tone === "positive" ? "text-positive" : tone === "negative" ? "text-negative" : "text-text-muted"
-          }`}>
-            {secondaryValue}
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 type QuarterMetric = "revenue" | "eps";
 
@@ -100,8 +54,9 @@ function MobileQuarterMetricChart({ metric, title, events, selectedDate }: { met
             const percentage = value === null ? 0 : Math.abs(value) / maximum * 100;
             const height = value === null ? 0 : Math.max(percentage * (hasNegative ? 0.4 : 0.78), 3);
             const color = metricColor(value === null ? 50 : value < 0 ? 50 - Math.abs(value) / maximum * 50 : 50 + value / maximum * 50);
+            const selected = event.date === selectedDate;
             return <div key={event.date} className="relative border-l border-border-subtle first:border-l-0" onMouseEnter={() => { if (value !== null) setHoveredValue(value); }} onMouseLeave={() => setHoveredValue(null)}>
-              {value !== null && <div className={`absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm ${estimate ? "border border-accent bg-accent/15" : ""}`} style={{ ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: animated ? `${height}%` : "0%", ...(!estimate ? { backgroundColor: color, boxShadow: `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` } : {}), transition: "height 1.657s cubic-bezier(0.22, 1, 0.36, 1)" }} />}
+              {value !== null && <div className={`absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm ${estimate ? selected ? "border-2 border-accent bg-accent/15" : "border border-accent/70 bg-accent/15 opacity-45" : selected ? "border-2 border-accent" : ""}`} style={{ ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: animated ? `${height}%` : "0%", ...(!estimate ? { backgroundColor: color, boxShadow: `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` } : {}), transition: "height 1.657s cubic-bezier(0.22, 1, 0.36, 1)" }} />}
               <span className="absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold text-accent">Q{event.quarter}</span>
             </div>;
           })}
@@ -114,12 +69,8 @@ function MobileQuarterMetricChart({ metric, title, events, selectedDate }: { met
 export function EarningsDetailCard({
   event, earnings, onBack
 }: { event: EarningsEvent; earnings: EarningsEvent[]; onBack: () => void }) {
-  const reported = isReported(event);
   const dateLabel = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" })
     .format(new Date(`${event.date}T00:00:00`));
-
-  const revPct = reported ? revenueSurprisePct(event) : expectedRevenueGrowthPct(earnings, event);
-  const epsPct = reported ? epsSurprisePct(event)      : expectedEpsGrowthPct(earnings, event);
   const sorted = [...earnings].sort((a, b) => a.date.localeCompare(b.date));
   const selectedIndex = Math.max(0, sorted.findIndex(item => item.date === event.date));
   const chartEvents = sorted.slice(Math.max(0, selectedIndex - 4), selectedIndex + 5);
@@ -150,25 +101,7 @@ export function EarningsDetailCard({
         </div>
       </div>
 
-      <div className="flex flex-col">
-        <StatBlock
-          title="Earnings (Revenue)"
-          primaryLabel="Expected"
-          primaryValue={fmtRevenue(event.revenueEstimate)}
-          secondaryLabel={reported ? "Result" : "vs Last Qtr"}
-          secondaryValue={revPct !== null ? formatPercent(revPct) : "N/A"}
-          tone={toneOf(revPct)}
-        />
-        <StatBlock
-          title="EPS"
-          primaryLabel="Expected"
-          primaryValue={formatCurrency(event.epsEstimate)}
-          secondaryLabel={reported ? "Result" : "vs Last Qtr"}
-          secondaryValue={epsPct !== null ? formatPercent(epsPct) : "N/A"}
-          tone={toneOf(epsPct)}
-        />
-      </div>
-      <div className="mt-4 space-y-7 border-t border-white/10 pt-5">
+      <div className="space-y-7">
         <MobileQuarterMetricChart title="Earnings (Revenue)" metric="revenue" events={chartEvents} selectedDate={event.date} />
         <MobileQuarterMetricChart title="EPS" metric="eps" events={chartEvents} selectedDate={event.date} />
       </div>
