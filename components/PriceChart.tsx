@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
-  Bar,
   ComposedChart,
+  Customized,
   CartesianGrid,
   Line,
   ReferenceLine,
@@ -48,38 +48,47 @@ const MAX_VOLUME_BARS = 240;
 
 type VolumeBucket = { volume: number };
 
-// Recharts has no built-in OHLC series, so each Bar supplies the categorical
-// x-position while this shape draws the body and wick from the candle fields.
-function CandlestickShape(props: Record<string, unknown>) {
-  const { x = 0, y = 0, width = 0, height = 0, payload } = props as {
-    x?: number; y?: number; width?: number; height?: number; payload?: CandlePoint;
-  };
-  const close = payload?.close;
-  if (!payload || typeof close !== "number" || !Number.isFinite(close) || close === 0 || !height) return null;
+// Recharts has no built-in OHLC series. This layer uses the chart's actual
+// Y-axis scale, rather than approximating it from a bar's zero baseline, so
+// every body and wick lands exactly on its open/high/low/close price.
+function CandlestickLayer({
+  data,
+  offset,
+  yAxisMap,
+}: {
+  data?: CandlePoint[];
+  offset?: { left: number; width: number };
+  yAxisMap?: Record<string, { scale?: (value: number) => number }>;
+}) {
+  const yScale = Object.values(yAxisMap ?? {})[0]?.scale;
+  if (!data?.length || !offset || !yScale) return null;
 
-  const open = payload.open ?? close;
-  const high = payload.high ?? Math.max(open, close);
-  const low = payload.low ?? Math.min(open, close);
-  // A Bar's height spans from the close to its zero baseline. That gives us
-  // the current pixel-per-price ratio without coupling this shape to chart
-  // internals or a particular responsive size.
-  const pixelsPerPrice = Math.abs(height / close);
-  const closeY = y;
-  const priceY = (price: number) => closeY + (close - price) * pixelsPerPrice;
-  const openY = priceY(open);
-  const highY = priceY(high);
-  const lowY = priceY(low);
-  const rising = close >= open;
-  const color = rising ? "#00c805" : "#ff3003";
-  const bodyTop = Math.min(openY, closeY);
-  const bodyHeight = Math.max(Math.abs(openY - closeY), 1);
-  const bodyWidth = Math.max(1, Math.min(width * 0.62, 12));
-  const centerX = x + width / 2;
-
+  const slotWidth = offset.width / data.length;
+  const bodyWidth = Math.max(1, Math.min(slotWidth * 0.62, 12));
   return (
-    <g>
-      <line x1={centerX} x2={centerX} y1={highY} y2={lowY} stroke={color} strokeWidth={1} />
-      <rect x={centerX - bodyWidth / 2} y={bodyTop} width={bodyWidth} height={bodyHeight} fill={color} />
+    <g className="recharts-candlestick-layer" aria-hidden>
+      {data.map((point, index) => {
+        const close = point.close;
+        const open = point.open ?? close;
+        const high = point.high ?? Math.max(open, close);
+        const low = point.low ?? Math.min(open, close);
+        const openY = yScale(open);
+        const closeY = yScale(close);
+        const highY = yScale(high);
+        const lowY = yScale(low);
+        const rising = close >= open;
+        const color = rising ? "#00c805" : "#ff3003";
+        const centerX = offset.left + (index + 0.5) * slotWidth;
+        const bodyTop = Math.min(openY, closeY);
+        const bodyHeight = Math.max(Math.abs(openY - closeY), 1);
+
+        return (
+          <g key={point.time}>
+            <line x1={centerX} x2={centerX} y1={highY} y2={lowY} stroke={color} strokeWidth={1} />
+            <rect x={centerX - bodyWidth / 2} y={bodyTop} width={bodyWidth} height={bodyHeight} fill={color} />
+          </g>
+        );
+      })}
     </g>
   );
 }
@@ -954,7 +963,8 @@ export function PriceChart({
               />
 
               {useCandlesticks ? (
-                <Bar dataKey="close" shape={<CandlestickShape />} isAnimationActive={false} />
+                /* Keeps the native tooltip and hover logic tied to close. */
+                <Area dataKey="close" stroke="transparent" fill="none" dot={false} activeDot={false} isAnimationActive={false} />
               ) : (
               <Area
                 type="monotone"
@@ -977,6 +987,7 @@ export function PriceChart({
                 isAnimationActive={false}
               />
               )}
+              {useCandlesticks && <Customized component={CandlestickLayer} />}
 
               {/* ── Moving average overlays ── */}
               {(MA_AVAILABILITY[period] ?? []).includes(7) && renderedMAs.has(7) && (
