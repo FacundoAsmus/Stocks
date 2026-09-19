@@ -9,6 +9,16 @@ import { cn } from "@/lib/utils";
 
 type Theme = "dark" | "light" | "system";
 
+function Toggle({ enabled }: { enabled: boolean }) {
+  return (
+    <span className="shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative"
+      style={{ borderColor: enabled ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: enabled ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
+      <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
+        style={{ left: enabled ? "calc(100% - 1.125rem)" : "0.125rem" }} />
+    </span>
+  );
+}
+
 function getStoredTheme(): Theme {
   if (typeof window === "undefined") return "dark";
   return (localStorage.getItem("theme") as Theme) ?? "dark";
@@ -51,6 +61,9 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
   const [useCandlesticks, setUseCandlesticks] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("chart-style") === "candles" : false
   );
+  const [colorVolumeBars, setColorVolumeBars] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("pro-volume-color-bars") === "1" : false
+  );
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -85,6 +98,13 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
     setUseCandlesticks(next);
     localStorage.setItem("chart-style", next ? "candles" : "line");
     window.dispatchEvent(new Event("chart-style-changed"));
+  }
+
+  function toggleVolumeBarColors() {
+    const next = !colorVolumeBars;
+    setColorVolumeBars(next);
+    localStorage.setItem("pro-volume-color-bars", next ? "1" : "0");
+    window.dispatchEvent(new Event("pro-volume-color-bars-changed"));
   }
 
   const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
@@ -147,21 +167,6 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
           </span>
         </button>
         <button
-          onClick={toggleVolumeChart}
-          className="mt-2 w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5"
-        >
-          <span className="flex flex-col gap-0.5 text-left">
-            <span className="text-sm text-text-primary font-medium">Volume chart</span>
-            <span className="text-xs text-text-muted">Shows trading volume below the timeframes</span>
-          </span>
-          <span className="shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative"
-            style={{ borderColor: showVolumeChart ? "var(--color-accent)" : "var(--color-border-subtle)",
-                     backgroundColor: showVolumeChart ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
-            <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
-              style={{ left: showVolumeChart ? "calc(100% - 1.125rem)" : "0.125rem" }} />
-          </span>
-        </button>
-        <button
           onClick={toggleCandlesticks}
           className="mt-2 w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5"
         >
@@ -175,6 +180,18 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
             <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
               style={{ left: useCandlesticks ? "calc(100% - 1.125rem)" : "0.125rem" }} />
           </span>
+        </button>
+      </div>
+
+      <div className="px-4 py-3 border-t border-border-subtle">
+        <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-2">Pro Features</p>
+        <button onClick={toggleVolumeChart} className="w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5">
+          <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Volume chart</span><span className="text-xs text-text-muted">Shows trading volume below the timeframes</span></span>
+          <Toggle enabled={showVolumeChart} />
+        </button>
+        <button onClick={toggleVolumeBarColors} disabled={!showVolumeChart} className="mt-2 w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed">
+          <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Color bars</span><span className="text-xs text-text-muted">Uses green for up intervals and muted red for down intervals</span></span>
+          <Toggle enabled={colorVolumeBars} />
         </button>
       </div>
 

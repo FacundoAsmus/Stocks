@@ -46,7 +46,7 @@ const MA_COLORS: Record<number, string> = {
 
 const MAX_VOLUME_BARS = 240;
 
-type VolumeBucket = { volume: number };
+type VolumeBucket = { volume: number; isUp: boolean };
 
 // Recharts has no built-in OHLC series. This layer uses the chart's actual
 // Y-axis scale, rather than approximating it from a bar's zero baseline, so
@@ -97,20 +97,29 @@ function CandlestickLayer({
 // overview, so combine adjacent candles into a bounded number of buckets.
 // This keeps rendering work stable without hiding any period of history.
 function buildVolumeBuckets(points: CandlePoint[]): VolumeBucket[] {
-  const volumes = points
-    .map((point) => point.volume)
-    .filter((volume): volume is number => typeof volume === "number" && volume > 0);
-  if (volumes.length <= MAX_VOLUME_BARS) return volumes.map((volume) => ({ volume }));
+  let previousClose: number | undefined;
+  const volumes = points.flatMap((point) => {
+    const volume = point.volume;
+    const referencePrice = point.open ?? previousClose ?? point.close;
+    previousClose = point.close;
+    return typeof volume === "number" && volume > 0
+      ? [{ volume, isUp: point.close >= referencePrice }]
+      : [];
+  });
+  if (volumes.length <= MAX_VOLUME_BARS) return volumes;
 
   const bucketSize = Math.ceil(volumes.length / MAX_VOLUME_BARS);
   const buckets: VolumeBucket[] = [];
   for (let start = 0; start < volumes.length; start += bucketSize) {
-    buckets.push({ volume: volumes.slice(start, start + bucketSize).reduce((sum, volume) => sum + volume, 0) });
+    const source = volumes.slice(start, start + bucketSize);
+    const volume = source.reduce((sum, entry) => sum + entry.volume, 0);
+    const directionalVolume = source.reduce((sum, entry) => sum + (entry.isUp ? entry.volume : -entry.volume), 0);
+    buckets.push({ volume, isUp: directionalVolume >= 0 });
   }
   return buckets;
 }
 
-function VolumeChartCanvas({ buckets }: { buckets: VolumeBucket[] }) {
+function VolumeChartCanvas({ buckets, colorBars }: { buckets: VolumeBucket[]; colorBars: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -136,10 +145,12 @@ function VolumeChartCanvas({ buckets }: { buckets: VolumeBucket[] }) {
       const maxVolume = Math.max(...buckets.map((bucket) => bucket.volume), 1);
       const step = width / buckets.length;
       const barWidth = Math.max(1, step * 0.72);
-      context.fillStyle = "rgba(0, 200, 5, 0.24)";
       buckets.forEach((bucket, index) => {
         const barHeight = Math.max(1, (bucket.volume / maxVolume) * height * progress);
         const x = index * step + (step - barWidth) / 2;
+        context.fillStyle = colorBars && !bucket.isUp
+          ? "rgba(255, 70, 58, 0.22)"
+          : "rgba(0, 200, 5, 0.24)";
         context.fillRect(x, height - barHeight, barWidth, barHeight);
       });
     }
@@ -158,7 +169,7 @@ function VolumeChartCanvas({ buckets }: { buckets: VolumeBucket[] }) {
       observer.disconnect();
       cancelAnimationFrame(animationFrame);
     };
-  }, [buckets]);
+  }, [buckets, colorBars]);
 
   return <canvas ref={canvasRef} className="block h-full w-full" aria-hidden />;
 }
@@ -520,6 +531,9 @@ export function PriceChart({
   const [showVolumeChart, setShowVolumeChart] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-volume-chart") !== "0" : true
   );
+  const [colorVolumeBars, setColorVolumeBars] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("pro-volume-color-bars") === "1" : false
+  );
   const [useCandlesticks, setUseCandlesticks] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("chart-style") === "candles" : false
   );
@@ -535,14 +549,19 @@ export function PriceChart({
     function syncChartStyle() {
       setUseCandlesticks(localStorage.getItem("chart-style") === "candles");
     }
+    function syncVolumeBarColors() {
+      setColorVolumeBars(localStorage.getItem("pro-volume-color-bars") === "1");
+    }
     window.addEventListener("pro-mode-changed", sync);
     window.addEventListener("pro-volume-chart-changed", syncVolumeChart);
     window.addEventListener("chart-style-changed", syncChartStyle);
+    window.addEventListener("pro-volume-color-bars-changed", syncVolumeBarColors);
     window.addEventListener("storage", sync);
     return () => {
       window.removeEventListener("pro-mode-changed", sync);
       window.removeEventListener("pro-volume-chart-changed", syncVolumeChart);
       window.removeEventListener("chart-style-changed", syncChartStyle);
+      window.removeEventListener("pro-volume-color-bars-changed", syncVolumeBarColors);
       window.removeEventListener("storage", sync);
     };
   }, []);
@@ -1100,7 +1119,7 @@ export function PriceChart({
       {showVolumeChart && hasVolume && (
         <section className="mt-0" aria-label="Trading volume">
           <div className="relative h-20 sm:h-24">
-            <VolumeChartCanvas buckets={volumeBuckets} />
+            <VolumeChartCanvas buckets={volumeBuckets} colorBars={colorVolumeBars} />
             <div
               ref={volumeCrosshairRef}
               className="pointer-events-none absolute inset-y-0 hidden w-px"

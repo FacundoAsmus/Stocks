@@ -51,6 +51,9 @@ function SettingsPanel({ closing }: { closing: boolean }) {
   const [useCandlesticks, setUseCandlesticks] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("chart-style") === "candles" : false
   );
+  const [colorVolumeBars, setColorVolumeBars] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("pro-volume-color-bars") === "1" : false
+  );
 
   function changeTheme(t: Theme) {
     setTheme(t);
@@ -77,6 +80,13 @@ function SettingsPanel({ closing }: { closing: boolean }) {
     setUseCandlesticks(next);
     localStorage.setItem("chart-style", next ? "candles" : "line");
     window.dispatchEvent(new Event("chart-style-changed"));
+  }
+
+  function toggleVolumeBarColors() {
+    const next = !colorVolumeBars;
+    setColorVolumeBars(next);
+    localStorage.setItem("pro-volume-color-bars", next ? "1" : "0");
+    window.dispatchEvent(new Event("pro-volume-color-bars-changed"));
   }
 
   const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
@@ -144,21 +154,6 @@ function SettingsPanel({ closing }: { closing: boolean }) {
               </span>
             </button>
             <button
-              onClick={toggleVolumeChart}
-              className="w-full flex items-center justify-between px-4 py-3.5 text-left border-t border-border-subtle"
-            >
-              <span className="flex flex-col gap-0.5">
-                <span className="text-sm text-text-primary font-medium">Volume chart</span>
-                <span className="text-xs text-text-muted">Shows trading volume below the timeframes</span>
-              </span>
-              <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative"
-                style={{ borderColor: showVolumeChart ? "var(--color-accent)" : "var(--color-border-subtle)",
-                         backgroundColor: showVolumeChart ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
-                <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
-                  style={{ left: showVolumeChart ? "calc(100% - 1.125rem)" : "0.125rem" }} />
-              </span>
-            </button>
-            <button
               onClick={toggleCandlesticks}
               className="w-full flex items-center justify-between px-4 py-3.5 text-left border-t border-border-subtle"
             >
@@ -172,6 +167,20 @@ function SettingsPanel({ closing }: { closing: boolean }) {
                 <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
                   style={{ left: useCandlesticks ? "calc(100% - 1.125rem)" : "0.125rem" }} />
               </span>
+            </button>
+          </div>
+        </section>
+
+        <section>
+          <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">Pro Features</p>
+          <div className="rounded-xl border border-border-subtle bg-panel overflow-hidden">
+            <button onClick={toggleVolumeChart} className="w-full flex items-center justify-between px-4 py-3.5 text-left">
+              <span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Volume chart</span><span className="text-xs text-text-muted">Shows trading volume below the timeframes</span></span>
+              <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative" style={{ borderColor: showVolumeChart ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: showVolumeChart ? "var(--color-accent)" : "var(--color-panel-muted)" }}><span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: showVolumeChart ? "calc(100% - 1.125rem)" : "0.125rem" }} /></span>
+            </button>
+            <button onClick={toggleVolumeBarColors} disabled={!showVolumeChart} className="w-full flex items-center justify-between px-4 py-3.5 text-left border-t border-border-subtle transition-opacity disabled:opacity-35 disabled:cursor-not-allowed">
+              <span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Color bars</span><span className="text-xs text-text-muted">Uses green for up intervals and muted red for down intervals</span></span>
+              <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative" style={{ borderColor: colorVolumeBars ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: colorVolumeBars ? "var(--color-accent)" : "var(--color-panel-muted)" }}><span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: colorVolumeBars ? "calc(100% - 1.125rem)" : "0.125rem" }} /></span>
             </button>
           </div>
         </section>
