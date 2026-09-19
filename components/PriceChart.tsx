@@ -571,21 +571,40 @@ export function PriceChart({
     return () => controller.abort();
   }, [data, maHistoryWindow, period, requiredMAHistoryDays, symbol]);
 
+  // Do not mount an MA line until the requested lead-in candles have arrived.
+  // This prevents a partial line from drawing first and then re-animating
+  // after its missing beginning has been loaded.
+  const renderedMAs = useMemo(
+    () => new Set([...activeMAs].filter((window) => maHistoryWindow >= window)),
+    [activeMAs, maHistoryWindow]
+  );
+
   const hasData    = data.length > 1;
   const hasVolume  = data.some((point) => typeof point.volume === "number" && point.volume > 0);
   const volumeBuckets = useMemo(() => buildVolumeBuckets(data), [data]);
   const isLongTerm = LONG_TERM_SET.has(period);
+  // Keep the price graph's vertical scale independent from indicators. An MA
+  // can leave this range, but it must never compress or stretch stock prices.
+  const priceYDomain = useMemo<[number, number]>(() => {
+    const prices = data.map((point) => point.close).filter(Number.isFinite);
+    if (!prices.length) return [0, 1];
+    const low = Math.min(...prices);
+    const high = Math.max(...prices);
+    if (low !== high) return [low, high];
+    const padding = Math.max(Math.abs(low) * 0.01, 1);
+    return [low - padding, high + padding];
+  }, [data]);
 
   // Merge in MA fields for whichever windows are both available for this
   // period and currently toggled on. Only computed when needed.
   const chartData = useMemo(() => {
-    if (!activeMAs.size) return data;
+    if (!renderedMAs.size) return data;
     // Calculate over the hidden lead-in candles plus the visible range, then
     // map results back onto only the visible points.
     const calculationPoints = [...maHistory, ...data]
       .sort((a, b) => a.time - b.time)
       .filter((point, index, points) => index === 0 || points[index - 1].time !== point.time);
-    const mas = new Map([...activeMAs].map(w => [w, computeMA(calculationPoints, w)]));
+    const mas = new Map([...renderedMAs].map(w => [w, computeMA(calculationPoints, w)]));
     const maValuesByTime = new Map(
       calculationPoints.map((point, index) => [
         point.time,
@@ -598,7 +617,7 @@ export function PriceChart({
       ma25: maValuesByTime.get(d.time)?.ma25 ?? undefined,
       ma99: maValuesByTime.get(d.time)?.ma99 ?? undefined,
     }));
-  }, [activeMAs, data, maHistory]);
+  }, [data, maHistory, renderedMAs]);
 
   /* Displayed price and % change — hover overrides live values */
   const displayPrice = hoverPrice ?? currentPrice;
@@ -848,7 +867,7 @@ export function PriceChart({
             >
               {/* No Y axis, no grid lines */}
               <CartesianGrid stroke="transparent" />
-              <YAxis domain={["dataMin", "dataMax"]} hide />
+              <YAxis domain={priceYDomain} allowDataOverflow hide />
               <XAxis dataKey="date" hide />
 
               <Tooltip
@@ -896,15 +915,15 @@ export function PriceChart({
               />
 
               {/* ── Moving average overlays ── */}
-              {(MA_AVAILABILITY[period] ?? []).includes(7) && activeMAs.has(7) && (
+              {(MA_AVAILABILITY[period] ?? []).includes(7) && renderedMAs.has(7) && (
                 <Line key="ma7" type="monotone" dataKey="ma7" stroke={MA_COLORS[7]} strokeWidth={3}
                   dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
               )}
-              {(MA_AVAILABILITY[period] ?? []).includes(25) && activeMAs.has(25) && (
+              {(MA_AVAILABILITY[period] ?? []).includes(25) && renderedMAs.has(25) && (
                 <Line key="ma25" type="monotone" dataKey="ma25" stroke={MA_COLORS[25]} strokeWidth={3}
                   dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
               )}
-              {(MA_AVAILABILITY[period] ?? []).includes(99) && activeMAs.has(99) && (
+              {(MA_AVAILABILITY[period] ?? []).includes(99) && renderedMAs.has(99) && (
                 <Line key="ma99" type="monotone" dataKey="ma99" stroke={MA_COLORS[99]} strokeWidth={3}
                   dot={false} activeDot={false} isAnimationActive animationDuration={700} animationEasing="ease-out" connectNulls />
               )}
