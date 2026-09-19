@@ -1,11 +1,12 @@
 "use client";
 
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft } from "lucide-react";
 
 import { formatCompact, formatCurrency, formatPercent } from "@/lib/format";
+import { WheelPrice } from "@/components/PriceChart";
 import {
   epsSurprisePct,
   expectedEpsGrowthPct,
@@ -59,6 +60,57 @@ function StatBlock({
   );
 }
 
+type QuarterMetric = "revenue" | "eps";
+
+function metricColor(percentage: number) {
+  const stops: [number, [number, number, number]][] = [[0, [220, 38, 38]], [25, [249, 115, 22]], [50, [250, 204, 21]], [75, [163, 230, 53]], [100, [52, 211, 153]]];
+  const upperIndex = stops.findIndex(([stop]) => percentage <= stop);
+  const upper = stops[Math.max(1, upperIndex === -1 ? stops.length - 1 : upperIndex)];
+  const lower = stops[stops.indexOf(upper) - 1];
+  const progress = (percentage - lower[0]) / (upper[0] - lower[0] || 1);
+  return `rgb(${Math.round(lower[1][0] + (upper[1][0] - lower[1][0]) * progress)}, ${Math.round(lower[1][1] + (upper[1][1] - lower[1][1]) * progress)}, ${Math.round(lower[1][2] + (upper[1][2] - lower[1][2]) * progress)})`;
+}
+
+// The phone counterpart of the desktop quarter charts. It keeps the same
+// bars, animated value wheel, estimates, and hover interaction, but is sized
+// for the calendar detail sheet.
+function MobileQuarterMetricChart({ metric, title, events, selectedDate }: { metric: QuarterMetric; title: string; events: EarningsEvent[]; selectedDate: string }) {
+  const [animated, setAnimated] = useState(false);
+  const [hoveredValue, setHoveredValue] = useState<number | null>(null);
+  useEffect(() => { const frame = requestAnimationFrame(() => setAnimated(true)); return () => cancelAnimationFrame(frame); }, []);
+  const points = events.map(event => {
+    const actual = metric === "revenue" ? event.revenueActual : event.epsActual;
+    const estimate = metric === "revenue" ? event.revenueEstimate : event.epsEstimate;
+    return { event, value: actual ?? estimate, estimate: event.date >= todayStr() };
+  });
+  const values = points.map(point => point.value).filter((value): value is number => value !== null);
+  const selectedValue = points.find(point => point.event.date === selectedDate)?.value ?? [...points].reverse().find(point => point.value !== null)?.value ?? null;
+  const displayedValue = hoveredValue ?? selectedValue;
+  const maximum = Math.max(...values.map(value => Math.abs(value)), 1);
+  const hasNegative = values.some(value => value < 0);
+  const baseline = hasNegative ? "45%" : "14%";
+  return (
+    <section>
+      <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
+      <div className="mb-4 text-text-primary"><WheelPrice value={displayedValue === null ? "N/A" : metric === "revenue" ? `$${formatCompact(displayedValue)}` : formatCurrency(displayedValue)} size="xs" /></div>
+      <div className="relative h-48 border-y border-border-subtle">
+        <div className="absolute inset-x-0 border-t border-border-subtle" style={hasNegative ? { top: baseline } : { bottom: baseline }} aria-hidden />
+        <div className="grid h-full grid-flow-col auto-cols-fr">
+          {points.map(({ event, value, estimate }) => {
+            const percentage = value === null ? 0 : Math.abs(value) / maximum * 100;
+            const height = value === null ? 0 : Math.max(percentage * (hasNegative ? 0.4 : 0.78), 3);
+            const color = metricColor(value === null ? 50 : value < 0 ? 50 - Math.abs(value) / maximum * 50 : 50 + value / maximum * 50);
+            return <div key={event.date} className="relative border-l border-border-subtle first:border-l-0" onMouseEnter={() => { if (value !== null) setHoveredValue(value); }} onMouseLeave={() => setHoveredValue(null)}>
+              {value !== null && <div className={`absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm ${estimate ? "border border-accent bg-accent/15" : ""}`} style={{ ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: animated ? `${height}%` : "0%", ...(!estimate ? { backgroundColor: color, boxShadow: `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` } : {}), transition: "height 1.657s cubic-bezier(0.22, 1, 0.36, 1)" }} />}
+              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold text-accent">Q{event.quarter}</span>
+            </div>;
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function EarningsDetailCard({
   event, earnings, onBack
 }: { event: EarningsEvent; earnings: EarningsEvent[]; onBack: () => void }) {
@@ -68,6 +120,9 @@ export function EarningsDetailCard({
 
   const revPct = reported ? revenueSurprisePct(event) : expectedRevenueGrowthPct(earnings, event);
   const epsPct = reported ? epsSurprisePct(event)      : expectedEpsGrowthPct(earnings, event);
+  const sorted = [...earnings].sort((a, b) => a.date.localeCompare(b.date));
+  const selectedIndex = Math.max(0, sorted.findIndex(item => item.date === event.date));
+  const chartEvents = sorted.slice(Math.max(0, selectedIndex - 4), selectedIndex + 5);
 
   return (
     <div
@@ -112,6 +167,10 @@ export function EarningsDetailCard({
           secondaryValue={epsPct !== null ? formatPercent(epsPct) : "N/A"}
           tone={toneOf(epsPct)}
         />
+      </div>
+      <div className="mt-4 space-y-7 border-t border-white/10 pt-5">
+        <MobileQuarterMetricChart title="Earnings (Revenue)" metric="revenue" events={chartEvents} selectedDate={event.date} />
+        <MobileQuarterMetricChart title="EPS" metric="eps" events={chartEvents} selectedDate={event.date} />
       </div>
     </div>
   );

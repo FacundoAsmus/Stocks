@@ -8,6 +8,7 @@ import { ChevronLeft } from "lucide-react";
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
+import { FilingIndicators } from "@/components/FilingIndicators";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { PriceChart } from "@/components/PriceChart";
 import { CompanyDescription } from "@/components/CompanyDescription";
@@ -184,6 +185,8 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
             earnings={stock.earnings}
             isEtf={isEtf}
           />
+
+          {!isEtf && <FilingIndicators symbol={stock.symbol} compact />}
 
           {!isEtf && (
             <div className="flex justify-end -mt-2">

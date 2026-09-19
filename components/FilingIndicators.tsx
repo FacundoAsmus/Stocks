@@ -41,12 +41,15 @@ function AnnualIndicatorChart({
   title,
   field,
   indicators,
-  started
+  started,
+  compact = false
 }: {
   title: string;
   field: IndicatorKey;
   indicators: FilingIndicator[];
   started: boolean;
+  /** Phone stock pages use a shorter chart while retaining all interactions. */
+  compact?: boolean;
 }) {
   const [animated, setAnimated] = useState(false);
   const [hoveredValue, setHoveredValue] = useState<number | null>(null);
@@ -74,7 +77,7 @@ function AnnualIndicatorChart({
       <div className="mb-5 text-text-primary">
         <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" />
       </div>
-      <div className="relative h-64 border-y border-border-subtle">
+      <div className={`relative ${compact ? "h-52" : "h-64"} border-y border-border-subtle`}>
         <div
           className="absolute inset-x-0 border-t border-border-subtle"
           style={hasNegativeValues ? { top: baseline } : { bottom: baseline }}
@@ -124,7 +127,7 @@ function AnnualIndicatorChart({
   );
 }
 
-export function FilingIndicators({ symbol }: { symbol: string }) {
+export function FilingIndicators({ symbol, compact = false }: { symbol: string; compact?: boolean }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [started, setStarted] = useState(false);
   const [indicators, setIndicators] = useState<FilingIndicator[] | null>(null);
@@ -157,19 +160,19 @@ export function FilingIndicators({ symbol }: { symbol: string }) {
   if (indicators !== null && !hasAnyChart) return null;
 
   return (
-    <section ref={sectionRef} className="mt-6 rounded-xl bg-black p-5">
+    <section ref={sectionRef} className="mt-6 rounded-xl bg-black p-5" aria-label="SEC filing indicators">
       {indicators === null ? (
         <p className="py-10 text-center text-sm text-text-muted">Loading SEC filing data…</p>
       ) : (
         <div className="space-y-8">
           {indicators.some((indicator) => indicator.capex !== null) && (
-            <AnnualIndicatorChart title="CapEx" field="capex" indicators={indicators} started={started} />
+            <AnnualIndicatorChart title="CapEx" field="capex" indicators={indicators} started={started} compact={compact} />
           )}
           {indicators.some((indicator) => indicator.researchAndDevelopment !== null) && (
-            <AnnualIndicatorChart title="R&D" field="researchAndDevelopment" indicators={indicators} started={started} />
+            <AnnualIndicatorChart title="R&D" field="researchAndDevelopment" indicators={indicators} started={started} compact={compact} />
           )}
           {indicators.some((indicator) => indicator.freeCashFlow !== null) && (
-            <AnnualIndicatorChart title="Free cash flow" field="freeCashFlow" indicators={indicators} started={started} />
+            <AnnualIndicatorChart title="Free cash flow" field="freeCashFlow" indicators={indicators} started={started} compact={compact} />
           )}
         </div>
       )}
