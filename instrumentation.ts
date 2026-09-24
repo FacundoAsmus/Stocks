@@ -12,5 +12,20 @@ export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const dns = await import("dns");
     dns.setDefaultResultOrder("ipv4first");
+
+    // Self-hosted Next servers stay alive between requests, so check alerts
+    // once a minute without requiring a separate process. Serverless hosts
+    // should invoke the same protected endpoint using their scheduler instead.
+    const secret = process.env.ALERT_CRON_SECRET;
+    const processWithAlertTimer = globalThis as typeof globalThis & { __stockPriceAlertTimer?: NodeJS.Timeout };
+    if (secret && !processWithAlertTimer.__stockPriceAlertTimer) {
+      const port = process.env.PORT || "3000";
+      processWithAlertTimer.__stockPriceAlertTimer = setInterval(() => {
+        void fetch(`http://127.0.0.1:${port}/api/alerts/check`, {
+          headers: { authorization: `Bearer ${secret}` },
+        }).catch(() => undefined);
+      }, 60_000);
+      processWithAlertTimer.__stockPriceAlertTimer.unref();
+    }
   }
 }

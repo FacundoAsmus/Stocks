@@ -6,6 +6,7 @@ const dmSans = DM_Sans({ subsets: ["latin"] });
 import { MobileNav } from "@/components/MobileNav";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ToastProvider } from "@/components/ToastProvider";
+import { PushWorkerRegistration } from "@/components/PushWorkerRegistration";
 import { BottomBlur } from "@/components/EdgeBlur";
 import "./globals.css";
 
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className="dark">
       <body className={dmSans.className}>
+        <PushWorkerRegistration />
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
             var t = localStorage.getItem('theme') || 'dark';

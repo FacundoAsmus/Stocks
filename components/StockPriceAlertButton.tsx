@@ -6,15 +6,16 @@ import { Bell, X } from "lucide-react";
 
 type Direction = "crossing" | "below" | "above";
 type PriceAlert = { id: string; symbol: string; name: string; price: number; direction: Direction; lastPrice: number };
-const STORAGE_KEY = "market-lens-price-alerts";
-
-function readAlerts(): PriceAlert[] {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") as PriceAlert[]; }
-  catch { return []; }
+const DEVICE_KEY = "market-lens-alert-device";
+function getDeviceId() {
+  let id = localStorage.getItem(DEVICE_KEY);
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem(DEVICE_KEY, id); }
+  return id;
 }
+function decodeKey(value: string) { const base64 = value.replace(/-/g, "+").replace(/_/g, "/"); return Uint8Array.from(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")), char => char.charCodeAt(0)); }
 
-export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = false }: {
-  symbol: string; name: string; currentPrice: number; mobile?: boolean;
+export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = false, mobileHeader = false }: {
+  symbol: string; name: string; currentPrice: number; mobile?: boolean; mobileHeader?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -24,70 +25,44 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
   const [message, setMessage] = useState("");
   const ownAlerts = alerts.filter(alert => alert.symbol === symbol);
 
-  useEffect(() => { setMounted(true); setAlerts(readAlerts()); }, []);
-
   useEffect(() => {
-    const isMobileViewport = window.matchMedia("(max-width: 1023px)").matches;
-    if (!ownAlerts.length || (mobile ? !isMobileViewport : isMobileViewport)) return;
-    let checking = false;
-    const check = async () => {
-      if (checking || document.visibilityState !== "visible") return;
-      checking = true;
-      try {
-        const response = await fetch(`/api/quote?symbol=${encodeURIComponent(symbol)}`, { cache: "no-store" });
-        if (!response.ok) return;
-        const { price: latest } = await response.json() as { price: number };
-        if (!Number.isFinite(latest) || latest <= 0) return;
-        const all = readAlerts();
-        const fired = all.filter(alert => alert.symbol === symbol && (
-          alert.direction === "crossing" ? (alert.lastPrice - alert.price) * (latest - alert.price) <= 0 && alert.lastPrice !== latest && (alert.lastPrice <= alert.price || latest <= alert.price)
-            : alert.direction === "above" ? alert.lastPrice < alert.price && latest >= alert.price
-              : alert.lastPrice > alert.price && latest <= alert.price
-        ));
-        const remaining = all.filter(alert => !fired.some(item => item.id === alert.id)).map(alert =>
-          alert.symbol === symbol ? { ...alert, lastPrice: latest } : alert
-        );
-        if (fired.length) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
-          setAlerts(remaining);
-          for (const alert of fired) {
-            const verb = alert.direction === "below" ? "fell below" : alert.direction === "above" ? "rose above" : "passed";
-            const body = `${alert.name} (${alert.symbol}) ${verb} $${alert.price.toFixed(2)}.`;
-            if ("Notification" in window && Notification.permission === "granted") new Notification("Price alert", { body, tag: alert.id });
-          }
-        } else {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(remaining));
-        }
-      } catch { /* A transient quote failure leaves the alert active. */ }
-      finally { checking = false; }
-    };
-    const timer = window.setInterval(check, 30_000);
-    return () => window.clearInterval(timer);
-  }, [symbol, ownAlerts.length, mobile]);
+    setMounted(true);
+    if (!navigator.serviceWorker) return;
+    fetch(`/api/alerts?deviceId=${encodeURIComponent(getDeviceId())}`).then(response => response.ok ? response.json() : null).then(data => { if (data?.alerts) setAlerts(data.alerts); }).catch(() => {});
+  }, []);
 
   async function saveAlert() {
     const target = Number(price);
     if (!Number.isFinite(target) || target <= 0) { setMessage("Enter a valid price."); return; }
-    if (!("Notification" in window)) { setMessage("Notifications are not supported by this browser."); return; }
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) { setMessage("Push notifications are not supported in this browser."); return; }
     let permission = Notification.permission;
     if (permission === "default") permission = await Notification.requestPermission();
     if (permission !== "granted") { setMessage("Allow notifications in your browser settings to save an alert."); return; }
-    const next = [...readAlerts(), { id: crypto.randomUUID(), symbol, name, price: target, direction, lastPrice: currentPrice }];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    setAlerts(next);
+    try {
+      const configResponse = await fetch("/api/alerts/config");
+      const config = await configResponse.json() as { publicKey?: string; error?: string };
+      if (!configResponse.ok || !config.publicKey) throw new Error(config.error || "Push is not configured on the server.");
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription() ?? await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeKey(config.publicKey) });
+      const response = await fetch("/api/alerts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ deviceId: getDeviceId(), alert: { symbol, name, price: target, direction, lastPrice: currentPrice }, subscription: subscription.toJSON() }) });
+      const result = await response.json() as { id?: string; error?: string };
+      if (!response.ok) throw new Error(result.error || "Unable to save alert.");
+      const next = [...alerts, { id: result.id!, symbol, name, price: target, direction, lastPrice: currentPrice }];
+      setAlerts(next);
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to save alert."); return; }
     setPrice(""); setMessage("Alert saved");
     window.setTimeout(() => { setOpen(false); setMessage(""); }, 700);
   }
 
   function removeAlert(id: string) {
-    const next = readAlerts().filter(alert => alert.id !== id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); setAlerts(next);
+    setAlerts(current => current.filter(alert => alert.id !== id));
+    void fetch(`/api/alerts?deviceId=${encodeURIComponent(getDeviceId())}&id=${encodeURIComponent(id)}`, { method: "DELETE" });
   }
 
   return <>
     <button type="button" aria-label="Price alerts" title="Price alerts" onClick={() => setOpen(true)}
-      className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle text-accent transition hover:border-accent/50 hover:bg-accent/10 ${mobile ? "fixed" : ""}`}
-      style={mobile ? { top: "calc(0.75rem + env(safe-area-inset-top))", right: "1rem", zIndex: 500, background: "transparent" } : undefined}>
+      className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle text-accent transition hover:border-accent/50 hover:bg-accent/10 ${mobile && !mobileHeader ? "fixed" : ""} ${mobileHeader ? "z-[50] ml-auto" : ""}`}
+      style={mobile && !mobileHeader ? { top: "calc(0.75rem + env(safe-area-inset-top))", right: "1rem", zIndex: 500, background: "transparent" } : undefined}>
       <Bell className="h-4 w-4" />
       {ownAlerts.length > 0 && <span className="absolute -mt-7 ml-7 min-w-4 rounded-full bg-accent px-1 text-[9px] font-bold text-black">{ownAlerts.length}</span>}
     </button>
