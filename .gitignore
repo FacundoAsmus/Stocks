@@ -1,5 +1,4 @@
 .next
-data/price-alerts.json
 node_modules
 .env*.local
 dist

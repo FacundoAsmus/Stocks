@@ -1,24 +1,21 @@
 import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { getQuote } from "@/lib/finnhub";
-import { updatePriceAlerts, type SavedPriceAlert } from "@/lib/priceAlerts";
+import { claimPriceAlertCheck, deleteDeviceAlert, getPushSubscription, listAllPriceAlerts, updateStoredAlert, type SavedPriceAlert } from "@/lib/priceAlerts";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-let checking = false;
 
 export async function GET(request: Request) {
-  if (checking) return NextResponse.json({ error: "A price check is already running." }, { status: 409 });
-  const secret = process.env.ALERT_CRON_SECRET;
+  const secret = process.env.CRON_SECRET ?? process.env.ALERT_CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const publicKey = process.env.VAPID_PUBLIC_KEY; const privateKey = process.env.VAPID_PRIVATE_KEY;
   if (!publicKey || !privateKey) return NextResponse.json({ error: "Web Push keys are not configured." }, { status: 503 });
   webpush.setVapidDetails(process.env.VAPID_SUBJECT ?? "mailto:alerts@example.com", publicKey, privateKey);
-  checking = true;
-  try {
-  const store = await updatePriceAlerts(current => ({ alerts: [...current.alerts], subscriptions: [...current.subscriptions] }));
+  if (!await claimPriceAlertCheck()) return NextResponse.json({ error: "A price check is already running." }, { status: 409 });
+  const alerts = await listAllPriceAlerts();
   const prices = new Map<string, number>(); const fired: SavedPriceAlert[] = []; const expired = new Set<string>();
-  for (const alert of store.alerts) {
+  for (const alert of alerts) {
     try {
       let latest = prices.get(alert.symbol);
       if (latest === undefined) { latest = (await getQuote(alert.symbol)).c; if (!latest || latest <= 0) continue; prices.set(alert.symbol, latest); }
@@ -30,19 +27,20 @@ export async function GET(request: Request) {
     } catch { /* Keep the alert active after transient market-data errors. */ }
   }
   if (fired.length) {
-    const subscriptions = new Map(store.subscriptions.map(subscription => [subscription.deviceId, subscription]));
     for (const alert of fired) {
-      const subscription = subscriptions.get(alert.deviceId); if (!subscription) { expired.add(alert.id); continue; }
+      const subscription = await getPushSubscription(alert.deviceId); if (!subscription) { expired.add(alert.id); continue; }
       const direction = alert.direction === "below" ? "fell below" : alert.direction === "above" ? "rose above" : "passed";
       try { await webpush.sendNotification(subscription, JSON.stringify({ title: "Stock price alert", body: `${alert.name} (${alert.symbol}) ${direction} $${alert.price.toFixed(2)}.`, url: `/stock/${encodeURIComponent(alert.symbol)}` })); expired.add(alert.id); }
       catch (error) { if ((error as { statusCode?: number }).statusCode === 404 || (error as { statusCode?: number }).statusCode === 410) expired.add(alert.id); }
     }
   }
-  await updatePriceAlerts(current => {
-    current.alerts = current.alerts.filter(alert => !expired.has(alert.id));
-    const triggered = new Set(fired.map(alert => alert.id));
-    for (const alert of current.alerts) { const latest = prices.get(alert.symbol); if (latest && !triggered.has(alert.id)) alert.lastPrice = latest; }
-  });
-  return NextResponse.json({ checked: store.alerts.length, triggered: fired.length });
-  } finally { checking = false; }
+  await Promise.all(alerts.map(async alert => {
+    if (expired.has(alert.id)) return deleteDeviceAlert(alert.deviceId, alert.id);
+    // Leave the previous price untouched after a transient delivery failure so
+    // the threshold remains crossed and the next run retries the notification.
+    if (fired.some(item => item.id === alert.id)) return;
+    const latest = prices.get(alert.symbol);
+    if (latest) { alert.lastPrice = latest; await updateStoredAlert(alert); }
+  }));
+  return NextResponse.json({ checked: alerts.length, triggered: fired.length });
 }

@@ -80,11 +80,12 @@ types/
 
 ## Price alerts and Web Push
 
-Price alerts use the Web Push standard and can reach a Home Screen web app on supported iOS versions or Chrome after the app has permission. Alert rules and push subscriptions are stored on the server in `data/price-alerts.json`. Keep this directory on persistent storage and run one server instance; this file store is not suitable for multi-instance/serverless hosting.
+Price alerts use the Web Push standard and can reach a Home Screen web app on supported iOS versions or Chrome after the app has permission. Alert rules and push subscriptions are stored in Upstash Redis, which works with Vercel Functions.
 
-1. Set `VAPID_SUBJECT`, `ALERT_CRON_SECRET`, and the Finnhub API key in the server environment.
-2. Run `npm run alerts:keys` and copy the printed public/private keys to `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. Keep the private key secret and stable.
-3. Deploy over HTTPS. The app registers `/sw.js`; users tap Save in the alert sheet to grant notification permission and subscribe.
-4. A long-running self-hosted Next.js Node process checks alerts once per minute automatically. Serverless deployments should instead configure a scheduler to request `GET /api/alerts/check` once per minute during the market session, with `Authorization: Bearer <ALERT_CRON_SECRET>`. The route checks prices, sends matching pushes, and removes completed alerts.
+1. Connect an Upstash Redis database from the Vercel Marketplace. Vercel can provide `KV_REST_API_URL` and `KV_REST_API_TOKEN`; alternatively set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`.
+2. Set `VAPID_SUBJECT`, `CRON_SECRET`, and the Finnhub API key in the server environment.
+3. Run `npm run alerts:keys` and copy the printed public/private keys to `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. Keep the private key secret and stable.
+4. Deploy over HTTPS. The app registers `/sw.js`; users tap Save in the alert sheet to grant notification permission and subscribe.
+5. A long-running self-hosted Node process checks alerts once per minute. On Vercel, `vercel.json` configures a minute cron. Vercel Hobby only permits daily cron runs, so deploy this schedule on Pro or use an external scheduler.
 
 The checker uses Finnhub quotes, whose freshness and market coverage depend on the account plan. Alert timing is bounded by the checker schedule and data provider, and is not guaranteed tick-by-tick.

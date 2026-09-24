@@ -16,7 +16,7 @@ export async function register() {
     // Self-hosted Next servers stay alive between requests, so check alerts
     // once a minute without requiring a separate process. Serverless hosts
     // should invoke the same protected endpoint using their scheduler instead.
-    const secret = process.env.ALERT_CRON_SECRET;
+    const secret = process.env.CRON_SECRET ?? process.env.ALERT_CRON_SECRET;
     const processWithAlertTimer = globalThis as typeof globalThis & { __stockPriceAlertTimer?: NodeJS.Timeout };
     if (secret && !processWithAlertTimer.__stockPriceAlertTimer) {
       const port = process.env.PORT || "3000";

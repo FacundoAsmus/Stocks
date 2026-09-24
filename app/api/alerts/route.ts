@@ -6,7 +6,8 @@ export const runtime = "nodejs";
 export async function GET(request: Request) {
   const deviceId = new URL(request.url).searchParams.get("deviceId") ?? "";
   if (!/^[\w-]{16,80}$/.test(deviceId)) return NextResponse.json({ error: "Invalid device." }, { status: 400 });
-  return NextResponse.json({ alerts: await listDeviceAlerts(deviceId) });
+  try { return NextResponse.json({ alerts: await listDeviceAlerts(deviceId) }); }
+  catch { return NextResponse.json({ error: "Alert storage is unavailable. Check the Upstash Redis environment variables in Vercel." }, { status: 503 }); }
 }
 
 export async function POST(request: Request) {
@@ -20,11 +21,15 @@ export async function POST(request: Request) {
     const id = crypto.randomUUID();
     await addDeviceAlert({ id, deviceId, symbol, name: String(alert?.name ?? symbol).slice(0, 120), price, direction, lastPrice: Number(alert?.lastPrice) || price, createdAt: Date.now() }, { deviceId, endpoint: subscription.endpoint, keys: { p256dh: subscription.keys.p256dh, auth: subscription.keys.auth } });
     return NextResponse.json({ id }, { status: 201 });
-  } catch { return NextResponse.json({ error: "Unable to save alert." }, { status: 500 }); }
+  } catch (error) {
+    console.error("Unable to persist stock price alert:", error);
+    return NextResponse.json({ error: "Alert storage failed. Check that the Upstash Redis REST URL and token are correct in Vercel." }, { status: 503 });
+  }
 }
 
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url); const deviceId = searchParams.get("deviceId") ?? ""; const id = searchParams.get("id") ?? "";
   if (!/^[\w-]{16,80}$/.test(deviceId) || !/^[\w-]{8,80}$/.test(id)) return NextResponse.json({ error: "Invalid request." }, { status: 400 });
-  await deleteDeviceAlert(deviceId, id); return NextResponse.json({ ok: true });
+  try { await deleteDeviceAlert(deviceId, id); return NextResponse.json({ ok: true }); }
+  catch { return NextResponse.json({ error: "Alert storage is unavailable." }, { status: 503 }); }
 }

@@ -1,46 +1,77 @@
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import path from "node:path";
-
 export type AlertDirection = "crossing" | "below" | "above";
 export interface SavedPriceAlert { id: string; deviceId: string; symbol: string; name: string; price: number; direction: AlertDirection; lastPrice: number; createdAt: number }
 export interface SavedPushSubscription { deviceId: string; endpoint: string; keys: { p256dh: string; auth: string } }
-interface Store { alerts: SavedPriceAlert[]; subscriptions: SavedPushSubscription[] }
-const file = path.join(process.cwd(), "data", "price-alerts.json");
-let queue: Promise<unknown> = Promise.resolve();
 
-async function readStore(): Promise<Store> {
-  try { return JSON.parse(await readFile(file, "utf8")) as Store; }
-  catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return { alerts: [], subscriptions: [] }; throw error; }
+const PREFIX = "stock-price-alerts:v1";
+
+export function isPriceAlertStorageConfigured() {
+  return Boolean((process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL) && (process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN));
 }
 
-export function updatePriceAlerts<T>(update: (store: Store) => T | Promise<T>): Promise<T> {
-  const next = queue.then(async () => {
-    const store = await readStore();
-    const result = await update(store);
-    await mkdir(path.dirname(file), { recursive: true });
-    const temporary = `${file}.tmp-${process.pid}`;
-    await writeFile(temporary, JSON.stringify(store), "utf8");
-    await rename(temporary, file);
-    return result;
+function redisConfig() {
+  const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+  if (!url || !token) throw new Error("Redis is not configured. Add UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN to Vercel.");
+  return { url: url.replace(/\/$/, ""), token };
+}
+
+async function command<T>(...args: Array<string | number>): Promise<T> {
+  const { url, token } = redisConfig();
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(args),
+    cache: "no-store",
   });
-  queue = next.catch(() => undefined);
-  return next;
+  const result = await response.json() as { result?: T; error?: string };
+  if (!response.ok || result.error) throw new Error(result.error ?? `Redis request failed (${response.status}).`);
+  return result.result as T;
 }
+
+const alertKey = (id: string) => `${PREFIX}:alert:${id}`;
+const deviceAlertSet = (deviceId: string) => `${PREFIX}:device:${deviceId}:alerts`;
+const subscriptionKey = (deviceId: string) => `${PREFIX}:device:${deviceId}:subscription`;
 
 export async function listDeviceAlerts(deviceId: string) {
-  const next = queue.then(async () => (await readStore()).alerts.filter(alert => alert.deviceId === deviceId));
-  queue = next.catch(() => undefined);
-  return next;
+  const ids = await command<string[]>("SMEMBERS", deviceAlertSet(deviceId));
+  if (!ids.length) return [];
+  const rows = await Promise.all(ids.map(id => command<string | null>("GET", alertKey(id))));
+  return rows.filter((row): row is string => typeof row === "string").map(row => JSON.parse(row) as SavedPriceAlert);
+}
+
+export async function listAllPriceAlerts() {
+  const ids = await command<string[]>("SMEMBERS", `${PREFIX}:all`);
+  if (!ids.length) return [];
+  const rows = await Promise.all(ids.map(id => command<string | null>("GET", alertKey(id))));
+  return rows.filter((row): row is string => typeof row === "string").map(row => JSON.parse(row) as SavedPriceAlert);
+}
+
+export async function getPushSubscription(deviceId: string) {
+  const row = await command<string | null>("GET", subscriptionKey(deviceId));
+  return row ? JSON.parse(row) as SavedPushSubscription : null;
 }
 
 export async function addDeviceAlert(alert: SavedPriceAlert, subscription: SavedPushSubscription) {
-  return updatePriceAlerts(store => {
-    store.subscriptions = store.subscriptions.filter(item => item.deviceId !== subscription.deviceId);
-    store.subscriptions.push(subscription);
-    store.alerts.push(alert);
-  });
+  await Promise.all([
+    command("SET", subscriptionKey(subscription.deviceId), JSON.stringify(subscription)),
+    command("SET", alertKey(alert.id), JSON.stringify(alert)),
+    command("SADD", deviceAlertSet(alert.deviceId), alert.id),
+    command("SADD", `${PREFIX}:all`, alert.id),
+  ]);
+}
+
+export async function updateStoredAlert(alert: SavedPriceAlert) {
+  await command("SET", alertKey(alert.id), JSON.stringify(alert));
 }
 
 export async function deleteDeviceAlert(deviceId: string, id: string) {
-  return updatePriceAlerts(store => { store.alerts = store.alerts.filter(alert => alert.deviceId !== deviceId || alert.id !== id); });
+  await Promise.all([
+    command("DEL", alertKey(id)),
+    command("SREM", deviceAlertSet(deviceId), id),
+    command("SREM", `${PREFIX}:all`, id),
+  ]);
+}
+
+export async function claimPriceAlertCheck() {
+  return (await command<string | null>("SET", `${PREFIX}:check-lock`, crypto.randomUUID(), "NX", "EX", 55)) === "OK";
 }
