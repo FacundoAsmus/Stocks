@@ -86,6 +86,6 @@ Price alerts use the Web Push standard and can reach a Home Screen web app on su
 2. Set `VAPID_SUBJECT`, `CRON_SECRET`, and the Finnhub API key in the server environment.
 3. Run `npm run alerts:keys` and copy the printed public/private keys to `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY`. Keep the private key secret and stable.
 4. Deploy over HTTPS. The app registers `/sw.js`; users tap Save in the alert sheet to grant notification permission and subscribe.
-5. A long-running self-hosted Node process checks alerts once per minute. On Vercel, `vercel.json` configures a minute cron. Vercel Hobby only permits daily cron runs, so deploy this schedule on Pro or use an external scheduler.
+5. A long-running self-hosted Node process checks alerts once per minute. On Vercel Hobby, use an external scheduler such as cron-job.org: call `https://YOUR_DOMAIN/api/alerts/check` with method `GET` every minute and add the header `Authorization: Bearer YOUR_CRON_SECRET`. Vercel Hobby's built-in Cron is limited to daily runs, so it is too infrequent for price alerts.
 
 The checker uses Finnhub quotes, whose freshness and market coverage depend on the account plan. Alert timing is bounded by the checker schedule and data provider, and is not guaranteed tick-by-tick.
