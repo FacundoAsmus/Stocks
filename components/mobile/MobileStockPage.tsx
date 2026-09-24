@@ -106,6 +106,7 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         <span className="invisible flex items-center justify-center h-[2.45rem] w-[2.45rem] rounded-full" aria-hidden>
           <ChevronLeft className="h-5 w-5" />
         </span>
+        <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} mobile mobileHeader />
       </div>
 
       {/* The real, clickable Back button — portaled straight onto
@@ -128,11 +129,6 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         >
           <ChevronLeft className="h-5 w-5" />
         </button>,
-        document.body
-      )}
-
-      {mounted && createPortal(
-        <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} mobile />,
         document.body
       )}
 
