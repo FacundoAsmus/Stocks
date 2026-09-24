@@ -15,6 +15,7 @@ import { CompanyDescription } from "@/components/CompanyDescription";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
+import { StockPriceAlertButton } from "@/components/StockPriceAlertButton";
 import { cn } from "@/lib/utils";
 import type { StockDetail } from "@/types/stock";
 
@@ -127,6 +128,11 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
         >
           <ChevronLeft className="h-5 w-5" />
         </button>,
+        document.body
+      )}
+
+      {mounted && createPortal(
+        <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} mobile />,
         document.body
       )}
 

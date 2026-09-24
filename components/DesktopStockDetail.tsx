@@ -10,6 +10,7 @@ import { MarketSentiment } from "@/components/MarketSentiment";
 import { NewsCard } from "@/components/NewsCard";
 import { PriceChart } from "@/components/PriceChart";
 import { StockLogo } from "@/components/StockLogo";
+import { StockPriceAlertButton } from "@/components/StockPriceAlertButton";
 import { SECTOR_ETFS } from "@/lib/etfs";
 import type { getStockDetail } from "@/lib/finnhub";
 
@@ -52,7 +53,8 @@ export function DesktopStockDetail({
     <div className="relative space-y-6">
       <div className="relative z-10 space-y-6">
         <section className="relative p-5">
-          <div className="absolute right-5 top-5 z-10">
+          <div className="absolute right-5 top-5 z-10 flex items-center gap-2">
+            <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} />
             <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
           </div>
           {/* ── Logo + name row ── */}
