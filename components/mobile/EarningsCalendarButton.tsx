@@ -81,9 +81,9 @@ export function EarningsDetailCard({
       style={{
         maxWidth: "min(380px, calc(100vw - 2rem))",
         animation: "detailFadeIn 0.18s ease both",
-        backdropFilter: "blur(16px) saturate(160%)",
-        WebkitBackdropFilter: "blur(16px) saturate(160%)",
-        boxShadow: "0 18px 48px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.24)"
+        backdropFilter: "blur(24px) saturate(180%)",
+        WebkitBackdropFilter: "blur(24px) saturate(180%)",
+        boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)"
       }}
       onClick={e => e.stopPropagation()}
     >
@@ -274,17 +274,17 @@ export function EarningsCalendarButton({
       {open && portalTarget && createPortal(
         <div
           className={containerRef ? "absolute inset-0 z-[9999] flex items-end justify-center" : "fixed inset-0 z-[9999] flex items-end justify-center"}
-          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}
+          style={{ background: "rgba(0,0,0,0.3)", backdropFilter: "blur(16px) saturate(150%)", WebkitBackdropFilter: "blur(16px) saturate(150%)" }}
         >
           <div
-            className="w-full rounded-t-2xl border border-white/25 flex flex-col"
+            className="earnings-detail-glass w-full rounded-t-2xl border border-white/15 flex flex-col"
             style={{
               height: containerRef ? "88%" : "88vh",
               transformOrigin,
-              background: "linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.07) 38%, rgba(0,0,0,0.32))",
-              backdropFilter: "blur(16px) saturate(160%)",
-              WebkitBackdropFilter: "blur(16px) saturate(160%)",
-              boxShadow: "0 18px 48px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.24)",
+              background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
+              backdropFilter: "blur(24px) saturate(180%)",
+              WebkitBackdropFilter: "blur(24px) saturate(180%)",
+              boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
               animation: closing
                 ? "calendarSink 0.3s cubic-bezier(0.4,0,1,1) forwards"
                 : "calendarRise 0.32s cubic-bezier(0.22,1,0.36,1) both"
@@ -331,7 +331,7 @@ export function EarningsCalendarButton({
       {selected && portalTarget && createPortal(
         <div
           className={containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}
-          style={{ background: "rgba(0,0,0,0.2)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)" }}
+          style={{ background: "rgba(0,0,0,0.18)", backdropFilter: "blur(16px) saturate(150%)", WebkitBackdropFilter: "blur(16px) saturate(150%)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
         >
           <EarningsDetailCard event={selected} earnings={earnings} onBack={() => setSelected(null)} />
@@ -353,18 +353,16 @@ export function EarningsCalendarButton({
           to   { opacity: 1; transform: scale(1)    translateY(0);   }
         }
         .earnings-detail-glass {
-          background: linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.07) 38%, rgba(0,0,0,0.32));
-          border: 1px solid rgba(255,255,255,0.25);
-          -webkit-backdrop-filter: blur(16px) saturate(160%);
-          backdrop-filter: blur(16px) saturate(160%);
-        }
-        html.light-mode .earnings-detail-glass {
-          background: linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,255,255,0.68) 38%, rgba(255,255,255,0.52));
+          background: linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54));
+          border: 1px solid rgba(255,255,255,0.15);
+          -webkit-backdrop-filter: blur(24px) saturate(180%);
+          backdrop-filter: blur(24px) saturate(180%);
+          box-shadow: 0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18);
         }
         html.light-mode .earnings-detail-glass,
         html.light-mode .earnings-detail-glass .text-text-primary,
         html.light-mode .earnings-detail-glass .text-text-muted {
-          color: #000;
+          color: rgba(245,248,248,0.94);
         }
       `}</style>
     </>

@@ -1555,16 +1555,12 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
     if (e.target === e.currentTarget) handleDismiss();
   }
 
-  const bgBubbleAI    = isLightMode
-    ? "linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,255,255,0.68) 38%, rgba(255,255,255,0.52))"
-    : "linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.07) 38%, rgba(0,0,0,0.32))";
-  const chatControlGlass = isLightMode
-    ? "linear-gradient(145deg, rgba(255,255,255,0.78), rgba(255,255,255,0.48))"
-    : "linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.07) 38%, rgba(0,0,0,0.32))";
-  const bubbleBorderUser = isLightMode ? "rgba(0,0,0,0.14)"    : "rgba(255,255,255,0.16)";
-  const bubbleBorderAI   = "color-mix(in srgb, var(--color-accent) 55%, transparent)";
-  const bubbleGlowAI     = "0 0 10px color-mix(in srgb, var(--color-accent) 35%, transparent), 0 0 2px color-mix(in srgb, var(--color-accent) 50%, transparent)";
-  const textColor     = isLightMode ? "#1a1a1e"             : "#f0f0f2";
+  const bgBubbleAI = "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))";
+  const chatControlGlass = "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))";
+  const bubbleBorderUser = "rgba(255,255,255,0.16)";
+  const bubbleBorderAI   = "rgba(255,255,255,0.16)";
+  const bubbleGlowAI     = "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)";
+  const textColor     = "rgba(245,248,248,0.94)";
 
   const vpW = vp.width  || (typeof window !== "undefined" ? window.innerWidth  : 0);
   const vpH = vp.height || (typeof window !== "undefined" ? window.innerHeight : 0);
@@ -1666,9 +1662,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 borderRadius: msg.role === "user" ? "20px 20px 5px 20px" : "20px 20px 20px 5px",
                 background: bgBubbleAI,
                 border: `1px solid ${msg.role === "model" ? bubbleBorderAI : bubbleBorderUser}`,
-                backdropFilter: "blur(16px) saturate(160%)",
-                WebkitBackdropFilter: "blur(16px) saturate(160%)",
-                boxShadow: `${msg.role === "model" ? bubbleGlowAI + ", " : ""}0 10px 28px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.2)`,
+                backdropFilter: "blur(24px) saturate(180%)",
+                WebkitBackdropFilter: "blur(24px) saturate(180%)",
+                boxShadow: bubbleGlowAI,
                 color: textColor,
                 fontSize: 17,
                 lineHeight: 1.55,
@@ -1691,8 +1687,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 background: bgBubbleAI,
                 border: `1px solid ${bubbleBorderAI}`,
                 boxShadow: bubbleGlowAI,
-                backdropFilter: "blur(16px) saturate(160%)",
-                WebkitBackdropFilter: "blur(16px) saturate(160%)",
+                backdropFilter: "blur(24px) saturate(180%)",
+                WebkitBackdropFilter: "blur(24px) saturate(180%)",
                 display: "flex", alignItems: "center",
               }}>
                 <AIStarLoader size="md" />
@@ -1707,7 +1703,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
           separate bar/card behind it — this IS the input, elongated. */}
       {!hideTrigger && (
       <div
-        className="fixed rounded-full border border-white/25 text-accent overflow-hidden"
+        className="fixed rounded-full border border-white/15 text-accent overflow-hidden"
         style={{
           zIndex: 1002,
           bottom: pillBottom,
@@ -1715,22 +1711,12 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
           width: open ? pillOpenWidth : "3.5rem",
           height: "3.5rem",
           background: chatControlGlass,
-          backdropFilter: "blur(30px) saturate(160%)",
-          WebkitBackdropFilter: "blur(30px) saturate(160%)",
-          boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
+          backdropFilter: "blur(24px) saturate(180%)",
+          WebkitBackdropFilter: "blur(24px) saturate(180%)",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
           transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
         }}
       >
-        {/* Thin specular highlight along the top edge — the classic glass "sheen" */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute", top: 0, left: "8%", right: "8%", height: 1,
-            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
-            pointerEvents: "none",
-          }}
-        />
-
         {/* Closed state: the trigger icon */}
         <button
           onClick={() => setOpen(true)}
@@ -1764,13 +1750,14 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
             placeholder={`Ask about ${stock.symbol}…`}
-            className="text-text-primary placeholder:text-text-muted"
+            className="text-white placeholder:text-white/45"
             style={{
               flex: 1,
               background: "transparent",
               border: "none",
               outline: "none",
               fontSize: 16,
+              color: textColor,
               caretColor: "#adfa1b",
             }}
           />
@@ -1816,7 +1803,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
       {/* Controlled mode (e.g. desktop): render just the input row inline where hideTrigger is set and open is true, anchored bottom same as mobile pill would be, so typing still works without the floating circle. */}
       {hideTrigger && open && (
         <div
-          className="fixed rounded-full border border-white/25 text-accent overflow-hidden"
+          className="fixed rounded-full border border-white/15 text-accent overflow-hidden"
           style={{
             zIndex: 1002,
             bottom: pillBottom,
@@ -1825,9 +1812,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
             maxWidth: "480px",
             height: "3.5rem",
             background: chatControlGlass,
-            backdropFilter: "blur(30px) saturate(160%)",
-            WebkitBackdropFilter: "blur(30px) saturate(160%)",
-            boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
+            backdropFilter: "blur(24px) saturate(180%)",
+            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+            boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
           }}
         >
           <div style={{
@@ -1841,8 +1828,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               placeholder={`Ask about ${stock.symbol}…`}
-              className="text-text-primary placeholder:text-text-muted"
-              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "#adfa1b" }}
+              className="text-white placeholder:text-white/45"
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, color: textColor, caretColor: "#adfa1b" }}
             />
             {input.trim() ? (
               <button

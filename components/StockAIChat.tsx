@@ -262,18 +262,18 @@ export function StockAIChat(props: StockAIChatProps) {
                     )}
                     <div
                       className={cn(
-                        "max-w-[78%] rounded-2xl border border-white/20 px-4 py-2.5 text-sm leading-relaxed shadow-lg",
+                        "max-w-[78%] rounded-2xl border border-white/15 px-4 py-2.5 text-sm leading-relaxed shadow-lg",
                         m.role === "user" ? "rounded-br-sm font-medium" : "rounded-bl-sm text-white/90"
                       )}
                       style={{
                         animation: "bubbleIn 0.2s ease both",
                         background: m.role === "user"
-                          ? "linear-gradient(145deg, color-mix(in srgb, var(--color-positive) 34%, rgba(255,255,255,0.16)), color-mix(in srgb, var(--color-positive) 18%, rgba(0,0,0,0.26)))"
-                          : "linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07) 38%, rgba(0,0,0,0.32))",
-                        color: m.role === "user" ? "var(--color-text-primary)" : "rgba(255,255,255,0.92)",
-                        backdropFilter: "blur(16px) saturate(160%)",
-                        WebkitBackdropFilter: "blur(16px) saturate(160%)",
-                        boxShadow: "0 10px 28px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.2)"
+                          ? "linear-gradient(145deg, rgba(6,22,18,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))"
+                          : "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
+                        color: "rgba(245,248,248,0.94)",
+                        backdropFilter: "blur(24px) saturate(180%)",
+                        WebkitBackdropFilter: "blur(24px) saturate(180%)",
+                        boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)"
                       }}
                     >
                       {m.text}
@@ -286,7 +286,7 @@ export function StockAIChat(props: StockAIChatProps) {
                     <span className="h-6 w-6 rounded-full bg-positive flex items-center justify-center shrink-0 mr-2 mt-0.5">
                       <Sparkles className="h-3 w-3 text-black" />
                     </span>
-                    <div className="rounded-2xl rounded-bl-sm border border-white/20 px-4 py-3 flex items-center" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07) 38%, rgba(0,0,0,0.32))", backdropFilter: "blur(16px) saturate(160%)", WebkitBackdropFilter: "blur(16px) saturate(160%)", boxShadow: "0 10px 28px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.2)" }}>
+                    <div className="rounded-2xl rounded-bl-sm border border-white/15 px-4 py-3 flex items-center" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}>
                       <AIStarLoader size="md" />
                     </div>
                   </div>
@@ -300,7 +300,7 @@ export function StockAIChat(props: StockAIChatProps) {
             className="fixed inset-x-0 z-50 px-3 transition-all duration-200"
             style={{ bottom: inputBottom }}
           >
-            <div className="flex items-center gap-2 rounded-full bg-black/90 border border-white/15 backdrop-blur-xl px-4 py-2 shadow-2xl">
+            <div className="flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 shadow-2xl" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}>
               <input
                 ref={inputRef}
                 value={input}

@@ -320,16 +320,16 @@ export function DesktopEarningsCalendar({
           onClick={(e) => { if (e.target === e.currentTarget) closeCalendar(); }}
         >
           <div
-            className="earnings-detail-glass flex w-full flex-col overflow-hidden rounded-2xl border border-white/25 shadow-2xl"
+            className="earnings-detail-glass flex w-full flex-col overflow-hidden rounded-2xl border border-white/15 shadow-2xl"
             style={{
               maxWidth: "min(880px, 100%)",
               maxHeight: "100%",
               animation: closing
                 ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards"
                 : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both",
-              backdropFilter: "blur(16px) saturate(160%)",
-              WebkitBackdropFilter: "blur(16px) saturate(160%)",
-              boxShadow: "0 18px 48px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.24)"
+              backdropFilter: "blur(24px) saturate(180%)",
+              WebkitBackdropFilter: "blur(24px) saturate(180%)",
+              boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)"
             }}
           >
             <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
@@ -402,20 +402,18 @@ export function DesktopEarningsCalendar({
           to   { transform: scale(0.94); opacity: 0; }
         }
         .earnings-detail-glass {
-          background: linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.07) 38%, rgba(0,0,0,0.32));
-          border: 1px solid rgba(255,255,255,0.25);
-          -webkit-backdrop-filter: blur(16px) saturate(160%);
-          backdrop-filter: blur(16px) saturate(160%);
-        }
-        html.light-mode .earnings-detail-glass {
-          background: linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,255,255,0.68) 38%, rgba(255,255,255,0.52));
+          background: linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54));
+          border: 1px solid rgba(255,255,255,0.15);
+          -webkit-backdrop-filter: blur(24px) saturate(180%);
+          backdrop-filter: blur(24px) saturate(180%);
+          box-shadow: 0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18);
         }
         html.light-mode .earnings-detail-glass,
         html.light-mode .earnings-detail-glass .text-text-primary {
-          color: #000;
+          color: rgba(245,248,248,0.94);
         }
         html.light-mode .earnings-detail-glass .text-text-muted {
-          color: #6e6e80;
+          color: rgba(220,230,230,0.68);
         }
       `}</style>
     </>
