@@ -1654,7 +1654,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
         >
           {messages.map((msg, i) => (
             <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
-              <div style={{
+              <div className="smoked-glass-surface" style={{
                 maxWidth: "86%",
                 wordBreak: "break-word",
                 whiteSpace: "pre-wrap",
@@ -1681,7 +1681,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
 
           {loading && (
             <div style={{ display: "flex", justifyContent: "flex-start" }}>
-              <div style={{
+              <div className="smoked-glass-surface" style={{
                 padding: "14px 18px",
                 borderRadius: "20px 20px 20px 5px",
                 background: bgBubbleAI,
@@ -1703,7 +1703,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
           separate bar/card behind it — this IS the input, elongated. */}
       {!hideTrigger && (
       <div
-        className="fixed rounded-full border border-white/15 text-accent overflow-hidden"
+        className="smoked-glass-surface fixed rounded-full border border-white/15 text-accent overflow-hidden"
         style={{
           zIndex: 1002,
           bottom: pillBottom,
@@ -1803,7 +1803,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
       {/* Controlled mode (e.g. desktop): render just the input row inline where hideTrigger is set and open is true, anchored bottom same as mobile pill would be, so typing still works without the floating circle. */}
       {hideTrigger && open && (
         <div
-          className="fixed rounded-full border border-white/15 text-accent overflow-hidden"
+          className="smoked-glass-surface fixed rounded-full border border-white/15 text-accent overflow-hidden"
           style={{
             zIndex: 1002,
             bottom: pillBottom,

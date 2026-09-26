@@ -77,7 +77,7 @@ export function EarningsDetailCard({
 
   return (
     <div
-      className="earnings-detail-glass w-full rounded-2xl p-5 shadow-2xl"
+      className="earnings-detail-glass smoked-glass-surface w-full rounded-2xl p-5 shadow-2xl"
       style={{
         maxWidth: "min(380px, calc(100vw - 2rem))",
         animation: "detailFadeIn 0.18s ease both",
@@ -277,7 +277,7 @@ export function EarningsCalendarButton({
           style={{ background: "rgba(0,0,0,0.3)", backdropFilter: "blur(16px) saturate(150%)", WebkitBackdropFilter: "blur(16px) saturate(150%)" }}
         >
           <div
-            className="earnings-detail-glass w-full rounded-t-2xl border border-white/15 flex flex-col"
+            className="earnings-detail-glass smoked-glass-surface w-full rounded-t-2xl border border-white/15 flex flex-col"
             style={{
               height: containerRef ? "88%" : "88vh",
               transformOrigin,
@@ -362,7 +362,7 @@ export function EarningsCalendarButton({
         html.light-mode .earnings-detail-glass,
         html.light-mode .earnings-detail-glass .text-text-primary,
         html.light-mode .earnings-detail-glass .text-text-muted {
-          color: rgba(245,248,248,0.94);
+          color: #1a1a1e;
         }
       `}</style>
     </>

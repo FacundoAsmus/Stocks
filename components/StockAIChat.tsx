@@ -262,7 +262,7 @@ export function StockAIChat(props: StockAIChatProps) {
                     )}
                     <div
                       className={cn(
-                        "max-w-[78%] rounded-2xl border border-white/15 px-4 py-2.5 text-sm leading-relaxed shadow-lg",
+                        "smoked-glass-surface max-w-[78%] rounded-2xl border border-white/15 px-4 py-2.5 text-sm leading-relaxed shadow-lg",
                         m.role === "user" ? "rounded-br-sm font-medium" : "rounded-bl-sm text-white/90"
                       )}
                       style={{
@@ -286,7 +286,7 @@ export function StockAIChat(props: StockAIChatProps) {
                     <span className="h-6 w-6 rounded-full bg-positive flex items-center justify-center shrink-0 mr-2 mt-0.5">
                       <Sparkles className="h-3 w-3 text-black" />
                     </span>
-                    <div className="rounded-2xl rounded-bl-sm border border-white/15 px-4 py-3 flex items-center" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}>
+                    <div className="smoked-glass-surface rounded-2xl rounded-bl-sm border border-white/15 px-4 py-3 flex items-center" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}>
                       <AIStarLoader size="md" />
                     </div>
                   </div>
@@ -300,7 +300,7 @@ export function StockAIChat(props: StockAIChatProps) {
             className="fixed inset-x-0 z-50 px-3 transition-all duration-200"
             style={{ bottom: inputBottom }}
           >
-            <div className="flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 shadow-2xl" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}>
+            <div className="smoked-glass-surface flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 shadow-2xl" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}>
               <input
                 ref={inputRef}
                 value={input}

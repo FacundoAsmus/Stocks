@@ -97,6 +97,30 @@ body {
   font-family: var(--font-sans);
 }
 
+/* Light mode: cool frosted crystal. These material-only overrides deliberately
+   leave each surface's dark-mode inline styling untouched. */
+html.light-mode .smoked-glass-surface,
+html.light-mode .earnings-detail-glass.smoked-glass-surface {
+  background: linear-gradient(145deg, rgba(255,255,255,0.27), rgba(241,248,255,0.17) 52%, rgba(218,237,251,0.24)), rgba(249,252,255,0.18) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(155%) !important;
+  backdrop-filter: blur(22px) saturate(155%) !important;
+  border-color: rgba(105,138,162,0.2) !important;
+  box-shadow: 0 24px 70px rgba(45,73,96,0.13), 0 5px 18px rgba(45,73,96,0.08), inset 0 0 18px rgba(78,125,158,0.075), inset 0 1px 0 rgba(255,255,255,0.16) !important;
+  color: #1a1a1e !important;
+}
+html.light-mode .smoked-glass-surface input {
+  color: #1a1a1e !important;
+}
+html.light-mode .smoked-glass-surface input::placeholder {
+  color: rgba(48,68,82,0.48) !important;
+}
+html.light-mode .smoked-glass-surface .text-text-primary {
+  color: #1a1a1e !important;
+}
+html.light-mode .smoked-glass-surface .text-text-muted {
+  color: #657580 !important;
+}
+
 a {
   color: inherit;
   text-decoration: none;
