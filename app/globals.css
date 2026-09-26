@@ -120,6 +120,20 @@ html.light-mode .smoked-glass-surface .text-text-primary {
 html.light-mode .smoked-glass-surface .text-text-muted {
   color: #657580 !important;
 }
+html.light-mode .smoked-glass-backdrop {
+  background: transparent !important;
+  -webkit-backdrop-filter: blur(12px) brightness(0.97) !important;
+  backdrop-filter: blur(12px) brightness(0.97) !important;
+}
+html.light-mode .smoked-glass-control {
+  background: linear-gradient(145deg, rgba(255,255,255,0.42), rgba(232,243,252,0.29) 55%, rgba(218,237,250,0.34)) !important;
+  border-color: rgba(105,138,162,0.19) !important;
+  color: #1a1a1e !important;
+}
+html.light-mode .smoked-glass-control option {
+  background: #f2f7fb;
+  color: #1a1a1e;
+}
 
 a {
   color: inherit;

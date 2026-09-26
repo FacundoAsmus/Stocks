@@ -273,7 +273,7 @@ export function EarningsCalendarButton({
 
       {open && portalTarget && createPortal(
         <div
-          className={containerRef ? "absolute inset-0 z-[9999] flex items-end justify-center" : "fixed inset-0 z-[9999] flex items-end justify-center"}
+          className={`smoked-glass-backdrop ${containerRef ? "absolute inset-0 z-[9999] flex items-end justify-center" : "fixed inset-0 z-[9999] flex items-end justify-center"}`}
           style={{ background: "rgba(0,0,0,0.3)", backdropFilter: "blur(16px) saturate(150%)", WebkitBackdropFilter: "blur(16px) saturate(150%)" }}
         >
           <div
@@ -330,7 +330,7 @@ export function EarningsCalendarButton({
 
       {selected && portalTarget && createPortal(
         <div
-          className={containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}
+          className={`smoked-glass-backdrop ${containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}`}
           style={{ background: "rgba(0,0,0,0.18)", backdropFilter: "blur(16px) saturate(150%)", WebkitBackdropFilter: "blur(16px) saturate(150%)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
         >

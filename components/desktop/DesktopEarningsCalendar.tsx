@@ -313,7 +313,7 @@ export function DesktopEarningsCalendar({
 
       {open && portalTarget && createPortal(
         <div
-          className={containerRef ? "absolute inset-0 z-[9999] flex items-center justify-center p-6" : "fixed inset-0 z-[9999] flex items-center justify-center p-6"}
+          className={`smoked-glass-backdrop ${containerRef ? "absolute inset-0 z-[9999] flex items-center justify-center p-6" : "fixed inset-0 z-[9999] flex items-center justify-center p-6"}`}
           // Match the AI chat backdrop: blur the underlying panel without
           // laying a dark tint over it, so light mode stays bright.
           style={{ background: "transparent", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
@@ -383,7 +383,7 @@ export function DesktopEarningsCalendar({
 
       {selected && portalTarget && createPortal(
         <div
-          className={containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}
+          className={`smoked-glass-backdrop ${containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}`}
           style={{ background: "transparent", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
           onClick={(e) => { if (e.target === e.currentTarget) closeQuarter(); }}
         >
