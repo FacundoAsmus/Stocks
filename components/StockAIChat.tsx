@@ -262,12 +262,19 @@ export function StockAIChat(props: StockAIChatProps) {
                     )}
                     <div
                       className={cn(
-                        "max-w-[78%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-lg",
-                        m.role === "user"
-                          ? "bg-positive text-black rounded-br-sm font-medium"
-                          : "bg-black/80 text-white/90 rounded-bl-sm backdrop-blur-md border border-white/10"
+                        "max-w-[78%] rounded-2xl border border-white/20 px-4 py-2.5 text-sm leading-relaxed shadow-lg",
+                        m.role === "user" ? "rounded-br-sm font-medium" : "rounded-bl-sm text-white/90"
                       )}
-                      style={{ animation: "bubbleIn 0.2s ease both" }}
+                      style={{
+                        animation: "bubbleIn 0.2s ease both",
+                        background: m.role === "user"
+                          ? "linear-gradient(145deg, color-mix(in srgb, var(--color-positive) 34%, rgba(255,255,255,0.16)), color-mix(in srgb, var(--color-positive) 18%, rgba(0,0,0,0.26)))"
+                          : "linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07) 38%, rgba(0,0,0,0.32))",
+                        color: m.role === "user" ? "var(--color-text-primary)" : "rgba(255,255,255,0.92)",
+                        backdropFilter: "blur(16px) saturate(160%)",
+                        WebkitBackdropFilter: "blur(16px) saturate(160%)",
+                        boxShadow: "0 10px 28px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.2)"
+                      }}
                     >
                       {m.text}
                     </div>
@@ -279,7 +286,7 @@ export function StockAIChat(props: StockAIChatProps) {
                     <span className="h-6 w-6 rounded-full bg-positive flex items-center justify-center shrink-0 mr-2 mt-0.5">
                       <Sparkles className="h-3 w-3 text-black" />
                     </span>
-                    <div className="bg-black/80 border border-white/10 backdrop-blur-md rounded-2xl rounded-bl-sm px-4 py-3 flex items-center">
+                    <div className="rounded-2xl rounded-bl-sm border border-white/20 px-4 py-3 flex items-center" style={{ background: "linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07) 38%, rgba(0,0,0,0.32))", backdropFilter: "blur(16px) saturate(160%)", WebkitBackdropFilter: "blur(16px) saturate(160%)", boxShadow: "0 10px 28px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.2)" }}>
                       <AIStarLoader size="md" />
                     </div>
                   </div>

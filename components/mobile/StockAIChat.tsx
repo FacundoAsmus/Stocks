@@ -1555,8 +1555,12 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
     if (e.target === e.currentTarget) handleDismiss();
   }
 
-  const bgBubbleAI    = isLightMode ? "rgba(255,255,255,0.72)" : "rgba(0,0,0,0.72)";
-  const chatControlGlass = isLightMode ? "rgba(255,255,255,0.28)" : "rgba(8,8,12,0.28)";
+  const bgBubbleAI    = isLightMode
+    ? "linear-gradient(145deg, rgba(255,255,255,0.82), rgba(255,255,255,0.68) 38%, rgba(255,255,255,0.52))"
+    : "linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.07) 38%, rgba(0,0,0,0.32))";
+  const chatControlGlass = isLightMode
+    ? "linear-gradient(145deg, rgba(255,255,255,0.78), rgba(255,255,255,0.48))"
+    : "linear-gradient(145deg, rgba(255,255,255,0.18), rgba(255,255,255,0.07) 38%, rgba(0,0,0,0.32))";
   const bubbleBorderUser = isLightMode ? "rgba(0,0,0,0.14)"    : "rgba(255,255,255,0.16)";
   const bubbleBorderAI   = "color-mix(in srgb, var(--color-accent) 55%, transparent)";
   const bubbleGlowAI     = "0 0 10px color-mix(in srgb, var(--color-accent) 35%, transparent), 0 0 2px color-mix(in srgb, var(--color-accent) 50%, transparent)";
@@ -1660,9 +1664,11 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 whiteSpace: "pre-wrap",
                 padding: "12px 18px",
                 borderRadius: msg.role === "user" ? "20px 20px 5px 20px" : "20px 20px 20px 5px",
-                backgroundColor: bgBubbleAI,
+                background: bgBubbleAI,
                 border: `1px solid ${msg.role === "model" ? bubbleBorderAI : bubbleBorderUser}`,
-                boxShadow: msg.role === "model" ? bubbleGlowAI : "none",
+                backdropFilter: "blur(16px) saturate(160%)",
+                WebkitBackdropFilter: "blur(16px) saturate(160%)",
+                boxShadow: `${msg.role === "model" ? bubbleGlowAI + ", " : ""}0 10px 28px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.2)`,
                 color: textColor,
                 fontSize: 17,
                 lineHeight: 1.55,
@@ -1682,9 +1688,11 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
               <div style={{
                 padding: "14px 18px",
                 borderRadius: "20px 20px 20px 5px",
-                backgroundColor: bgBubbleAI,
+                background: bgBubbleAI,
                 border: `1px solid ${bubbleBorderAI}`,
                 boxShadow: bubbleGlowAI,
+                backdropFilter: "blur(16px) saturate(160%)",
+                WebkitBackdropFilter: "blur(16px) saturate(160%)",
                 display: "flex", alignItems: "center",
               }}>
                 <AIStarLoader size="md" />
