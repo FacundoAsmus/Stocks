@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import webpush from "web-push";
 import { getQuote } from "@/lib/finnhub";
 import { claimPriceAlertCheck, deleteDeviceAlert, getPushSubscription, listAllPriceAlerts, updateStoredAlert, type SavedPriceAlert } from "@/lib/priceAlerts";
+import { isUsEquityMarketOpen } from "@/lib/usMarketHours";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -9,6 +10,7 @@ export const maxDuration = 60;
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET ?? process.env.ALERT_CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!isUsEquityMarketOpen()) return NextResponse.json({ checked: 0, triggered: 0, skipped: "market-closed" });
   const publicKey = process.env.VAPID_PUBLIC_KEY; const privateKey = process.env.VAPID_PRIVATE_KEY;
   if (!publicKey || !privateKey) return NextResponse.json({ error: "Web Push keys are not configured." }, { status: 503 });
   webpush.setVapidDetails(process.env.VAPID_SUBJECT ?? "mailto:alerts@example.com", publicKey, privateKey);

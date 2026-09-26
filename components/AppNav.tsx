@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { TestPushNotificationButton } from "@/components/TestPushNotificationButton";
 
 type Theme = "dark" | "light" | "system";
 
@@ -64,6 +65,9 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
   const [colorVolumeBars, setColorVolumeBars] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-volume-color-bars") === "1" : false
   );
+  const [showAlertLines, setShowAlertLines] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("pro-alert-lines") === "1" : false
+  );
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -105,6 +109,13 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
     setColorVolumeBars(next);
     localStorage.setItem("pro-volume-color-bars", next ? "1" : "0");
     window.dispatchEvent(new Event("pro-volume-color-bars-changed"));
+  }
+
+  function toggleAlertLines() {
+    const next = !showAlertLines;
+    setShowAlertLines(next);
+    localStorage.setItem("pro-alert-lines", next ? "1" : "0");
+    window.dispatchEvent(new Event("pro-alert-lines-changed"));
   }
 
   const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
@@ -193,6 +204,11 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
           <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Color bars</span><span className="text-xs text-text-muted">Uses green for up intervals and muted red for down intervals</span></span>
           <Toggle enabled={colorVolumeBars} />
         </button>
+        <button onClick={toggleAlertLines} className="mt-2 w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5">
+          <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Alert price lines</span><span className="text-xs text-text-muted">Show saved alert levels on stock charts</span></span>
+          <Toggle enabled={showAlertLines} />
+        </button>
+        <TestPushNotificationButton compact />
       </div>
 
       <style>{`

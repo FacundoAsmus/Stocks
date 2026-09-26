@@ -17,6 +17,7 @@ import { RotateCcw } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { CandlePoint, ChartPeriod } from "@/types/stock";
+import { getAlertDeviceId } from "@/lib/priceAlertClient";
 
 const SHORT_PERIODS: ChartPeriod[] = ["1D", "1W", "1M", "2M", "3M", "5M", "6M"];
 const LONG_PERIODS:  ChartPeriod[] = ["1Y", "2Y", "5Y", "ALL"];
@@ -537,6 +538,10 @@ export function PriceChart({
   const [useCandlesticks, setUseCandlesticks] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("chart-style") === "candles" : false
   );
+  const [showPriceAlertLines, setShowPriceAlertLines] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("pro-alert-lines") === "1" : false
+  );
+  const [priceAlerts, setPriceAlerts] = useState<Array<{ id: string; symbol: string; price: number }>>([]);
 
   // Keep proMode in sync across tabs and after settings toggle
   useEffect(() => {
@@ -565,6 +570,38 @@ export function PriceChart({
       window.removeEventListener("storage", sync);
     };
   }, []);
+
+  useEffect(() => {
+    function syncAlertLines() { setShowPriceAlertLines(localStorage.getItem("pro-alert-lines") === "1"); }
+    window.addEventListener("pro-alert-lines-changed", syncAlertLines);
+    window.addEventListener("storage", syncAlertLines);
+    return () => {
+      window.removeEventListener("pro-alert-lines-changed", syncAlertLines);
+      window.removeEventListener("storage", syncAlertLines);
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadAlerts = () => {
+      fetch(`/api/alerts?deviceId=${encodeURIComponent(getAlertDeviceId())}`)
+        .then(response => response.ok ? response.json() : null)
+        .then(result => {
+          if (!cancelled && Array.isArray(result?.alerts)) {
+            setPriceAlerts(result.alerts.filter((alert: { symbol?: string; price?: number }) => alert.symbol === symbol && Number.isFinite(alert.price)));
+          }
+        })
+        .catch(() => undefined);
+    };
+    loadAlerts();
+    window.addEventListener("price-alerts-updated", loadAlerts);
+    window.addEventListener("storage", loadAlerts);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("price-alerts-updated", loadAlerts);
+      window.removeEventListener("storage", loadAlerts);
+    };
+  }, [symbol]);
 
   /* Load candles */
   useEffect(() => {
@@ -1030,6 +1067,11 @@ export function PriceChart({
                     const next = new Set(previous); next.delete(99); return next;
                   })} />
               )}
+              {showPriceAlertLines && priceAlerts
+                .filter(alert => alert.price >= priceYDomain[0] && alert.price <= priceYDomain[1])
+                .map(alert => (
+                  <ReferenceLine key={`price-alert-${alert.id}`} y={alert.price} stroke="#858585" strokeDasharray="6 5" strokeWidth={1.5} ifOverflow="discard" />
+                ))}
             </ComposedChart>
           </ResponsiveContainer>
           </div>

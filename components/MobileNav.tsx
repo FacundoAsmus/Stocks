@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { TestPushNotificationButton } from "@/components/TestPushNotificationButton";
 
 function GlobeIcon({ className }: { className?: string }) {
   return (
@@ -54,6 +55,9 @@ function SettingsPanel({ closing }: { closing: boolean }) {
   const [colorVolumeBars, setColorVolumeBars] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-volume-color-bars") === "1" : false
   );
+  const [showAlertLines, setShowAlertLines] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("pro-alert-lines") === "1" : false
+  );
 
   function changeTheme(t: Theme) {
     setTheme(t);
@@ -87,6 +91,13 @@ function SettingsPanel({ closing }: { closing: boolean }) {
     setColorVolumeBars(next);
     localStorage.setItem("pro-volume-color-bars", next ? "1" : "0");
     window.dispatchEvent(new Event("pro-volume-color-bars-changed"));
+  }
+
+  function toggleAlertLines() {
+    const next = !showAlertLines;
+    setShowAlertLines(next);
+    localStorage.setItem("pro-alert-lines", next ? "1" : "0");
+    window.dispatchEvent(new Event("pro-alert-lines-changed"));
   }
 
   const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
@@ -182,6 +193,11 @@ function SettingsPanel({ closing }: { closing: boolean }) {
               <span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Color bars</span><span className="text-xs text-text-muted">Uses green for up intervals and muted red for down intervals</span></span>
               <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative" style={{ borderColor: colorVolumeBars ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: colorVolumeBars ? "var(--color-accent)" : "var(--color-panel-muted)" }}><span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: colorVolumeBars ? "calc(100% - 1.125rem)" : "0.125rem" }} /></span>
             </button>
+            <button onClick={toggleAlertLines} className="w-full flex items-center justify-between px-4 py-3.5 text-left border-t border-border-subtle">
+              <span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Alert price lines</span><span className="text-xs text-text-muted">Show saved alert levels on stock charts</span></span>
+              <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative" style={{ borderColor: showAlertLines ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: showAlertLines ? "var(--color-accent)" : "var(--color-panel-muted)" }}><span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: showAlertLines ? "calc(100% - 1.125rem)" : "0.125rem" }} /></span>
+            </button>
+            <div className="px-4 pb-3"><TestPushNotificationButton compact /></div>
           </div>
         </section>
       </div>
