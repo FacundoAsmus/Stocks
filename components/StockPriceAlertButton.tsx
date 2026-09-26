@@ -13,12 +13,19 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
   symbol: string; name: string; currentPrice: number; mobile?: boolean; mobileHeader?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [price, setPrice] = useState("");
   const [direction, setDirection] = useState<Direction>("crossing");
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
   const [message, setMessage] = useState("");
   const ownAlerts = alerts.filter(alert => alert.symbol === symbol);
+
+  function closeAlert() {
+    if (closing) return;
+    setClosing(true);
+    window.setTimeout(() => { setOpen(false); setClosing(false); }, 240);
+  }
 
   useEffect(() => {
     setMounted(true);
@@ -47,7 +54,7 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
       notifyPriceAlertsChanged();
     } catch (error) { setMessage(error instanceof Error ? error.message : "Unable to save alert."); return; }
     setPrice(""); setMessage("Alert saved");
-    window.setTimeout(() => { setOpen(false); setMessage(""); }, 700);
+    window.setTimeout(() => { closeAlert(); setMessage(""); }, 700);
   }
 
   async function removeAlert(id: string) {
@@ -65,11 +72,11 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
       {ownAlerts.length > 0 && <span className="absolute -mt-7 ml-7 min-w-4 rounded-full bg-accent px-1 text-[9px] font-bold text-black">{ownAlerts.length}</span>}
     </button>
     {mounted && open && createPortal(
-      <div className="fixed inset-0 z-[600] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }} onClick={() => setOpen(false)}>
-        <div className="w-full max-w-sm rounded-2xl border border-white/20 p-5 shadow-2xl" style={{ background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.035) 42%, rgba(0,0,0,0.42))", backdropFilter: "blur(30px) saturate(160%)", WebkitBackdropFilter: "blur(30px) saturate(160%)", boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)" }} onClick={event => event.stopPropagation()}>
+      <div className="fixed inset-0 z-[600] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }} onClick={closeAlert}>
+        <div className="w-full max-w-sm rounded-2xl border border-white/20 p-5 shadow-2xl" style={{ animation: closing ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards" : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both", background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.035) 42%, rgba(0,0,0,0.42))", backdropFilter: "blur(30px) saturate(160%)", WebkitBackdropFilter: "blur(30px) saturate(160%)", boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)" }} onClick={event => event.stopPropagation()}>
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-base font-semibold text-text-primary">Alerts</h2>
-            <button aria-label="Close alerts" onClick={() => setOpen(false)} className="rounded-full p-2 text-text-muted hover:text-text-primary"><X className="h-4 w-4" /></button>
+            <button aria-label="Close alerts" onClick={closeAlert} className="rounded-full p-2 text-text-muted hover:text-text-primary"><X className="h-4 w-4" /></button>
           </div>
           <label className="mb-2 block text-xs font-medium text-text-muted">Price</label>
           <input type="number" min="0" step="any" inputMode="decimal" placeholder={`Current $${currentPrice.toFixed(2)}`} value={price} onChange={event => setPrice(event.target.value)}
@@ -87,5 +94,6 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
         </div>
       </div>, document.body
     )}
+    <style>{`@keyframes desktopCalendarRise { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } } @keyframes desktopCalendarSink { from { transform: scale(1); opacity: 1; } to { transform: scale(0.94); opacity: 0; } }`}</style>
   </>;
 }

@@ -130,11 +130,13 @@ function QuarterMetricChart({
 function DesktopQuarterDetail({
   event,
   earnings,
-  onBack
+  onBack,
+  closing = false
 }: {
   event: EarningsEvent;
   earnings: EarningsEvent[];
   onBack: () => void;
+  closing?: boolean;
 }) {
   const dateLabel = new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric", year: "numeric" })
     .format(new Date(`${event.date}T00:00:00`));
@@ -143,7 +145,7 @@ function DesktopQuarterDetail({
   const chartEvents = sorted.slice(Math.max(0, selectedIndex - 4), selectedIndex + 5);
 
   return (
-    <div className="earnings-detail-glass w-full overflow-y-auto rounded-2xl p-5 shadow-2xl" style={{ maxWidth: "min(680px, calc(100vw - 2rem))", maxHeight: "calc(100vh - 2rem)" }} onClick={(click) => click.stopPropagation()}>
+    <div className="earnings-detail-glass w-full overflow-y-auto rounded-2xl p-5 shadow-2xl" style={{ maxWidth: "min(680px, calc(100vw - 2rem))", maxHeight: "calc(100vh - 2rem)", animation: closing ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards" : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both" }} onClick={(click) => click.stopPropagation()}>
       <div className="mb-5 flex items-center gap-3">
         <button onClick={onBack} className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-black">
           <ChevronLeft className="h-4 w-4" />
@@ -248,6 +250,7 @@ export function DesktopEarningsCalendar({
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const [selected, setSelected] = useState<EarningsEvent | null>(null);
+  const [quarterClosing, setQuarterClosing] = useState(false);
   const today = todayStr();
   const [year, setYear] = useState(() => new Date().getFullYear());
 
@@ -289,6 +292,12 @@ export function DesktopEarningsCalendar({
       setOpen(false);
       setClosing(false);
     }, 240);
+  }
+
+  function closeQuarter() {
+    if (quarterClosing) return;
+    setQuarterClosing(true);
+    window.setTimeout(() => { setSelected(null); setQuarterClosing(false); }, 240);
   }
 
   return (
@@ -362,7 +371,7 @@ export function DesktopEarningsCalendar({
                   key={monthDate.getMonth()}
                   monthDate={monthDate}
                   eventsByDate={eventsByDate}
-                  onSelect={setSelected}
+                  onSelect={(event) => { setQuarterClosing(false); setSelected(event); }}
                   today={today}
                 />
               ))}
@@ -376,9 +385,9 @@ export function DesktopEarningsCalendar({
         <div
           className={containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}
           style={{ background: "transparent", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
-          onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeQuarter(); }}
         >
-          <DesktopQuarterDetail event={selected} earnings={earnings} onBack={() => setSelected(null)} />
+          <DesktopQuarterDetail event={selected} earnings={earnings} closing={quarterClosing} onBack={closeQuarter} />
         </div>,
         portalTarget
       )}
