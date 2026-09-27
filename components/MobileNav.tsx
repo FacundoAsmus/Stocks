@@ -108,7 +108,8 @@ function SettingsPanel({ closing }: { closing: boolean }) {
 
   return (
     <div
-      className={cn("fixed inset-0 z-50 flex flex-col bg-black", closing && "page-slide-right")}
+      className={cn("smoked-glass-surface fixed inset-0 z-50 flex flex-col bg-black", closing && "page-slide-right")}
+      style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}
     >
       {/* Fixed header with blur */}
       <div
@@ -375,10 +376,10 @@ function MobileSearchPill({ origin }: { origin: string }) {
             opacity: open ? 1 : 0,
             transform: open ? "translateY(0)" : "translateY(8px)",
             transition: "opacity 0.22s ease, transform 0.22s ease",
-            background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-            backdropFilter: "blur(22px) saturate(160%)",
-            WebkitBackdropFilter: "blur(22px) saturate(160%)",
-            boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
+            background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
+            backdropFilter: "blur(24px) saturate(180%)",
+            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+            boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
           }}
           onClick={onEmptyAreaClick}
           onTouchStart={onEmptyAreaTouchStart}
@@ -447,23 +448,13 @@ function MobileSearchPill({ origin }: { origin: string }) {
           right: open ? "1rem" : "1.25rem",
           width: open ? "calc(100vw - 2rem)" : "3.5rem",
           height: "3.5rem",
-          background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-          backdropFilter: "blur(22px) saturate(160%)",
-          WebkitBackdropFilter: "blur(22px) saturate(160%)",
-          boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
+          background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
+          backdropFilter: "blur(24px) saturate(180%)",
+          WebkitBackdropFilter: "blur(24px) saturate(180%)",
+          boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
           transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
         }}
       >
-        {/* Thin specular highlight along the top edge — matching the AI pill's glass sheen */}
-        <div
-          aria-hidden
-          className="smoked-glass-edge-highlight"
-          style={{
-            position: "absolute", top: 0, left: "8%", right: "8%", height: 1,
-            background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
-            pointerEvents: "none",
-          }}
-        />
         {/* Closed state: search icon */}
         <button
           onClick={() => setOpen(true)}
@@ -622,18 +613,12 @@ export function MobileNav() {
           className="smoked-glass-surface relative flex items-center rounded-full border border-white/25 overflow-hidden pointer-events-auto"
           style={{
             height: BUBBLE_SIZE,
-            background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-            backdropFilter: "blur(22px) saturate(160%)",
-            WebkitBackdropFilter: "blur(22px) saturate(160%)",
-            boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
+            background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
+            backdropFilter: "blur(24px) saturate(180%)",
+            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+            boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
           }}
         >
-          {/* Thin specular highlight along the top edge — matching the AI pill's glass sheen */}
-          <div
-            aria-hidden
-            className="smoked-glass-edge-highlight absolute top-0 left-[8%] right-[8%] pointer-events-none"
-            style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)" }}
-          />
           {/* Sliding green indicator */}
           <span
             aria-hidden

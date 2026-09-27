@@ -80,9 +80,9 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
     </button>
     {mounted && open && createPortal(
       <div className="smoked-glass-backdrop fixed inset-0 z-[600] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }} onClick={closeAlert}>
-        <div className="smoked-glass-surface w-full max-w-sm rounded-2xl border border-white/15 p-5 shadow-2xl" style={{ animation: closing ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards" : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both", background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }} onClick={event => event.stopPropagation()}>
+        <div className="smoked-glass-surface w-full max-w-sm rounded-3xl border border-white/15 p-5 shadow-2xl" style={{ animation: closing ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards" : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both", background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }} onClick={event => event.stopPropagation()}>
           <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-base font-semibold text-text-primary">Alerts</h2>
+            <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Alerts</h2>
             <button aria-label="Close alerts" onClick={closeAlert} className="rounded-full p-2 text-text-muted hover:text-text-primary"><X className="h-4 w-4" /></button>
           </div>
           <label className="mb-2 block text-xs font-medium text-text-muted">Price</label>
@@ -97,7 +97,7 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
           </select>
           {ownAlerts.length > 0 && <div className="mb-4 space-y-2">{ownAlerts.map(alert => <div key={alert.id} className="smoked-glass-control flex items-center justify-between rounded-xl bg-black/20 px-3 py-2 text-sm text-text-muted"><span>${alert.price.toFixed(2)} · {alert.direction === "crossing" ? "Passing" : alert.direction === "below" ? "Below" : "Above"}</span><button onClick={() => removeAlert(alert.id)} className="text-xs text-accent">Remove</button></div>)}</div>}
           {message && <p role="status" className="mb-3 text-xs text-accent">{message}</p>}
-          <button onClick={saveAlert} className="h-11 w-full rounded-xl bg-accent text-sm font-semibold text-black">Save</button>
+          <button onClick={saveAlert} className="h-11 w-full rounded-full bg-accent text-sm font-semibold text-black">Save</button>
         </div>
       </div>, document.body
     )}

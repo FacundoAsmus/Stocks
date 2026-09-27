@@ -33,8 +33,6 @@ type SearchResult = {
 // Same glass treatment as the mobile search sheet's results bubble
 // (components/MobileNav.tsx) — translucent gradient + heavy blur, not a
 // solid panel.
-const GLASS_SHADOW = "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)";
-
 // Icon for one result/recent row: real logo when available, with the same
 // graceful fallback mobile uses (ETF label for ETFs, else first two letters
 // of the symbol) if there's no logo or the image fails to load.
@@ -190,8 +188,8 @@ export function SearchBar() {
 
       {showRecent ? (
         <div
-          className="search-results-glass absolute mt-2 w-full overflow-hidden rounded-2xl border border-white/25"
-          style={{ backdropFilter: "blur(24px) saturate(160%)", WebkitBackdropFilter: "blur(24px) saturate(160%)", boxShadow: GLASS_SHADOW }}
+          className="search-results-glass smoked-glass-surface absolute mt-2 w-full overflow-hidden rounded-2xl border border-white/15"
+          style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}
         >
           <p className="px-4 py-2 text-xs uppercase tracking-widest text-text-muted">Recent</p>
           {recentSearches.map((symbol) => (
@@ -209,8 +207,8 @@ export function SearchBar() {
         </div>
       ) : showResults ? (
         <div
-          className="search-results-glass absolute mt-2 w-full overflow-hidden rounded-2xl border border-white/25"
-          style={{ backdropFilter: "blur(24px) saturate(160%)", WebkitBackdropFilter: "blur(24px) saturate(160%)", boxShadow: GLASS_SHADOW }}
+          className="search-results-glass smoked-glass-surface absolute mt-2 w-full overflow-hidden rounded-2xl border border-white/15"
+          style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}
         >
           {results.map((result) => (
             <button
