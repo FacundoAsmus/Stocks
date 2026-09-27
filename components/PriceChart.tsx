@@ -542,6 +542,8 @@ export function PriceChart({
     typeof window !== "undefined" ? localStorage.getItem("pro-alert-lines") === "1" : false
   );
   const [priceAlerts, setPriceAlerts] = useState<Array<{ id: string; symbol: string; price: number }>>([]);
+  const [animatingAlertIds, setAnimatingAlertIds] = useState<Set<string>>(() => new Set());
+  const lastAlertIdsRef = useRef<Set<string> | null>(null);
 
   // Keep proMode in sync across tabs and after settings toggle
   useEffect(() => {
@@ -583,12 +585,26 @@ export function PriceChart({
 
   useEffect(() => {
     let cancelled = false;
+    let animationTimer: number | undefined;
+    lastAlertIdsRef.current = null;
     const loadAlerts = () => {
       fetch(`/api/alerts?deviceId=${encodeURIComponent(getAlertDeviceId())}`)
         .then(response => response.ok ? response.json() : null)
         .then(result => {
           if (!cancelled && Array.isArray(result?.alerts)) {
-            setPriceAlerts(result.alerts.filter((alert: { symbol?: string; price?: number }) => alert.symbol === symbol && Number.isFinite(alert.price)));
+            const currentAlerts = result.alerts.filter((alert: { symbol?: string; price?: number }) => alert.symbol === symbol && Number.isFinite(alert.price)) as Array<{ id: string; symbol: string; price: number }>;
+            const nextIds = new Set(currentAlerts.map(alert => alert.id));
+            const previousIds = lastAlertIdsRef.current;
+            if (previousIds) {
+              const addedIds = new Set([...nextIds].filter(id => !previousIds.has(id)));
+              if (addedIds.size) {
+                setAnimatingAlertIds(previous => new Set([...previous, ...addedIds]));
+                if (animationTimer !== undefined) window.clearTimeout(animationTimer);
+                animationTimer = window.setTimeout(() => setAnimatingAlertIds(new Set()), 760);
+              }
+            }
+            lastAlertIdsRef.current = nextIds;
+            setPriceAlerts(currentAlerts);
           }
         })
         .catch(() => undefined);
@@ -598,6 +614,7 @@ export function PriceChart({
     window.addEventListener("storage", loadAlerts);
     return () => {
       cancelled = true;
+      if (animationTimer !== undefined) window.clearTimeout(animationTimer);
       window.removeEventListener("price-alerts-updated", loadAlerts);
       window.removeEventListener("storage", loadAlerts);
     };
@@ -1070,7 +1087,7 @@ export function PriceChart({
               {showPriceAlertLines && priceAlerts
                 .filter(alert => alert.price >= priceYDomain[0] && alert.price <= priceYDomain[1])
                 .map(alert => (
-                  <ReferenceLine key={`price-alert-${alert.id}`} y={alert.price} stroke="#858585" strokeDasharray="6 5" strokeWidth={1.5} ifOverflow="discard" />
+                  <ReferenceLine key={`price-alert-${alert.id}`} className={animatingAlertIds.has(alert.id) ? "price-alert-line-enter" : undefined} y={alert.price} stroke="#858585" strokeDasharray="6 5" strokeWidth={1.5} ifOverflow="discard" />
                 ))}
             </ComposedChart>
           </ResponsiveContainer>

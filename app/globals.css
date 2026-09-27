@@ -108,6 +108,10 @@ html.light-mode .earnings-detail-glass.smoked-glass-surface {
   box-shadow: 0 24px 70px rgba(45,73,96,0.13), 0 5px 18px rgba(45,73,96,0.08), inset 0 0 18px rgba(78,125,158,0.075), inset 0 1px 0 rgba(255,255,255,0.16) !important;
   color: #1a1a1e !important;
 }
+html.light-mode .smoked-glass-surface.ai-response-bubble {
+  border-color: var(--color-accent) !important;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-accent) 42%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 64%, transparent), 0 24px 70px rgba(45,73,96,0.13), 0 5px 18px rgba(45,73,96,0.08), inset 0 0 18px rgba(78,125,158,0.075) !important;
+}
 html.light-mode .smoked-glass-calendar {
   -webkit-backdrop-filter: blur(32px) saturate(155%) !important;
   backdrop-filter: blur(32px) saturate(155%) !important;
@@ -143,6 +147,20 @@ html.light-mode .smoked-glass-control option {
 }
 html.light-mode .ai-button-icon {
   color: var(--color-accent) !important;
+}
+
+/* Newly added alert markers reveal on their own, leaving the chart animation untouched. */
+.price-alert-line-enter line {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: price-alert-line-reveal 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes price-alert-line-reveal {
+  from { transform: scaleX(0); opacity: 0.25; }
+  to { transform: scaleX(1); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .price-alert-line-enter line { animation: none; }
 }
 
 a {

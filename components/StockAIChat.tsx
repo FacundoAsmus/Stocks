@@ -262,8 +262,8 @@ export function StockAIChat(props: StockAIChatProps) {
                     )}
                     <div
                       className={cn(
-                        "smoked-glass-surface max-w-[78%] rounded-2xl border border-white/15 px-4 py-2.5 text-sm leading-relaxed shadow-lg",
-                        m.role === "user" ? "rounded-br-sm font-medium" : "rounded-bl-sm text-white/90"
+                        "smoked-glass-surface max-w-[78%] rounded-3xl border border-white/15 px-4 py-2.5 text-sm leading-relaxed shadow-lg",
+                        m.role === "user" ? "font-medium" : "ai-response-bubble text-white/90"
                       )}
                       style={{
                         animation: "bubbleIn 0.2s ease both",
@@ -273,7 +273,8 @@ export function StockAIChat(props: StockAIChatProps) {
                         color: "rgba(245,248,248,0.94)",
                         backdropFilter: "blur(24px) saturate(180%)",
                         WebkitBackdropFilter: "blur(24px) saturate(180%)",
-                        boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)"
+                        borderColor: m.role === "model" ? "var(--color-accent)" : undefined,
+                        boxShadow: m.role === "model" ? "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent), 0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" : "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)"
                       }}
                     >
                       {m.text}
@@ -286,7 +287,7 @@ export function StockAIChat(props: StockAIChatProps) {
                     <span className="h-6 w-6 rounded-full bg-positive flex items-center justify-center shrink-0 mr-2 mt-0.5">
                       <Sparkles className="h-3 w-3 text-black" />
                     </span>
-                    <div className="smoked-glass-surface rounded-2xl rounded-bl-sm border border-white/15 px-4 py-3 flex items-center" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}>
+                    <div className="smoked-glass-surface rounded-3xl border border-white/15 px-4 py-3 flex items-center" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}>
                       <AIStarLoader size="md" />
                     </div>
                   </div>

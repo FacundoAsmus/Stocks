@@ -140,15 +140,16 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
               <div
                 key={i}
                 className={cn(
-                  "max-w-[85%] rounded-xl px-3 py-2 text-sm leading-relaxed",
-                  m.role === "user" ? "self-end bg-positive text-black" : "self-start border border-positive/40 text-text-primary"
+                  "max-w-[85%] rounded-3xl px-3 py-2 text-sm leading-relaxed",
+                  m.role === "user" ? "self-end bg-positive text-black" : "self-start border border-accent/70 text-text-primary"
                 )}
+                style={m.role === "model" ? { boxShadow: "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent)" } : undefined}
               >
                 {m.text}
               </div>
             ))}
             {loading && (
-              <div className="self-start rounded-xl border border-positive/40 px-3 py-2">
+              <div className="self-start rounded-3xl border border-accent/70 px-3 py-2">
                 <AIStarLoader size="md" />
               </div>
             )}

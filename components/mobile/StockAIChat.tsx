@@ -1654,17 +1654,17 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
         >
           {messages.map((msg, i) => (
             <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
-              <div className="smoked-glass-surface" style={{
+              <div className={`smoked-glass-surface${msg.role === "model" ? " ai-response-bubble" : ""}`} style={{
                 maxWidth: "86%",
                 wordBreak: "break-word",
                 whiteSpace: "pre-wrap",
                 padding: "12px 18px",
-                borderRadius: msg.role === "user" ? "20px 20px 5px 20px" : "20px 20px 20px 5px",
+                borderRadius: 24,
                 background: bgBubbleAI,
-                border: `1px solid ${msg.role === "model" ? bubbleBorderAI : bubbleBorderUser}`,
+                border: `1px solid ${msg.role === "model" ? "var(--color-accent)" : bubbleBorderUser}`,
                 backdropFilter: "blur(24px) saturate(180%)",
                 WebkitBackdropFilter: "blur(24px) saturate(180%)",
-                boxShadow: bubbleGlowAI,
+                boxShadow: msg.role === "model" ? `0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent), ${bubbleGlowAI}` : bubbleGlowAI,
                 color: textColor,
                 fontSize: 17,
                 lineHeight: 1.55,
@@ -1683,7 +1683,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
             <div style={{ display: "flex", justifyContent: "flex-start" }}>
               <div className="smoked-glass-surface" style={{
                 padding: "14px 18px",
-                borderRadius: "20px 20px 20px 5px",
+                borderRadius: 24,
                 background: bgBubbleAI,
                 border: `1px solid ${bubbleBorderAI}`,
                 boxShadow: bubbleGlowAI,

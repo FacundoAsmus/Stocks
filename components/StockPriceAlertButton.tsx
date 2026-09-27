@@ -83,7 +83,7 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
         <div className="smoked-glass-surface w-full max-w-sm rounded-3xl border border-white/15 p-5 shadow-2xl" style={{ animation: closing ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards" : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both", background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }} onClick={event => event.stopPropagation()}>
           <div className="mb-5 flex items-center justify-between">
             <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Alerts</h2>
-            <button aria-label="Close alerts" onClick={closeAlert} className="rounded-full p-2 text-text-muted hover:text-text-primary"><X className="h-4 w-4" /></button>
+            <button aria-label="Close alerts" onClick={closeAlert} className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-black transition hover:brightness-105 active:scale-95"><X className="h-4 w-4" /></button>
           </div>
           <label className="mb-2 block text-xs font-medium text-text-muted">Price</label>
           <input type="number" min="0" step="any" inputMode="decimal" placeholder={`Current $${currentPrice.toFixed(2)}`} value={price} onChange={event => setPrice(event.target.value)}

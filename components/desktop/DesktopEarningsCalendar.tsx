@@ -252,7 +252,6 @@ export function DesktopEarningsCalendar({
   const [quarterClosing, setQuarterClosing] = useState(false);
   const today = todayStr();
   const [year, setYear] = useState(() => new Date().getFullYear());
-  const [yearRollDirection, setYearRollDirection] = useState<"up" | "down">("up");
 
   // Year-back navigation limit: you can only ever go one year behind the
   // real current year (never two+), and even that one year back is only
@@ -300,10 +299,7 @@ export function DesktopEarningsCalendar({
     window.setTimeout(() => { setSelected(null); setQuarterClosing(false); }, 240);
   }
 
-  function changeYear(nextYear: number) {
-    setYearRollDirection(nextYear > year ? "up" : "down");
-    setYear(nextYear);
-  }
+  function changeYear(nextYear: number) { setYear(nextYear); }
 
   return (
     <>
@@ -351,8 +347,8 @@ export function DesktopEarningsCalendar({
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <span className="flex h-7 w-12 items-center justify-center overflow-hidden text-sm font-bold text-text-primary" style={{ perspective: 300 }}>
-                  <span key={year} className={`inline-block ${yearRollDirection === "up" ? "calendarYearRollUp" : "calendarYearRollDown"}`}>{year}</span>
+                <span className="flex h-[22px] w-12 items-center justify-center overflow-hidden text-text-primary">
+                  <WheelPrice value={String(year)} size="xs" colorClass="text-text-primary" />
                 </span>
                 <button
                   onClick={() => changeYear(Math.min(maxYear, year + 1))}
@@ -403,19 +399,6 @@ export function DesktopEarningsCalendar({
         @keyframes desktopCalendarSink {
           from { transform: scale(1);    opacity: 1; }
           to   { transform: scale(0.94); opacity: 0; }
-        }
-        @keyframes calendarYearRollUp {
-          from { transform: translateY(100%) rotateX(-55deg); opacity: 0; }
-          to   { transform: translateY(0) rotateX(0); opacity: 1; }
-        }
-        @keyframes calendarYearRollDown {
-          from { transform: translateY(-100%) rotateX(55deg); opacity: 0; }
-          to   { transform: translateY(0) rotateX(0); opacity: 1; }
-        }
-        .calendarYearRollUp { animation: calendarYearRollUp 0.32s cubic-bezier(0.22,1,0.36,1) both; }
-        .calendarYearRollDown { animation: calendarYearRollDown 0.32s cubic-bezier(0.22,1,0.36,1) both; }
-        @media (prefers-reduced-motion: reduce) {
-          .calendarYearRollUp, .calendarYearRollDown { animation: none; }
         }
         .earnings-detail-glass {
           background: linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54));
