@@ -127,7 +127,7 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       ref={panelRef}
-      className="smoked-glass-surface absolute top-full right-0 mt-2 w-72 rounded-xl border border-border-subtle bg-panel shadow-2xl z-50 overflow-hidden"
+      className="desktop-alert-glass smoked-glass-surface absolute top-full right-0 mt-2 w-72 rounded-xl border border-border-subtle bg-panel shadow-2xl z-50 overflow-hidden"
       style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)", animation: "dropIn 0.15s ease both" }}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">

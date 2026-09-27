@@ -149,7 +149,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
               </div>
             ))}
             {loading && (
-              <div className="self-start rounded-3xl border border-accent/70 px-3 py-2">
+              <div className="ai-response-bubble self-start rounded-3xl border border-accent/70 px-3 py-2" style={{ boxShadow: "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent)" }}>
                 <AIStarLoader size="md" />
               </div>
             )}

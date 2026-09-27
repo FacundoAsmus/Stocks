@@ -1681,12 +1681,12 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
 
           {loading && (
             <div style={{ display: "flex", justifyContent: "flex-start" }}>
-              <div className="smoked-glass-surface" style={{
+              <div className="smoked-glass-surface ai-response-bubble" style={{
                 padding: "14px 18px",
                 borderRadius: 24,
                 background: bgBubbleAI,
-                border: `1px solid ${bubbleBorderAI}`,
-                boxShadow: bubbleGlowAI,
+                border: "1px solid var(--color-accent)",
+                boxShadow: `0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent), ${bubbleGlowAI}`,
                 backdropFilter: "blur(24px) saturate(180%)",
                 WebkitBackdropFilter: "blur(24px) saturate(180%)",
                 display: "flex", alignItems: "center",
