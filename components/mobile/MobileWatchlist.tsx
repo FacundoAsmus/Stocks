@@ -119,9 +119,11 @@ const SETTLE_TRANSITION = "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
 function WatchlistRow({
   stock,
   onRemove,
+  isRemoving,
 }: {
   stock: StockSummary;
   onRemove: (s: string) => void;
+  isRemoving: boolean;
 }) {
   const router = useRouter();
   const innerRef = useRef<HTMLDivElement>(null);
@@ -292,13 +294,16 @@ function WatchlistRow({
       as="div"
       dragListener={false}
       dragControls={dragControls}
+      layout="position"
+      initial={false}
+      animate={isRemoving ? { height: 0, opacity: 0, scale: 0.96, marginTop: 0, marginBottom: 0 } : { height: "auto", opacity: 1, scale: 1 }}
       className="relative overflow-hidden rounded-2xl border-b border-border-subtle/70 last:border-0 bg-black select-none"
       whileDrag={{
         scale: 1.03,
         boxShadow: "0 16px 40px rgba(0,0,0,0.55)",
         zIndex: 50,
       }}
-      transition={{ type: "spring", stiffness: 500, damping: 40 }}
+      transition={isRemoving ? { duration: 0.48, ease: [0.22, 1, 0.36, 1] } : { type: "spring", stiffness: 500, damping: 40 }}
       onDragEnd={handleDragEnd}
       style={{
         touchAction: isDragging ? "none" : "pan-y",
@@ -355,7 +360,14 @@ export function MobileWatchlist() {
   const [symbols, setSymbols] = useState<string[]>([]);
   const [stocks, setStocks] = useState<Map<string, StockSummary>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [removingSymbols, setRemovingSymbols] = useState<Set<string>>(() => new Set());
+  const removalTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const fetchedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => () => {
+    removalTimersRef.current.forEach(timer => clearTimeout(timer));
+    removalTimersRef.current.clear();
+  }, []);
 
   useEffect(() => {
     function sync() {
@@ -397,9 +409,20 @@ export function MobileWatchlist() {
   }, [symbols]);
 
   function handleRemove(symbol: string) {
-    const updated = symbols.filter((s) => s !== symbol);
-    setSymbols(updated);
-    writeWatchlist(updated);
+    if (removalTimersRef.current.has(symbol)) return;
+    setRemovingSymbols(current => new Set(current).add(symbol));
+    const timer = setTimeout(() => {
+      removalTimersRef.current.delete(symbol);
+      const updated = readWatchlist().filter((s) => s !== symbol);
+      setSymbols(updated);
+      writeWatchlist(updated);
+      setRemovingSymbols(current => {
+        const next = new Set(current);
+        next.delete(symbol);
+        return next;
+      });
+    }, 500);
+    removalTimersRef.current.set(symbol, timer);
   }
 
   function handleReorder(newOrder: string[]) {
@@ -448,7 +471,7 @@ export function MobileWatchlist() {
           className="mx-2 mt-[0.95rem] rounded-xl bg-black"
         >
           {orderedStocks.map((stock) => (
-            <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} />
+            <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} isRemoving={removingSymbols.has(stock.symbol)} />
           ))}
         </Reorder.Group>
       )}

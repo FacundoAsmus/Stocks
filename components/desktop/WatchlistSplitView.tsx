@@ -193,6 +193,7 @@ export function WatchlistSplitView() {
   const [symbols, setSymbols] = useState<string[]>([]);
   const [stocks, setStocks] = useState<StockSummary[]>([]);
   const [displayedStocks, setDisplayedStocks] = useState<StockSummary[]>([]);
+  const [removingSymbols, setRemovingSymbols] = useState<Set<string>>(() => new Set());
   const [isListLoading, setIsListLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
 
@@ -223,16 +224,45 @@ export function WatchlistSplitView() {
   // fetch used to key off symbol *order*) re-triggers the full watchlist
   // fetch/loading screen mid-drag, which looked like the page reloading.
   const pendingOrderRef = useRef<string[] | null>(null);
+  const symbolsRef = useRef<string[]>([]);
+  const pendingSymbolsRef = useRef<string[] | null>(null);
+  const removalTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasLoadedListRef = useRef(false);
 
   // ── Load watchlist symbols + summaries (same approach as components/Watchlist.tsx) ──
   useEffect(() => {
-    setSymbols(readWatchlist());
+    const initialSymbols = readWatchlist();
+    symbolsRef.current = initialSymbols;
+    setSymbols(initialSymbols);
     function handleStorage() {
-      setSymbols(readWatchlist());
+      const nextSymbols = readWatchlist();
+      const pending = pendingSymbolsRef.current;
+      if (pending && pending.length === nextSymbols.length && pending.every((symbol, index) => symbol === nextSymbols[index])) return;
+      const previousSymbols = pending ?? symbolsRef.current;
+      const removedSymbols = previousSymbols.filter(symbol => !nextSymbols.includes(symbol));
+      if (removedSymbols.length) {
+        pendingSymbolsRef.current = nextSymbols;
+        setRemovingSymbols(current => new Set([...current, ...removedSymbols]));
+        if (removalTimerRef.current) clearTimeout(removalTimerRef.current);
+        removalTimerRef.current = setTimeout(() => {
+          const finalSymbols = readWatchlist();
+          symbolsRef.current = finalSymbols;
+          pendingSymbolsRef.current = null;
+          setSymbols(finalSymbols);
+          setDisplayedStocks(current => current.filter(stock => finalSymbols.includes(stock.symbol)));
+          setRemovingSymbols(new Set());
+          removalTimerRef.current = null;
+        }, 500);
+        return;
+      }
+      symbolsRef.current = nextSymbols;
+      pendingSymbolsRef.current = null;
+      setSymbols(nextSymbols);
     }
     window.addEventListener("watchlist-updated", handleStorage);
     window.addEventListener("storage", handleStorage);
     return () => {
+      if (removalTimerRef.current) clearTimeout(removalTimerRef.current);
       window.removeEventListener("watchlist-updated", handleStorage);
       window.removeEventListener("storage", handleStorage);
     };
@@ -258,6 +288,7 @@ export function WatchlistSplitView() {
     async function loadStocks() {
       if (!symbolQuery) {
         setStocks([]);
+        hasLoadedListRef.current = true;
         setIsListLoading(false);
         return;
       }
@@ -275,7 +306,10 @@ export function WatchlistSplitView() {
           setListError(loadError instanceof Error ? loadError.message : "Unable to load watchlist.");
         }
       } finally {
-        if (!controller.signal.aborted) setIsListLoading(false);
+        if (!controller.signal.aborted) {
+          hasLoadedListRef.current = true;
+          setIsListLoading(false);
+        }
       }
     }
     loadStocks();
@@ -343,12 +377,13 @@ export function WatchlistSplitView() {
     const finalOrder = pendingOrderRef.current;
     pendingOrderRef.current = null;
     if (!finalOrder) return;
+    symbolsRef.current = finalOrder;
     setSymbols(finalOrder);
     writeWatchlist(finalOrder);
   }
 
-  if (isListLoading) return <EmptyWatchlist isLoading />;
-  if (listError) return <ErrorState title="Watchlist unavailable" message={listError} />;
+  if (isListLoading && !hasLoadedListRef.current) return <EmptyWatchlist isLoading />;
+  if (listError && !displayedStocks.length) return <ErrorState title="Watchlist unavailable" message={listError} />;
   if (!displayedStocks.length) return <EmptyWatchlist />;
 
   return (
@@ -373,6 +408,10 @@ export function WatchlistSplitView() {
               key={stock.symbol}
               value={stock.symbol}
               as="div"
+              layout="position"
+              initial={false}
+              animate={removingSymbols.has(stock.symbol) ? { height: 0, opacity: 0, scale: 0.96, marginTop: 0, marginBottom: 0 } : { height: "auto", opacity: 1, scale: 1 }}
+              transition={removingSymbols.has(stock.symbol) ? { duration: 0.48, ease: [0.22, 1, 0.36, 1] } : { type: "spring", stiffness: 500, damping: 40 }}
               className="mx-2 my-0.5 rounded-xl"
               // Keeping an explicit, persistent z-index tied to our own
               // `draggingSymbol` state (see below) — not just Framer's
@@ -386,7 +425,7 @@ export function WatchlistSplitView() {
               // like it's above" bug. Staying elevated until well after the
               // spring has settled (see the timeout in onDragEnd below)
               // fixes it.
-              style={{ position: "relative", zIndex: stock.symbol === draggingSymbol ? 30 : 0 }}
+              style={{ position: "relative", zIndex: stock.symbol === draggingSymbol ? 30 : 0, overflow: removingSymbols.has(stock.symbol) ? "hidden" : undefined }}
               whileDrag={{ scale: 1.02, boxShadow: "0 12px 30px rgba(0,0,0,0.45)" }}
               transition={{ type: "spring", stiffness: 500, damping: 40 }}
               onDragStart={() => setDraggingSymbol(stock.symbol)}
