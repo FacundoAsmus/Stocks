@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { List, Settings, Moon, Sun, Monitor, ChevronLeft, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
 import { TestPushNotificationButton } from "@/components/TestPushNotificationButton";
@@ -51,7 +52,7 @@ function GlobeIcon({ className }: { className?: string }) {
 }
 
 // Desktop settings dropdown
-function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
+function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anchorRef: { current: HTMLButtonElement | null } }) {
   const [theme, setTheme]     = useState<Theme>(getStoredTheme);
   const [proMode, setProMode] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
@@ -69,14 +70,28 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
     typeof window !== "undefined" ? localStorage.getItem("pro-alert-lines") === "1" : false
   );
   const panelRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const updatePosition = () => {
+      const rect = anchorRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setPosition({ top: rect.bottom + 8, left: Math.max(12, Math.min(rect.right - 288, window.innerWidth - 300)) });
+    };
     function handleClick(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose();
+      const target = e.target as Node;
+      if (panelRef.current && !panelRef.current.contains(target) && !anchorRef.current?.contains(target)) onClose();
     }
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
     document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [onClose]);
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+      document.removeEventListener("mousedown", handleClick);
+    };
+  }, [onClose, anchorRef]);
 
   function changeTheme(t: Theme) {
     setTheme(t);
@@ -124,11 +139,11 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
     { value: "system", label: "System", icon: <Monitor className="h-4 w-4" /> },
   ];
 
-  return (
+  return typeof document === "undefined" ? null : createPortal((
     <div
       ref={panelRef}
-      className="desktop-alert-glass smoked-glass-surface absolute top-full right-0 mt-2 w-72 rounded-xl border border-border-subtle bg-panel shadow-2xl z-50 overflow-hidden"
-      style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)", animation: "dropIn 0.15s ease both" }}
+      className="desktop-alert-glass smoked-glass-surface fixed z-[1201] w-72 overflow-hidden rounded-xl border border-border-subtle bg-panel shadow-2xl"
+      style={{ ...position, background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)", animation: "dropIn 0.15s ease both" }}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
         <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Settings</h2>
@@ -218,7 +233,7 @@ function DesktopSettingsPanel({ onClose }: { onClose: () => void }) {
         }
       `}</style>
     </div>
-  );
+  ), document.body);
 }
 
 const navItems = [
@@ -234,6 +249,7 @@ type AppNavProps = {
 export function AppNav({ variant = "full" }: AppNavProps) {
   const pathname     = usePathname();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsButtonRef = useRef<HTMLButtonElement>(null);
 
   // Apply stored theme on mount (desktop)
   useEffect(() => {
@@ -272,6 +288,7 @@ export function AppNav({ variant = "full" }: AppNavProps) {
   const settings = (
     <div className="relative">
       <button
+        ref={settingsButtonRef}
         onClick={() => setSettingsOpen(o => !o)}
         aria-label="Settings"
         className={cn(
@@ -291,7 +308,7 @@ export function AppNav({ variant = "full" }: AppNavProps) {
         </span>
         {variant !== "settings" && <span>Settings</span>}
       </button>
-      {settingsOpen && <DesktopSettingsPanel onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && <DesktopSettingsPanel anchorRef={settingsButtonRef} onClose={() => setSettingsOpen(false)} />}
     </div>
   );
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import { Search, Clock } from "lucide-react";
 
@@ -71,6 +72,8 @@ export function SearchBar() {
   const [isLoading, setIsLoading] = useState(false);
   const [logos, setLogos] = useState<Record<string, string>>({});
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
 
   // Logos are a nice-to-have enrichment fetched separately from the search
   // results themselves (/api/search doesn't return them) — same two-step
@@ -125,11 +128,33 @@ export function SearchBar() {
 
   useEffect(() => {
     function handleClick(event: MouseEvent) {
-      if (!wrapperRef.current?.contains(event.target as Node)) setIsOpen(false);
+      const target = event.target as Node;
+      if (!wrapperRef.current?.contains(target) && !dropdownRef.current?.contains(target)) setIsOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const updateDropdownPosition = () => {
+      const rect = wrapperRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const width = Math.min(rect.width, window.innerWidth - 24);
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        left: Math.max(12, Math.min(rect.left, window.innerWidth - width - 12)),
+        width,
+      });
+    };
+    updateDropdownPosition();
+    window.addEventListener("resize", updateDropdownPosition);
+    window.addEventListener("scroll", updateDropdownPosition, true);
+    return () => {
+      window.removeEventListener("resize", updateDropdownPosition);
+      window.removeEventListener("scroll", updateDropdownPosition, true);
+    };
+  }, [isOpen]);
 
   function navigateToSymbol(symbol: string) {
     const cleanSymbol = symbol.trim().toUpperCase();
@@ -168,8 +193,17 @@ export function SearchBar() {
 
   const showRecent = isOpen && !query.trim() && recentSearches.length > 0;
   const showResults = isOpen && query.trim() && results.length > 0;
+  const dropdownStyle = dropdownPosition ? {
+    position: "fixed" as const,
+    top: dropdownPosition.top,
+    left: dropdownPosition.left,
+    width: dropdownPosition.width,
+    maxHeight: `calc(100vh - ${dropdownPosition.top + 16}px)`,
+    zIndex: 1201,
+  } : undefined;
 
   return (
+    <>
     <div ref={wrapperRef} className="relative w-full lg:max-w-xl">
       <form onSubmit={handleSubmit} className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
@@ -186,11 +220,10 @@ export function SearchBar() {
         ) : null}
       </form>
 
-      {showRecent ? (
-        <div
-          className="search-results-glass desktop-alert-glass smoked-glass-surface absolute mt-2 w-full overflow-hidden rounded-2xl border border-white/15"
-          style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}
-        >
+    </div>
+    {(showRecent || showResults) && dropdownPosition && typeof document !== "undefined" && createPortal(
+      showRecent ? (
+        <div ref={dropdownRef} className="search-results-glass desktop-alert-glass smoked-glass-surface fixed w-full overflow-auto rounded-2xl border border-white/15" style={{ ...dropdownStyle, background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
           <p className="px-4 py-2 text-xs uppercase tracking-widest text-text-muted">Recent</p>
           {recentSearches.map((symbol) => (
             <button
@@ -205,11 +238,8 @@ export function SearchBar() {
             </button>
           ))}
         </div>
-      ) : showResults ? (
-        <div
-          className="search-results-glass desktop-alert-glass smoked-glass-surface absolute mt-2 w-full overflow-hidden rounded-2xl border border-white/15"
-          style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}
-        >
+      ) : (
+        <div ref={dropdownRef} className="search-results-glass desktop-alert-glass smoked-glass-surface fixed w-full overflow-auto rounded-2xl border border-white/15" style={{ ...dropdownStyle, background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
           {results.map((result) => (
             <button
               key={`${result.symbol}-${result.description}`}
@@ -228,7 +258,8 @@ export function SearchBar() {
             </button>
           ))}
         </div>
-      ) : null}
-    </div>
+      ), document.body
+    )}
+    </>
   );
 }
