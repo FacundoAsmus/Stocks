@@ -189,6 +189,60 @@ function PanelLoader({ label }: { label: string }) {
   );
 }
 
+function DesktopWatchlistSkeleton() {
+  return (
+    <div className="watchlist-desktop-root flex w-full" style={{ height: "calc(100dvh - var(--header-height, 0px))" }} aria-label="Loading watchlist" role="status">
+      <div className="watchlist-list-panel m-3 flex w-1/4 shrink-0 flex-col overflow-hidden rounded-2xl border border-border-subtle/70">
+        <div className="shrink-0 px-6 pb-4 pt-6">
+          <div className="mb-3 h-3 w-20 animate-pulse rounded-full bg-panel-muted" />
+          <div className="h-8 w-40 animate-pulse rounded-lg bg-panel-muted" />
+        </div>
+        <div className="flex-1 space-y-3 overflow-hidden px-3 pb-4">
+          {Array.from({ length: 7 }, (_, index) => (
+            <div key={index} className="flex items-center gap-3 rounded-xl border-2 border-transparent px-4 py-3.5">
+              <div className="h-9 w-9 shrink-0 animate-pulse rounded-md bg-panel-muted" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <div className="h-3 w-16 animate-pulse rounded-full bg-panel-muted" />
+                <div className="h-2 w-24 animate-pulse rounded-full bg-panel-muted/70" />
+              </div>
+              <div className="h-8 w-16 shrink-0 animate-pulse rounded-md bg-panel-muted/80" />
+              <div className="h-7 w-14 shrink-0 animate-pulse rounded-lg bg-panel-muted" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="relative h-full min-w-0 w-3/4 overflow-hidden">
+        <div className="animate-pulse px-6 py-8">
+          <div className="mb-6 flex items-start justify-between gap-6">
+            <div className="space-y-3">
+              <div className="h-3 w-28 rounded-full bg-panel-muted" />
+              <div className="h-9 w-52 rounded-lg bg-panel-muted" />
+              <div className="h-4 w-36 rounded-full bg-panel-muted/70" />
+            </div>
+            <div className="h-10 w-10 rounded-full bg-panel-muted" />
+          </div>
+          <div className="mb-8 flex items-end gap-4">
+            <div className="h-12 w-44 rounded-lg bg-panel-muted" />
+            <div className="mb-1 h-6 w-24 rounded-lg bg-panel-muted/70" />
+          </div>
+          <div className="mb-6 h-[320px] w-full rounded-2xl border border-border-subtle/50 bg-panel/40 p-8">
+            <div className="flex h-full items-end gap-2 opacity-60">
+              {[36, 52, 44, 68, 57, 76, 62, 88, 70, 96, 82, 100, 74, 90, 66, 84, 72, 98, 80, 92].map((height, index) => (
+                <div key={index} className="flex-1 animate-pulse rounded-t-sm bg-accent/20" style={{ height: `${height}%` }} />
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {Array.from({ length: 6 }, (_, index) => (
+              <div key={index} className="h-20 animate-pulse rounded-xl border border-border-subtle/50 bg-panel/40" />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function WatchlistSplitView() {
   const [symbols, setSymbols] = useState<string[]>([]);
   const [stocks, setStocks] = useState<StockSummary[]>([]);
@@ -382,16 +436,15 @@ export function WatchlistSplitView() {
     writeWatchlist(finalOrder);
   }
 
-  if (isListLoading && !hasLoadedListRef.current) return <EmptyWatchlist isLoading />;
+  if (isListLoading && !hasLoadedListRef.current) return <DesktopWatchlistSkeleton />;
   if (listError && !displayedStocks.length) return <ErrorState title="Watchlist unavailable" message={listError} />;
-  if (!displayedStocks.length) return <EmptyWatchlist />;
 
   return (
     <div className="watchlist-desktop-root flex w-full" style={{ height: "calc(100dvh - var(--header-height, 0px))" }}>
       {/* Left: 1/4 — its own rounded, distinctly-shaded card holding the title + list.
           Background: #0e0e0e dark / #ffffff light (see .watchlist-list-panel in globals.css).
           Page background behind it: #ececec in light mode (.watchlist-desktop-root). */}
-      <div className="watchlist-list-panel m-3 flex w-[1/4] shrink-0 flex-col overflow-hidden rounded-2xl border border-border-subtle/70">
+      <div className="watchlist-list-panel m-3 flex w-1/4 shrink-0 flex-col overflow-hidden rounded-2xl border border-border-subtle/70">
         <div className="shrink-0 px-6 pb-4 pt-6">
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Watchlist</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Your Stocks</h1>
@@ -449,6 +502,11 @@ export function WatchlistSplitView() {
               />
             </Reorder.Item>
           ))}
+          {!displayedStocks.length && (
+            <div className="px-3 py-5">
+              <EmptyWatchlist />
+            </div>
+          )}
         </Reorder.Group>
       </div>
 
@@ -478,6 +536,13 @@ export function WatchlistSplitView() {
                 earningsCalendarContainerRef={detailColumnRef}
                 hideCursorDateTooltip
               />
+            </div>
+          ) : !displayedStocks.length ? (
+            <div className="flex h-full items-center justify-center px-8 text-center">
+              <div className="max-w-sm">
+                <p className="text-lg font-semibold text-text-primary">Choose a stock to view its details</p>
+                <p className="mt-2 text-sm text-text-muted">Search for a company above, then add it to your watchlist with the star button.</p>
+              </div>
             </div>
           ) : null}
         </div>
