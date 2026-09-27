@@ -245,6 +245,7 @@ function DesktopWatchlistSkeleton() {
 
 export function WatchlistSplitView() {
   const [symbols, setSymbols] = useState<string[]>([]);
+  const [watchlistReady, setWatchlistReady] = useState(false);
   const [stocks, setStocks] = useState<StockSummary[]>([]);
   const [displayedStocks, setDisplayedStocks] = useState<StockSummary[]>([]);
   const [removingSymbols, setRemovingSymbols] = useState<Set<string>>(() => new Set());
@@ -288,6 +289,7 @@ export function WatchlistSplitView() {
     const initialSymbols = readWatchlist();
     symbolsRef.current = initialSymbols;
     setSymbols(initialSymbols);
+    setWatchlistReady(true);
     function handleStorage() {
       const nextSymbols = readWatchlist();
       const pending = pendingSymbolsRef.current;
@@ -338,6 +340,7 @@ export function WatchlistSplitView() {
   const symbolQuery = useMemo(() => [...symbols].sort().join(","), [symbols]);
 
   useEffect(() => {
+    if (!watchlistReady) return;
     const controller = new AbortController();
     async function loadStocks() {
       if (!symbolQuery) {
@@ -354,7 +357,11 @@ export function WatchlistSplitView() {
         });
         const data = (await response.json()) as { stocks?: StockSummary[]; error?: string };
         if (!response.ok) throw new Error(data.error ?? "Unable to load watchlist.");
-        setStocks(data.stocks ?? []);
+        const nextStocks = data.stocks ?? [];
+        setStocks(nextStocks);
+        setDisplayedStocks(symbolsRef.current
+          .map((sym) => nextStocks.find((stock) => stock.symbol === sym))
+          .filter((stock): stock is StockSummary => !!stock));
       } catch (loadError) {
         if (!controller.signal.aborted) {
           setListError(loadError instanceof Error ? loadError.message : "Unable to load watchlist.");
@@ -368,7 +375,7 @@ export function WatchlistSplitView() {
     }
     loadStocks();
     return () => controller.abort();
-  }, [symbolQuery]);
+  }, [symbolQuery, watchlistReady]);
 
   useEffect(() => {
     const ordered = symbols
