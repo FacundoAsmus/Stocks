@@ -63,9 +63,9 @@ export function AddToWatchlistButton({
         aria-label={isSaved ? `Remove ${name} from watchlist` : `Add ${name} to watchlist`}
         onClick={toggleWatchlist}
         className={cn(
-          "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border p-0 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.12]",
+          "inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border p-0 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.12]",
           isSaved
-            ? "border-accent/40 bg-black text-accent"
+            ? "border-accent/40 bg-transparent text-accent"
             : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-accent"
         )}
       >

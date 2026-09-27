@@ -314,7 +314,7 @@ function WatchlistRow({
           <button
             onClick={() => onRemove(stock.symbol)}
             aria-label={`Remove ${stock.symbol}`}
-            className="flex items-center justify-center text-positive active:scale-90 transition-transform"
+            className="flex items-center justify-center text-accent active:scale-90 transition-transform"
           >
             <Star className="h-5 w-5 fill-current" />
           </button>
