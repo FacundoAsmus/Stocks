@@ -209,7 +209,7 @@ export function StockAIChat(props: StockAIChatProps) {
         className="flex items-center justify-center h-8 w-8 rounded-lg bg-positive/15 border border-positive/40 text-positive transition-all active:scale-90"
         aria-label="Ask AI about this stock"
       >
-        <Sparkles className="h-4 w-4" />
+        <Sparkles className="ai-button-icon h-4 w-4" />
       </button>
 
       {open && (

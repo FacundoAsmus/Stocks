@@ -362,7 +362,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
           (closest match) renders nearest the bar via column-reverse. */}
       {showDropdown && (
         <div
-          className="fixed lg:hidden rounded-2xl border border-white/25"
+          className="smoked-glass-surface fixed lg:hidden rounded-2xl border border-white/25"
           style={{
             zIndex: 1001,
             right: "1rem",
@@ -440,7 +440,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
       {/* The pill — same element morphs from a small circle into the search
           bar, identical geometry/easing/timing to the AI chat pill. */}
       <div
-        className="fixed lg:hidden overflow-hidden rounded-full border border-white/25 text-accent"
+        className="smoked-glass-surface fixed lg:hidden overflow-hidden rounded-full border border-white/25 text-accent"
         style={{
           zIndex: 1002,
           bottom: pillBottom,
@@ -457,6 +457,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
         {/* Thin specular highlight along the top edge — matching the AI pill's glass sheen */}
         <div
           aria-hidden
+          className="smoked-glass-edge-highlight"
           style={{
             position: "absolute", top: 0, left: "8%", right: "8%", height: 1,
             background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
@@ -475,7 +476,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
             transition: "opacity 0.16s ease",
           }}
         >
-          <Search className="h-7 w-7" />
+          <Search className="h-7 w-7 text-accent" />
         </button>
 
         {/* Open state: the actual search input row */}
@@ -618,7 +619,7 @@ export function MobileNav() {
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 0.5rem)", paddingTop: "1rem" }}
       >
         <div
-          className="relative flex items-center rounded-full border border-white/25 overflow-hidden pointer-events-auto"
+          className="smoked-glass-surface relative flex items-center rounded-full border border-white/25 overflow-hidden pointer-events-auto"
           style={{
             height: BUBBLE_SIZE,
             background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
@@ -630,7 +631,7 @@ export function MobileNav() {
           {/* Thin specular highlight along the top edge — matching the AI pill's glass sheen */}
           <div
             aria-hidden
-            className="absolute top-0 left-[8%] right-[8%] pointer-events-none"
+            className="smoked-glass-edge-highlight absolute top-0 left-[8%] right-[8%] pointer-events-none"
             style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)" }}
           />
           {/* Sliding green indicator */}

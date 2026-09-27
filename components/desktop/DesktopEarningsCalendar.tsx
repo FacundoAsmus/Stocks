@@ -145,7 +145,7 @@ function DesktopQuarterDetail({
   const chartEvents = sorted.slice(Math.max(0, selectedIndex - 4), selectedIndex + 5);
 
   return (
-    <div className="earnings-detail-glass smoked-glass-surface w-full overflow-y-auto rounded-2xl p-5 shadow-2xl" style={{ maxWidth: "min(680px, calc(100vw - 2rem))", maxHeight: "calc(100vh - 2rem)", animation: closing ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards" : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both" }} onClick={(click) => click.stopPropagation()}>
+    <div className="earnings-detail-glass smoked-glass-surface smoked-glass-calendar w-full overflow-y-auto rounded-2xl p-5 shadow-2xl" style={{ maxWidth: "min(680px, calc(100vw - 2rem))", maxHeight: "calc(100vh - 2rem)", animation: closing ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards" : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both" }} onClick={(click) => click.stopPropagation()}>
       <div className="mb-5 flex items-center gap-3">
         <button onClick={onBack} className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-black">
           <ChevronLeft className="h-4 w-4" />
@@ -320,7 +320,7 @@ export function DesktopEarningsCalendar({
           onClick={(e) => { if (e.target === e.currentTarget) closeCalendar(); }}
         >
           <div
-            className="earnings-detail-glass smoked-glass-surface flex w-full flex-col overflow-hidden rounded-2xl border border-white/15 shadow-2xl"
+            className="earnings-detail-glass smoked-glass-surface smoked-glass-calendar flex w-full flex-col overflow-hidden rounded-2xl border border-white/15 shadow-2xl"
             style={{
               maxWidth: "min(880px, 100%)",
               maxHeight: "100%",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Bell, X } from "lucide-react";
 import { getAlertDeviceId, notifyPriceAlertsChanged } from "@/lib/priceAlertClient";
@@ -32,6 +32,13 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
     if (!navigator.serviceWorker) return;
     fetch(`/api/alerts?deviceId=${encodeURIComponent(getAlertDeviceId())}`).then(response => response.ok ? response.json() : null).then(data => { if (data?.alerts) setAlerts(data.alerts); }).catch(() => {});
   }, []);
+
+  useLayoutEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [open]);
 
   async function saveAlert() {
     const target = Number(price);

@@ -1729,7 +1729,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
             transition: "opacity 0.16s ease",
           }}
         >
-          <Sparkles className="h-7 w-7 text-positive" />
+          <Sparkles className="h-7 w-7 text-accent" />
         </button>
 
         {/* Open state: the actual input row */}

@@ -108,6 +108,13 @@ html.light-mode .earnings-detail-glass.smoked-glass-surface {
   box-shadow: 0 24px 70px rgba(45,73,96,0.13), 0 5px 18px rgba(45,73,96,0.08), inset 0 0 18px rgba(78,125,158,0.075), inset 0 1px 0 rgba(255,255,255,0.16) !important;
   color: #1a1a1e !important;
 }
+html.light-mode .smoked-glass-calendar {
+  -webkit-backdrop-filter: blur(32px) saturate(155%) !important;
+  backdrop-filter: blur(32px) saturate(155%) !important;
+}
+html.light-mode .smoked-glass-edge-highlight {
+  background: linear-gradient(90deg, transparent, rgba(80,130,164,0.12), transparent) !important;
+}
 html.light-mode .smoked-glass-surface input {
   color: #1a1a1e !important;
 }
@@ -133,6 +140,9 @@ html.light-mode .smoked-glass-control {
 html.light-mode .smoked-glass-control option {
   background: #f2f7fb;
   color: #1a1a1e;
+}
+html.light-mode .ai-button-icon {
+  color: var(--color-accent) !important;
 }
 
 a {
