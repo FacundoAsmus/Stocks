@@ -17,7 +17,6 @@ import {
   calcTodayChange,
   calcTotalCost,
   readTracker,
-  removeHolding,
 } from "@/lib/tracker";
 import { cn } from "@/lib/utils";
 import type { StockSummary } from "@/types/stock";

@@ -23,5 +23,12 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    "Stocks",
+    "stocks-wheel-animation-fix",
+    "_stock_fix_staging",
+    "_quarter_change_staging",
+    "_market_heatmap_source"
+  ]
 }

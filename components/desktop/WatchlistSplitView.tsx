@@ -427,7 +427,6 @@ export function WatchlistSplitView() {
               // fixes it.
               style={{ position: "relative", zIndex: stock.symbol === draggingSymbol ? 30 : 0, overflow: removingSymbols.has(stock.symbol) ? "hidden" : undefined }}
               whileDrag={{ scale: 1.02, boxShadow: "0 12px 30px rgba(0,0,0,0.45)" }}
-              transition={{ type: "spring", stiffness: 500, damping: 40 }}
               onDragStart={() => setDraggingSymbol(stock.symbol)}
               onDragEnd={() => {
                 justDraggedRef.current = true;
