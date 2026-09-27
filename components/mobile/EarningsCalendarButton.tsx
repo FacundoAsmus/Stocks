@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { createPortal } from "react-dom";
-import { CalendarDays, ChevronLeft } from "lucide-react";
+import { CalendarDays, X } from "lucide-react";
 
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { WheelPrice } from "@/components/PriceChart";
@@ -77,7 +77,7 @@ export function EarningsDetailCard({
 
   return (
     <div
-      className="earnings-detail-glass smoked-glass-surface smoked-glass-calendar w-full rounded-2xl p-5 shadow-2xl"
+      className="earnings-detail-glass smoked-glass-surface smoked-glass-calendar w-full rounded-3xl p-5 shadow-2xl"
       style={{
         maxWidth: "min(380px, calc(100vw - 2rem))",
         animation: "detailFadeIn 0.18s ease both",
@@ -87,18 +87,14 @@ export function EarningsDetailCard({
       }}
       onClick={e => e.stopPropagation()}
     >
-      <div className="flex items-center gap-3 mb-5">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 bg-accent text-black text-sm font-semibold px-3 py-1.5 rounded-lg shrink-0"
-        >
-          <ChevronLeft className="h-4 w-4" />
-          Back
-        </button>
+      <div className="flex items-start justify-between gap-3 mb-5">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent">Q{event.quarter} {event.year}</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Q{event.quarter} {event.year}</h2>
           <p className="text-sm text-text-muted">{dateLabel}</p>
         </div>
+        <button type="button" onClick={onBack} aria-label="Close quarter details" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-black transition hover:brightness-105 active:scale-95">
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
       <div className="space-y-7">
@@ -290,15 +286,11 @@ export function EarningsCalendarButton({
                 : "calendarRise 0.32s cubic-bezier(0.22,1,0.36,1) both"
             }}
           >
-            <div className="flex items-center gap-3 px-4 pt-4 pb-3 shrink-0">
-              <button
-                onClick={closeCalendar}
-                className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-black"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Back
+            <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
+              <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Earnings Calendar</h2>
+              <button type="button" onClick={closeCalendar} aria-label="Close earnings calendar" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-black transition hover:brightness-105 active:scale-95">
+                <X className="h-4 w-4" />
               </button>
-              <p className="text-sm font-semibold text-accent">Earnings Calendar</p>
             </div>
 
             <div className="grid grid-cols-7 px-4 pb-2 shrink-0">

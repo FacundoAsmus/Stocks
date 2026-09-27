@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { RefObject } from "react";
 import { createPortal } from "react-dom";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
 
 import { todayStr } from "@/lib/earnings";
 import { formatCompact, formatCurrency } from "@/lib/format";
@@ -145,16 +145,15 @@ function DesktopQuarterDetail({
   const chartEvents = sorted.slice(Math.max(0, selectedIndex - 4), selectedIndex + 5);
 
   return (
-    <div className="earnings-detail-glass smoked-glass-surface smoked-glass-calendar w-full overflow-y-auto rounded-2xl p-5 shadow-2xl" style={{ maxWidth: "min(680px, calc(100vw - 2rem))", maxHeight: "calc(100vh - 2rem)", animation: closing ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards" : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both" }} onClick={(click) => click.stopPropagation()}>
-      <div className="mb-5 flex items-center gap-3">
-        <button onClick={onBack} className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-black">
-          <ChevronLeft className="h-4 w-4" />
-          Back
-        </button>
+    <div className="earnings-detail-glass smoked-glass-surface smoked-glass-calendar w-full overflow-y-auto rounded-3xl p-5 shadow-2xl" style={{ maxWidth: "min(680px, calc(100vw - 2rem))", maxHeight: "calc(100vh - 2rem)", animation: closing ? "desktopCalendarSink 0.24s cubic-bezier(0.22,1,0.36,1) forwards" : "desktopCalendarRise 0.24s cubic-bezier(0.22,1,0.36,1) both" }} onClick={(click) => click.stopPropagation()}>
+      <div className="mb-5 flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent">Q{event.quarter} {event.year}</p>
+          <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Q{event.quarter} {event.year}</h2>
           <p className="text-sm text-text-muted">{dateLabel}</p>
         </div>
+        <button type="button" onClick={onBack} aria-label="Close quarter details" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-black transition hover:brightness-105 active:scale-95">
+          <X className="h-4 w-4" />
+        </button>
       </div>
       <div className="space-y-8 border-t border-white/10 pt-5">
         <QuarterMetricChart title="Earnings (Revenue)" metric="revenue" events={chartEvents} selectedDate={event.date} />
@@ -253,6 +252,7 @@ export function DesktopEarningsCalendar({
   const [quarterClosing, setQuarterClosing] = useState(false);
   const today = todayStr();
   const [year, setYear] = useState(() => new Date().getFullYear());
+  const [yearRollDirection, setYearRollDirection] = useState<"up" | "down">("up");
 
   // Year-back navigation limit: you can only ever go one year behind the
   // real current year (never two+), and even that one year back is only
@@ -300,6 +300,11 @@ export function DesktopEarningsCalendar({
     window.setTimeout(() => { setSelected(null); setQuarterClosing(false); }, 240);
   }
 
+  function changeYear(nextYear: number) {
+    setYearRollDirection(nextYear > year ? "up" : "down");
+    setYear(nextYear);
+  }
+
   return (
     <>
       <button
@@ -320,7 +325,7 @@ export function DesktopEarningsCalendar({
           onClick={(e) => { if (e.target === e.currentTarget) closeCalendar(); }}
         >
           <div
-            className="earnings-detail-glass smoked-glass-surface smoked-glass-calendar flex w-full flex-col overflow-hidden rounded-2xl border border-white/15 shadow-2xl"
+            className="earnings-detail-glass smoked-glass-surface smoked-glass-calendar flex w-full flex-col overflow-hidden rounded-3xl border border-white/15 shadow-2xl"
             style={{
               maxWidth: "min(880px, 100%)",
               maxHeight: "100%",
@@ -335,32 +340,30 @@ export function DesktopEarningsCalendar({
             <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-accent" />
-                <p className="text-sm font-bold text-accent">Earnings Calendar</p>
+                <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Earnings Calendar</h2>
               </div>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setYear((y) => Math.max(minYear, y - 1))}
+                  onClick={() => changeYear(Math.max(minYear, year - 1))}
                   aria-label="Previous year"
                   disabled={!canGoBack}
                   className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-text-muted"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
-                <span className="w-12 text-center text-sm font-bold text-text-primary">{year}</span>
+                <span className="flex h-7 w-12 items-center justify-center overflow-hidden text-sm font-bold text-text-primary" style={{ perspective: 300 }}>
+                  <span key={year} className={`inline-block ${yearRollDirection === "up" ? "calendarYearRollUp" : "calendarYearRollDown"}`}>{year}</span>
+                </span>
                 <button
-                  onClick={() => setYear((y) => Math.min(maxYear, y + 1))}
+                  onClick={() => changeYear(Math.min(maxYear, year + 1))}
                   aria-label="Next year"
                   disabled={!canGoForward}
                   className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:text-text-muted"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
-                <button
-                  onClick={closeCalendar}
-                  aria-label="Close"
-                  className="ml-1 flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-black"
-                >
-                  Close
+                <button type="button" onClick={closeCalendar} aria-label="Close earnings calendar" className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-accent text-black transition hover:brightness-105 active:scale-95">
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -400,6 +403,19 @@ export function DesktopEarningsCalendar({
         @keyframes desktopCalendarSink {
           from { transform: scale(1);    opacity: 1; }
           to   { transform: scale(0.94); opacity: 0; }
+        }
+        @keyframes calendarYearRollUp {
+          from { transform: translateY(100%) rotateX(-55deg); opacity: 0; }
+          to   { transform: translateY(0) rotateX(0); opacity: 1; }
+        }
+        @keyframes calendarYearRollDown {
+          from { transform: translateY(-100%) rotateX(55deg); opacity: 0; }
+          to   { transform: translateY(0) rotateX(0); opacity: 1; }
+        }
+        .calendarYearRollUp { animation: calendarYearRollUp 0.32s cubic-bezier(0.22,1,0.36,1) both; }
+        .calendarYearRollDown { animation: calendarYearRollDown 0.32s cubic-bezier(0.22,1,0.36,1) both; }
+        @media (prefers-reduced-motion: reduce) {
+          .calendarYearRollUp, .calendarYearRollDown { animation: none; }
         }
         .earnings-detail-glass {
           background: linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54));
