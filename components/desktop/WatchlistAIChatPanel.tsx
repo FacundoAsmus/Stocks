@@ -9,7 +9,24 @@ import { cn } from "@/lib/utils";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import type { StockDetail } from "@/types/stock";
 
-interface Message { role: "user" | "model"; text: string }
+interface Message { role: "user" | "model"; text: string; animating?: boolean }
+
+function AnimatedWelcomeText({ text }: { text: string }) {
+  const [visibleText, setVisibleText] = useState("");
+
+  useEffect(() => {
+    let count = 0;
+    setVisibleText("");
+    const timer = window.setInterval(() => {
+      count += 1;
+      setVisibleText(text.slice(0, count));
+      if (count >= text.length) window.clearInterval(timer);
+    }, 6);
+    return () => window.clearInterval(timer);
+  }, [text]);
+
+  return <>{visibleText}{visibleText.length < text.length && <span aria-hidden="true" className="text-accent">▍</span>}</>;
+}
 
 interface Props {
   stock: StockDetail;
@@ -40,6 +57,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
   const [stockContext, setStockContext] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const welcomedStockRef = useRef<string | null>(null);
 
   // Reset the conversation and rebuild context whenever the selected stock
   // changes (the split view keeps this component mounted across selections).
@@ -59,8 +77,17 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
-    setMessages(previous => previous.length ? previous : [{ role: "model", text: getRandomAIWelcome() }]);
+    if (!open || welcomedStockRef.current === stock.symbol) return;
+    setLoading(true);
+    const timer = window.setTimeout(() => {
+      setMessages([{ role: "model", text: getRandomAIWelcome(), animating: true }]);
+      setLoading(false);
+      welcomedStockRef.current = stock.symbol;
+    }, 500);
+    return () => {
+      window.clearTimeout(timer);
+      setLoading(false);
+    };
   }, [open, stock.symbol]);
 
   useEffect(() => {
@@ -151,7 +178,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
                 )}
                 style={m.role === "model" ? { boxShadow: "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent)" } : undefined}
               >
-                {m.text}
+                {m.role === "model" && m.animating ? <AnimatedWelcomeText text={m.text} /> : m.text}
               </div>
             ))}
             {loading && (

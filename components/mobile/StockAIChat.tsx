@@ -1403,6 +1403,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
   const scrollRef   = useRef<HTMLDivElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
   const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
+  const welcomedStockRef = useRef<string | null>(null);
   const [stockContext, setStockContext] = useState(() => buildStockContext(stock, currentPrice, sentiment, metrics));
 
   // Desktop reuses one long-lived instance of this component across every
@@ -1428,8 +1429,17 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
   }, [open]);
 
   useEffect(() => {
-    if (!open) return;
-    setMessages(previous => previous.length ? previous : [{ role: "model", text: getRandomAIWelcome() }]);
+    if (!open || welcomedStockRef.current === stock.symbol) return;
+    setLoading(true);
+    const timer = window.setTimeout(() => {
+      setMessages([{ role: "model", text: getRandomAIWelcome(), animating: true }]);
+      setLoading(false);
+      welcomedStockRef.current = stock.symbol;
+    }, 500);
+    return () => {
+      window.clearTimeout(timer);
+      setLoading(false);
+    };
   }, [open, stock.symbol]);
   const isLightMode = typeof document !== "undefined" && document.documentElement.classList.contains("light-mode");
   const graphCtx: GraphCtx = { stock, currentPrice, sentiment, metrics, isLightMode };
