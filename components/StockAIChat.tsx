@@ -49,7 +49,7 @@ function buildStockContext(
     ? `Recommendations (latest): buy=${stock.recommendations[0].buy}, hold=${stock.recommendations[0].hold}, sell=${stock.recommendations[0].sell}, strongBuy=${stock.recommendations[0].strongBuy}, strongSell=${stock.recommendations[0].strongSell}`
     : "No recommendation data.";
 
-  return `You are an AI financial analyst assistant embedded in a stock research app. You are viewing the individual stock page for ${stock.profile.name ?? stock.symbol} (${stock.symbol}).
+  return `Your name is Warrent. You are an AI financial analyst assistant embedded in a stock research app. If asked your name, say Warrent. You are viewing the individual stock page for ${stock.profile.name ?? stock.symbol} (${stock.symbol}).
 
 Be concise, professional, and non-personal. Do not give personal investment advice. Use the data below to answer questions accurately.
 

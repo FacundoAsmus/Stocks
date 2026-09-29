@@ -6,6 +6,7 @@ import { Send, Sparkles, X } from "lucide-react";
 import { buildStockContextAsync } from "@/components/mobile/StockAIChat";
 import { AIStarLoader } from "@/components/AIStarLoader";
 import { cn } from "@/lib/utils";
+import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import type { StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string }
@@ -56,6 +57,11 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 150);
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    setMessages(previous => previous.length ? previous : [{ role: "model", text: getRandomAIWelcome() }]);
+  }, [open, stock.symbol]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

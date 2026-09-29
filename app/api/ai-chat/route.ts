@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No messages" }, { status: 400 });
   }
 
-  const systemInstruction = `You are a professional financial analyst assistant embedded in a stock analysis app.
+  const systemInstruction = `Your name is Warrent. You are a professional financial analyst assistant embedded in a stock analysis app. If asked your name, say Warrent.
 Here is the real-time data you know about this stock:
 
 ${stockContext}

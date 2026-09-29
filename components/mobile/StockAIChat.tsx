@@ -7,6 +7,7 @@ import { Area, ComposedChart, Line, ReferenceArea, ReferenceDot, ReferenceLine, 
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { formatEarningsForAIContext } from "@/lib/earnings";
 import { AIStarLoader } from "@/components/AIStarLoader";
+import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import { WheelPrice } from "@/components/PriceChart";
 import type { CandlePoint, StockDetail } from "@/types/stock";
 
@@ -1425,6 +1426,11 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
     buildStockContextAsync(stock, currentPrice, sentiment, metrics).then(ctx => setStockContext(ctx));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    setMessages(previous => previous.length ? previous : [{ role: "model", text: getRandomAIWelcome() }]);
+  }, [open, stock.symbol]);
   const isLightMode = typeof document !== "undefined" && document.documentElement.classList.contains("light-mode");
   const graphCtx: GraphCtx = { stock, currentPrice, sentiment, metrics, isLightMode };
 
