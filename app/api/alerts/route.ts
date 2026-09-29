@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { addDeviceAlert, deleteDeviceAlert, listDeviceAlerts, type AlertDirection } from "@/lib/priceAlerts";
+import { getQuote } from "@/lib/finnhub";
 
 export const runtime = "nodejs";
 
@@ -18,8 +19,17 @@ export async function POST(request: Request) {
     const price = Number(alert?.price); const direction = alert?.direction as AlertDirection;
     if (!deviceId || !/^[\w-]{16,80}$/.test(deviceId) || !/^[A-Z.^-]{1,12}$/.test(symbol) || !Number.isFinite(price) || price <= 0 || !["crossing", "below", "above"].includes(direction)) return NextResponse.json({ error: "Invalid alert." }, { status: 400 });
     if (!subscription?.endpoint?.startsWith("https://") || !subscription.keys?.p256dh || !subscription.keys.auth) return NextResponse.json({ error: "Push subscription is required." }, { status: 400 });
+    // Take the baseline from the same quote source the scheduled checker uses,
+    // so an alert can detect a move on its very first scheduled check.
+    const clientBaseline = Number(alert?.lastPrice);
+    let baseline = Number.isFinite(clientBaseline) && clientBaseline > 0 ? clientBaseline : null;
+    try {
+      const quote = await getQuote(symbol);
+      if (Number.isFinite(quote.c) && quote.c > 0) baseline = quote.c;
+    } catch { /* Use the valid price observed by the client as a fallback. */ }
+    if (baseline === null) return NextResponse.json({ error: "Unable to read a current stock price to start this alert." }, { status: 503 });
     const id = crypto.randomUUID();
-    await addDeviceAlert({ id, deviceId, symbol, name: String(alert?.name ?? symbol).slice(0, 120), price, direction, lastPrice: Number(alert?.lastPrice) || price, createdAt: Date.now() }, { deviceId, endpoint: subscription.endpoint, keys: { p256dh: subscription.keys.p256dh, auth: subscription.keys.auth } });
+    await addDeviceAlert({ id, deviceId, symbol, name: String(alert?.name ?? symbol).slice(0, 120), price, direction, lastPrice: baseline, createdAt: Date.now() }, { deviceId, endpoint: subscription.endpoint, keys: { p256dh: subscription.keys.p256dh, auth: subscription.keys.auth } });
     return NextResponse.json({ id }, { status: 201 });
   } catch (error) {
     console.error("Unable to persist stock price alert:", error);

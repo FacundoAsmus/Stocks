@@ -7,6 +7,14 @@ import { isUsEquityMarketOpen } from "@/lib/usMarketHours";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+function crosses(previous: number, latest: number, target: number) {
+  return Number.isFinite(previous)
+    && Number.isFinite(latest)
+    && previous !== latest
+    && Math.min(previous, latest) <= target
+    && Math.max(previous, latest) >= target;
+}
+
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET ?? process.env.ALERT_CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,9 +29,11 @@ export async function GET(request: Request) {
     try {
       let latest = prices.get(alert.symbol);
       if (latest === undefined) { latest = (await getQuote(alert.symbol)).c; if (!latest || latest <= 0) continue; prices.set(alert.symbol, latest); }
-      const hit = alert.direction === "above" ? alert.lastPrice < alert.price && latest >= alert.price
-        : alert.direction === "below" ? alert.lastPrice > alert.price && latest <= alert.price
-          : (alert.lastPrice - alert.price) * (latest - alert.price) <= 0 && alert.lastPrice !== latest;
+      const hit = alert.direction === "above"
+        ? alert.lastPrice < alert.price && latest >= alert.price
+        : alert.direction === "below"
+          ? alert.lastPrice > alert.price && latest <= alert.price
+          : crosses(alert.lastPrice, latest, alert.price);
       if (hit) fired.push(alert);
       else alert.lastPrice = latest;
     } catch { /* Keep the alert active after transient market-data errors. */ }
