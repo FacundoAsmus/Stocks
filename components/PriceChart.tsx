@@ -245,7 +245,7 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
 const WHEEL_SLOT_RATIO = 0.62;
 
-function Digit({ ch, size = "lg" }: { ch: string; size?: "xs" | "sm" | "lg" }) {
+function Digit({ ch, size = "lg" }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg" }) {
   const isDigit = DIGIT_CHARS.includes(ch);
   const idx     = isDigit ? parseInt(ch) : 0;
   const previousDigitRef = useRef(idx);
@@ -275,12 +275,16 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "xs" | "sm" | "lg" }) {
     });
   }, [idx, isDigit]);
 
-  const rowPx     = size === "lg" ? 54 : size === "sm" ? 32 : 22;
+  const rowPx     = size === "lg" ? 54 : size === "sm" ? 32 : size === "md" ? 30 : 22;
   const fontClass = size === "lg"
-    ? "text-5xl font-semibold text-text-primary"
+    ? "text-5xl font-semibold text-current"
     : size === "sm"
       ? "text-2xl font-medium"
-      : "text-xs font-semibold text-text-primary";
+      : size === "md"
+        ? "text-xl font-semibold text-current"
+        : size === "badge"
+          ? "text-sm font-bold text-current"
+          : "text-xs font-semibold text-current";
 
   if (!isDigit) {
     return (
@@ -342,7 +346,7 @@ export function WheelPrice({
   colorClass,
 }: {
   value: string;
-  size?: "xs" | "sm" | "lg";
+  size?: "xs" | "badge" | "sm" | "md" | "lg";
   colorClass?: string;
 }) {
   const chars = value.split("");
@@ -366,7 +370,7 @@ export function WheelPrice({
           to { transform: translateY(0); }
         }
       `}</style>
-      <span className={cn("inline-flex items-end", colorClass)}>
+      <span className={cn("inline-flex items-end", colorClass ?? "text-text-primary")}>
         {chars.map((ch, index) => {
           let key: string;
           if (DIGIT_CHARS.includes(ch)) {
@@ -584,6 +588,16 @@ export function PriceChart({
   }, []);
 
   useEffect(() => {
+    function refreshForStockUpdate(event: Event) {
+      const symbolFromEvent = (event as CustomEvent<{ symbol?: string }>).detail?.symbol;
+      if (symbolFromEvent !== symbol) return;
+      setReloadNonce((nonce) => nonce + 1);
+    }
+    window.addEventListener("stock-data-refreshed", refreshForStockUpdate);
+    return () => window.removeEventListener("stock-data-refreshed", refreshForStockUpdate);
+  }, [symbol]);
+
+  useEffect(() => {
     let cancelled = false;
     let animationTimer: number | undefined;
     lastAlertIdsRef.current = null;
@@ -633,8 +647,8 @@ export function PriceChart({
       setMaHistoryWindow(0);
       try {
         const res = await fetch(
-          `/api/candles?symbol=${encodeURIComponent(symbol)}&period=${period}`,
-          { signal: controller.signal }
+          `/api/candles?symbol=${encodeURIComponent(symbol)}&period=${period}&refresh=1`,
+          { signal: controller.signal, cache: "no-store" }
         );
         const payload = (await res.json()) as { candles?: CandlePoint[]; error?: string };
         if (!res.ok) throw new Error(payload.error ?? "Unable to load chart data.");
@@ -643,7 +657,7 @@ export function PriceChart({
           const todayPrefix = new Date().toISOString().slice(0, 10);
           const last  = candles[candles.length - 1];
           if (!last.date.startsWith(todayPrefix)) {
-            const liveRes   = await fetch(`/api/stocks?symbols=${encodeURIComponent(symbol)}`, { signal: controller.signal });
+            const liveRes   = await fetch(`/api/stocks?symbols=${encodeURIComponent(symbol)}&refresh=1`, { signal: controller.signal, cache: "no-store" });
             const liveData  = (await liveRes.json()) as { stocks?: { price: number }[] };
             const livePrice = liveData.stocks?.[0]?.price;
             if (livePrice) candles.push({ date: new Date().toISOString(), time: Date.now() / 1000, close: livePrice });
@@ -661,6 +675,7 @@ export function PriceChart({
         } else {
           setData(candles);
         }
+        setChartKey((key) => key + 1);
         // Small delay so digits have settled before fading back in
         setTimeout(() => setPriceVisible(true), 40);
 
@@ -691,7 +706,7 @@ export function PriceChart({
       try {
         const res = await fetch(
           `/api/candles?symbol=${encodeURIComponent(symbol)}&period=${period}&before=${firstVisibleTime}&historyDays=${requiredMAHistoryDays}`,
-          { signal: controller.signal }
+          { signal: controller.signal, cache: "no-store" }
         );
         const payload = (await res.json()) as { candles?: CandlePoint[] };
         if (!res.ok) return;

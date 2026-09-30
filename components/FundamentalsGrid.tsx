@@ -1,4 +1,5 @@
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
+import { WheelPrice } from "@/components/PriceChart";
 import { expectedRevenueGrowthPct, getNextReport } from "@/lib/earnings";
 import type { EarningsEvent } from "@/types/stock";
 
@@ -60,12 +61,6 @@ function formatReportDate(dateStr: string) {
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
     new Date(`${dateStr}T00:00:00`)
   );
-}
-
-function toneClasses(tone: FundamentalItem["tone"]) {
-  if (tone === "positive") return "border-positive/25 bg-positive/5 text-positive";
-  if (tone === "negative") return "border-negative/25 bg-negative/5 text-negative";
-  return "border-border-subtle bg-panel text-text-muted";
 }
 
 export function FundamentalsGrid({
@@ -174,7 +169,7 @@ export function FundamentalsGrid({
               }`} />
               <p className="text-xs uppercase tracking-[0.12em] text-text-muted truncate">{item.label}</p>
             </div>
-            <p className="text-xl font-semibold text-text-primary">{item.value}</p>
+            <p className="text-xl font-semibold text-text-primary"><WheelPrice value={item.value} size="md" /></p>
           </div>
         ))}
       </div>

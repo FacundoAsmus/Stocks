@@ -114,7 +114,7 @@ function cleanSymbol(symbol: string) {
   return aliases[normalized] ?? normalized;
 }
 
-async function fetchYahooQuote(symbol: string): Promise<Partial<FinnhubQuote>> {
+async function fetchYahooQuote(symbol: string, forceRefresh = false): Promise<Partial<FinnhubQuote>> {
   const yahooSymbol = toYahooSymbol(symbol);
   const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}`);
   url.searchParams.set("range", "1d");
@@ -123,7 +123,7 @@ async function fetchYahooQuote(symbol: string): Promise<Partial<FinnhubQuote>> {
   const response = await timeit(`yahoo quote fallback ${symbol}`, () =>
     fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 MarketLens/1.0" },
-      next: { revalidate: 30 },
+      ...(forceRefresh ? { cache: "no-store" as const } : { next: { revalidate: 30 } }),
       signal: AbortSignal.timeout(5000)
     })
   );
@@ -172,7 +172,8 @@ function yyyyMmDdDaysAgo(days: number) {
 async function fetchFinnhub<T>(
   endpoint: string,
   params: Record<string, string | number | undefined>,
-  ttlMs = DEFAULT_CACHE_TTL_MS
+  ttlMs = DEFAULT_CACHE_TTL_MS,
+  forceRefresh = false
 ): Promise<T> {
   const apiKey = getApiKey();
   const url = new URL(`${BASE_URL}${endpoint}`);
@@ -186,7 +187,7 @@ async function fetchFinnhub<T>(
   const cacheKey = url.toString().replace(apiKey, "API_KEY");
   const cached = memoryCache.get(cacheKey) as CacheEntry<T> | undefined;
 
-  if (cached && cached.expiresAt > Date.now()) {
+  if (!forceRefresh && cached && cached.expiresAt > Date.now()) {
     if (PERF_DEBUG) console.log(`[perf] CACHE HIT  ${endpoint} ${params.symbol ?? ""}`);
     return cached.value;
   }
@@ -194,9 +195,9 @@ async function fetchFinnhub<T>(
   if (PERF_DEBUG) console.log(`[perf] CACHE MISS ${endpoint} ${params.symbol ?? ""}`);
 
   const response = await timeit(`finnhub ${endpoint} ${params.symbol ?? ""}`, () =>
-    fetch(url, {
-      next: { revalidate: Math.floor(ttlMs / 1000) }
-    })
+    fetch(url, forceRefresh
+      ? { cache: "no-store" }
+      : { next: { revalidate: Math.floor(ttlMs / 1000) } })
   );
 
   if (response.status === 429) {
@@ -212,13 +213,14 @@ async function fetchFinnhub<T>(
   return value;
 }
 
-export async function getQuote(symbol: string): Promise<FinnhubQuote> {
+export async function getQuote(symbol: string, forceRefresh = false): Promise<FinnhubQuote> {
   const normalizedSymbol = cleanSymbol(symbol);
 
   const finnhubQuote = await fetchFinnhub<FinnhubQuote>(
     "/quote",
     { symbol: normalizedSymbol },
-    30_000
+    30_000,
+    forceRefresh
   ).catch(() => ({} as FinnhubQuote));
 
   // If Finnhub returned a valid price, use it
@@ -226,7 +228,7 @@ export async function getQuote(symbol: string): Promise<FinnhubQuote> {
 
   // Fallback to Yahoo for indices and unsupported symbols
   if (PERF_DEBUG) console.log(`[perf] ${normalizedSymbol}: finnhub quote empty, falling back to Yahoo`);
-  const yahooQuote = await fetchYahooQuote(normalizedSymbol).catch(() => ({}));
+  const yahooQuote = await fetchYahooQuote(normalizedSymbol, forceRefresh).catch(() => ({}));
   return { ...finnhubQuote, ...yahooQuote } as FinnhubQuote;
 }
 
@@ -736,7 +738,8 @@ async function fetchYahooCandles(
   symbol: string,
   period: ChartPeriod,
   historyBefore?: number,
-  historyDays?: number
+  historyDays?: number,
+  forceRefresh = false
 ): Promise<CandlePoint[]> {
   const yahooSymbol = toYahooSymbol(symbol);
   const url = new URL(`${YAHOO_CHART_BASE_URL}/${encodeURIComponent(yahooSymbol)}`);
@@ -755,7 +758,7 @@ async function fetchYahooCandles(
     : `yahoo:${yahooSymbol}:${period}:before:${historyBefore}:days:${historyDays}`;
   const cached = memoryCache.get(cacheKey) as CacheEntry<CandlePoint[]> | undefined;
 
-  if (cached && cached.expiresAt > Date.now()) {
+  if (!forceRefresh && cached && cached.expiresAt > Date.now()) {
     return cached.value;
   }
 
@@ -764,7 +767,7 @@ async function fetchYahooCandles(
       headers: {
         "User-Agent": "Mozilla/5.0 MarketLens/1.0"
       },
-      next: { revalidate: 60 * 15 },
+      ...(forceRefresh ? { cache: "no-store" as const } : { next: { revalidate: 60 * 15 } }),
       signal: AbortSignal.timeout(5000)
     })
   );
@@ -819,7 +822,7 @@ async function fetchYahooCandles(
   return candles;
 }
 
-export async function getStockCandles(symbol: string, period: ChartPeriod = "3M") {
+export async function getStockCandles(symbol: string, period: ChartPeriod = "3M", forceRefresh = false) {
   const normalizedSymbol = cleanSymbol(symbol);
 
   // Finnhub's /stock/candle endpoint is gated on free-tier plans and reliably
@@ -831,7 +834,7 @@ export async function getStockCandles(symbol: string, period: ChartPeriod = "3M"
   // Yahoo is tried first instead; Finnhub is kept as a last-resort fallback
   // in case Yahoo has an outage, or in case this key's plan changes later.
   try {
-    return await fetchYahooCandles(normalizedSymbol, period);
+    return await fetchYahooCandles(normalizedSymbol, period, undefined, undefined, forceRefresh);
   } catch (error) {
     if (PERF_DEBUG) {
       const message = error instanceof Error ? error.message : "";
@@ -854,7 +857,8 @@ export async function getStockCandles(symbol: string, period: ChartPeriod = "3M"
   }>(
     "/stock/candle",
     { symbol: normalizedSymbol, resolution, from, to },
-    1000 * 60 * 15
+    1000 * 60 * 15,
+    forceRefresh
   );
 
   if (response.s === "ok" && response.c?.length && response.t?.length) {
@@ -925,12 +929,12 @@ export async function getCandles(symbol: string, resolution: "D" | "W", days: nu
   }));
 }
 
-export async function getStockSummary(symbol: string): Promise<StockSummary> {
+export async function getStockSummary(symbol: string, forceRefresh = false): Promise<StockSummary> {
   const normalizedSymbol = cleanSymbol(symbol);
   const [quote, profile, sparkline] = await Promise.all([
-    getQuote(normalizedSymbol),
+    getQuote(normalizedSymbol, forceRefresh),
     getCompanyProfile(normalizedSymbol).catch(() => ({} as CompanyProfile)),
-    getStockCandles(normalizedSymbol, "1D").catch(() => [])
+    getStockCandles(normalizedSymbol, "1D", forceRefresh).catch(() => [])
   ]);
 
   const fallbackSparkline: CandlePoint[] = [
@@ -949,10 +953,10 @@ export async function getStockSummary(symbol: string): Promise<StockSummary> {
   };
 }
 
-export async function getStockDetail(symbol: string): Promise<StockDetail> {
+export async function getStockDetail(symbol: string, forceRefresh = false): Promise<StockDetail> {
   const normalizedSymbol = cleanSymbol(symbol);
   const [quote, profile, financials, news, recommendations, priceTarget, earnings] = await Promise.all([
-    getQuote(normalizedSymbol),
+    getQuote(normalizedSymbol, forceRefresh),
     getCompanyProfile(normalizedSymbol).catch(() => ({} as CompanyProfile)),
     getBasicFinancials(normalizedSymbol).catch(() => ({} as BasicFinancials)),
     getCompanyNews(normalizedSymbol).catch(() => []),
@@ -979,10 +983,10 @@ export async function getStockDetail(symbol: string): Promise<StockDetail> {
   };
 }
 
-export async function getStockSummaries(symbols: string[]) {
+export async function getStockSummaries(symbols: string[], forceRefresh = false) {
   const uniqueSymbols = [...new Set(symbols.map(cleanSymbol).filter(Boolean))].slice(0, 30);
   const settled = await timeit(`getStockSummaries [${uniqueSymbols.join(",")}]`, () =>
-    Promise.allSettled(uniqueSymbols.map((symbol) => getStockSummary(symbol)))
+    Promise.allSettled(uniqueSymbols.map((symbol) => getStockSummary(symbol, forceRefresh)))
   );
 
   return settled

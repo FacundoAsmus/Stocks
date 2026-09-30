@@ -14,6 +14,8 @@ import { StockAIChat } from "@/components/mobile/StockAIChat";
 import { EmptyWatchlist } from "@/components/EmptyWatchlist";
 import { ErrorState } from "@/components/ErrorState";
 import type { getStockDetail } from "@/lib/finnhub";
+import { WheelPrice } from "@/components/PriceChart";
+import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
 
 const STORAGE_KEY = "market-lens-watchlist";
 
@@ -56,8 +58,9 @@ function RowSparkline({ stock }: { stock: StockSummary }) {
   const data = stock.sparkline?.length
     ? [{ close: yesterdayClose, time: 0 }, ...stock.sparkline]
     : [{ time: 0, close: yesterdayClose }, { time: 1, close: currentPrice }];
+  const graphKey = `${stock.price ?? ""}:${data[data.length - 1]?.time ?? ""}:${data[data.length - 1]?.close ?? ""}`;
   return (
-    <div className="h-10 w-20 shrink-0 pointer-events-none">
+    <div key={graphKey} className="h-10 w-20 shrink-0 pointer-events-none" style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ left: 0, right: 0, top: 2, bottom: 2 }}>
           <YAxis domain={["dataMin", "dataMax"]} hide width={0} />
@@ -148,7 +151,7 @@ function WatchlistListRow({
             isPos ? "bg-positive" : "bg-negative"
           )}
         >
-          {formatPercent(stock.changePercent)}
+          <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass="text-black" />
         </span>
       </span>
     </div>
@@ -352,8 +355,9 @@ export function WatchlistSplitView() {
       setIsListLoading(true);
       setListError(null);
       try {
-        const response = await fetch(`/api/stocks?symbols=${encodeURIComponent(symbolQuery)}`, {
-          signal: controller.signal
+        const response = await fetch(`/api/stocks?symbols=${encodeURIComponent(symbolQuery)}&refresh=1`, {
+          signal: controller.signal,
+          cache: "no-store"
         });
         const data = (await response.json()) as { stocks?: StockSummary[]; error?: string };
         if (!response.ok) throw new Error(data.error ?? "Unable to load watchlist.");
@@ -400,12 +404,14 @@ export function WatchlistSplitView() {
       setDetailError(null);
       detailPanelRef.current?.scrollTo({ top: 0 });
       try {
-        const response = await fetch(`/api/stock-detail?symbol=${encodeURIComponent(selectedSymbol!)}`, {
-          signal: controller.signal
+        const response = await fetch(`/api/stock-detail?symbol=${encodeURIComponent(selectedSymbol!)}&refresh=1`, {
+          signal: controller.signal,
+          cache: "no-store"
         });
         const data = (await response.json()) as DetailPayload & { error?: string };
         if (!response.ok) throw new Error(data.error ?? `Unable to load ${selectedSymbol}.`);
         setDetail(data);
+        window.dispatchEvent(new CustomEvent("stock-data-refreshed", { detail: { symbol: selectedSymbol } }));
       } catch (loadError) {
         if (!controller.signal.aborted) {
           setDetailError(loadError instanceof Error ? loadError.message : `Unable to load ${selectedSymbol}.`);
@@ -417,6 +423,48 @@ export function WatchlistSplitView() {
     loadDetail();
     return () => controller.abort();
   }, [selectedSymbol]);
+
+  useEffect(() => {
+    if (!watchlistReady) return;
+    let listController: AbortController | null = null;
+    let detailController: AbortController | null = null;
+    const refresh = () => {
+      if (symbolQuery) {
+        listController?.abort();
+        const requestController = new AbortController();
+        listController = requestController;
+        fetch(`/api/stocks?symbols=${encodeURIComponent(symbolQuery)}&refresh=1`, { signal: requestController.signal, cache: "no-store" })
+          .then(async response => {
+            const payload = await response.json() as { stocks?: StockSummary[] };
+            if (!response.ok || requestController.signal.aborted || !payload.stocks) return;
+            setStocks(payload.stocks);
+            setDisplayedStocks(symbolsRef.current
+              .map(symbol => payload.stocks?.find(stock => stock.symbol === symbol))
+              .filter((stock): stock is StockSummary => !!stock));
+          })
+          .catch(() => undefined);
+      }
+      if (selectedSymbol) {
+        detailController?.abort();
+        const requestController = new AbortController();
+        detailController = requestController;
+        fetch(`/api/stock-detail?symbol=${encodeURIComponent(selectedSymbol)}&refresh=1`, { signal: requestController.signal, cache: "no-store" })
+          .then(async response => {
+            const payload = await response.json() as DetailPayload;
+            if (!response.ok || requestController.signal.aborted) return;
+            setDetail(payload);
+            window.dispatchEvent(new CustomEvent("stock-data-refreshed", { detail: { symbol: selectedSymbol } }));
+          })
+          .catch(() => undefined);
+      }
+    };
+    const unsubscribe = subscribeToMarketRefresh(refresh);
+    return () => {
+      unsubscribe();
+      listController?.abort();
+      detailController?.abort();
+    };
+  }, [watchlistReady, symbolQuery, selectedSymbol]);
 
   // ── Reorder via Framer Motion's Reorder (same mechanism as the phone
   // watchlist's drag-to-reorder). This moves the real row elements and lets

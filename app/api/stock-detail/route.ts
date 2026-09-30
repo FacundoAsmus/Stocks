@@ -16,12 +16,13 @@ export async function GET(request: Request) {
   }
 
   const normalizedSymbol = decodeURIComponent(rawSymbol).toUpperCase();
+  const forceRefresh = searchParams.get("refresh") === "1";
   if (!/^[A-Z.^-]{1,12}$/.test(normalizedSymbol)) {
     return NextResponse.json({ error: "Invalid symbol." }, { status: 400 });
   }
 
   try {
-    const stock = await getStockDetail(normalizedSymbol);
+    const stock = await getStockDetail(normalizedSymbol, forceRefresh);
     const metrics = stock.financials.metric;
     const currentPrice = stock.quote.c || 0;
     const sentiment = getSentimentScore({
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
       currentPrice
     });
 
-    return NextResponse.json({ stock, currentPrice, sentiment, metrics });
+    return NextResponse.json({ stock, currentPrice, sentiment, metrics }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return NextResponse.json(
       {

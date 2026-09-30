@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   const period = searchParams.get("period")?.toUpperCase() as ChartPeriod | null;
   const beforeParam = searchParams.get("before");
   const historyDaysParam = searchParams.get("historyDays");
+  const forceRefresh = searchParams.get("refresh") === "1";
   const before = beforeParam === null ? null : Number(beforeParam);
   const historyDays = historyDaysParam === null ? null : Number(historyDaysParam);
 
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ candles });
     }
 
-    const candles = await getStockCandles(symbol, period);
+    const candles = await getStockCandles(symbol, period, forceRefresh);
 
     if (!candles.length) {
       return NextResponse.json(
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
       );
     }
 
-    return NextResponse.json({ candles });
+    return NextResponse.json({ candles }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return NextResponse.json(
       {

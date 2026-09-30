@@ -17,6 +17,8 @@ import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
 import { StockPriceAlertButton } from "@/components/StockPriceAlertButton";
 import { cn } from "@/lib/utils";
+import { isUsEquityMarketOpen } from "@/lib/usMarketHours";
+import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
 import type { StockDetail } from "@/types/stock";
 
 interface MobileStockPageProps {
@@ -28,7 +30,9 @@ interface MobileStockPageProps {
 
 // Plays the search-close animation (fullscreen → tiny circle in bottom-right).
 
-export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: MobileStockPageProps) {
+export function MobileStockPage(props: MobileStockPageProps) {
+  const [liveData, setLiveData] = useState(props);
+  const { stock, currentPrice, sentiment, metrics } = liveData;
   const router = useRouter();
   const pageRef = useRef<HTMLDivElement>(null);
   const [fromSearch,       setFromSearch]       = useState(false);
@@ -61,6 +65,32 @@ export function MobileStockPage({ stock, currentPrice, sentiment, metrics }: Mob
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [stock.symbol]);
+
+  useEffect(() => {
+    setLiveData({ stock: props.stock, currentPrice: props.currentPrice, sentiment: props.sentiment, metrics: props.metrics });
+  }, [props.stock, props.currentPrice, props.sentiment, props.metrics]);
+
+  useEffect(() => {
+    let inFlight = false;
+    let controller: AbortController | null = null;
+    const refresh = () => {
+      if (inFlight || !isUsEquityMarketOpen()) return;
+      inFlight = true;
+      controller = new AbortController();
+      fetch(`/api/stock-detail?symbol=${encodeURIComponent(props.stock.symbol)}&refresh=1`, { cache: "no-store", signal: controller.signal })
+        .then(async response => {
+          const payload = await response.json() as MobileStockPageProps & { error?: string };
+          if (!response.ok) throw new Error(payload.error ?? "Unable to refresh stock data.");
+          setLiveData(payload);
+          window.dispatchEvent(new CustomEvent("stock-data-refreshed", { detail: { symbol: props.stock.symbol } }));
+        })
+        .catch(() => undefined)
+        .finally(() => { inFlight = false; });
+    };
+    refresh();
+    const unsubscribe = subscribeToMarketRefresh(refresh);
+    return () => { unsubscribe(); controller?.abort(); };
+  }, [props.stock.symbol]);
 
   function handleBack() {
     const el = pageRef.current;

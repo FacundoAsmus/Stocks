@@ -9,14 +9,15 @@ export async function GET(request: Request) {
     ?.split(",")
     .map((symbol) => symbol.trim().toUpperCase())
     .filter(Boolean);
+  const forceRefresh = searchParams.get("refresh") === "1";
 
   if (!symbols?.length) {
     return NextResponse.json({ stocks: [] });
   }
 
   try {
-    const stocks = await getStockSummaries(symbols);
-    return NextResponse.json({ stocks });
+    const stocks = await getStockSummaries(symbols, forceRefresh);
+    return NextResponse.json({ stocks }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return NextResponse.json(
       {

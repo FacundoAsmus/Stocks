@@ -10,6 +10,8 @@ import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { formatPercent } from "@/lib/format";
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
+import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
+import { WheelPrice } from "@/components/PriceChart";
 import { cn } from "@/lib/utils";
 import type { StockSummary } from "@/types/stock";
 
@@ -43,8 +45,9 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
   const data = stock.sparkline?.length
     ? [{ close: yesterdayClose, time: 0 }, ...stock.sparkline]
     : [{ time: 0, close: yesterdayClose }, { time: 1, close: currentPrice }];
+  const graphKey = `${stock.price ?? ""}:${data[data.length - 1]?.time ?? ""}:${data[data.length - 1]?.close ?? ""}`;
   return (
-    <div className="h-10 w-20 shrink-0 pointer-events-none">
+    <div key={graphKey} className="h-10 w-20 shrink-0 pointer-events-none" style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ left: 0, right: 0, top: 2, bottom: 2 }}>
           <YAxis domain={["dataMin", "dataMax"]} hide width={0} />
@@ -97,7 +100,7 @@ function RowContent({ stock }: { stock: StockSummary }) {
             isPos ? "bg-positive" : "bg-negative"
           )}
         >
-          {formatPercent(stock.changePercent)}
+          <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass="text-black" />
         </span>
       </span>
     </>
@@ -362,7 +365,7 @@ export function MobileWatchlist() {
   const [loading, setLoading] = useState(true);
   const [removingSymbols, setRemovingSymbols] = useState<Set<string>>(() => new Set());
   const removalTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
-  const fetchedRef = useRef<Set<string>>(new Set());
+  const symbolQuery = [...symbols].sort().join(",");
 
   useEffect(() => () => {
     removalTimersRef.current.forEach(timer => clearTimeout(timer));
@@ -383,18 +386,16 @@ export function MobileWatchlist() {
   }, []);
 
   useEffect(() => {
-    const missing = symbols.filter((s) => !fetchedRef.current.has(s));
-    if (!missing.length) {
+    if (!symbolQuery) {
       setLoading(false);
       return;
     }
     const ctrl = new AbortController();
     setLoading(true);
-    fetch(`/api/market?watchlist=${missing.join(",")}`, { signal: ctrl.signal })
-      .then((r) => r.json() as Promise<{ tickerStocks?: StockSummary[] }>)
+    fetch(`/api/stocks?symbols=${encodeURIComponent(symbolQuery)}&refresh=1`, { signal: ctrl.signal, cache: "no-store" })
+      .then((r) => r.json() as Promise<{ stocks?: StockSummary[] }>)
       .then((d) => {
-        const fetched = d.tickerStocks ?? [];
-        fetched.forEach((s) => fetchedRef.current.add(s.symbol));
+        const fetched = d.stocks ?? [];
         setStocks((prev) => {
           const next = new Map(prev);
           fetched.forEach((s) => next.set(s.symbol, s));
@@ -406,7 +407,30 @@ export function MobileWatchlist() {
         if (!ctrl.signal.aborted) setLoading(false);
       });
     return () => ctrl.abort();
-  }, [symbols]);
+  }, [symbolQuery]);
+
+  useEffect(() => {
+    if (!symbolQuery) return;
+    let controller: AbortController | null = null;
+    const refresh = () => {
+      controller?.abort();
+      const requestController = new AbortController();
+      controller = requestController;
+      fetch(`/api/stocks?symbols=${encodeURIComponent(symbolQuery)}&refresh=1`, { signal: requestController.signal, cache: "no-store" })
+        .then((response) => response.ok ? response.json() as Promise<{ stocks?: StockSummary[] }> : null)
+        .then((data) => {
+          if (!data?.stocks || requestController.signal.aborted) return;
+          setStocks((previous) => {
+            const next = new Map(previous);
+            data.stocks?.forEach((stock) => next.set(stock.symbol, stock));
+            return next;
+          });
+        })
+        .catch(() => undefined);
+    };
+    const unsubscribe = subscribeToMarketRefresh(refresh);
+    return () => { unsubscribe(); controller?.abort(); };
+  }, [symbolQuery]);
 
   function handleRemove(symbol: string) {
     if (removalTimersRef.current.has(symbol)) return;
