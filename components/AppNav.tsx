@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { List, Settings, Moon, Sun, Monitor, ChevronLeft, X } from "lucide-react";
+import { List, Settings, Moon, Sun, Monitor, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -142,12 +142,12 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
   return typeof document === "undefined" ? null : createPortal((
     <div
       ref={panelRef}
-      className="desktop-alert-glass smoked-glass-surface fixed z-[1201] w-72 overflow-hidden rounded-xl border border-border-subtle bg-panel shadow-2xl"
+      className="desktop-alert-glass smoked-glass-surface fixed z-[1201] w-72 overflow-hidden rounded-3xl border border-border-subtle bg-panel shadow-2xl"
       style={{ ...position, background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)", animation: "dropIn 0.15s ease both" }}
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
         <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Settings</h2>
-        <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors">
+        <button type="button" aria-label="Close settings" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-black transition hover:brightness-105 active:scale-95">
           <X className="h-4 w-4" />
         </button>
       </div>
