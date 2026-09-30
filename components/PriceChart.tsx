@@ -245,7 +245,7 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
 const WHEEL_SLOT_RATIO = 0.62;
 
-function Digit({ ch, size = "lg" }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg" }) {
+function Digit({ ch, size = "lg", compact = false }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg"; compact?: boolean }) {
   const isDigit = DIGIT_CHARS.includes(ch);
   const idx     = isDigit ? parseInt(ch) : 0;
   const previousDigitRef = useRef(idx);
@@ -297,7 +297,7 @@ function Digit({ ch, size = "lg" }: { ch: string; size?: "xs" | "badge" | "sm" |
     );
   }
 
-  const slotPx = Math.round(WHEEL_SLOT_RATIO * rowPx);
+  const slotPx = Math.round((compact ? 0.49 : WHEEL_SLOT_RATIO) * rowPx);
   const rollingDigits = roll
     ? (roll.direction === "up" ? [roll.from, roll.to] : [roll.to, roll.from])
     : [idx];
@@ -344,10 +344,13 @@ export function WheelPrice({
   value,
   size = "lg",
   colorClass,
+  compact = false,
 }: {
   value: string;
   size?: "xs" | "badge" | "sm" | "md" | "lg";
   colorClass?: string;
+  /** Tighter digit and punctuation spacing for compact metric readouts. */
+  compact?: boolean;
 }) {
   const chars = value.split("");
   const decimalIndex = chars.lastIndexOf(".");
@@ -370,7 +373,7 @@ export function WheelPrice({
           to { transform: translateY(0); }
         }
       `}</style>
-      <span className={cn("inline-flex items-end", colorClass ?? "text-text-primary")}>
+      <span className={cn("inline-flex items-end", colorClass ?? "text-text-primary")} style={{ letterSpacing: compact ? "-0.035em" : undefined }}>
         {chars.map((ch, index) => {
           let key: string;
           if (DIGIT_CHARS.includes(ch)) {
@@ -389,7 +392,7 @@ export function WheelPrice({
           } else {
             key = `symbol-${index}-${ch}`;
           }
-          return <Digit key={key} ch={ch} size={size} />;
+          return <Digit key={key} ch={ch} size={size} compact={compact} />;
         })}
       </span>
     </>

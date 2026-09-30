@@ -169,7 +169,7 @@ export function FundamentalsGrid({
               }`} />
               <p className="text-xs uppercase tracking-[0.12em] text-text-muted truncate">{item.label}</p>
             </div>
-            <p className="text-xl font-semibold text-text-primary"><WheelPrice value={item.value} size="md" /></p>
+            <p className="text-xl font-semibold text-text-primary"><WheelPrice value={item.value} size="md" compact /></p>
           </div>
         ))}
       </div>

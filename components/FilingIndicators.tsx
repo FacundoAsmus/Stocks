@@ -75,7 +75,7 @@ function AnnualIndicatorChart({
     <section>
       <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
       <div className="mb-5 text-text-primary">
-        <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" />
+        <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact />
       </div>
       <div className={`relative ${compact ? "h-52" : "h-64"} border-y border-border-subtle`}>
         <div

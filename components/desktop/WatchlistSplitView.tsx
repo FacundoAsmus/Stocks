@@ -151,7 +151,7 @@ function WatchlistListRow({
             isPos ? "bg-positive" : "bg-negative"
           )}
         >
-          <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass="text-black" />
+          <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass="text-black" compact />
         </span>
       </span>
     </div>
