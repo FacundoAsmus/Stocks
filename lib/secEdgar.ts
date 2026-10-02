@@ -78,8 +78,20 @@ export type FilingIndicator = {
   freeCashFlow: number | null;
 };
 
-const CAPEX_CONCEPT = "PaymentsToAcquirePropertyPlantAndEquipment";
-const OPERATING_CASH_FLOW_CONCEPT = "NetCashProvidedByUsedInOperatingActivities";
+// Companies use different US-GAAP tags for investing in fixed assets. Keep
+// the most specific/common concept first, then fill gaps from broader tags.
+// Values are merged by fiscal year so one tag can cover years another omits.
+const CAPEX_CONCEPTS = [
+  "PaymentsToAcquirePropertyPlantAndEquipment",
+  "PaymentsToAcquirePropertyPlantAndEquipmentAndIntangibleAssets",
+  "PaymentsToAcquireProductiveAssets",
+  "PaymentsToAcquirePropertyPlantAndEquipmentNetOfSalesProceeds",
+  "PaymentsToAcquireOilAndGasPropertyAndEquipment",
+];
+const OPERATING_CASH_FLOW_CONCEPTS = [
+  "NetCashProvidedByUsedInOperatingActivities",
+  "NetCashProvidedByUsedInOperatingActivitiesContinuingOperations",
+];
 const R_AND_D_CONCEPTS = [
   "ResearchAndDevelopmentExpense",
   "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost"
@@ -98,7 +110,7 @@ async function getAnnualConceptValues(cik: string, concept: string): Promise<Map
   const annual = new Map<number, { value: number; filed: string }>();
 
   for (const entry of entries) {
-    if (entry.form !== "10-K" || entry.fp !== "FY" || typeof entry.val !== "number" || !entry.end) continue;
+    if (!["10-K", "10-K405", "20-F", "40-F"].includes(entry.form ?? "") || entry.fp !== "FY" || typeof entry.val !== "number" || !entry.end) continue;
     const year = Number(entry.end.slice(0, 4));
     if (!Number.isInteger(year)) continue;
     const existing = annual.get(year);
@@ -110,6 +122,21 @@ async function getAnnualConceptValues(cik: string, concept: string): Promise<Map
   }
 
   return new Map([...annual].map(([year, entry]) => [year, entry.value]));
+}
+
+async function getAnnualValuesWithFallbacks(cik: string, concepts: string[]): Promise<Map<number, number>> {
+  const values = new Map<number, number>();
+  // Query alternatives together to keep page latency low, then apply the
+  // ordered preference below while filling any fiscal-year gaps.
+  const candidates = await Promise.all(concepts.map((concept) => getAnnualConceptValues(cik, concept)));
+  for (const candidate of candidates) {
+    // Preserve preferred concepts where present, and use later tags only for
+    // missing years. This also handles tags that have partial historical data.
+    for (const [year, value] of candidate) {
+      if (!values.has(year)) values.set(year, value);
+    }
+  }
+  return values;
 }
 
 /**
@@ -127,8 +154,8 @@ export async function getFilingIndicators(symbol: string): Promise<FilingIndicat
     if (!cik) return [];
 
     const [capex, operatingCashFlow, ...researchAndDevelopmentCandidates] = await Promise.all([
-      getAnnualConceptValues(cik, CAPEX_CONCEPT),
-      getAnnualConceptValues(cik, OPERATING_CASH_FLOW_CONCEPT),
+      getAnnualValuesWithFallbacks(cik, CAPEX_CONCEPTS),
+      getAnnualValuesWithFallbacks(cik, OPERATING_CASH_FLOW_CONCEPTS),
       ...R_AND_D_CONCEPTS.map((concept) => getAnnualConceptValues(cik, concept))
     ]);
     const researchAndDevelopment = researchAndDevelopmentCandidates.find((values) => values.size > 0) ?? new Map<number, number>();
