@@ -157,6 +157,34 @@ async function getQuarterlyConceptValues(facts: CompanyFactsResponse, concepts: 
   return values;
 }
 
+async function getAnnualRevenueValues(facts: CompanyFactsResponse): Promise<Map<string, QuarterlyConceptValue>> {
+  const values = new Map<string, QuarterlyConceptValue>();
+  for (const concept of QUARTERLY_REVENUE_CONCEPTS) {
+    const candidates = Object.values(facts.facts?.["us-gaap"]?.[concept]?.units ?? {}).flat()
+      .filter((entry) => {
+        if (!["10-K", "10-K405", "20-F", "40-F"].includes(entry.form ?? "") || entry.fp !== "FY" || !entry.start || !entry.end || typeof entry.val !== "number") return false;
+        const durationDays = (Date.parse(`${entry.end}T00:00:00Z`) - Date.parse(`${entry.start}T00:00:00Z`)) / 86_400_000 + 1;
+        return durationDays >= 330 && durationDays <= 400;
+      })
+      .map((entry) => ({
+        periodEnd: entry.end!,
+        value: entry.val!,
+        filedDate: entry.filed ?? entry.end!,
+        quarter: 4,
+        fiscalYear: typeof entry.fy === "number" ? entry.fy : null,
+      }));
+    const firstFiledForConcept = new Map<string, QuarterlyConceptValue>();
+    for (const entry of candidates) {
+      const prior = firstFiledForConcept.get(entry.periodEnd);
+      if (!prior || entry.filedDate < prior.filedDate) firstFiledForConcept.set(entry.periodEnd, entry);
+    }
+    for (const [periodEnd, entry] of firstFiledForConcept) {
+      if (!values.has(periodEnd)) values.set(periodEnd, entry);
+    }
+  }
+  return values;
+}
+
 /** Best-effort quarterly reported revenue/EPS from SEC XBRL facts. */
 export async function getQuarterlyFilingResults(symbol: string): Promise<QuarterlyFilingResult[]> {
   try {
@@ -165,10 +193,27 @@ export async function getQuarterlyFilingResults(symbol: string): Promise<Quarter
     const response = await secFetch(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`);
     if (!response.ok) return [];
     const facts = await response.json() as CompanyFactsResponse;
-    const [revenue, eps] = await Promise.all([
+    const [revenue, eps, annualRevenue] = await Promise.all([
       getQuarterlyConceptValues(facts, QUARTERLY_REVENUE_CONCEPTS),
       getQuarterlyConceptValues(facts, QUARTERLY_EPS_CONCEPTS),
+      getAnnualRevenueValues(facts),
     ]);
+
+    // Many issuers disclose Q4 only inside the 10-K's full-year total. Derive
+    // the standalone quarter only when no direct Q4 fact exists and all three
+    // discrete prior quarters from that same SEC fiscal year are available.
+    for (const [periodEnd, annual] of annualRevenue) {
+      if (revenue.has(periodEnd)) continue;
+      const fiscalYear = annual.fiscalYear;
+      if (fiscalYear === null) continue;
+      const priorQuarters = [1, 2, 3].map((quarter) =>
+        [...revenue.values()].find((fact) => fact.fiscalYear === fiscalYear && fact.quarter === quarter)
+      );
+      if (priorQuarters.some((fact) => !fact)) continue;
+      const q4Revenue = annual.value - priorQuarters.reduce((sum, fact) => sum + (fact?.value ?? 0), 0);
+      revenue.set(periodEnd, { ...annual, value: q4Revenue });
+    }
+
     const periodEnds = [...new Set([...revenue.keys(), ...eps.keys()])].sort();
     return periodEnds.slice(-12).map((periodEnd) => {
       const revenueFact = revenue.get(periodEnd);
