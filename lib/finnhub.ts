@@ -16,6 +16,7 @@ import type {
   SymbolSearchResult
 } from "@/types/stock";
 import { MAJOR_INDICES, MARKET_MOVER_FALLBACK_SYMBOLS } from "@/lib/constants";
+import { getQuarterlyFilingResults } from "@/lib/secEdgar";
 
 const BASE_URL = "https://finnhub.io/api/v1";
 const YAHOO_CHART_BASE_URL = "https://query1.finance.yahoo.com/v8/finance/chart";
@@ -481,13 +482,14 @@ function periodToQuarter(period: string): { quarter: number; year: number } {
 // for that quarter anywhere in the calendar data.
 export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent[]> {
   const cleaned = cleanSymbol(symbol);
-  const [calendarData, surpriseHistory] = await Promise.all([
+  const [calendarData, surpriseHistory, filingResults] = await Promise.all([
     fetchFinnhub<{ earningsCalendar?: EarningsEvent[] }>(
       "/calendar/earnings",
       { symbol: cleaned, from: yyyyMmDdDaysAgo(400), to: yyyyMmDdDaysAgo(-220) },
       1000 * 60 * 60
     ),
-    getEarningsSurpriseHistory(cleaned).catch(() => [] as FinnhubEarningsSurprise[])
+    getEarningsSurpriseHistory(cleaned).catch(() => [] as FinnhubEarningsSurprise[]),
+    getQuarterlyFilingResults(cleaned).catch(() => [])
   ]);
 
   const events = (calendarData.earningsCalendar ?? [])
@@ -545,6 +547,37 @@ export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent
       epsActual: s.actual,
       revenueEstimate: null,
       revenueActual: null
+    });
+  });
+
+  // Finnhub's historical calendar/surprise endpoints can omit reported
+  // quarters. SEC company facts provide filed quarterly revenue and GAAP EPS;
+  // attach those facts to an existing dated event when possible, and create a
+  // past filing-date event only when Finnhub has no matching quarter at all.
+  const today = new Date().toISOString().slice(0, 10);
+  const minVisibleDate = yyyyMmDdDaysAgo(400);
+  const matchedFilingEvents = new Set<EarningsEvent>();
+  filingResults.forEach((filing) => {
+    const match = findEventForPeriod(events, filing.periodEnd);
+    if (match && !matchedFilingEvents.has(match)) {
+      if (match.revenueActual == null) match.revenueActual = filing.revenue;
+      if (match.epsActual == null) match.epsActual = filing.eps;
+      matchedFilingEvents.add(match);
+      return;
+    }
+
+    if (filing.filedDate > today || filing.filedDate < minVisibleDate) return;
+    const dateCollision = events.some((event) => event.date === filing.filedDate);
+    if (dateCollision) return;
+    events.push({
+      date: filing.filedDate,
+      quarter: filing.quarter,
+      year: filing.year,
+      hour: null,
+      epsEstimate: null,
+      epsActual: filing.eps,
+      revenueEstimate: null,
+      revenueActual: filing.revenue,
     });
   });
 

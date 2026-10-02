@@ -71,6 +71,12 @@ type CompanyConceptResponse = {
   }>>;
 };
 
+type CompanyFactsResponse = {
+  facts?: {
+    "us-gaap"?: Record<string, { units?: CompanyConceptResponse["units"] }>;
+  };
+};
+
 export type FilingIndicator = {
   year: number;
   capex: number | null;
@@ -96,6 +102,86 @@ const R_AND_D_CONCEPTS = [
   "ResearchAndDevelopmentExpense",
   "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost"
 ];
+
+export type QuarterlyFilingResult = {
+  periodEnd: string;
+  filedDate: string;
+  quarter: number;
+  year: number;
+  revenue: number | null;
+  eps: number | null;
+};
+
+const QUARTERLY_REVENUE_CONCEPTS = [
+  "RevenueFromContractWithCustomerExcludingAssessedTax",
+  "SalesRevenueNet",
+  "Revenues",
+];
+const QUARTERLY_EPS_CONCEPTS = ["EarningsPerShareDiluted", "EarningsPerShareBasic"];
+
+async function getQuarterlyConceptValues(facts: CompanyFactsResponse, concepts: string[]): Promise<Map<string, { value: number; filedDate: string; quarter: number | null }>> {
+  const values = new Map<string, { value: number; filedDate: string; quarter: number | null }>();
+  // Concepts are in preference order: keep the first tag for each period,
+  // using later tags only to fill years the preferred tag does not report.
+  for (const concept of concepts) {
+    const candidate = Object.values(facts.facts?.["us-gaap"]?.[concept]?.units ?? {}).flat()
+      .filter((entry) => {
+        if (!["10-Q", "10-K", "20-F", "40-F"].includes(entry.form ?? "") || !entry.start || !entry.end || typeof entry.val !== "number") return false;
+        const durationDays = (Date.parse(`${entry.end}T00:00:00Z`) - Date.parse(`${entry.start}T00:00:00Z`)) / 86_400_000 + 1;
+        // Keep discrete quarter facts; year-to-date and annual facts must not
+        // be mistaken for a single quarter's reported result.
+        return durationDays >= 70 && durationDays <= 110;
+      })
+      .map((entry) => ({
+        periodEnd: entry.end!,
+        value: entry.val!,
+        filedDate: entry.filed ?? entry.end!,
+        quarter: entry.fp && /^Q[1-4]$/.test(entry.fp) ? Number(entry.fp.slice(1)) : entry.fp === "FY" ? 4 : null,
+      }));
+    const latestForConcept = new Map<string, { value: number; filedDate: string; quarter: number | null }>();
+    for (const entry of candidate) {
+      const prior = latestForConcept.get(entry.periodEnd);
+      if (!prior || entry.filedDate > prior.filedDate) latestForConcept.set(entry.periodEnd, entry);
+    }
+    for (const [periodEnd, entry] of latestForConcept) {
+      if (!values.has(periodEnd)) values.set(periodEnd, entry);
+    }
+  }
+  return values;
+}
+
+/** Best-effort quarterly reported revenue/EPS from SEC XBRL facts. */
+export async function getQuarterlyFilingResults(symbol: string): Promise<QuarterlyFilingResult[]> {
+  try {
+    const cik = await getCik(symbol);
+    if (!cik) return [];
+    const response = await secFetch(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`);
+    if (!response.ok) return [];
+    const facts = await response.json() as CompanyFactsResponse;
+    const [revenue, eps] = await Promise.all([
+      getQuarterlyConceptValues(facts, QUARTERLY_REVENUE_CONCEPTS),
+      getQuarterlyConceptValues(facts, QUARTERLY_EPS_CONCEPTS),
+    ]);
+    const periodEnds = [...new Set([...revenue.keys(), ...eps.keys()])].sort();
+    return periodEnds.slice(-12).map((periodEnd) => {
+      const revenueFact = revenue.get(periodEnd);
+      const epsFact = eps.get(periodEnd);
+      const date = new Date(`${periodEnd}T00:00:00Z`);
+      const filingDates = [revenueFact?.filedDate, epsFact?.filedDate].filter((value): value is string => Boolean(value)).sort();
+      return {
+        periodEnd,
+        filedDate: filingDates[filingDates.length - 1] ?? periodEnd,
+        quarter: revenueFact?.quarter ?? epsFact?.quarter ?? Math.floor(date.getUTCMonth() / 3) + 1,
+        year: date.getUTCFullYear(),
+        revenue: revenueFact?.value ?? null,
+        eps: epsFact?.value ?? null,
+      };
+    });
+  } catch (error) {
+    console.error(`[secEdgar] getQuarterlyFilingResults(${symbol}) failed:`, error instanceof Error ? error.message : error);
+    return [];
+  }
+}
 
 async function getAnnualConceptValues(cik: string, concept: string): Promise<Map<number, number>> {
   const response = await secFetch(
