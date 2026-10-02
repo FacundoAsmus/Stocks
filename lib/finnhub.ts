@@ -611,7 +611,6 @@ export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent
     });
   }
 
-  const today = new Date().toISOString().slice(0, 10);
   const uniqueEvents = [...byFiscalQuarter.values()].sort((a, b) => a.date.localeCompare(b.date));
   const completed = uniqueEvents.filter((event) => event.date < today).slice(-4);
   const upcoming = uniqueEvents.filter((event) => event.date >= today).slice(0, 2);
