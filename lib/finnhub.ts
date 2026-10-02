@@ -564,6 +564,11 @@ export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent
   filingResults.forEach((filing) => {
     const match = findEventForPeriod(events, filing.periodEnd);
     if (match && !matchedFilingEvents.has(match)) {
+      // Keep Finnhub's actual announcement date but use the fiscal period
+      // labels from the original SEC filing (e.g. NVDA FY2027 reported in
+      // calendar 2026).
+      match.quarter = filing.quarter;
+      if (filing.fiscalYear !== null) match.year = filing.fiscalYear;
       if (match.revenueActual == null) match.revenueActual = filing.revenue;
       if (match.epsActual == null) match.epsActual = filing.eps;
       matchedFilingEvents.add(match);

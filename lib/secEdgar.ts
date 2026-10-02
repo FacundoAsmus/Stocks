@@ -64,6 +64,7 @@ type CompanyConceptResponse = {
   units?: Record<string, Array<{
     form?: string;
     fp?: string;
+    fy?: number;
     filed?: string;
     end?: string;
     start?: string;
@@ -107,6 +108,7 @@ export type QuarterlyFilingResult = {
   periodEnd: string;
   filedDate: string;
   quarter: number;
+  fiscalYear: number | null;
   year: number;
   revenue: number | null;
   eps: number | null;
@@ -119,8 +121,10 @@ const QUARTERLY_REVENUE_CONCEPTS = [
 ];
 const QUARTERLY_EPS_CONCEPTS = ["EarningsPerShareDiluted", "EarningsPerShareBasic"];
 
-async function getQuarterlyConceptValues(facts: CompanyFactsResponse, concepts: string[]): Promise<Map<string, { value: number; filedDate: string; quarter: number | null }>> {
-  const values = new Map<string, { value: number; filedDate: string; quarter: number | null }>();
+type QuarterlyConceptValue = { value: number; filedDate: string; quarter: number | null; fiscalYear: number | null };
+
+async function getQuarterlyConceptValues(facts: CompanyFactsResponse, concepts: string[]): Promise<Map<string, QuarterlyConceptValue>> {
+  const values = new Map<string, QuarterlyConceptValue>();
   // Concepts are in preference order: keep the first tag for each period,
   // using later tags only to fill years the preferred tag does not report.
   for (const concept of concepts) {
@@ -137,13 +141,16 @@ async function getQuarterlyConceptValues(facts: CompanyFactsResponse, concepts: 
         value: entry.val!,
         filedDate: entry.filed ?? entry.end!,
         quarter: entry.fp && /^Q[1-4]$/.test(entry.fp) ? Number(entry.fp.slice(1)) : entry.fp === "FY" ? 4 : null,
+        fiscalYear: typeof entry.fy === "number" ? entry.fy : null,
       }));
-    const latestForConcept = new Map<string, { value: number; filedDate: string; quarter: number | null }>();
+    const firstFiledForConcept = new Map<string, QuarterlyConceptValue>();
     for (const entry of candidate) {
-      const prior = latestForConcept.get(entry.periodEnd);
-      if (!prior || entry.filedDate > prior.filedDate) latestForConcept.set(entry.periodEnd, entry);
+      const prior = firstFiledForConcept.get(entry.periodEnd);
+      // Prefer the original filing for this quarter. Later filings can repeat
+      // comparative facts under a newer fiscal-year focus and relabel them.
+      if (!prior || entry.filedDate < prior.filedDate) firstFiledForConcept.set(entry.periodEnd, entry);
     }
-    for (const [periodEnd, entry] of latestForConcept) {
+    for (const [periodEnd, entry] of firstFiledForConcept) {
       if (!values.has(periodEnd)) values.set(periodEnd, entry);
     }
   }
@@ -172,7 +179,8 @@ export async function getQuarterlyFilingResults(symbol: string): Promise<Quarter
         periodEnd,
         filedDate: filingDates[filingDates.length - 1] ?? periodEnd,
         quarter: revenueFact?.quarter ?? epsFact?.quarter ?? Math.floor(date.getUTCMonth() / 3) + 1,
-        year: date.getUTCFullYear(),
+        fiscalYear: revenueFact?.fiscalYear ?? epsFact?.fiscalYear ?? null,
+        year: revenueFact?.fiscalYear ?? epsFact?.fiscalYear ?? date.getUTCFullYear(),
         revenue: revenueFact?.value ?? null,
         eps: epsFact?.value ?? null,
       };
