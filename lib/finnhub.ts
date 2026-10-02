@@ -534,11 +534,7 @@ export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent
   // the report date at all. Using this symbol's own observed ~50-day gap
   // instead lands within a couple of days of the real date.
   unmatched.forEach(s => {
-    // Finnhub's surprise endpoint gives the fiscal period-end date, which
-    // does not always fall in the same calendar quarter (e.g. NVDA). SEC's
-    // filing-period focus is the better label when we have it.
-    const filingPeriod = filingResults.find((filing) => filing.periodEnd === s.period);
-    const { quarter, year } = filingPeriod ?? periodToQuarter(s.period);
+    const { quarter, year } = periodToQuarter(s.period);
     const estimatedDate = new Date(
       new Date(`${s.period}T00:00:00`).getTime() + avgLagDays * DAY_MS
     ).toISOString().slice(0, 10);
@@ -587,35 +583,7 @@ export async function getEarningsCalendar(symbol: string): Promise<EarningsEvent
 
   events.sort((a, b) => a.date.localeCompare(b.date));
 
-  // Keep a single record for each fiscal quarter, merging any missing values
-  // from duplicates. Then expose only the four most recent completed reports
-  // and the next two scheduled quarters to both calendar and detail views.
-  const byFiscalQuarter = new Map<string, EarningsEvent>();
-  for (const event of events) {
-    const key = `${event.year}-Q${event.quarter}`;
-    const current = byFiscalQuarter.get(key);
-    if (!current) {
-      byFiscalQuarter.set(key, { ...event });
-      continue;
-    }
-
-    const actualCount = (item: EarningsEvent) => Number(item.revenueActual != null) + Number(item.epsActual != null);
-    const keep = actualCount(event) > actualCount(current) ? event : current;
-    const fill = keep === event ? current : event;
-    byFiscalQuarter.set(key, {
-      ...keep,
-      revenueActual: keep.revenueActual ?? fill.revenueActual,
-      epsActual: keep.epsActual ?? fill.epsActual,
-      revenueEstimate: keep.revenueEstimate ?? fill.revenueEstimate,
-      epsEstimate: keep.epsEstimate ?? fill.epsEstimate,
-    });
-  }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const uniqueEvents = [...byFiscalQuarter.values()].sort((a, b) => a.date.localeCompare(b.date));
-  const completed = uniqueEvents.filter((event) => event.date < today).slice(-4);
-  const upcoming = uniqueEvents.filter((event) => event.date >= today).slice(0, 2);
-  return [...completed, ...upcoming].sort((a, b) => a.date.localeCompare(b.date));
+  return events;
 }
 
 // Well-known company name → ticker map for reliable name searches
