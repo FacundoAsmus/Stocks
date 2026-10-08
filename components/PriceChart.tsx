@@ -314,12 +314,10 @@ function Digit({ ch, size = "lg", compact = false }: { ch: string; size?: "xs" |
         key={roll?.id ?? "settled"}
         className="flex flex-col"
         style={{
-          // A light blur softens the moving glyph while preserving legibility.
-          filter: roll ? "blur(0.45px)" : "blur(0)",
           animation: roll
             ? `price-digit-roll-${roll.direction} 280ms cubic-bezier(0.22, 1, 0.36, 1) both`
             : "none",
-          willChange: "transform, filter",
+          willChange: "transform",
         }}
         onAnimationEnd={() => {
           setRoll((activeRoll) => activeRoll?.id === roll?.id ? null : activeRoll);
@@ -845,9 +843,10 @@ export function PriceChart({
   const dataRef = useRef<CandlePoint[]>([]);
   useEffect(() => { dataRef.current = data; }, [data]);
 
-  // Scroll-lock + full custom touch tracking on document so finger can roam anywhere
+  // Keep chart touch tracking local to the active gesture. Page scrolling is
+  // prevented by touch-action on the chart itself rather than a global
+  // preventDefault listener, which could remain stuck if iOS misses touchend.
   const chartRef = useRef<HTMLDivElement>(null);
-  const blockScrollRef = useRef<((e: TouchEvent) => void) | null>(null);
 
   useEffect(() => {
     const el = chartRef.current;
@@ -880,17 +879,19 @@ export function PriceChart({
       updateFromClientX(e.touches[0].clientX);
     };
 
-    const onTouchEnd = () => {
+    function onTouchEnd() {
       // Remove the per-gesture listeners
       document.removeEventListener("touchmove", onTouchMove);
       document.removeEventListener("touchend", onTouchEnd);
       document.removeEventListener("touchcancel", onTouchEnd);
-      if (blockScrollRef.current) {
-        document.removeEventListener("touchmove", blockScrollRef.current);
-        blockScrollRef.current = null;
-      }
+      window.removeEventListener("blur", onTouchEnd);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       clearHover();
-    };
+    }
+
+    function onVisibilityChange() {
+      if (document.hidden) onTouchEnd();
+    }
 
     const onTouchStart = (e: TouchEvent) => {
       setIsTouching(true);
@@ -900,11 +901,8 @@ export function PriceChart({
       document.addEventListener("touchmove", onTouchMove, { passive: true });
       document.addEventListener("touchend", onTouchEnd);
       document.addEventListener("touchcancel", onTouchEnd);
-
-      // Block scroll for entire gesture
-      const block = (ev: TouchEvent) => ev.preventDefault();
-      blockScrollRef.current = block;
-      document.addEventListener("touchmove", block, { passive: false });
+      window.addEventListener("blur", onTouchEnd);
+      document.addEventListener("visibilitychange", onVisibilityChange);
     };
 
     el.addEventListener("touchstart", onTouchStart, { passive: true });
@@ -915,10 +913,8 @@ export function PriceChart({
       document.removeEventListener("touchmove", onTouchMove);
       document.removeEventListener("touchend", onTouchEnd);
       document.removeEventListener("touchcancel", onTouchEnd);
-      if (blockScrollRef.current) {
-        document.removeEventListener("touchmove", blockScrollRef.current);
-        blockScrollRef.current = null;
-      }
+      window.removeEventListener("blur", onTouchEnd);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [clearHover, positionVolumeCrosshair]);
 
@@ -955,6 +951,7 @@ export function PriceChart({
       <div
         ref={chartRef}
         className={cn(heightClassName, "relative")}
+        style={{ touchAction: "none" }}
         onMouseMove={(event) => {
           // Phones retain the direct pointer position used by their custom
           // touch/hover treatment. Desktop is updated from Recharts below,
