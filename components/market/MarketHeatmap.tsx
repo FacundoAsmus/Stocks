@@ -332,7 +332,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
             : null}
         </div>
       ) : <>
-      <div ref={areaRef} className={cn("relative flex-1 overflow-hidden rounded-2xl border border-white/10 bg-[#342606]", desktopLayout ? "mx-3 mt-3 min-h-0" : "mx-4 mt-4 min-h-[calc(100dvh-12rem)]")} role="tabpanel" aria-live="polite">
+      <div ref={areaRef} className={cn("relative flex-1 overflow-hidden border border-white/10 bg-[#342606]", desktopLayout ? "mx-3 mt-3 min-h-0 rounded-3xl" : "mx-4 mt-4 min-h-[calc(100dvh-12rem)] rounded-2xl")} role="tabpanel" aria-live="polite">
         {loading && !stocks.length && <LoadingHeatCanvas group={activeGroup} width={size.width} height={size.height} />}
         {!!previousStocks?.length && isTransitioning && previousRectangles && <HeatCanvas stocks={previousStocks} rectangles={previousRectangles} width={size.width} height={size.height} className="heatmap-fade-out" />}
         {!!stocks.length && !error && <HeatCanvas key={activeGroup} stocks={stocks} rectangles={rectangles} width={size.width} height={size.height} className={isTransitioning ? "heatmap-fade-in" : undefined} />}
@@ -350,7 +350,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
               opacity: tilesVisible ? 1 : 0,
             };
             return (
-              <Link key={stock.symbol} href={`/stock/${encodeURIComponent(stock.symbol)}`} onClick={(event) => { if (desktopLayout) { event.preventDefault(); setSelectedSymbol(stock.symbol); } }} className="heatmap-tile absolute flex flex-col overflow-hidden rounded-lg border border-white/10 bg-black/15 p-3 text-left transition-opacity duration-200 hover:z-10 hover:bg-black/30 hover:ring-1 hover:ring-white/50" style={tileStyle} aria-label={`${stock.name} (${stock.symbol}), ${formatPercent(stock.changePercent)}`}>
+              <Link key={stock.symbol} href={`/stock/${encodeURIComponent(stock.symbol)}`} onClick={(event) => { if (desktopLayout) { event.preventDefault(); setSelectedSymbol(stock.symbol); } }} className={cn("heatmap-tile absolute flex flex-col overflow-hidden border border-white/10 bg-black/15 p-3 text-left transition-opacity duration-200 hover:z-10 hover:bg-black/30 hover:ring-1 hover:ring-white/50", desktopLayout ? "rounded-3xl" : "rounded-lg")} style={tileStyle} aria-label={`${stock.name} (${stock.symbol}), ${formatPercent(stock.changePercent)}`}>
                 <span className={cn("font-bold tracking-tight text-white", compact ? "text-base" : "text-2xl")}>{stock.symbol}</span>
                 <span className={cn("mt-1 truncate text-white/70", compact ? "text-xs" : "text-sm")}>{stock.name}</span>
                 <span className={cn("mt-auto font-semibold", compact ? "text-sm" : "text-lg", (stock.changePercent ?? 0) >= 0 ? "text-[#adfa1b]" : "text-[#ff7560]")}>{formatPercent(stock.changePercent)}</span>
