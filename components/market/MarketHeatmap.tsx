@@ -244,18 +244,19 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
 
   useEffect(() => {
     if (!selectedSymbol) return;
+    const symbol = selectedSymbol;
     const controller = new AbortController();
     async function loadDetail() {
       setDetailLoading(true);
       setDetailError(null);
       detailColumnRef.current?.scrollTo({ top: 0 });
       try {
-        const response = await fetch(`/api/stock-detail?symbol=${encodeURIComponent(selectedSymbol)}&refresh=1`, { signal: controller.signal, cache: "no-store" });
+        const response = await fetch(`/api/stock-detail?symbol=${encodeURIComponent(symbol)}&refresh=1`, { signal: controller.signal, cache: "no-store" });
         const payload = await response.json() as DetailPayload & { error?: string };
-        if (!response.ok) throw new Error(payload.error ?? `Unable to load ${selectedSymbol}.`);
+        if (!response.ok) throw new Error(payload.error ?? `Unable to load ${symbol}.`);
         setDetail(payload);
       } catch (reason) {
-        if (!controller.signal.aborted) setDetailError(reason instanceof Error ? reason.message : `Unable to load ${selectedSymbol}.`);
+        if (!controller.signal.aborted) setDetailError(reason instanceof Error ? reason.message : `Unable to load ${symbol}.`);
       } finally {
         if (!controller.signal.aborted) setDetailLoading(false);
       }
