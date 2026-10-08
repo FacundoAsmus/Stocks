@@ -6,7 +6,7 @@ import { MarketHeatmap } from "@/components/market/MarketHeatmap";
 export function MarketHome() {
   return (
     <main className="min-h-dvh bg-black">
-      <MarketHeatmap />
+      <MarketHeatmap desktopLayout />
     </main>
   );
 }

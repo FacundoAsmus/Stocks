@@ -161,7 +161,7 @@ function LoadingHeatCanvas({ group, width, height }: { group: string; width: num
   return <canvas ref={ref} className="absolute inset-0 h-full w-full" aria-hidden="true" />;
 }
 
-export function MarketHeatmap() {
+export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boolean }) {
   const [activeGroup, setActiveGroup] = useState(MARKET_HEATMAP_GROUPS[0].id);
   const [stocks, setStocks] = useState<HeatmapStock[]>([]);
   const [loading, setLoading] = useState(true);
@@ -222,9 +222,44 @@ export function MarketHeatmap() {
   const previousRectangles = useMemo(() => previousStocks ? makeTreemap(previousStocks, { x: 0, y: 0, width: size.width, height: size.height }) : null, [previousStocks, size]);
 
   return (
-    <section className="flex min-h-dvh flex-col overflow-hidden bg-black" aria-labelledby="market-heatmap-title">
-      {/* This is a real layout row, rather than an overlay: the map always
-          starts below the title and section buttons. */}
+    <section className={cn("overflow-hidden bg-black", desktopLayout ? "flex h-[calc(100dvh-var(--header-height,0px))] min-h-0" : "flex min-h-dvh flex-col")} aria-labelledby="market-heatmap-title">
+      {/* Desktop uses a watchlist-style selector rail; mobile keeps the
+          existing horizontal selector above the heatmap. */}
+      {desktopLayout ? (
+        <aside className="watchlist-list-panel m-3 flex w-1/5 shrink-0 flex-col overflow-hidden rounded-2xl border border-border-subtle/70">
+          <div className="shrink-0 px-6 pb-4 pt-6">
+            <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market</p>
+            <h2 id="market-heatmap-title" className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Heatmaps</h2>
+          </div>
+          <div className="no-scrollbar flex-1 overflow-y-auto px-2 pb-2" role="tablist" aria-label="Market groups" aria-orientation="vertical">
+            {MARKET_HEATMAP_GROUPS.map((group) => {
+              const initials = group.label.split(/[\s-]+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase();
+              const isActive = group.id === activeGroup;
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => setActiveGroup(group.id)}
+                  className={cn(
+                    "mx-0.5 my-0.5 flex w-[calc(100%-0.25rem)] items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left transition-colors select-none",
+                    isActive
+                      ? "watchlist-list-panel watchlist-list-selected border-accent hover:bg-panel-muted/50"
+                      : "watchlist-list-panel border-transparent hover:bg-panel-muted/50"
+                  )}
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary">{initials}</span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold text-text-primary">{group.label}</span>
+                    <span className="mt-0.5 block text-xs text-text-muted">{group.symbols.length} stocks</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+      ) : (
       <div className="relative z-20 shrink-0 border-b border-white/10 bg-black px-6 pb-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
         <div className="flex items-end justify-between gap-6">
           <div>
@@ -238,8 +273,10 @@ export function MarketHeatmap() {
         ))}
         </div>
       </div>
+      )}
 
-      <div ref={areaRef} className="relative mx-4 mt-4 min-h-[calc(100dvh-12rem)] flex-1 overflow-hidden rounded-2xl border border-white/10 bg-[#342606]" role="tabpanel" aria-live="polite">
+      <div className={desktopLayout ? "flex min-h-0 min-w-0 flex-1 flex-col" : "contents"}>
+      <div ref={areaRef} className={cn("relative flex-1 overflow-hidden rounded-2xl border border-white/10 bg-[#342606]", desktopLayout ? "mx-3 mt-3 min-h-0" : "mx-4 mt-4 min-h-[calc(100dvh-12rem)]")} role="tabpanel" aria-live="polite">
         {loading && !stocks.length && <LoadingHeatCanvas group={activeGroup} width={size.width} height={size.height} />}
         {!!previousStocks?.length && isTransitioning && previousRectangles && <HeatCanvas stocks={previousStocks} rectangles={previousRectangles} width={size.width} height={size.height} className="heatmap-fade-out" />}
         {!!stocks.length && !error && <HeatCanvas key={activeGroup} stocks={stocks} rectangles={rectangles} width={size.width} height={size.height} className={isTransitioning ? "heatmap-fade-in" : undefined} />}
@@ -267,7 +304,7 @@ export function MarketHeatmap() {
         </div>}
         {error && <div className="absolute inset-0 flex items-center justify-center text-sm text-negative">{error}</div>}
       </div>
-      <div className="mx-4 min-h-40 shrink-0 py-4 pb-20" aria-label="Sector fund">
+      <div className={cn("shrink-0", desktopLayout ? "mx-3 mb-3 pt-3" : "mx-4 min-h-40 py-4 pb-20")} aria-label="Sector fund">
         {selected.sectorFund && (
           <Link
             href={`/stock/${encodeURIComponent(selected.sectorFund.symbol)}`}
@@ -280,6 +317,7 @@ export function MarketHeatmap() {
             <span className="text-lg font-bold text-accent">{selected.sectorFund.symbol}</span>
           </Link>
         )}
+      </div>
       </div>
       <style>{`@keyframes heatmap-fade-out { 0% { opacity: 1; } 30% { opacity: .95; } 60% { opacity: .75; } 80% { opacity: .3; } 100% { opacity: 0; } } @keyframes heatmap-fade-in { 0% { opacity: 0; } 30% { opacity: .5; } 60% { opacity: .8; } 80% { opacity: .95; } 100% { opacity: 1; } } .heatmap-fade-out, .heatmap-fade-in { animation: 1200ms cubic-bezier(.4, 0, .2, 1) both; } .heatmap-fade-out { animation-name: heatmap-fade-out; } .heatmap-fade-in { animation-name: heatmap-fade-in; } @media (prefers-reduced-motion: reduce) { .heatmap-tile, .heatmap-fade-out, .heatmap-fade-in { animation: none !important; transition: none !important; } }`}</style>
     </section>
