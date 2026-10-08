@@ -172,6 +172,11 @@ export function SearchBar() {
       return;
     }
 
+    if (pathname === "/") {
+      window.dispatchEvent(new CustomEvent("market-preview-symbol", { detail: cleanSymbol }));
+      return;
+    }
+
     router.push(`/stock/${encodeURIComponent(cleanSymbol)}`);
   }
 

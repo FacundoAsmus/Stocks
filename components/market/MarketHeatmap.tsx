@@ -1,12 +1,23 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import type { CSSProperties } from "react";
 
 import { MARKET_HEATMAP_GROUPS } from "@/lib/marketHeatmap";
 import { cn } from "@/lib/utils";
 import { formatPercent } from "@/lib/format";
+import { DesktopStockDetail } from "@/components/DesktopStockDetail";
+import { ErrorState } from "@/components/ErrorState";
+import type { getStockDetail } from "@/lib/finnhub";
+
+type StockDetail = Awaited<ReturnType<typeof getStockDetail>>;
+type DetailPayload = {
+  stock: StockDetail;
+  currentPrice: number;
+  sentiment: { score: number; drivers: string[] };
+  metrics: Record<string, number | string | null> | undefined;
+};
 
 type HeatmapStock = {
   symbol: string;
@@ -169,7 +180,12 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [tilesVisible, setTilesVisible] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
+  const [detail, setDetail] = useState<DetailPayload | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const areaRef = useRef<HTMLDivElement>(null);
+  const detailColumnRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
 
   useLayoutEffect(() => {
@@ -217,6 +233,37 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeGroup]);
 
+  useEffect(() => {
+    function handleMarketPreview(event: Event) {
+      const symbol = (event as CustomEvent<string>).detail?.trim().toUpperCase();
+      if (symbol) setSelectedSymbol(symbol);
+    }
+    window.addEventListener("market-preview-symbol", handleMarketPreview);
+    return () => window.removeEventListener("market-preview-symbol", handleMarketPreview);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSymbol) return;
+    const controller = new AbortController();
+    async function loadDetail() {
+      setDetailLoading(true);
+      setDetailError(null);
+      detailColumnRef.current?.scrollTo({ top: 0 });
+      try {
+        const response = await fetch(`/api/stock-detail?symbol=${encodeURIComponent(selectedSymbol)}&refresh=1`, { signal: controller.signal, cache: "no-store" });
+        const payload = await response.json() as DetailPayload & { error?: string };
+        if (!response.ok) throw new Error(payload.error ?? `Unable to load ${selectedSymbol}.`);
+        setDetail(payload);
+      } catch (reason) {
+        if (!controller.signal.aborted) setDetailError(reason instanceof Error ? reason.message : `Unable to load ${selectedSymbol}.`);
+      } finally {
+        if (!controller.signal.aborted) setDetailLoading(false);
+      }
+    }
+    loadDetail();
+    return () => controller.abort();
+  }, [selectedSymbol]);
+
   const selected = MARKET_HEATMAP_GROUPS.find((group) => group.id === activeGroup) ?? MARKET_HEATMAP_GROUPS[0];
   const rectangles = useMemo(() => makeTreemap(stocks, { x: 0, y: 0, width: size.width, height: size.height }), [size, stocks]);
   const previousRectangles = useMemo(() => previousStocks ? makeTreemap(previousStocks, { x: 0, y: 0, width: size.width, height: size.height }) : null, [previousStocks, size]);
@@ -234,14 +281,14 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
           <div className="no-scrollbar flex-1 overflow-y-auto px-2 pb-2" role="tablist" aria-label="Market groups" aria-orientation="vertical">
             {MARKET_HEATMAP_GROUPS.map((group) => {
               const initials = group.label.split(/[\s-]+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase();
-              const isActive = group.id === activeGroup;
+              const isActive = !selectedSymbol && group.id === activeGroup;
               return (
                 <button
                   key={group.id}
                   type="button"
                   role="tab"
                   aria-selected={isActive}
-                  onClick={() => setActiveGroup(group.id)}
+                  onClick={() => { setSelectedSymbol(null); setDetail(null); setDetailError(null); setActiveGroup(group.id); }}
                   className={cn(
                     "mx-0.5 my-0.5 flex w-[calc(100%-0.25rem)] items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left transition-colors select-none",
                     isActive
@@ -276,6 +323,14 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
       )}
 
       <div className={desktopLayout ? "flex min-h-0 min-w-0 flex-1 flex-col" : "contents"}>
+      {selectedSymbol && desktopLayout ? (
+        <div ref={detailColumnRef} className="no-scrollbar relative min-h-0 flex-1 overflow-y-auto">
+          {detailLoading ? <div className="flex h-full items-center justify-center text-sm text-text-muted">Loading {selectedSymbol}…</div>
+            : detailError ? <div className="p-8"><ErrorState title={`Unable to load ${selectedSymbol}`} message={detailError} /></div>
+            : detail ? <div className="px-6 py-8"><DesktopStockDetail stock={detail.stock} currentPrice={detail.currentPrice} sentiment={detail.sentiment} metrics={detail.metrics} chartHeightClassName="h-[320px]" earningsCalendarContainerRef={detailColumnRef} hideCursorDateTooltip /></div>
+            : null}
+        </div>
+      ) : <>
       <div ref={areaRef} className={cn("relative flex-1 overflow-hidden rounded-2xl border border-white/10 bg-[#342606]", desktopLayout ? "mx-3 mt-3 min-h-0" : "mx-4 mt-4 min-h-[calc(100dvh-12rem)]")} role="tabpanel" aria-live="polite">
         {loading && !stocks.length && <LoadingHeatCanvas group={activeGroup} width={size.width} height={size.height} />}
         {!!previousStocks?.length && isTransitioning && previousRectangles && <HeatCanvas stocks={previousStocks} rectangles={previousRectangles} width={size.width} height={size.height} className="heatmap-fade-out" />}
@@ -294,7 +349,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
               opacity: tilesVisible ? 1 : 0,
             };
             return (
-              <Link key={stock.symbol} href={`/stock/${encodeURIComponent(stock.symbol)}`} className="heatmap-tile absolute flex flex-col overflow-hidden rounded-lg border border-white/10 bg-black/15 p-3 transition-opacity duration-200 hover:z-10 hover:bg-black/30 hover:ring-1 hover:ring-white/50" style={tileStyle} aria-label={`${stock.name} (${stock.symbol}), ${formatPercent(stock.changePercent)}`}>
+              <Link key={stock.symbol} href={`/stock/${encodeURIComponent(stock.symbol)}`} onClick={(event) => { if (desktopLayout) { event.preventDefault(); setSelectedSymbol(stock.symbol); } }} className="heatmap-tile absolute flex flex-col overflow-hidden rounded-lg border border-white/10 bg-black/15 p-3 text-left transition-opacity duration-200 hover:z-10 hover:bg-black/30 hover:ring-1 hover:ring-white/50" style={tileStyle} aria-label={`${stock.name} (${stock.symbol}), ${formatPercent(stock.changePercent)}`}>
                 <span className={cn("font-bold tracking-tight text-white", compact ? "text-base" : "text-2xl")}>{stock.symbol}</span>
                 <span className={cn("mt-1 truncate text-white/70", compact ? "text-xs" : "text-sm")}>{stock.name}</span>
                 <span className={cn("mt-auto font-semibold", compact ? "text-sm" : "text-lg", (stock.changePercent ?? 0) >= 0 ? "text-[#adfa1b]" : "text-[#ff7560]")}>{formatPercent(stock.changePercent)}</span>
@@ -308,7 +363,8 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
         {selected.sectorFund && (
           <Link
             href={`/stock/${encodeURIComponent(selected.sectorFund.symbol)}`}
-            className="flex min-h-16 items-center justify-between rounded-2xl border border-white/10 bg-panel-muted/70 px-5 transition-colors hover:border-accent/50 hover:bg-panel-muted"
+            onClick={(event) => { if (desktopLayout) { event.preventDefault(); setSelectedSymbol(selected.sectorFund!.symbol); } }}
+            className="flex min-h-16 w-full items-center justify-between rounded-2xl border border-white/10 bg-panel-muted/70 px-5 text-left transition-colors hover:border-accent/50 hover:bg-panel-muted"
           >
             <span>
               <span className="block text-xs font-medium uppercase tracking-[0.14em] text-text-muted">Sector fund</span>
@@ -318,6 +374,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
           </Link>
         )}
       </div>
+      </>}
       </div>
       <style>{`@keyframes heatmap-fade-out { 0% { opacity: 1; } 30% { opacity: .95; } 60% { opacity: .75; } 80% { opacity: .3; } 100% { opacity: 0; } } @keyframes heatmap-fade-in { 0% { opacity: 0; } 30% { opacity: .5; } 60% { opacity: .8; } 80% { opacity: .95; } 100% { opacity: 1; } } .heatmap-fade-out, .heatmap-fade-in { animation: 1200ms cubic-bezier(.4, 0, .2, 1) both; } .heatmap-fade-out { animation-name: heatmap-fade-out; } .heatmap-fade-in { animation-name: heatmap-fade-in; } @media (prefers-reduced-motion: reduce) { .heatmap-tile, .heatmap-fade-out, .heatmap-fade-in { animation: none !important; transition: none !important; } }`}</style>
     </section>
