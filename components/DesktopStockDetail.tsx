@@ -8,6 +8,7 @@ import { FilingIndicators } from "@/components/FilingIndicators";
 import { DesktopEarningsCalendar } from "@/components/desktop/DesktopEarningsCalendar";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { NewsCard } from "@/components/NewsCard";
+import { NewsSummary } from "@/components/NewsSummary";
 import { PriceChart } from "@/components/PriceChart";
 import { StockLogo } from "@/components/StockLogo";
 import { StockPriceAlertButton } from "@/components/StockPriceAlertButton";
@@ -127,6 +128,7 @@ export function DesktopStockDetail({
               </div>
             )}
           </div>
+          {stock.news.length > 0 && <NewsSummary symbol={stock.symbol} articles={stock.news} />}
         </section>
 
         <CompanyDescription symbol={stock.symbol} className="px-5 pb-32" />

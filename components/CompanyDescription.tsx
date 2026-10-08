@@ -8,7 +8,7 @@ type DescriptionState =
   | { status: "ready"; text: string }
   | { status: "error"; text: "" };
 
-function DescriptionLoader() {
+export function AISummaryLoader() {
   return (
     <div className="flex h-20 items-center justify-center" aria-label="Loading description" role="status">
       <AIStarLoader size="lg" label="Creating AI summary" />
@@ -16,7 +16,7 @@ function DescriptionLoader() {
   );
 }
 
-function RevealedText({ text }: { text: string }) {
+export function AISummaryText({ text }: { text: string }) {
   const [visibleLength, setVisibleLength] = useState(0);
   const complete = visibleLength >= text.length;
 
@@ -85,8 +85,8 @@ export function CompanyDescription({ symbol, className = "" }: { symbol: string;
   return (
     <section className={className}>
       <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-accent">Description</p>
-      {state.status === "loading" && <DescriptionLoader />}
-      {state.status === "ready" && <RevealedText text={state.text} />}
+      {state.status === "loading" && <AISummaryLoader />}
+      {state.status === "ready" && <AISummaryText text={state.text} />}
       {state.status === "error" && <p className="text-[1.05rem] text-text-muted">Descriptions are not avaliable right now</p>}
     </section>
   );

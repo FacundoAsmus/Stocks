@@ -12,6 +12,7 @@ import { FilingIndicators } from "@/components/FilingIndicators";
 import { MarketSentiment } from "@/components/MarketSentiment";
 import { PriceChart } from "@/components/PriceChart";
 import { CompanyDescription } from "@/components/CompanyDescription";
+import { NewsSummary } from "@/components/NewsSummary";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
@@ -244,6 +245,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
                   </a>
                 ))}
               </div>
+              <NewsSummary symbol={stock.symbol} articles={stock.news} />
             </section>
           )}
 
