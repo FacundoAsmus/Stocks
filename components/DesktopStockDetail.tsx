@@ -119,6 +119,7 @@ export function DesktopStockDetail({
               <h2 className="mt-2 text-2xl font-semibold text-text-primary">Latest headlines</h2>
             </div>
           </div>
+          {stock.news.length > 0 && <NewsSummary symbol={stock.symbol} articles={stock.news} />}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {stock.news.length ? (
               stock.news.map((article) => <NewsCard key={article.id} article={article} />)
@@ -128,7 +129,6 @@ export function DesktopStockDetail({
               </div>
             )}
           </div>
-          {stock.news.length > 0 && <NewsSummary symbol={stock.symbol} articles={stock.news} />}
         </section>
 
         <CompanyDescription symbol={stock.symbol} className="px-5 pb-32" />

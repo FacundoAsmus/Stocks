@@ -229,7 +229,9 @@ export function MobileStockPage(props: MobileStockPageProps) {
 
           {stock.news.length > 0 && (
             <section>
-              <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">News</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-1">News</p>
+              <h2 className="mb-3 text-2xl font-semibold text-text-primary">Latest headlines</h2>
+              <NewsSummary symbol={stock.symbol} articles={stock.news} />
               <div className="flex flex-col gap-3">
                 {stock.news.slice(0, 8).map(article => (
                   <a key={article.id} href={article.url} target="_blank" rel="noreferrer"
@@ -245,7 +247,6 @@ export function MobileStockPage(props: MobileStockPageProps) {
                   </a>
                 ))}
               </div>
-              <NewsSummary symbol={stock.symbol} articles={stock.news} />
             </section>
           )}
 
