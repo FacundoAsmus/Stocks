@@ -100,12 +100,10 @@ function WatchlistListRow({
     <div
       onClick={onSelect}
       className={cn(
-        "desktop-alert-glass flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 transition-[filter,border-color,box-shadow] select-none",
+        "desktop-alert-glass desktop-alert-glass-list-item flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 transition-[filter,border-color,box-shadow] select-none",
         isDragging
-          ? "brightness-125 border-accent/70 shadow-[0_12px_34px_rgba(0,0,0,0.38)]"
-          : isActive
-            ? "watchlist-list-selected border-accent hover:brightness-110"
-            : "border-white/10 hover:brightness-110"
+          ? "is-lifted brightness-125 shadow-[0_12px_34px_rgba(0,0,0,0.38)]"
+          : isActive ? "brightness-105 hover:brightness-110" : "hover:brightness-110"
       )}
     >
       {stock.logo ? (

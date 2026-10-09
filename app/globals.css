@@ -272,6 +272,13 @@ input {
    distinct from the page/detail-panel background on either side of it. */
 .watchlist-list-panel { background: #0e0e0e; }
 html.light-mode .watchlist-list-panel { background: #ececec; }
+@media (min-width: 1024px) {
+  .desktop-alert-glass.desktop-alert-glass-list-item { border-color: transparent !important; }
+  .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted,
+  .desktop-alert-glass.market-heatmap-list-item:hover,
+  .desktop-alert-glass.market-heatmap-list-item:focus-visible,
+  .desktop-alert-glass.market-heatmap-list-item:active { border-color: var(--color-accent) !important; }
+}
 /* Desktop watchlist page only: swap the overall page background in light
    mode: the detail panel is pure white and the list panel is a soft grey. */
 html.light-mode .watchlist-desktop-root { background: #ffffff; }

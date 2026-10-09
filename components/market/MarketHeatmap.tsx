@@ -291,10 +291,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
                   aria-selected={isActive}
                   onClick={() => { setSelectedSymbol(null); setDetail(null); setDetailError(null); setActiveGroup(group.id); }}
                   className={cn(
-                    "desktop-alert-glass mx-0.5 my-0.5 flex w-[calc(100%-0.25rem)] items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left transition-[filter,border-color] select-none hover:brightness-110",
-                    isActive
-                      ? "watchlist-list-selected border-accent"
-                      : "border-white/10"
+                    "desktop-alert-glass desktop-alert-glass-list-item market-heatmap-list-item mx-0.5 my-0.5 flex w-[calc(100%-0.25rem)] items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left transition-[filter,border-color,transform] select-none hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0",
                   )}
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary">{initials}</span>
