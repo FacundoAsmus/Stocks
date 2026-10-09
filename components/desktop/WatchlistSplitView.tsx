@@ -100,22 +100,12 @@ function WatchlistListRow({
     <div
       onClick={onSelect}
       className={cn(
-        "flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 transition-colors select-none",
-        // Every row always gets a real, opaque background — not just when
-        // dragging/hovered. An idle row with no background of its own is
-        // genuinely transparent, and Framer's layout animation (sliding rows
-        // out of the way during a drag) moves rows around while they're
-        // still in that idle state, which is what let you briefly see
-        // through them mid-reflow. The idle background below matches the
-        // panel's own color exactly, so it's visually identical to "no
-        // background" while actually being solid. The selected row uses
-        // that same idle background too, plus the green border — just the
-        // outline, no grey fill.
+        "desktop-alert-glass flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 transition-[filter,border-color,box-shadow] select-none",
         isDragging
-          ? "border-transparent bg-panel-muted"
+          ? "brightness-125 border-accent/70 shadow-[0_12px_34px_rgba(0,0,0,0.38)]"
           : isActive
-            ? "watchlist-list-panel watchlist-list-selected border-accent hover:bg-panel-muted/50"
-            : "watchlist-list-panel border-transparent hover:bg-panel-muted/50"
+            ? "watchlist-list-selected border-accent hover:brightness-110"
+            : "border-white/10 hover:brightness-110"
       )}
     >
       {stock.logo ? (
