@@ -169,14 +169,14 @@ export function MobileStockPage(props: MobileStockPageProps) {
           {stock.profile.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={stock.profile.logo} alt=""
-              className="h-12 w-12 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
+              className="h-12 w-12 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
                 e.currentTarget.nextElementSibling?.classList.remove("hidden");
               }} />
           ) : null}
           <span className={cn(
-            "h-12 w-12 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted font-bold shrink-0",
+            "h-12 w-12 flex items-center justify-center rounded-3xl border border-border-subtle bg-panel-muted font-bold shrink-0",
             stock.profile.logo && "hidden",
             isEtf ? "text-sm text-text-primary" : "text-sm text-text-primary"
           )}>

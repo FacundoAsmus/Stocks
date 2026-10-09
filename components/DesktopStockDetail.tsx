@@ -31,6 +31,8 @@ interface DesktopStockDetailProps {
   earningsCalendarContainerRef?: RefObject<HTMLElement | null>;
   /** Hides the cursor-following date bubble in the compact watchlist detail panel. */
   hideCursorDateTooltip?: boolean;
+  /** Enlarges and vertically centers the title in the desktop watchlist detail pane. */
+  watchlistDetailHeader?: boolean;
 }
 
 // This is the exact "Desktop stock page" content that used to live inline in
@@ -44,7 +46,8 @@ export function DesktopStockDetail({
   metrics,
   chartHeightClassName = "h-[461px]",
   earningsCalendarContainerRef,
-  hideCursorDateTooltip = false
+  hideCursorDateTooltip = false,
+  watchlistDetailHeader = false
 }: DesktopStockDetailProps) {
   // ETFs don't file earnings reports the way individual companies do — same
   // check the mobile stock page already uses to hide the calendar button and
@@ -59,7 +62,7 @@ export function DesktopStockDetail({
             <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
           </div>
           {/* ── Logo + name row ── */}
-          <div className="flex gap-4 items-start">
+          <div className={`flex gap-4 ${watchlistDetailHeader ? "items-center pr-44" : "items-start"}`}>
             <div className="shrink-0">
               <StockLogo
                 logo={stock.profile.logo}
@@ -67,10 +70,10 @@ export function DesktopStockDetail({
               />
             </div>
             <div>
-              <h1 className="text-3xl font-semibold tracking-normal text-text-primary sm:text-4xl">
+              <h1 className={`font-semibold tracking-normal text-text-primary ${watchlistDetailHeader ? "text-4xl sm:text-5xl" : "text-3xl sm:text-4xl"}`}>
                 {stock.profile.name ?? stock.symbol}
               </h1>
-              <p className="mt-0.5 text-base text-text-muted">{stock.symbol}</p>
+              {!watchlistDetailHeader && <p className="mt-0.5 text-base text-text-muted">{stock.symbol}</p>}
             </div>
           </div>
           {/* ── Price + chart — price indented to align with name, chart full width ── */}

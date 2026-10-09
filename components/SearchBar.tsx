@@ -46,7 +46,7 @@ function ResultIcon({ symbol, logo }: { symbol: string; logo?: string }) {
         <img
           src={logo}
           alt=""
-          className="h-10 w-10 shrink-0 rounded-md border border-border-subtle bg-panel-muted object-contain"
+          className="h-10 w-10 shrink-0 rounded-3xl border border-border-subtle bg-panel-muted object-contain"
           onError={(e) => {
             e.currentTarget.style.display = "none";
             e.currentTarget.nextElementSibling?.classList.remove("hidden");
@@ -54,7 +54,7 @@ function ResultIcon({ symbol, logo }: { symbol: string; logo?: string }) {
         />
       ) : null}
       <span
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary ${logo ? "hidden" : ""}`}
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-3xl border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary ${logo ? "hidden" : ""}`}
       >
         {isEtf ? "ETF" : symbol.replace("^", "").slice(0, 2)}
       </span>

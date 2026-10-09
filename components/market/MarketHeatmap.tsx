@@ -292,7 +292,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
                   onClick={() => { setSelectedSymbol(null); setDetail(null); setDetailError(null); setActiveGroup(group.id); }}
                   className={cn("desktop-alert-glass desktop-alert-glass-list-item market-heatmap-list-item mx-0.5 my-0.5 flex w-[calc(100%-0.25rem)] items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left transition-[filter,border-color,transform,box-shadow] select-none hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0", isActive && "is-selected")}
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary">{initials}</span>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-3xl border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary">{initials}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-bold text-text-primary">{group.label}</span>
                     <span className="mt-0.5 block text-xs text-text-muted">{group.symbols.length} stocks</span>

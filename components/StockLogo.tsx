@@ -23,7 +23,7 @@ export function StockLogo({
         <img
           src={logo}
           alt=""
-          className={`${sizeClassName} rounded-md border border-white/10 bg-white/5 object-contain`}
+          className={`${sizeClassName} rounded-3xl border border-white/10 bg-white/5 object-contain`}
           onError={(e) => {
             e.currentTarget.style.display = "none";
             e.currentTarget.nextElementSibling?.classList.remove("hidden");
@@ -31,7 +31,7 @@ export function StockLogo({
         />
       ) : null}
       <span
-        className={`${sizeClassName} flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-lg font-semibold text-text-primary ${logo ? "hidden" : ""}`}
+        className={`${sizeClassName} flex items-center justify-center rounded-3xl border border-border-subtle bg-panel-muted text-lg font-semibold text-text-primary ${logo ? "hidden" : ""}`}
       >
         {label}
       </span>

@@ -75,7 +75,7 @@ function RowContent({ stock }: { stock: StockSummary }) {
         <img
           src={stock.logo}
           alt=""
-          className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0 pointer-events-none"
+          className="h-9 w-9 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0 pointer-events-none"
           onError={(e) => {
             e.currentTarget.style.display = "none";
             e.currentTarget.nextElementSibling?.classList.remove("hidden");
@@ -83,7 +83,7 @@ function RowContent({ stock }: { stock: StockSummary }) {
         />
       ) : null}
       <span className={cn(
-        "h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold shrink-0 pointer-events-none",
+        "h-9 w-9 flex items-center justify-center rounded-3xl border border-border-subtle bg-panel-muted text-xs font-bold shrink-0 pointer-events-none",
         stock.logo && "hidden",
         SECTOR_ETFS.some(e => e.symbol === stock.symbol) ? "text-text-primary" : "text-text-primary"
       )}>

@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element -- stock logos use dynamic external URLs and a local fallback. */
+
 import { List, Search, Settings, X, Monitor, Sun, Moon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -408,7 +410,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
                   src={logos[r.symbol]}
                   alt=""
                   style={{
-                    height: 40, width: 40, borderRadius: 10, flexShrink: 0,
+                    height: 40, width: 40, borderRadius: 24, flexShrink: 0,
                     border: "1px solid var(--color-border-subtle)",
                     backgroundColor: "var(--color-panel-muted)",
                     objectFit: "contain",
@@ -422,7 +424,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
               ) : null}
               <span style={{
                 display: logos[r.symbol] ? "none" : "flex", alignItems: "center", justifyContent: "center",
-                height: 40, width: 40, borderRadius: 10, flexShrink: 0,
+                height: 40, width: 40, borderRadius: 24, flexShrink: 0,
                 border: "1px solid var(--color-border-subtle)",
                 backgroundColor: "var(--color-panel-muted)",
                 fontSize: 11, fontWeight: 700, color: "var(--color-text-primary)",

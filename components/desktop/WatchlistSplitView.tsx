@@ -111,7 +111,7 @@ function WatchlistListRow({
         <img
           src={stock.logo}
           alt=""
-          className="h-9 w-9 shrink-0 rounded-md border border-white/10 bg-white/5 object-contain pointer-events-none"
+          className="h-9 w-9 shrink-0 rounded-3xl border border-white/10 bg-white/5 object-contain pointer-events-none"
           onError={(e) => {
             e.currentTarget.style.display = "none";
             e.currentTarget.nextElementSibling?.classList.remove("hidden");
@@ -120,7 +120,7 @@ function WatchlistListRow({
       ) : null}
       <span
         className={cn(
-          "flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary pointer-events-none",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-3xl border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary pointer-events-none",
           stock.logo && "hidden"
         )}
       >
@@ -191,7 +191,7 @@ function DesktopWatchlistSkeleton() {
         <div className="flex-1 space-y-3 overflow-hidden px-3 pb-4">
           {Array.from({ length: 7 }, (_, index) => (
             <div key={index} className="flex items-center gap-3 rounded-xl border-2 border-transparent px-4 py-3.5">
-              <div className="h-9 w-9 shrink-0 animate-pulse rounded-md bg-panel-muted" />
+              <div className="h-9 w-9 shrink-0 animate-pulse rounded-3xl bg-panel-muted" />
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="h-3 w-16 animate-pulse rounded-full bg-panel-muted" />
                 <div className="h-2 w-24 animate-pulse rounded-full bg-panel-muted/70" />
@@ -578,6 +578,7 @@ export function WatchlistSplitView() {
                 chartHeightClassName="h-[320px]"
                 earningsCalendarContainerRef={detailColumnRef}
                 hideCursorDateTooltip
+                watchlistDetailHeader
               />
             </div>
           ) : !displayedStocks.length ? (
