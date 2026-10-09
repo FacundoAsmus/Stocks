@@ -183,8 +183,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             {isEtf ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
           </span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-text-primary leading-tight truncate">{stock.profile.name ?? stock.symbol}</h1>
-            <p className="text-xs text-text-muted">{stock.symbol}</p>
+            <h1 className="text-xl font-bold text-text-primary leading-tight truncate">{stock.profile.name ?? stock.symbol}</h1>
           </div>
           <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
         </div>

@@ -10,12 +10,15 @@
 export function StockLogo({
   logo,
   label,
-  sizeClassName = "h-14 w-14"
+  sizeClassName = "h-14 w-14",
+  shape = "rounded"
 }: {
   logo?: string;
   label: string;
   sizeClassName?: string;
+  shape?: "rounded" | "circle";
 }) {
+  const shapeClassName = shape === "circle" ? "rounded-full" : "rounded-3xl";
   return (
     <>
       {logo ? (
@@ -23,7 +26,7 @@ export function StockLogo({
         <img
           src={logo}
           alt=""
-          className={`${sizeClassName} rounded-3xl border border-white/10 bg-white/5 object-contain`}
+          className={`${sizeClassName} ${shapeClassName} border border-white/10 bg-white/5 object-contain`}
           onError={(e) => {
             e.currentTarget.style.display = "none";
             e.currentTarget.nextElementSibling?.classList.remove("hidden");
@@ -31,7 +34,7 @@ export function StockLogo({
         />
       ) : null}
       <span
-        className={`${sizeClassName} flex items-center justify-center rounded-3xl border border-border-subtle bg-panel-muted text-lg font-semibold text-text-primary ${logo ? "hidden" : ""}`}
+        className={`${sizeClassName} ${shapeClassName} flex items-center justify-center border border-border-subtle bg-panel-muted text-lg font-semibold text-text-primary ${logo ? "hidden" : ""}`}
       >
         {label}
       </span>

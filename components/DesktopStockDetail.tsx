@@ -67,6 +67,7 @@ export function DesktopStockDetail({
               <StockLogo
                 logo={stock.profile.logo}
                 label={isEtf ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
+                shape={watchlistDetailHeader ? "circle" : "rounded"}
               />
             </div>
             <div>
