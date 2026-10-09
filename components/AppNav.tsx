@@ -174,43 +174,16 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
         </div>
       </div>
 
-      {/* Pro Mode */}
-      <div className="px-4 py-3">
-        <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-2">Pro Mode</p>
-        <button
-          onClick={toggleProMode}
-          className="w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5"
-        >
-          <span className="flex flex-col gap-0.5 text-left">
-            <span className="text-sm text-text-primary font-medium">Horizontal crosshair</span>
-            <span className="text-xs text-text-muted">Adds horizontal line at hovered price level</span>
-          </span>
-          <span className="shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative"
-            style={{ borderColor: proMode ? "var(--color-accent)" : "var(--color-border-subtle)",
-                     backgroundColor: proMode ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
-            <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
-              style={{ left: proMode ? "calc(100% - 1.125rem)" : "0.125rem" }} />
-          </span>
-        </button>
-        <button
-          onClick={toggleCandlesticks}
-          className="mt-2 w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5"
-        >
-          <span className="flex flex-col gap-0.5 text-left">
-            <span className="text-sm text-text-primary font-medium">Candlestick chart</span>
-            <span className="text-xs text-text-muted">Shows open, high, low, and close for each interval</span>
-          </span>
-          <span className="shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative"
-            style={{ borderColor: useCandlesticks ? "var(--color-accent)" : "var(--color-border-subtle)",
-                     backgroundColor: useCandlesticks ? "var(--color-accent)" : "var(--color-panel-muted)" }}>
-            <span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200"
-              style={{ left: useCandlesticks ? "calc(100% - 1.125rem)" : "0.125rem" }} />
-          </span>
-        </button>
-      </div>
-
       <div className="px-4 py-3 border-t border-border-subtle">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-2">Pro Features</p>
+        <button onClick={toggleProMode} className="w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5">
+          <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Horizontal crosshair</span><span className="text-xs text-text-muted">Adds horizontal line at hovered price level</span></span>
+          <Toggle enabled={proMode} />
+        </button>
+        <button onClick={toggleCandlesticks} className="mt-2 w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5">
+          <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Candlestick chart</span><span className="text-xs text-text-muted">Shows open, high, low, and close for each interval</span></span>
+          <Toggle enabled={useCandlesticks} />
+        </button>
         <button onClick={toggleVolumeChart} className="w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5">
           <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Volume chart</span><span className="text-xs text-text-muted">Shows trading volume below the timeframes</span></span>
           <Toggle enabled={showVolumeChart} />
