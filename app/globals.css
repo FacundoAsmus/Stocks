@@ -273,11 +273,25 @@ input {
 .watchlist-list-panel { background: #0e0e0e; }
 html.light-mode .watchlist-list-panel { background: #ececec; }
 @media (min-width: 1024px) {
-  .desktop-alert-glass.desktop-alert-glass-list-item { border-color: transparent !important; }
-  .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted,
+  .desktop-alert-glass.desktop-alert-glass-list-item {
+    border-color: transparent !important;
+    box-shadow: none !important;
+  }
+  .desktop-alert-glass.desktop-alert-glass-list-item.is-selected,
+  .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted.is-selected {
+    border-color: var(--color-accent) !important;
+  }
+  .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted:not(.is-selected),
+  .desktop-alert-glass.market-heatmap-list-item:hover:not(.is-selected),
+  .desktop-alert-glass.market-heatmap-list-item:focus-visible:not(.is-selected),
+  .desktop-alert-glass.market-heatmap-list-item:active:not(.is-selected) {
+    border-color: rgba(145, 151, 158, 0.72) !important;
+  }
   .desktop-alert-glass.market-heatmap-list-item:hover,
   .desktop-alert-glass.market-heatmap-list-item:focus-visible,
-  .desktop-alert-glass.market-heatmap-list-item:active { border-color: var(--color-accent) !important; }
+  .desktop-alert-glass.market-heatmap-list-item:active {
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28) !important;
+  }
 }
 /* Desktop watchlist page only: swap the overall page background in light
    mode: the detail panel is pure white and the list panel is a soft grey. */

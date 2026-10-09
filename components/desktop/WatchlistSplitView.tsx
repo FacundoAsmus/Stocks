@@ -102,8 +102,8 @@ function WatchlistListRow({
       className={cn(
         "desktop-alert-glass desktop-alert-glass-list-item flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 transition-[filter,border-color,box-shadow] select-none",
         isDragging
-          ? "is-lifted brightness-125 shadow-[0_12px_34px_rgba(0,0,0,0.38)]"
-          : isActive ? "brightness-105 hover:brightness-110" : "hover:brightness-110"
+          ? `is-lifted brightness-125 ${isActive ? "is-selected" : ""}`
+          : isActive ? "is-selected brightness-105 hover:brightness-110" : "hover:brightness-110"
       )}
     >
       {stock.logo ? (
