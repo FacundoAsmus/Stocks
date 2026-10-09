@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { RefObject } from "react";
 import { createPortal } from "react-dom";
 import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -234,16 +234,14 @@ function MiniMonthGrid({
 // 4-column × 3-row grid of full months for one year at a time, instead of
 // the phone's single-column list you scroll through month by month.
 export function DesktopEarningsCalendar({
-  earnings,
-  containerRef
+  earnings
 }: {
   earnings: EarningsEvent[];
   // Kept optional for compatibility with prior desktop-detail callers. It is
   // intentionally unused by the calendar UI.
   symbol?: string;
-  /** Confines the overlay to this element's bounds (the watchlist split
-   *  view's right-hand column) instead of the full viewport. Falls back to
-   *  document.body on the standalone stock page. */
+  /** Retained for existing callers; calendar and quarter overlays now use
+   *  the full viewport so the entire page is blurred and blocked. */
   containerRef?: RefObject<HTMLElement | null>;
 }) {
   const [open, setOpen] = useState(false);
@@ -252,6 +250,13 @@ export function DesktopEarningsCalendar({
   const [quarterClosing, setQuarterClosing] = useState(false);
   const today = todayStr();
   const [year, setYear] = useState(() => new Date().getFullYear());
+
+  useLayoutEffect(() => {
+    if (!open && !selected) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [open, selected]);
 
   // Year-back navigation limit: you can only ever go one year behind the
   // real current year (never two+), and even that one year back is only
@@ -282,7 +287,7 @@ export function DesktopEarningsCalendar({
 
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => new Date(year, i, 1)), [year]);
 
-  const portalTarget = containerRef?.current ?? (typeof document !== "undefined" ? document.body : null);
+  const portalTarget = typeof document !== "undefined" ? document.body : null;
 
   function closeCalendar() {
     if (closing) return;
@@ -314,10 +319,10 @@ export function DesktopEarningsCalendar({
 
       {open && portalTarget && createPortal(
         <div
-          className={`smoked-glass-backdrop ${containerRef ? "absolute inset-0 z-[9999] flex items-center justify-center p-6" : "fixed inset-0 z-[9999] flex items-center justify-center p-6"}`}
+          className="smoked-glass-backdrop fixed inset-0 z-[9999] flex items-center justify-center p-6"
           // Match the AI chat backdrop: blur the underlying panel without
           // laying a dark tint over it, so light mode stays bright.
-          style={{ background: "transparent", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
+          style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
           onClick={(e) => { if (e.target === e.currentTarget) closeCalendar(); }}
         >
           <div
@@ -382,8 +387,8 @@ export function DesktopEarningsCalendar({
 
       {selected && portalTarget && createPortal(
         <div
-          className={`smoked-glass-backdrop ${containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}`}
-          style={{ background: "transparent", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
+          className="smoked-glass-backdrop fixed inset-0 z-[10000] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
           onClick={(e) => { if (e.target === e.currentTarget) closeQuarter(); }}
         >
           <DesktopQuarterDetail event={selected} earnings={earnings} closing={quarterClosing} onBack={closeQuarter} />

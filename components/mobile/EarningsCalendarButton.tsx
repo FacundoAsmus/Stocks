@@ -165,14 +165,11 @@ function MonthGrid({
 
 // ─── Trigger button + calendar overlay + detail popup ──────────────────────
 export function EarningsCalendarButton({
-  earnings,
-  containerRef
+  earnings
 }: {
   earnings: EarningsEvent[];
-  /** When provided, the calendar sheet is confined to this element's bounds
-   *  (e.g. the right-hand 3/4 column of the watchlist split view) instead of
-   *  covering the full viewport. The element must have `position: relative`
-   *  (or similar) so absolutely-positioned children resolve against it. */
+  /** Retained for existing callers; calendar and quarter overlays use the
+   *  full viewport so the entire page is blurred and blocked. */
   containerRef?: RefObject<HTMLElement | null>;
 }) {
   const [open, setOpen]         = useState(false);
@@ -188,11 +185,11 @@ export function EarningsCalendarButton({
   // Lock the stock page's scroll while the calendar is open — only the
   // calendar's own list should move.
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open && !selected) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = prev; };
-  }, [open]);
+  }, [open, selected]);
 
   // Center the current month in view the moment the calendar opens.
   useLayoutEffect(() => {
@@ -250,11 +247,10 @@ export function EarningsCalendarButton({
   // box, so the open animation visibly grows out from the button. When
   // constrained to a container, "its box" is that container; otherwise
   // it's the viewport.
-  const boxHeight = containerRef?.current?.clientHeight
-    ?? (typeof window !== "undefined" ? window.innerHeight : 0);
-  const sheetTop = boxHeight * 0.12;
+  const boxHeight = typeof window !== "undefined" ? window.innerHeight : 0;
+  const sheetTop = boxHeight * 0.06;
   const transformOrigin = `${origin.x}px ${origin.y - sheetTop}px`;
-  const portalTarget = containerRef?.current ?? (typeof document !== "undefined" ? document.body : null);
+  const portalTarget = typeof document !== "undefined" ? document.body : null;
 
   return (
     <>
@@ -269,13 +265,13 @@ export function EarningsCalendarButton({
 
       {open && portalTarget && createPortal(
         <div
-          className={`smoked-glass-backdrop ${containerRef ? "absolute inset-0 z-[9999] flex items-end justify-center" : "fixed inset-0 z-[9999] flex items-end justify-center"}`}
-          style={{ background: "rgba(0,0,0,0.3)", backdropFilter: "blur(16px) saturate(150%)", WebkitBackdropFilter: "blur(16px) saturate(150%)" }}
+          className="smoked-glass-backdrop fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
         >
           <div
-            className="earnings-detail-glass smoked-glass-surface smoked-glass-calendar w-full rounded-t-2xl border border-white/15 flex flex-col"
+            className="earnings-detail-glass smoked-glass-surface smoked-glass-calendar flex w-full max-w-lg flex-col rounded-3xl border border-white/15"
             style={{
-              height: containerRef ? "88%" : "88vh",
+              height: "min(88dvh, 880px)",
               transformOrigin,
               background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
               backdropFilter: "blur(24px) saturate(180%)",
@@ -322,8 +318,8 @@ export function EarningsCalendarButton({
 
       {selected && portalTarget && createPortal(
         <div
-          className={`smoked-glass-backdrop ${containerRef ? "absolute inset-0 z-[10000] flex items-center justify-center p-4" : "fixed inset-0 z-[10000] flex items-center justify-center p-4"}`}
-          style={{ background: "rgba(0,0,0,0.18)", backdropFilter: "blur(16px) saturate(150%)", WebkitBackdropFilter: "blur(16px) saturate(150%)" }}
+          className="smoked-glass-backdrop fixed inset-0 z-[10000] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
           onClick={(e) => { if (e.target === e.currentTarget) setSelected(null); }}
         >
           <EarningsDetailCard event={selected} earnings={earnings} onBack={() => setSelected(null)} />
