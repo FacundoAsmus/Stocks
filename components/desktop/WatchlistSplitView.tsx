@@ -195,7 +195,7 @@ function PanelLoader({ label }: { label: string }) {
 function DesktopWatchlistSkeleton() {
   return (
     <div className="watchlist-desktop-root flex w-full" style={{ height: "calc(100dvh - var(--header-height, 0px))" }} aria-label="Loading watchlist" role="status">
-      <div className="watchlist-list-panel m-3 flex w-1/4 shrink-0 flex-col overflow-hidden rounded-3xl border border-border-subtle/70">
+      <div className="desktop-alert-glass m-3 flex w-1/4 shrink-0 flex-col overflow-hidden rounded-3xl border border-white/15">
         <div className="shrink-0 px-6 pb-4 pt-6">
           <div className="mb-3 h-3 w-20 animate-pulse rounded-full bg-panel-muted" />
           <div className="h-8 w-40 animate-pulse rounded-lg bg-panel-muted" />
@@ -499,7 +499,7 @@ export function WatchlistSplitView() {
       {/* Left: 1/4 — its own rounded, distinctly-shaded card holding the title + list.
           Background: #0e0e0e dark / #ffffff light (see .watchlist-list-panel in globals.css).
           Page background behind it: #ececec in light mode (.watchlist-desktop-root). */}
-      <div className="watchlist-list-panel m-3 flex w-1/4 shrink-0 flex-col overflow-hidden rounded-3xl border border-border-subtle/70">
+      <div className="desktop-alert-glass m-3 flex w-1/4 shrink-0 flex-col overflow-hidden rounded-3xl border border-white/15">
         <div className="shrink-0 px-6 pb-4 pt-6">
           <p className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Your Stocks</p>
           <h1 className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Watchlist</h1>

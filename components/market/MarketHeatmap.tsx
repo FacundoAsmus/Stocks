@@ -274,7 +274,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
       {/* Desktop uses a watchlist-style selector rail; mobile keeps the
           existing horizontal selector above the heatmap. */}
       {desktopLayout ? (
-        <aside className="watchlist-list-panel m-3 flex w-1/5 shrink-0 flex-col overflow-hidden rounded-3xl border border-border-subtle/70">
+        <aside className="desktop-alert-glass m-3 flex w-1/5 shrink-0 flex-col overflow-hidden rounded-3xl border border-white/15">
           <div className="shrink-0 px-6 pb-4 pt-6">
             <p className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Heatmaps</p>
             <h2 id="market-heatmap-title" className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market</h2>
