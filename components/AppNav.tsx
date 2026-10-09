@@ -7,7 +7,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
-import { TestPushNotificationButton } from "@/components/TestPushNotificationButton";
 
 type Theme = "dark" | "light" | "system";
 
@@ -196,7 +195,6 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
           <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Alert price lines</span><span className="text-xs text-text-muted">Show saved alert levels on stock charts</span></span>
           <Toggle enabled={showAlertLines} />
         </button>
-        <TestPushNotificationButton compact />
       </div>
 
       <style>{`
