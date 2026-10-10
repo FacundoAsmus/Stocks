@@ -13,6 +13,7 @@ import { MarketSentiment } from "@/components/MarketSentiment";
 import { PriceChart } from "@/components/PriceChart";
 import { CompanyDescription } from "@/components/CompanyDescription";
 import { NewsSummary } from "@/components/NewsSummary";
+import { NewsCard } from "@/components/NewsCard";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
@@ -231,19 +232,9 @@ export function MobileStockPage(props: MobileStockPageProps) {
               <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-1">News</p>
               <h2 className="mb-3 text-2xl font-semibold text-text-primary">Latest headlines</h2>
               <NewsSummary symbol={stock.symbol} articles={stock.news} />
-              <div className="flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {stock.news.slice(0, 8).map(article => (
-                  <a key={article.id} href={article.url} target="_blank" rel="noreferrer"
-                    className="flex gap-3 rounded-xl bg-black p-3 active:opacity-80">
-                    {article.image
-                      // eslint-disable-next-line @next/next/no-img-element
-                      ? <img src={article.image} alt="" className="h-[53px] w-[70px] rounded-md object-cover shrink-0 self-start" />
-                      : <span className="h-[53px] w-[70px] rounded-md bg-white/5 shrink-0" />}
-                    <span className="flex-1 min-w-0">
-                      <span className="block text-sm font-semibold text-text-primary leading-snug line-clamp-2">{article.headline}</span>
-                      <span className="block mt-1 text-[10px] text-text-muted">{article.source}</span>
-                    </span>
-                  </a>
+                  <NewsCard key={article.id} article={article} />
                 ))}
               </div>
             </section>

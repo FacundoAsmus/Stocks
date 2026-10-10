@@ -9,6 +9,7 @@ import { formatEarningsForAIContext } from "@/lib/earnings";
 import { AIStarLoader } from "@/components/AIStarLoader";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import { WheelPrice } from "@/components/PriceChart";
+import { NewsCard as StockNewsCard } from "@/components/NewsCard";
 import type { CandlePoint, StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
@@ -810,41 +811,10 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
 function NewsCard({ index, ctx }: { index: number; ctx: GraphCtx }) {
   const article = ctx.stock.news?.[index];
   if (!article) return null;
-  const isLightMode = ctx.isLightMode;
-  const bg = isLightMode ? "#ffffff" : "#000000";
-  const border = isLightMode ? "rgba(0,0,0,0.10)" : "rgba(255,255,255,0.10)";
-  const text = isLightMode ? "#1a1a1e" : "#f0f0f2";
-  const muted = isLightMode ? "#6e6e80" : "#9a9aa2";
   return (
-    <a
-      href={article.url}
-      target="_blank"
-      rel="noreferrer"
-      style={{
-        display: "flex", gap: 10, alignItems: "flex-start",
-        padding: "10px 12px",
-        borderRadius: 12,
-        border: `1px solid ${border}`,
-        backgroundColor: bg,
-        textDecoration: "none",
-        cursor: "pointer",
-      }}
-      onClick={e => e.stopPropagation()}
-    >
-      {article.image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={article.image} alt="" style={{ width: 52, height: 40, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
-      ) : (
-        <div style={{ width: 52, height: 40, borderRadius: 6, backgroundColor: "rgba(128,128,128,0.15)", flexShrink: 0 }} />
-      )}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: text, lineHeight: 1.4,
-          overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-          {article.headline}
-        </p>
-        <p style={{ margin: "4px 0 0", fontSize: 11, color: muted }}>{article.source}</p>
-      </div>
-    </a>
+    <div className="w-full max-w-[240px]" onClick={event => event.stopPropagation()}>
+      <StockNewsCard article={article} />
+    </div>
   );
 }
 

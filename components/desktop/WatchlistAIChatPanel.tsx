@@ -6,6 +6,7 @@ import { Send, Sparkles, X } from "lucide-react";
 
 import { buildStockContextAsync } from "@/components/mobile/StockAIChat";
 import { AIStarLoader } from "@/components/AIStarLoader";
+import { NewsCard } from "@/components/NewsCard";
 import { cn } from "@/lib/utils";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import type { StockDetail } from "@/types/stock";
@@ -27,6 +28,33 @@ function AnimatedWelcomeText({ text }: { text: string }) {
   }, [text]);
 
   return <>{visibleText}{visibleText.length < text.length && <span aria-hidden="true" className="text-accent">▍</span>}</>;
+}
+
+function AIMessageContent({ text, stock, animating }: { text: string; stock: StockDetail; animating?: boolean }) {
+  const parts: Array<{ type: "text"; value: string } | { type: "news"; index: number }> = [];
+  const matcher = /\[\[news:(\d+)\]\]/g;
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+  while ((match = matcher.exec(text)) !== null) {
+    if (match.index > cursor) parts.push({ type: "text", value: text.slice(cursor, match.index) });
+    parts.push({ type: "news", index: Number(match[1]) });
+    cursor = matcher.lastIndex;
+  }
+  if (cursor < text.length) parts.push({ type: "text", value: text.slice(cursor) });
+
+  if (parts.length === 1 && parts[0]?.type === "text" && animating) {
+    return <AnimatedWelcomeText text={parts[0].value} />;
+  }
+
+  return <>
+    {parts.map((part, index) => part.type === "text" ? (
+      <span key={`text-${index}`}>{part.value}</span>
+    ) : stock.news[part.index] ? (
+      <span key={`news-${index}`} className="my-2 block w-full max-w-[240px]">
+        <NewsCard article={stock.news[part.index]} />
+      </span>
+    ) : null)}
+  </>;
 }
 
 interface Props {
@@ -143,8 +171,12 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
         </button>
       )}
 
-      {mounted && open && createPortal(
-        <>
+      {/* Sized as a percentage of THIS column (the `absolute inset-0`
+          wrapper above, itself a child of the relative right-hand column)
+          — never the viewport — so it can't spill past the column. */}
+    </div>
+    {mounted && open && createPortal(
+      <>
         <div
           className="fixed inset-0 z-[1200]"
           style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
@@ -187,7 +219,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
                 )}
                 style={m.role === "model" ? { boxShadow: "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent)" } : undefined}
               >
-                {m.role === "model" && m.animating ? <AnimatedWelcomeText text={m.text} /> : m.text}
+                {m.role === "model" ? <AIMessageContent text={m.text} stock={stock} animating={m.animating} /> : m.text}
               </div>
             ))}
             {loading && (
@@ -217,10 +249,9 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
             </button>
           </div>
         </div>
-        </>,
-        document.body
-      )}
-    </div>
+      </>,
+      document.body
+    )}
     </>
   );
 }
