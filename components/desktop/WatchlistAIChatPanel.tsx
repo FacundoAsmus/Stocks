@@ -57,7 +57,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
   const inputRef = useRef<HTMLInputElement>(null);
   const welcomedStockRef = useRef<string | null>(null);
 
-  // Keep this panel independent of the mobile context builder; data is fetched on demand by /api/ai-chat.\n  // Reset the conversation when the selected stock changes.
+  // Data is fetched on demand by /api/ai-chat. Reset the conversation when the selected stock changes.
   useEffect(() => {
     setMessages([]);
     setInput("");
