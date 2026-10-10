@@ -979,10 +979,27 @@ function Cursor() {
 function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[]; ctx: GraphCtx; trailingCursor: boolean }) {
   const cleaned = segments.filter(s => s.kind !== "text" || s.value.length > 0);
   if (cleaned.length === 0) return trailingCursor ? <Cursor /> : null;
+  const arranged: Array<Segment | { kind: "news-row"; indexes: number[] }> = [];
+  for (let index = 0; index < cleaned.length; index += 1) {
+    const segment = cleaned[index];
+    if (segment.kind !== "news") {
+      arranged.push(segment);
+      continue;
+    }
+    const indexes = [segment.index];
+    while (index + 2 < cleaned.length) {
+      const separator = cleaned[index + 1];
+      const next = cleaned[index + 2];
+      if (separator.kind !== "text" || separator.value.trim() || next.kind !== "news") break;
+      indexes.push(next.index);
+      index += 2;
+    }
+    arranged.push(indexes.length > 1 ? { kind: "news-row", indexes } : segment);
+  }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      {cleaned.map((seg, i) => {
-        const isLast = i === cleaned.length - 1;
+      {arranged.map((seg, i) => {
+        const isLast = i === arranged.length - 1;
         if (seg.kind === "text") {
           return (
             <span key={i}>
@@ -995,6 +1012,14 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
           return (
             <div key={i}>
               <DataPill dataKey={seg.key} ctx={ctx} />
+              {isLast && trailingCursor && <Cursor />}
+            </div>
+          );
+        }
+        if (seg.kind === "news-row") {
+          return (
+            <div key={i} className="my-2 grid w-full min-w-[240px] max-w-[400px] grid-cols-2 gap-2">
+              {seg.indexes.map(index => <NewsCard key={index} index={index} ctx={ctx} />)}
               {isLast && trailingCursor && <Cursor />}
             </div>
           );

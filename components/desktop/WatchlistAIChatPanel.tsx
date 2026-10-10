@@ -45,21 +45,52 @@ function AIMessageContent({ text, stock, animating }: { text: string; stock: Sto
     return <AnimatedWelcomeText text={parts[0].value} />;
   }
 
+  const arranged: Array<typeof parts[number] | { type: "news-row"; indexes: number[] }> = [];
+  for (let index = 0; index < parts.length; index += 1) {
+    const part = parts[index];
+    if (part.type !== "news") {
+      arranged.push(part);
+      continue;
+    }
+    const indexes = [part.index];
+    while (index + 2 < parts.length && parts[index + 1].type === "text" && !(parts[index + 1] as { type: "text"; value: string }).value.trim() && parts[index + 2].type === "news") {
+      indexes.push((parts[index + 2] as { type: "news"; index: number }).index);
+      index += 2;
+    }
+    arranged.push(indexes.length > 1 ? { type: "news-row", indexes } : part);
+  }
+
   return <>
-    {parts.map((part, index) => part.type === "text" ? (
+    {arranged.map((part, index) => part.type === "text" ? (
       <span key={`text-${index}`}>{part.value}</span>
+    ) : part.type === "news-row" ? (
+      <span key={`news-row-${index}`} className="my-2 grid w-full min-w-[240px] max-w-[400px] grid-cols-2 gap-2">
+        {part.indexes.map(newsIndex => stock.news[newsIndex] ? (
+          <span key={newsIndex} className="block w-full max-w-[192px]">
+            <AIArticleImage stock={stock} index={newsIndex} />
+          </span>
+        ) : null)}
+      </span>
     ) : stock.news[part.index] ? (
       <span key={`news-${index}`} className="my-2 block w-full max-w-[192px]">
-        <a href={stock.news[part.index].url} target="_blank" rel="noreferrer" aria-label={stock.news[part.index].headline}
-          className="block aspect-video overflow-hidden rounded-3xl border border-white/15 bg-panel-muted">
-          {stock.news[part.index].image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={stock.news[part.index].image} alt="" className="h-full w-full object-cover" />
-          ) : <span className="block h-full w-full bg-panel-muted" />}
-        </a>
+        <AIArticleImage stock={stock} index={part.index} />
       </span>
     ) : null)}
   </>;
+}
+
+function AIArticleImage({ stock, index }: { stock: StockDetail; index: number }) {
+  const article = stock.news[index];
+  if (!article) return null;
+  return (
+    <a href={article.url} target="_blank" rel="noreferrer" aria-label={article.headline}
+      className="block aspect-video overflow-hidden rounded-3xl border border-white/15 bg-panel-muted">
+      {article.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={article.image} alt="" className="h-full w-full object-cover" />
+      ) : <span className="block h-full w-full bg-panel-muted" />}
+    </a>
+  );
 }
 
 interface Props {
