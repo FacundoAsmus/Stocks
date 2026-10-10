@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Sparkles, X } from "lucide-react";
 
-import { buildStockContextAsync } from "@/components/mobile/StockAIChat";
 import { AIStarLoader } from "@/components/AIStarLoader";
 import { cn } from "@/lib/utils";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
@@ -54,21 +53,14 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [stockContext, setStockContext] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const welcomedStockRef = useRef<string | null>(null);
 
-  // Reset the conversation and rebuild context whenever the selected stock
-  // changes (the split view keeps this component mounted across selections).
+  // Keep this panel independent of the mobile context builder; data is fetched on demand by /api/ai-chat.\n  // Reset the conversation when the selected stock changes.
   useEffect(() => {
     setMessages([]);
     setInput("");
-    let cancelled = false;
-    buildStockContextAsync(stock, currentPrice, sentiment, metrics).then(ctx => {
-      if (!cancelled) setStockContext(ctx);
-    });
-    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stock.symbol]);
 
@@ -105,7 +97,11 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
       const res = await fetch("/api/ai-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next.map(m => ({ role: m.role, text: m.text })), stockContext }),
+        body: JSON.stringify({
+          messages: next.map(m => ({ role: m.role, text: m.text })),
+          stockSymbol: stock.symbol,
+          stockName: stock.profile.name ?? stock.symbol,
+        }),
       });
       const data = await res.json() as { text?: string; error?: string };
       setMessages(prev => [...prev, { role: "model", text: data.text ?? data.error ?? "No response." }]);
