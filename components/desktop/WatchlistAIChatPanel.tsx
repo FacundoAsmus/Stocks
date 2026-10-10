@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Send, Sparkles, X } from "lucide-react";
 
 import { buildStockContextAsync } from "@/components/mobile/StockAIChat";
@@ -50,6 +51,7 @@ interface Props {
 // it's structurally impossible for it to spill into the list column,
 // regardless of window size.
 export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }: Props) {
+  const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -58,6 +60,8 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const welcomedStockRef = useRef<string | null>(null);
+
+  useEffect(() => setMounted(true), []);
 
   // Reset the conversation and rebuild context whenever the selected stock
   // changes (the split view keeps this component mounted across selections).
@@ -120,6 +124,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
   const glassShadow = "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)";
 
   return (
+    <>
     <div className="pointer-events-none absolute inset-0 z-30">
       {!open && (
         <button
@@ -138,15 +143,19 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
         </button>
       )}
 
-      {/* Sized as a percentage of THIS column (the `absolute inset-0`
-          wrapper above, itself a child of the relative right-hand column)
-          — never the viewport — so it can't spill past the column. */}
-      {open && (
+      {mounted && open && createPortal(
+        <>
         <div
-          className="pointer-events-auto absolute bottom-6 right-6 flex flex-col overflow-hidden rounded-2xl border border-white/25"
+          className="fixed inset-0 z-[1200]"
+          style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-auto fixed left-1/2 top-1/2 z-[1201] flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl border border-white/25"
           style={{
-            width: "min(420px, calc(100% - 3rem))",
-            height: "min(640px, calc(100% - 3rem))",
+            width: "min(420px, calc(100vw - 2rem))",
+            height: "min(640px, calc(100dvh - 2rem))",
             background: "linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.6))",
             backdropFilter: "blur(28px) saturate(160%)",
             WebkitBackdropFilter: "blur(28px) saturate(160%)",
@@ -208,7 +217,10 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
             </button>
           </div>
         </div>
+        </>,
+        document.body
       )}
     </div>
+    </>
   );
 }
