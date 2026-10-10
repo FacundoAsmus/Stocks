@@ -9,7 +9,6 @@ import { formatEarningsForAIContext } from "@/lib/earnings";
 import { AIStarLoader } from "@/components/AIStarLoader";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import { WheelPrice } from "@/components/PriceChart";
-import { NewsCard as StockNewsCard } from "@/components/NewsCard";
 import type { CandlePoint, StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
@@ -812,9 +811,14 @@ function NewsCard({ index, ctx }: { index: number; ctx: GraphCtx }) {
   const article = ctx.stock.news?.[index];
   if (!article) return null;
   return (
-    <div className="w-full max-w-[240px]" onClick={event => event.stopPropagation()}>
-      <StockNewsCard article={article} />
-    </div>
+    <a href={article.url} target="_blank" rel="noreferrer" aria-label={article.headline}
+      onClick={event => event.stopPropagation()}
+      className="my-2 block aspect-video w-full max-w-[192px] overflow-hidden rounded-3xl border border-white/15 bg-panel-muted">
+      {article.image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={article.image} alt="" className="h-full w-full object-cover" />
+      ) : <span className="block h-full w-full bg-panel-muted" />}
+    </a>
   );
 }
 

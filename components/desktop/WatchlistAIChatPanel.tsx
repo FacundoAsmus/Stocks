@@ -6,7 +6,6 @@ import { Send, Sparkles, X } from "lucide-react";
 
 import { buildStockContextAsync } from "@/components/mobile/StockAIChat";
 import { AIStarLoader } from "@/components/AIStarLoader";
-import { NewsCard } from "@/components/NewsCard";
 import { cn } from "@/lib/utils";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import type { StockDetail } from "@/types/stock";
@@ -50,8 +49,14 @@ function AIMessageContent({ text, stock, animating }: { text: string; stock: Sto
     {parts.map((part, index) => part.type === "text" ? (
       <span key={`text-${index}`}>{part.value}</span>
     ) : stock.news[part.index] ? (
-      <span key={`news-${index}`} className="my-2 block w-full max-w-[240px]">
-        <NewsCard article={stock.news[part.index]} />
+      <span key={`news-${index}`} className="my-2 block w-full max-w-[192px]">
+        <a href={stock.news[part.index].url} target="_blank" rel="noreferrer" aria-label={stock.news[part.index].headline}
+          className="block aspect-video overflow-hidden rounded-3xl border border-white/15 bg-panel-muted">
+          {stock.news[part.index].image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={stock.news[part.index].image} alt="" className="h-full w-full object-cover" />
+          ) : <span className="block h-full w-full bg-panel-muted" />}
+        </a>
       </span>
     ) : null)}
   </>;
@@ -178,21 +183,24 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
     {mounted && open && createPortal(
       <>
         <div
-          className="fixed inset-0 z-[1200]"
+          className="smoked-glass-backdrop fixed inset-0 z-[1200] flex items-center justify-center p-4"
           style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
           onClick={() => setOpen(false)}
-          aria-hidden="true"
-        />
+          role="presentation"
+        >
         <div
-          className="pointer-events-auto fixed left-1/2 top-1/2 z-[1201] flex -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl border border-white/25"
+          className="pointer-events-auto flex w-full max-w-[420px] flex-col overflow-hidden rounded-3xl border border-white/25"
           style={{
-            width: "min(420px, calc(100vw - 2rem))",
             height: "min(640px, calc(100dvh - 2rem))",
             background: "linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.6))",
             backdropFilter: "blur(28px) saturate(160%)",
             WebkitBackdropFilter: "blur(28px) saturate(160%)",
             boxShadow: "0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
           }}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Ask about ${stock.symbol}`}
+          onClick={event => event.stopPropagation()}
         >
           <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
             <span className="flex items-center gap-2 text-sm font-semibold text-text-primary">
@@ -248,6 +256,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
               <Send className="h-4 w-4" />
             </button>
           </div>
+        </div>
         </div>
       </>,
       document.body
