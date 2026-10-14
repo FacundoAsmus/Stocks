@@ -190,16 +190,11 @@ html.light-mode .ai-button-icon {
   flex: 0 0 auto;
   width: var(--d);
   height: var(--d);
-  padding: calc(var(--d) * 0.075);
+  padding: calc(var(--d) * 0.05);
   place-items: center;
-  border: 1px solid rgba(27, 85, 5, 0.78);
+  border: 0;
   border-radius: 50%;
-  background: linear-gradient(155deg, #75ba17 0%, var(--gib-ring-color, #397d08) 24%, #276006 66%, #4d910b 100%);
-  box-shadow:
-    0 calc(var(--d) * 0.035) calc(var(--d) * 0.12) rgba(105, 220, 25, 0.16),
-    0 calc(var(--d) * 0.025) calc(var(--d) * 0.055) rgba(0, 0, 0, 0.2),
-    inset 0 1px 1px rgba(239, 255, 215, 0.7),
-    inset 0 calc(var(--d) * -0.018) calc(var(--d) * 0.025) rgba(19, 70, 0, 0.42);
+  background: linear-gradient(to bottom, #B8FA33 0%, #70B30E 50%, #A5E81C 100%);
   color: #fff;
   cursor: pointer;
   appearance: none;
@@ -214,13 +209,10 @@ html.light-mode .ai-button-icon {
   height: 100%;
   place-items: center;
   border-radius: 50%;
-  border: calc(var(--d) * 0.018) solid transparent;
+  border: calc(var(--d) * 0.05) solid transparent;
   background:
-    linear-gradient(155deg, #c5ff62 0%, #aefa24 36%, var(--gib-face-color, #adfa1b) 68%, #91dc0d 100%) padding-box,
-    linear-gradient(155deg, #e2ff9d 0%, #8be825 35%, #4baf09 100%) border-box;
-  box-shadow:
-    inset 0 1px 2px rgba(255, 255, 255, 0.62),
-    inset 0 calc(var(--d) * -0.035) calc(var(--d) * 0.065) rgba(53, 111, 0, 0.26);
+    linear-gradient(#ADFA1B, #ADFA1B) padding-box,
+    linear-gradient(to bottom, #F1FEE0 0%, #B0FA22 50%, #D3FD8A 100%) border-box;
 }
 
 .glossy-icon-button__icon {
@@ -230,7 +222,7 @@ html.light-mode .ai-button-icon {
   width: 100%;
   height: 100%;
   place-items: center;
-  filter: drop-shadow(0 1px 0 rgba(57, 111, 0, 0.34));
+  filter: none;
 }
 
 .glossy-icon-button__icon > svg {
@@ -252,8 +244,8 @@ html:not(.light-mode) .glossy-icon-button__icon > .glossy-icon-button__close-ico
   stroke: #000;
 }
 
-html:not(.light-mode) .glossy-icon-button {
-  --gib-face-color: #adfa1b;
+html:not(.light-mode) .glossy-icon-button__icon > svg {
+  stroke: #000;
 }
 
 a {

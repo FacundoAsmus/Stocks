@@ -6,8 +6,6 @@ type GlossyIconButtonProps = {
   "aria-label": string;
   onClick: () => void;
   size?: number;
-  ringColor?: string;
-  faceColor?: string;
   children?: ReactNode;
   className?: string;
   type?: "button" | "submit" | "reset";
@@ -15,25 +13,17 @@ type GlossyIconButtonProps = {
 
 type GlossyStyle = CSSProperties & {
   "--d": string;
-  "--gib-ring-color": string;
-  "--gib-face-color": string;
 };
 
 export function GlossyIconButton({
   "aria-label": ariaLabel,
   onClick,
   size = 36,
-  ringColor = "#397d08",
-  faceColor = "#adfa1b",
   children,
   className,
   type = "button",
 }: GlossyIconButtonProps) {
-  const style: GlossyStyle = {
-    "--d": `${size}px`,
-    "--gib-ring-color": ringColor,
-    "--gib-face-color": faceColor,
-  };
+  const style: GlossyStyle = { "--d": `${size}px` };
 
   return (
     <button
