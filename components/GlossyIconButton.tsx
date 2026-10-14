@@ -23,7 +23,7 @@ export function GlossyIconButton({
   "aria-label": ariaLabel,
   onClick,
   size = 36,
-  ringColor = "#c1f16c",
+  ringColor = "#087746",
   faceColor = "#adfa1b",
   children,
   className,

@@ -190,21 +190,14 @@ html.light-mode .ai-button-icon {
   flex: 0 0 auto;
   width: var(--d);
   height: var(--d);
-  padding: calc(var(--d) * 0.084);
+  padding: calc(var(--d) * 0.065);
   place-items: center;
   border: 1px solid rgba(0, 0, 0, 0.35);
   border-radius: 50%;
-  background: conic-gradient(
-    from 0deg,
-    var(--gib-ring-color) 0deg 25deg,
-    var(--gib-ring-light, #fff) 70deg 115deg,
-    var(--gib-ring-color) 155deg 205deg,
-    var(--gib-ring-light, #fff) 245deg 290deg,
-    var(--gib-ring-color) 335deg 360deg
-  );
+  background: var(--gib-ring-color, #087746);
   box-shadow:
-    0 calc(var(--d) * 0.0006) calc(var(--d) * 0.00135) rgba(0, 0, 0, 0.0084),
-    0 calc(var(--d) * 0.0028) calc(var(--d) * 0.0056) rgba(0, 0, 0, 0.006);
+    0 calc(var(--d) * 0.002) calc(var(--d) * 0.0045) rgba(0, 0, 0, 0.08),
+    0 1px 2px rgba(0, 0, 0, 0.06);
   color: #fff;
   cursor: pointer;
   appearance: none;
@@ -217,15 +210,8 @@ html.light-mode .ai-button-icon {
   height: 100%;
   place-items: center;
   border-radius: 50%;
-  background: radial-gradient(
-    circle closest-side,
-    var(--gib-face-color) 0%,
-    var(--gib-face-mid-1, #a6e927) 32%,
-    var(--gib-face-mid-2, #b0ed45) 65%,
-    var(--gib-face-edge-1, #c5ef78) 90%,
-    var(--gib-face-edge-2, #d9f3a5) 100%
-  );
-  box-shadow: inset 0 0 0 calc(var(--d) * 0.005) rgba(255, 255, 255, 0.55);
+  background: var(--gib-face-color, #adfa1b);
+  box-shadow: inset 0 0 0 calc(var(--d) * 0.018) #54e89a;
 }
 
 .glossy-icon-button__icon {
@@ -233,7 +219,7 @@ html.light-mode .ai-button-icon {
   width: 100%;
   height: 100%;
   place-items: center;
-  filter: drop-shadow(0 0 0.5px rgba(100, 150, 15, 0.45));
+  filter: none;
 }
 
 .glossy-icon-button__icon > svg {
@@ -256,12 +242,7 @@ html:not(.light-mode) .glossy-icon-button__icon > .glossy-icon-button__close-ico
 }
 
 html:not(.light-mode) .glossy-icon-button {
-  --gib-ring-light: #203817;
-  --gib-face-color: #1b310f !important;
-  --gib-face-mid-1: #203817;
-  --gib-face-mid-2: #27451a;
-  --gib-face-edge-1: #2d4d1d;
-  --gib-face-edge-2: #31551f;
+  --gib-face-color: #adfa1b;
 }
 
 a {
