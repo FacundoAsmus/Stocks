@@ -1060,6 +1060,9 @@ export function PriceChart({
                 stroke={lineColor}
                 fill="none"
                 strokeWidth={isLongTerm ? 2 : 2.5}
+                style={{ filter: isPositive
+                  ? "drop-shadow(0 0 12px rgba(0, 200, 5, 0.48))"
+                  : "drop-shadow(0 0 12px rgba(255, 48, 3, 0.48))" }}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 dot={false}
