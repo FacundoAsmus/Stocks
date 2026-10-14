@@ -159,7 +159,7 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
               key={opt.value}
               onClick={() => changeTheme(opt.value)}
               className={cn(
-                "flex-1 flex flex-col items-center gap-1.5 rounded-lg p-2.5 border text-xs font-medium transition-all",
+                "flex-1 flex flex-col items-center gap-1.5 rounded-3xl p-2.5 border text-xs font-medium transition-all",
                 theme === opt.value
                   ? "bg-accent/10 border-accent text-accent"
                   : "border-border-subtle text-text-muted hover:border-accent/40"
@@ -174,23 +174,23 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
 
       <div className="px-4 py-3 border-t border-border-subtle">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-2">Pro Features</p>
-        <button onClick={toggleProMode} className="w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5">
+        <button onClick={toggleProMode} className="w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
           <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Horizontal crosshair</span><span className="text-xs text-text-muted">Adds horizontal line at hovered price level</span></span>
           <Toggle enabled={proMode} />
         </button>
-        <button onClick={toggleCandlesticks} className="mt-2 w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5">
+        <button onClick={toggleCandlesticks} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
           <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Candlestick chart</span><span className="text-xs text-text-muted">Shows open, high, low, and close for each interval</span></span>
           <Toggle enabled={useCandlesticks} />
         </button>
-        <button onClick={toggleVolumeChart} className="w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5">
+        <button onClick={toggleVolumeChart} className="w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
           <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Volume chart</span><span className="text-xs text-text-muted">Shows trading volume below the timeframes</span></span>
           <Toggle enabled={showVolumeChart} />
         </button>
-        <button onClick={toggleVolumeBarColors} disabled={!showVolumeChart} className="mt-2 w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed">
+        <button onClick={toggleVolumeBarColors} disabled={!showVolumeChart} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed">
           <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Color bars</span><span className="text-xs text-text-muted">Uses green for up intervals and muted red for down intervals</span></span>
           <Toggle enabled={colorVolumeBars} />
         </button>
-        <button onClick={toggleAlertLines} className="mt-2 w-full flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2.5">
+        <button onClick={toggleAlertLines} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
           <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Alert price lines</span><span className="text-xs text-text-muted">Show saved alert levels on stock charts</span></span>
           <Toggle enabled={showAlertLines} />
         </button>

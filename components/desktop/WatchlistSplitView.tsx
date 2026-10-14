@@ -135,8 +135,8 @@ function WatchlistListRow({
       <span className="ml-1 shrink-0 pointer-events-none">
         <span
           className={cn(
-            "inline-block rounded-lg px-3 py-1 text-sm font-bold text-black",
-            isPos ? "bg-positive" : "bg-negative"
+            "watchlist-change-badge inline-block rounded-3xl px-3 py-1 text-sm font-bold text-black",
+            isPos ? "is-positive bg-positive" : "is-negative bg-negative"
           )}
         >
           <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass="text-black" compact />
