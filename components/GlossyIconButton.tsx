@@ -33,14 +33,12 @@ export function GlossyIconButton({
       className={["glossy-icon-button", className].filter(Boolean).join(" ")}
       style={style}
     >
-      <span className="glossy-icon-button__face" aria-hidden="true">
-        <span className="glossy-icon-button__icon">
-          {children ?? (
-            <svg viewBox="0 0 100 100" fill="none">
-              <path d="M50 65.6V34.7M36.8 47.9L50 34.7L63.2 47.9" />
-            </svg>
-          )}
-        </span>
+      <span className="glossy-icon-button__icon" aria-hidden="true">
+        {children ?? (
+          <svg viewBox="0 0 100 100" fill="none">
+            <path d="M50 65.6V34.7M36.8 47.9L50 34.7L63.2 47.9" />
+          </svg>
+        )}
       </span>
     </button>
   );
@@ -48,8 +46,8 @@ export function GlossyIconButton({
 
 export function GlossyCloseIcon() {
   return (
-    <svg className="glossy-icon-button__close-icon" viewBox="0 0 100 100" fill="none">
-      <path d="M37 37L63 63M63 37L37 63" />
+    <svg className="glossy-icon-button__close-icon" viewBox="0 0 24 24" fill="none">
+      <path d="M5 5L19 19M19 5L5 19" />
     </svg>
   );
 }
