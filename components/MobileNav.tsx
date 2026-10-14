@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 
 function GlobeIcon({ className }: { className?: string }) {
   return (
@@ -42,7 +43,7 @@ function applyTheme(theme: Theme) {
 }
 
 // ─── Settings panel ───────────────────────────────────────────────────────
-function SettingsPanel({ closing }: { closing: boolean }) {
+function SettingsPanel({ closing, onClose }: { closing: boolean; onClose: () => void }) {
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
   const [proMode, setProMode] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
@@ -117,7 +118,10 @@ function SettingsPanel({ closing }: { closing: boolean }) {
         className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border-subtle px-4 pb-4"
         style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
       >
-        <h2 className="text-4xl font-bold text-text-primary">Settings</h2>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-4xl font-bold text-text-primary">Settings</h2>
+          <GlossyIconButton aria-label="Close settings" onClick={onClose}><GlossyCloseIcon /></GlossyIconButton>
+        </div>
       </div>
 
       <div
@@ -564,6 +568,12 @@ export function MobileNav() {
     }, SLIDE_DURATION - 20);
   }
 
+  function closeSettings() {
+    if (settingsPhase !== "open") return;
+    setSettingsPhase("closing");
+    setTimeout(() => setSettingsPhase("closed"), SLIDE_DURATION);
+  }
+
   const iconWrapClass = "relative z-10 flex items-center justify-center transition-colors duration-300";
   function iconClass(active: boolean) {
     return cn("transition-colors duration-300", active ? "text-black" : "text-accent");
@@ -571,7 +581,7 @@ export function MobileNav() {
 
   return (
     <>
-      {settingsPhase !== "closed" && <SettingsPanel closing={settingsPhase === "closing"} />}
+      {settingsPhase !== "closed" && <SettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} />}
 
       {/* One unified bubble: Market / Watchlist / Settings, with a sliding
           green indicator behind the active section. Height-matched to the

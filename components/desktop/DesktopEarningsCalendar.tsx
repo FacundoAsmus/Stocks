@@ -3,12 +3,13 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { RefObject } from "react";
 import { createPortal } from "react-dom";
-import { CalendarDays, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { todayStr } from "@/lib/earnings";
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { WEEKDAYS } from "@/components/mobile/EarningsCalendarButton";
 import { WheelPrice } from "@/components/PriceChart";
+import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import type { EarningsEvent } from "@/types/stock";
 
 type QuarterMetric = "revenue" | "eps";
@@ -151,9 +152,7 @@ function DesktopQuarterDetail({
           <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Q{event.quarter} {event.year}</h2>
           <p className="text-sm text-text-muted">{dateLabel}</p>
         </div>
-        <button type="button" onClick={onBack} aria-label="Close quarter details" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-black transition hover:brightness-105 active:scale-95">
-          <X className="h-4 w-4" />
-        </button>
+        <GlossyIconButton aria-label="Close quarter details" onClick={onBack}><GlossyCloseIcon /></GlossyIconButton>
       </div>
       <div className="space-y-8 border-t border-white/10 pt-5">
         <QuarterMetricChart title="Earnings (Revenue)" metric="revenue" events={chartEvents} selectedDate={event.date} />
@@ -363,9 +362,7 @@ export function DesktopEarningsCalendar({
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
-                <button type="button" onClick={closeCalendar} aria-label="Close earnings calendar" className="ml-1 flex h-9 w-9 items-center justify-center rounded-full bg-accent text-black transition hover:brightness-105 active:scale-95">
-                  <X className="h-4 w-4" />
-                </button>
+                <GlossyIconButton aria-label="Close earnings calendar" onClick={closeCalendar} className="ml-1"><GlossyCloseIcon /></GlossyIconButton>
               </div>
             </div>
 

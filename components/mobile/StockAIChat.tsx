@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Send, Sparkles, X } from "lucide-react";
+import { Send, Sparkles } from "lucide-react";
 import { Area, ComposedChart, Line, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { formatEarningsForAIContext } from "@/lib/earnings";
 import { AIStarLoader } from "@/components/AIStarLoader";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
+import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { WheelPrice } from "@/components/PriceChart";
 import type { CandlePoint, StockDetail } from "@/types/stock";
 
@@ -1794,22 +1795,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
               <Send style={{ height: 15, width: 15 }} />
             </button>
           ) : (
-            <button
-              onClick={handleDismiss}
-              aria-label="Close chat"
-              style={{
-                flexShrink: 0, height: 38, width: 38,
-                borderRadius: "50%",
-                backgroundColor: "#adfa1b",
-                color: "#000",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                border: "none",
-                cursor: "pointer",
-                transition: "background-color 0.18s, color 0.18s",
-              }}
-            >
-              <X style={{ height: 16, width: 16 }} />
-            </button>
+            <GlossyIconButton aria-label="Close chat" onClick={handleDismiss} size={38}><GlossyCloseIcon /></GlossyIconButton>
           )}
         </div>
       </div>
@@ -1863,21 +1849,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
                 <Send style={{ height: 15, width: 15 }} />
               </button>
             ) : (
-              <button
-                onClick={handleDismiss}
-                aria-label="Close chat"
-                style={{
-                  flexShrink: 0, height: 38, width: 38,
-                  borderRadius: "50%",
-                  backgroundColor: "#adfa1b",
-                  color: "#000",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                <X style={{ height: 16, width: 16 }} />
-              </button>
+              <GlossyIconButton aria-label="Close chat" onClick={handleDismiss} size={38}><GlossyCloseIcon /></GlossyIconButton>
             )}
           </div>
         </div>

@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Send, Sparkles, X } from "lucide-react";
+import { Send, Sparkles } from "lucide-react";
 
 import { buildStockContextAsync } from "@/components/mobile/StockAIChat";
 import { AIStarLoader } from "@/components/AIStarLoader";
+import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { cn } from "@/lib/utils";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import type { StockDetail } from "@/types/stock";
@@ -238,9 +239,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
               <Sparkles className="h-4 w-4 text-positive" />
               Ask about {stock.symbol}
             </span>
-            <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="text-text-muted hover:text-text-primary">
-              <X className="h-4 w-4" />
-            </button>
+            <GlossyIconButton aria-label="Close chat" onClick={() => setOpen(false)}><GlossyCloseIcon /></GlossyIconButton>
           </div>
 
           <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">

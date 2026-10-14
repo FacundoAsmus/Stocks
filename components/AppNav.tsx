@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { List, Settings, Moon, Sun, Monitor, X } from "lucide-react";
+import { List, Settings, Moon, Sun, Monitor } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
+import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 
 type Theme = "dark" | "light" | "system";
 
@@ -146,9 +147,7 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
     >
       <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle">
         <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Settings</h2>
-        <button type="button" aria-label="Close settings" onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-full bg-accent text-black transition hover:brightness-105 active:scale-95">
-          <X className="h-4 w-4" />
-        </button>
+        <GlossyIconButton aria-label="Close settings" onClick={onClose}><GlossyCloseIcon /></GlossyIconButton>
       </div>
 
       {/* Appearance */}
