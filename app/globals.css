@@ -190,21 +190,21 @@ html.light-mode .ai-button-icon {
   flex: 0 0 auto;
   width: var(--d);
   height: var(--d);
-  padding: calc(var(--d) * 0.042);
+  padding: calc(var(--d) * 0.084);
   place-items: center;
-  border: calc(var(--d) * 0.08) solid rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.35);
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
     var(--gib-ring-color) 0deg 25deg,
-    #fff 70deg 115deg,
+    var(--gib-ring-light, #fff) 70deg 115deg,
     var(--gib-ring-color) 155deg 205deg,
-    #fff 245deg 290deg,
+    var(--gib-ring-light, #fff) 245deg 290deg,
     var(--gib-ring-color) 335deg 360deg
   );
   box-shadow:
-    0 calc(var(--d) * 0.006) calc(var(--d) * 0.0135) rgba(0, 0, 0, 0.084),
-    0 1px 2px rgba(0, 0, 0, 0.06);
+    0 calc(var(--d) * 0.0006) calc(var(--d) * 0.00135) rgba(0, 0, 0, 0.0084),
+    0 calc(var(--d) * 0.0028) calc(var(--d) * 0.0056) rgba(0, 0, 0, 0.006);
   color: #fff;
   cursor: pointer;
   appearance: none;
@@ -220,10 +220,10 @@ html.light-mode .ai-button-icon {
   background: radial-gradient(
     circle closest-side,
     var(--gib-face-color) 0%,
-    #a6e927 32%,
-    #b0ed45 65%,
-    #c5ef78 90%,
-    #d9f3a5 100%
+    var(--gib-face-mid-1, #a6e927) 32%,
+    var(--gib-face-mid-2, #b0ed45) 65%,
+    var(--gib-face-edge-1, #c5ef78) 90%,
+    var(--gib-face-edge-2, #d9f3a5) 100%
   );
   box-shadow: inset 0 0 0 calc(var(--d) * 0.005) rgba(255, 255, 255, 0.55);
 }
@@ -253,6 +253,15 @@ html.light-mode .ai-button-icon {
 
 html:not(.light-mode) .glossy-icon-button__icon > .glossy-icon-button__close-icon {
   stroke: #000;
+}
+
+html:not(.light-mode) .glossy-icon-button {
+  --gib-ring-light: #203817;
+  --gib-face-color: #1b310f !important;
+  --gib-face-mid-1: #203817;
+  --gib-face-mid-2: #27451a;
+  --gib-face-edge-1: #2d4d1d;
+  --gib-face-edge-2: #31551f;
 }
 
 a {
