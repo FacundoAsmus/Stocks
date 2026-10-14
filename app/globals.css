@@ -192,7 +192,7 @@ html.light-mode .ai-button-icon {
   height: var(--d);
   padding: calc(var(--d) * 0.042);
   place-items: center;
-  border: calc(var(--d) * 0.05) solid rgba(0, 0, 0, 0.35);
+  border: calc(var(--d) * 0.08) solid rgba(0, 0, 0, 0.35);
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
@@ -203,11 +203,12 @@ html.light-mode .ai-button-icon {
     var(--gib-ring-color) 335deg 360deg
   );
   box-shadow:
-    0 calc(var(--d) * 0.02) calc(var(--d) * 0.045) rgba(0, 0, 0, 0.28),
-    0 1px 2px rgba(0, 0, 0, 0.2);
+    0 calc(var(--d) * 0.006) calc(var(--d) * 0.0135) rgba(0, 0, 0, 0.084),
+    0 1px 2px rgba(0, 0, 0, 0.06);
   color: #fff;
   cursor: pointer;
   appearance: none;
+  transform: scale(1.2);
 }
 
 .glossy-icon-button__face {
@@ -248,6 +249,10 @@ html.light-mode .ai-button-icon {
 
 .glossy-icon-button__icon > .glossy-icon-button__close-icon {
   transform: scale(1.2);
+}
+
+html:not(.light-mode) .glossy-icon-button__icon > .glossy-icon-button__close-icon {
+  stroke: #000;
 }
 
 a {
