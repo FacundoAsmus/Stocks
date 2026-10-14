@@ -58,7 +58,7 @@ export function GlossyIconButton({
 
 export function GlossyCloseIcon() {
   return (
-    <svg viewBox="0 0 100 100" fill="none">
+    <svg className="glossy-icon-button__close-icon" viewBox="0 0 100 100" fill="none">
       <path d="M37 37L63 63M63 37L37 63" />
     </svg>
   );
