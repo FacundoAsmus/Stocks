@@ -925,7 +925,7 @@ export function PriceChart({
         type="button"
         onClick={() => { if (active) return; setPeriod(option); setChartKey(k => k + 1); }}
         className={cn(
-          "rounded-lg px-2.5 py-1.5 text-xs font-semibold transition sm:px-3 sm:py-2 sm:text-sm",
+          "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition sm:h-10 sm:w-10 sm:text-sm",
           active ? "bg-accent text-black" : "text-accent hover:text-accent/80"
         )}
       >
@@ -1210,16 +1210,16 @@ export function PriceChart({
       {/* ── Period selector — centred below charts ───────────────────── */}
       <div className="mt-4 flex justify-center">
         {/* Phone only: years (1Y/2Y/5Y/ALL) on their own row below the rest */}
-        <div className="flex flex-col items-center gap-1.5 lg:hidden">
-          <div className="flex flex-nowrap items-center justify-center whitespace-nowrap overflow-x-auto">
+        <div className="chart-period-selector-glass flex flex-col items-center gap-1.5 rounded-3xl border p-1.5 lg:hidden">
+          <div className="flex flex-nowrap items-center justify-center gap-1 whitespace-nowrap overflow-x-auto">
             {SHORT_PERIODS.map((o) => <PeriodButton key={o} option={o} />)}
           </div>
-          <div className="flex flex-nowrap items-center justify-center whitespace-nowrap overflow-x-auto">
+          <div className="flex flex-nowrap items-center justify-center gap-1 whitespace-nowrap overflow-x-auto">
             {LONG_PERIODS.map((o) => <PeriodButton key={o} option={o} />)}
           </div>
         </div>
         {/* Desktop: unchanged, single row */}
-        <div className="hidden lg:flex flex-nowrap items-center justify-center whitespace-nowrap overflow-x-auto">
+        <div className="chart-period-selector-glass hidden flex-nowrap items-center justify-center gap-1 rounded-full border p-1 lg:flex">
           {[...SHORT_PERIODS, ...LONG_PERIODS].map((o) => <PeriodButton key={o} option={o} />)}
         </div>
       </div>
