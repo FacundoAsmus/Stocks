@@ -322,6 +322,16 @@ html.light-mode .search-input-glass:focus {
   filter: drop-shadow(0 0 7px rgba(255, 48, 3, 0.85));
 }
 
+/* Apply glow to Recharts' actual SVG curve path; Area's React style prop does
+   not reliably land on this path across Recharts render modes. */
+.stock-chart-positive .recharts-area-curve {
+  filter: drop-shadow(0 0 5px rgba(0, 200, 5, 0.76)) drop-shadow(0 0 11px rgba(0, 200, 5, 0.48)) !important;
+}
+
+.stock-chart-negative .recharts-area-curve {
+  filter: drop-shadow(0 0 5px rgba(255, 48, 3, 0.76)) drop-shadow(0 0 11px rgba(255, 48, 3, 0.48)) !important;
+}
+
 a {
   color: inherit;
   text-decoration: none;
