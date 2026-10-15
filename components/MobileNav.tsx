@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- stock logos use dynamic external URLs and a local fallback. */
 
-import { List, Search, Settings, X, Monitor, Sun, Moon } from "lucide-react";
+import { List, Search, Settings, Monitor, Sun, Moon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -354,7 +354,9 @@ function MobileSearchPill({ origin }: { origin: string }) {
             background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
             backdropFilter: "blur(24px) saturate(180%)",
             WebkitBackdropFilter: "blur(24px) saturate(180%)",
-            boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
+            boxShadow: open
+              ? "0 0 14px rgba(173,250,27,0.45), 0 0 5px rgba(173,250,27,0.65), 0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)"
+              : "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
           }}
           onClick={onEmptyAreaClick}
           onTouchStart={onEmptyAreaTouchStart}
@@ -465,21 +467,9 @@ function MobileSearchPill({ origin }: { origin: string }) {
             className="text-text-primary placeholder:text-text-muted"
             style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "var(--color-accent)" }}
           />
-          <button
-            onClick={handleDismiss}
-            aria-label="Close search"
-            style={{
-              flexShrink: 0, height: 38, width: 38,
-              borderRadius: "50%",
-              backgroundColor: "var(--color-accent)",
-              color: "#000",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              border: "none",
-              cursor: "pointer",
-            }}
-          >
-            <X style={{ height: 16, width: 16 }} />
-          </button>
+          <GlossyIconButton aria-label="Close search" onClick={handleDismiss} size={38} className="shrink-0">
+            <GlossyCloseIcon />
+          </GlossyIconButton>
         </div>
       </div>
     </>
@@ -604,7 +594,7 @@ export function MobileNav() {
           <span
             aria-hidden
             className="absolute left-0 top-0 rounded-full bg-accent transition-transform duration-300 ease-out"
-            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE, transform: `translateX(${activeIndex * 3.5}rem)` }}
+            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE, transform: `translateX(${activeIndex * 3.5}rem)`, boxShadow: "0 0 14px rgba(173,250,27,0.48), 0 0 5px rgba(173,250,27,0.7)" }}
           />
 
           <button

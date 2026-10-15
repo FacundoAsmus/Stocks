@@ -241,6 +241,7 @@ export function AppNav({ variant = "full" }: AppNavProps) {
               "flex h-10 w-10 items-center justify-center rounded-md border transition-all duration-200",
               variant === "links" && "h-7 w-7 rounded-full border-0",
               variant === "links" && isActive && "scale-[1.2]",
+              variant === "links" && isActive && "desktop-nav-selected-glow",
               isActive
                 ? "border-accent bg-accent text-black"
                 : "border-transparent bg-transparent text-accent group-hover:border-transparent"
@@ -269,7 +270,7 @@ export function AppNav({ variant = "full" }: AppNavProps) {
         <span className={cn(
           "flex h-10 w-10 items-center justify-center rounded-md border transition-all duration-200",
           variant === "settings" && "h-8 w-8 rounded-full border-0",
-          variant === "settings" && settingsOpen && "scale-[1.2]",
+          variant === "settings" && settingsOpen && "scale-[1.2] desktop-nav-selected-glow",
           settingsOpen
             ? "border-accent bg-accent text-black"
             : "border-transparent bg-transparent text-accent group-hover:border-transparent"

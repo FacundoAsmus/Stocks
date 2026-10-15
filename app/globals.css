@@ -258,6 +258,27 @@ html.light-mode .chart-period-selector-glass {
   box-shadow: 0 0 12px color-mix(in srgb, var(--color-negative) 48%, transparent);
 }
 
+.chart-period-selected {
+  box-shadow: 0 0 12px rgba(173, 250, 27, 0.52), 0 0 4px rgba(173, 250, 27, 0.68);
+}
+
+.quarter-date-glow {
+  text-shadow: 0 0 10px rgba(173, 250, 27, 0.48);
+}
+
+.ai-send-button-glow:not(:disabled) {
+  box-shadow: 0 0 12px rgba(173, 250, 27, 0.48), 0 0 4px rgba(173, 250, 27, 0.65);
+}
+
+.desktop-nav-selected-glow {
+  box-shadow: 0 0 13px rgba(173, 250, 27, 0.48), 0 0 4px rgba(173, 250, 27, 0.68);
+}
+
+.search-input-glass:focus {
+  border-color: #ADFA1B !important;
+  box-shadow: 0 0 0 1px rgba(173, 250, 27, 0.58), 0 0 15px rgba(173, 250, 27, 0.42) !important;
+}
+
 a {
   color: inherit;
   text-decoration: none;

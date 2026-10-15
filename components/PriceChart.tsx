@@ -926,7 +926,7 @@ export function PriceChart({
         onClick={() => { if (active) return; setPeriod(option); setChartKey(k => k + 1); }}
         className={cn(
           "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition sm:h-10 sm:w-10 sm:text-sm",
-          active ? "bg-accent text-black" : "text-accent hover:text-accent/80"
+          active ? "chart-period-selected bg-accent text-black" : "text-accent hover:text-accent/80"
         )}
       >
         {option}

@@ -150,7 +150,7 @@ function DesktopQuarterDetail({
       <div className="mb-5 flex items-start justify-between gap-3">
         <div>
           <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Q{event.quarter} {event.year}</h2>
-          <p className="text-sm text-text-muted">{dateLabel}</p>
+          <p className="quarter-date-glow text-sm text-text-muted">{dateLabel}</p>
         </div>
         <GlossyIconButton aria-label="Close quarter details" onClick={onBack}><GlossyCloseIcon /></GlossyIconButton>
       </div>

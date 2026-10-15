@@ -1781,6 +1781,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
             <button
               onClick={sendMessage}
               disabled={loading}
+              className="ai-send-button-glow"
               style={{
                 flexShrink: 0, height: 38, width: 38,
                 borderRadius: "50%",
@@ -1836,6 +1837,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
               <button
                 onClick={sendMessage}
                 disabled={loading}
+                className="ai-send-button-glow"
                 style={{
                   flexShrink: 0, height: 38, width: 38,
                   borderRadius: "50%",

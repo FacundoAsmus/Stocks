@@ -281,7 +281,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
               onClick={sendMessage}
               disabled={loading || !input.trim()}
               aria-label="Send"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-positive text-black disabled:opacity-40"
+              className="ai-send-button-glow flex h-9 w-9 items-center justify-center rounded-lg bg-positive text-black disabled:opacity-40"
             >
               <Send className="h-4 w-4" />
             </button>
