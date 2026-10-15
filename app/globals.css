@@ -332,6 +332,14 @@ html.light-mode .search-input-glass:focus {
   filter: drop-shadow(0 0 5px rgba(255, 48, 3, 0.76)) drop-shadow(0 0 11px rgba(255, 48, 3, 0.48)) !important;
 }
 
+html.light-mode .stock-chart-positive .recharts-area-curve {
+  filter: drop-shadow(0 0 3px rgba(0, 150, 4, 0.46)) drop-shadow(0 0 6px rgba(0, 150, 4, 0.24)) !important;
+}
+
+html.light-mode .stock-chart-negative .recharts-area-curve {
+  filter: drop-shadow(0 0 3px rgba(205, 38, 8, 0.46)) drop-shadow(0 0 6px rgba(205, 38, 8, 0.24)) !important;
+}
+
 a {
   color: inherit;
   text-decoration: none;
