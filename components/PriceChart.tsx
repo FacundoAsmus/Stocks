@@ -924,7 +924,7 @@ export function PriceChart({
     const hoveredIndex = hoveredPeriod === null ? -1 : [...SHORT_PERIODS, ...LONG_PERIODS].indexOf(hoveredPeriod);
     const distanceFromHovered = hoveredIndex < 0 ? -1 : Math.abs(hoveredIndex - index);
     const hoverScale = desktop && hoveredIndex >= 0
-      ? distanceFromHovered === 0 ? 1.14 : distanceFromHovered === 1 ? 0.9 : 1
+      ? distanceFromHovered === 0 ? 1.14 : 0.78
       : 1;
     return (
       <button
@@ -1083,7 +1083,7 @@ export function PriceChart({
                   if (cx == null || cy == null) return <g key="no-dot2" />;
                   // Update horizontal crosshair position for pro mode
                   if (proMode && cy !== dotCY) setDotCY(cy);
-                  return <circle key="dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} />;
+                  return <circle key="dot" className="stock-chart-hover-dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} />;
                 }}
                 isAnimationActive={false}
               />
@@ -1167,12 +1167,15 @@ export function PriceChart({
                 )}
                 {/* Dot */}
                 <div
-                  className="absolute w-3 h-3 rounded-full border-2 border-black"
+                  className="stock-chart-hover-dot absolute w-3 h-3 rounded-full border-2 border-black"
                   style={{
                     left: `${xPct}%`,
                     top: `${dotTopPct}%`,
                     transform: "translate(-50%, -50%)",
                     background: lineColor,
+                    filter: isPositive
+                      ? "drop-shadow(0 0 7px rgba(0, 200, 5, 0.85))"
+                      : "drop-shadow(0 0 7px rgba(255, 48, 3, 0.85))",
                   }}
                 />
                 {/* Date bubble — flip to left side if too close to right edge */}
