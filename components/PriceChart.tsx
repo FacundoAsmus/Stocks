@@ -472,6 +472,7 @@ export function PriceChart({
   hideCursorDateTooltip?: boolean;
 }) {
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
+  const [hoveredPeriod, setHoveredPeriod] = useState<ChartPeriod | null>(null);
   const [chartKey, setChartKey]       = useState(0);
   const [data, setData]               = useState<CandlePoint[]>([]);
   const [isLoading, setIsLoading]     = useState(true);
@@ -918,16 +919,25 @@ export function PriceChart({
     };
   }, [clearHover, positionVolumeCrosshair]);
 
-  function PeriodButton({ option }: { option: ChartPeriod }) {
+  function PeriodButton({ option, index, desktop = false }: { option: ChartPeriod; index: number; desktop?: boolean }) {
     const active = period === option;
+    const hoveredIndex = hoveredPeriod === null ? -1 : [...SHORT_PERIODS, ...LONG_PERIODS].indexOf(hoveredPeriod);
+    const distanceFromHovered = hoveredIndex < 0 ? -1 : Math.abs(hoveredIndex - index);
+    const hoverScale = desktop && hoveredIndex >= 0
+      ? distanceFromHovered === 0 ? 1.14 : distanceFromHovered === 1 ? 0.9 : 1
+      : 1;
     return (
       <button
         type="button"
         onClick={() => { if (active) return; setPeriod(option); setChartKey(k => k + 1); }}
+        onMouseEnter={() => {
+          if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) setHoveredPeriod(option);
+        }}
         className={cn(
-          "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition sm:h-10 sm:w-10 sm:text-sm",
-          active ? "chart-period-selected bg-accent text-black" : "text-accent hover:text-accent/80"
+          "chart-period-option relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition",
+          active ? "text-black" : "text-accent hover:text-accent/80"
         )}
+        style={{ transform: `scale(${hoverScale})` }}
       >
         {option}
       </button>
@@ -1210,17 +1220,30 @@ export function PriceChart({
       {/* ── Period selector — centred below charts ───────────────────── */}
       <div className="mt-4 flex justify-center">
         {/* Phone only: years (1Y/2Y/5Y/ALL) on their own row below the rest */}
-        <div className="chart-period-selector-glass flex flex-col items-center gap-1.5 rounded-3xl border p-1.5 lg:hidden">
+        <div className="chart-period-selector-glass chart-period-selector-phone relative flex flex-col items-center gap-1.5 rounded-3xl border p-1.5 lg:hidden">
+          <span
+            className="chart-period-indicator"
+            aria-hidden="true"
+            style={{ transform: `translate(${SHORT_PERIODS.includes(period) ? SHORT_PERIODS.indexOf(period) * 40 : LONG_PERIODS.indexOf(period) * 40}px, ${SHORT_PERIODS.includes(period) ? 0 : 42}px)` }}
+          />
           <div className="flex flex-nowrap items-center justify-center gap-1 whitespace-nowrap overflow-x-auto">
-            {SHORT_PERIODS.map((o) => <PeriodButton key={o} option={o} />)}
+            {SHORT_PERIODS.map((o, index) => <PeriodButton key={o} option={o} index={index} />)}
           </div>
           <div className="flex flex-nowrap items-center justify-center gap-1 whitespace-nowrap overflow-x-auto">
-            {LONG_PERIODS.map((o) => <PeriodButton key={o} option={o} />)}
+            {LONG_PERIODS.map((o, index) => <PeriodButton key={o} option={o} index={SHORT_PERIODS.length + index} />)}
           </div>
         </div>
         {/* Desktop: unchanged, single row */}
-        <div className="chart-period-selector-glass hidden flex-nowrap items-center justify-center gap-1 rounded-full border p-1 lg:flex">
-          {[...SHORT_PERIODS, ...LONG_PERIODS].map((o) => <PeriodButton key={o} option={o} />)}
+        <div
+          className="chart-period-selector-glass chart-period-selector-desktop relative hidden flex-nowrap items-center justify-center gap-1 rounded-full border p-1 lg:flex"
+          onMouseLeave={() => setHoveredPeriod(null)}
+        >
+          <span
+            className="chart-period-indicator"
+            aria-hidden="true"
+            style={{ transform: `translate(${([...SHORT_PERIODS, ...LONG_PERIODS].indexOf(period)) * 40}px, 0)` }}
+          />
+          {[...SHORT_PERIODS, ...LONG_PERIODS].map((o, index) => <PeriodButton key={o} option={o} index={index} desktop />)}
         </div>
       </div>
 
