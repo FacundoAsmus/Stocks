@@ -435,9 +435,21 @@ input {
 .watchlist-list-panel { background: #0e0e0e; }
 html.light-mode .watchlist-list-panel { background: #ececec; }
 @media (min-width: 1024px) {
+  /* The desktop 1/4 watchlist and 1/5 market rails keep their tinted glass
+     color, composited over a solid base instead of blurring the page behind. */
+  .desktop-alert-glass.desktop-list-holder {
+    background: linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54)), #000 !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  html.light-mode .desktop-alert-glass.desktop-list-holder {
+    background: linear-gradient(145deg, rgba(255,255,255,0.27), rgba(241,248,255,0.17) 52%, rgba(218,237,251,0.24)), #fff !important;
+  }
   .desktop-alert-glass.desktop-alert-glass-list-item {
     border-color: transparent !important;
-    box-shadow: none !important;
+  }
+  .desktop-alert-glass.desktop-alert-glass-list-item:not(:hover):not(:focus-visible):not(:active):not(.is-lifted) {
+    box-shadow: 0 24px 70px rgba(0,0,0,0.028), 0 6px 22px rgba(0,0,0,0.014), inset 0 0 18px rgba(0,0,0,0.018) !important;
   }
   .desktop-alert-glass.desktop-alert-glass-list-item.is-selected,
   .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted.is-selected {
