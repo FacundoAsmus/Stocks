@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Keep the desktop bottom edge blur compact and lightweight. */
+@media (min-width: 1024px) {
+  .bottom-edge-blur { height: 48px !important; }
+  .bottom-edge-blur .edge-blur-layer:not(.edge-blur-layer-6) { display: none; }
+}
+
 @keyframes chart-reveal {
   from { clip-path: inset(0 100% 0 0); }
   to { clip-path: inset(0 0% 0 0); }

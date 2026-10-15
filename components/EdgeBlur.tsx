@@ -22,7 +22,7 @@ export function EdgeBlur({ position = "bottom", height = 130, className = "" }: 
       {blurLayers.map((blur) => (
         <div
           key={blur}
-          className="absolute inset-0"
+          className={`edge-blur-layer edge-blur-layer-${blur} absolute inset-0`}
           style={{
             backdropFilter: `blur(${blur}px)`,
             WebkitBackdropFilter: `blur(${blur}px)`,
@@ -43,7 +43,7 @@ export function TopBlur({ height = 130, className = "" }: { height?: number | st
 }
 
 export function BottomBlur({ height = 90 }: { height?: number }) {
-  return <EdgeBlur position="bottom" height={height} />;
+  return <EdgeBlur position="bottom" height={height} className="bottom-edge-blur" />;
 }
 
 // Self-contained blur meant to be the FIRST child of a sticky/positioned
