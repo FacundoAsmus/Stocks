@@ -232,9 +232,11 @@ export function MobileStockPage(props: MobileStockPageProps) {
               <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-1">News</p>
               <h2 className="mb-3 text-2xl font-semibold text-text-primary">Latest headlines</h2>
               <NewsSummary symbol={stock.symbol} articles={stock.news} />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="no-scrollbar -mx-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 pb-2">
                 {stock.news.slice(0, 8).map(article => (
-                  <NewsCard key={article.id} article={article} />
+                  <div key={article.id} className="w-[76vw] max-w-[280px] shrink-0 snap-start">
+                    <NewsCard article={article} />
+                  </div>
                 ))}
               </div>
             </section>

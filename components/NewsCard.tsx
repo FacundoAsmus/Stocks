@@ -25,7 +25,7 @@ export function NewsCard({ article }: { article: CompanyNewsArticle }) {
         className="flex h-full w-full flex-col outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         {/* Image — top 3/4, flush to the card's edges */}
-        <div className="relative w-full flex-[3] bg-panel-muted">
+        <div className="relative w-full flex-[2] bg-panel-muted">
           {article.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={article.image} alt="" className="h-full w-full object-cover" />
@@ -36,11 +36,13 @@ export function NewsCard({ article }: { article: CompanyNewsArticle }) {
           )}
         </div>
 
-        {/* Title — bottom 1/4 */}
-        <div className="flex flex-1 items-center px-4">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-text-primary">
+        <div className="flex flex-1 flex-col items-start justify-center gap-1 px-3 py-2">
+          <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-text-primary">
             {article.headline}
           </h3>
+          <p className="line-clamp-2 text-[11px] leading-snug text-gray-400">
+            {article.summary}
+          </p>
         </div>
       </a>
     </article>
