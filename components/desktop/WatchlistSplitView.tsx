@@ -213,7 +213,7 @@ function DesktopWatchlistSkeleton() {
             <div className="h-12 w-44 rounded-lg bg-panel-muted" />
             <div className="mb-1 h-6 w-24 rounded-lg bg-panel-muted/70" />
           </div>
-          <div className="mb-6 h-[320px] w-full rounded-2xl border border-border-subtle/50 bg-panel/40 p-8">
+          <div className="mb-6 h-[384px] w-full rounded-2xl border border-border-subtle/50 bg-panel/40 p-8">
             <div className="flex h-full items-end gap-2 opacity-60">
               {[36, 52, 44, 68, 57, 76, 62, 88, 70, 96, 82, 100, 74, 90, 66, 84, 72, 98, 80, 92].map((height, index) => (
                 <div key={index} className="flex-1 animate-pulse rounded-t-sm bg-accent/20" style={{ height: `${height}%` }} />
@@ -572,7 +572,7 @@ export function WatchlistSplitView() {
                 currentPrice={detail.currentPrice}
                 sentiment={detail.sentiment}
                 metrics={detail.metrics}
-                chartHeightClassName="h-[320px]"
+                chartHeightClassName="h-[384px]"
                 earningsCalendarContainerRef={detailColumnRef}
                 hideCursorDateTooltip
                 watchlistDetailHeader

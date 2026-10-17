@@ -271,7 +271,11 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
   const previousRectangles = useMemo(() => previousStocks ? makeTreemap(previousStocks, { x: 0, y: 0, width: size.width, height: size.height }) : null, [previousStocks, size]);
 
   return (
-    <section className={cn("overflow-hidden bg-black", desktopLayout ? "flex h-[calc(100dvh-var(--header-height,0px))] min-h-0" : "flex min-h-dvh flex-col")} aria-labelledby="market-heatmap-title">
+    <section
+      className={cn("overflow-hidden bg-black", desktopLayout ? "flex min-h-0" : "flex min-h-dvh flex-col")}
+      style={desktopLayout ? { height: "calc((100dvh - var(--header-height, 0px)) * 1.3)" } : undefined}
+      aria-labelledby="market-heatmap-title"
+    >
       {/* Desktop uses a watchlist-style selector rail; mobile keeps the
           existing horizontal selector above the heatmap. */}
       {desktopLayout ? (
@@ -292,7 +296,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
                   onClick={() => { setSelectedSymbol(null); setDetail(null); setDetailError(null); setActiveGroup(group.id); }}
                   className={cn("desktop-alert-glass desktop-alert-glass-list-item market-heatmap-list-item mx-0.5 my-0.5 flex w-[calc(100%-0.25rem)] items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left transition-[filter,border-color,transform,box-shadow] select-none hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0", isActive && "is-selected")}
                 >
-                  <MarketIcon icon={group.icon} className="h-9 w-9 shrink-0 object-contain" />
+                  <MarketIcon icon={group.icon} className="h-9 w-9 rounded-3xl" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-bold text-text-primary">{group.label}</span>
                     <span className="mt-0.5 block text-xs text-text-muted">{group.symbols.length} stocks</span>
@@ -313,9 +317,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
         <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Market groups">
         {MARKET_HEATMAP_GROUPS.map((group) => (
           <button key={group.id} type="button" role="tab" aria-selected={group.id === activeGroup} onClick={() => setActiveGroup(group.id)} className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors", group.id === activeGroup ? "border-accent bg-accent text-black" : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-text-primary")}>
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-black/15">
-              <MarketIcon icon={group.icon} className="h-4 w-4 object-contain" />
-            </span>
+            <MarketIcon icon={group.icon} className="h-5 w-5 rounded-full bg-black/15" />
             {group.label}
           </button>
         ))}

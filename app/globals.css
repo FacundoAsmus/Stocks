@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+.market-icon-frame { background-color: #000000 !important; }
+html.light-mode .market-icon-frame { background-color: #ffffff !important; }
+
 /* Keep the desktop bottom edge blur compact and lightweight. */
 @media (min-width: 1024px) {
   .bottom-edge-blur { height: 48px !important; }
