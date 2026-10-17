@@ -333,7 +333,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
             : null}
         </div>
       ) : <>
-      <div ref={areaRef} className={cn("relative flex-1 overflow-hidden border border-white/10 bg-[#342606]", desktopLayout ? "mx-3 mt-3 min-h-0 rounded-3xl" : "mx-4 mt-4 min-h-[calc(100dvh-12rem)] rounded-2xl")} role="tabpanel" aria-live="polite">
+      <div ref={areaRef} className={cn("relative flex-1 overflow-hidden border border-white/10 bg-[#342606]", desktopLayout ? "mx-3 mt-2 min-h-0 rounded-3xl" : "mx-4 mt-4 min-h-[calc(100dvh-12rem)] rounded-2xl")} role="tabpanel" aria-live="polite">
         {loading && !stocks.length && <LoadingHeatCanvas group={activeGroup} width={size.width} height={size.height} />}
         {!!previousStocks?.length && isTransitioning && previousRectangles && <HeatCanvas stocks={previousStocks} rectangles={previousRectangles} width={size.width} height={size.height} className="heatmap-fade-out" />}
         {!!stocks.length && !error && <HeatCanvas key={activeGroup} stocks={stocks} rectangles={rectangles} width={size.width} height={size.height} className={isTransitioning ? "heatmap-fade-in" : undefined} />}

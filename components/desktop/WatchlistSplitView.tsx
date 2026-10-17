@@ -200,7 +200,7 @@ function DesktopWatchlistSkeleton() {
         </div>
       </div>
       <div className="relative h-full min-w-0 w-3/4 overflow-hidden">
-        <div className="animate-pulse px-6 py-8">
+        <div className="animate-pulse px-6 pt-3 pb-8">
           <div className="mb-6 flex items-start justify-between gap-6">
             <div className="space-y-3">
               <div className="h-3 w-28 rounded-full bg-panel-muted" />
@@ -566,7 +566,7 @@ export function WatchlistSplitView() {
               <ErrorState title={`Unable to load ${selectedSymbol}`} message={detailError} />
             </div>
           ) : detail ? (
-            <div className="px-6 py-8">
+            <div className="px-6 pt-3 pb-8">
               <DesktopStockDetail
                 stock={detail.stock}
                 currentPrice={detail.currentPrice}
