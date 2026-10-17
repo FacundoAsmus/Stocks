@@ -272,8 +272,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
 
   return (
     <section
-      className={cn("overflow-hidden bg-black", desktopLayout ? "flex min-h-0" : "flex min-h-dvh flex-col")}
-      style={desktopLayout ? { height: "calc((100dvh - var(--header-height, 0px)) * 1.3)" } : undefined}
+      className={cn("overflow-hidden bg-black", desktopLayout ? "flex h-[calc(100dvh-var(--header-height,0px))] min-h-0" : "flex min-h-dvh flex-col")}
       aria-labelledby="market-heatmap-title"
     >
       {/* Desktop uses a watchlist-style selector rail; mobile keeps the
@@ -330,7 +329,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
         <div ref={detailColumnRef} className="no-scrollbar relative min-h-0 flex-1 overflow-y-auto">
           {detailLoading ? <div className="flex h-full items-center justify-center text-sm text-text-muted">Loading {selectedSymbol}…</div>
             : detailError ? <div className="p-8"><ErrorState title={`Unable to load ${selectedSymbol}`} message={detailError} /></div>
-            : detail ? <div className="px-6 py-8"><DesktopStockDetail stock={detail.stock} currentPrice={detail.currentPrice} sentiment={detail.sentiment} metrics={detail.metrics} chartHeightClassName="h-[320px]" earningsCalendarContainerRef={detailColumnRef} hideCursorDateTooltip /></div>
+            : detail ? <div className="px-6 py-8"><DesktopStockDetail stock={detail.stock} currentPrice={detail.currentPrice} sentiment={detail.sentiment} metrics={detail.metrics} chartHeightClassName="h-[384px]" earningsCalendarContainerRef={detailColumnRef} hideCursorDateTooltip /></div>
             : null}
         </div>
       ) : <>
