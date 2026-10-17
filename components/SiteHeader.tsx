@@ -31,7 +31,7 @@ export function SiteHeader() {
       ref={headerRef}
       className={`sticky top-0 z-40 hidden lg:block ${usesUnifiedToolbar ? "watchlist-toolbar border-b border-transparent bg-background/50 backdrop-blur-xl" : "border-b border-border-subtle/70 bg-background/86 backdrop-blur-xl"}`}
     >
-      <div className={`flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between ${usesUnifiedToolbar ? "lg:px-4" : "mx-auto max-w-7xl lg:px-8"}`}>
+      <div className={`flex flex-col gap-4 px-4 py-2 sm:px-6 lg:flex-row lg:items-center lg:justify-between ${usesUnifiedToolbar ? "lg:px-4" : "mx-auto max-w-7xl lg:px-8"}`}>
         <AppNav variant={usesUnifiedToolbar ? "links" : "full"} />
         {usesUnifiedToolbar ? (
           <div className="flex w-full items-center gap-3 lg:w-auto lg:min-w-[34rem]">
