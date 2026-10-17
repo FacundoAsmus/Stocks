@@ -59,9 +59,8 @@ function RowSparkline({ stock }: { stock: StockSummary }) {
   const data = stock.sparkline?.length
     ? [{ close: yesterdayClose, time: 0 }, ...stock.sparkline]
     : [{ time: 0, close: yesterdayClose }, { time: 1, close: currentPrice }];
-  const graphKey = `${stock.price ?? ""}:${data[data.length - 1]?.time ?? ""}:${data[data.length - 1]?.close ?? ""}`;
   return (
-    <div key={graphKey} className="h-10 w-20 shrink-0 pointer-events-none" style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" }}>
+    <div key={stock.symbol} className="h-10 w-20 shrink-0 pointer-events-none" style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ left: 0, right: 0, top: 2, bottom: 2 }}>
           <YAxis domain={["dataMin", "dataMax"]} hide width={0} />
@@ -97,13 +96,6 @@ function WatchlistListRow({
   onSelect: () => void;
 }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
-  const previousChangeRef = useRef(stock.changePercent);
-  const [priceUpdateKey, setPriceUpdateKey] = useState(0);
-  useEffect(() => {
-    if (Object.is(previousChangeRef.current, stock.changePercent)) return;
-    previousChangeRef.current = stock.changePercent;
-    setPriceUpdateKey((key) => key + 1);
-  }, [stock.changePercent]);
   const isEtf = SECTOR_ETFS.some((e) => e.symbol === stock.symbol);
   const hasStockLogo = !!stock.logo && !isEtf;
   return (
@@ -138,11 +130,9 @@ function WatchlistListRow({
       </div>
       <span className="ml-1 shrink-0 pointer-events-none">
         <span
-          key={priceUpdateKey}
           className={cn(
-            "watchlist-change-badge desktop-watchlist-price-badge inline-block rounded-3xl px-3 py-1 text-sm font-bold text-black",
-            isPos ? "is-positive bg-positive" : "is-negative bg-negative",
-            priceUpdateKey > 0 && "watchlist-price-update-pulse"
+            "watchlist-change-badge inline-block rounded-3xl px-3 py-1 text-sm font-bold text-black",
+            isPos ? "is-positive bg-positive" : "is-negative bg-negative"
           )}
         >
           <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass="text-black" compact />

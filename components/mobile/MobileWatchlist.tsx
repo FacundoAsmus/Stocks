@@ -46,9 +46,8 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
   const data = stock.sparkline?.length
     ? [{ close: yesterdayClose, time: 0 }, ...stock.sparkline]
     : [{ time: 0, close: yesterdayClose }, { time: 1, close: currentPrice }];
-  const graphKey = `${stock.price ?? ""}:${data[data.length - 1]?.time ?? ""}:${data[data.length - 1]?.close ?? ""}`;
   return (
-    <div key={graphKey} className="h-10 w-20 shrink-0 pointer-events-none" style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" }}>
+    <div key={stock.symbol} className="h-10 w-20 shrink-0 pointer-events-none" style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ left: 0, right: 0, top: 2, bottom: 2 }}>
           <YAxis domain={["dataMin", "dataMax"]} hide width={0} />
