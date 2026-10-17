@@ -97,6 +97,13 @@ function WatchlistListRow({
   onSelect: () => void;
 }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
+  const previousChangeRef = useRef(stock.changePercent);
+  const [priceUpdateKey, setPriceUpdateKey] = useState(0);
+  useEffect(() => {
+    if (Object.is(previousChangeRef.current, stock.changePercent)) return;
+    previousChangeRef.current = stock.changePercent;
+    setPriceUpdateKey((key) => key + 1);
+  }, [stock.changePercent]);
   const isEtf = SECTOR_ETFS.some((e) => e.symbol === stock.symbol);
   const hasStockLogo = !!stock.logo && !isEtf;
   return (
@@ -131,9 +138,11 @@ function WatchlistListRow({
       </div>
       <span className="ml-1 shrink-0 pointer-events-none">
         <span
+          key={priceUpdateKey}
           className={cn(
-            "watchlist-change-badge inline-block rounded-3xl px-3 py-1 text-sm font-bold text-black",
-            isPos ? "is-positive bg-positive" : "is-negative bg-negative"
+            "watchlist-change-badge desktop-watchlist-price-badge inline-block rounded-3xl px-3 py-1 text-sm font-bold text-black",
+            isPos ? "is-positive bg-positive" : "is-negative bg-negative",
+            priceUpdateKey > 0 && "watchlist-price-update-pulse"
           )}
         >
           <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass="text-black" compact />
