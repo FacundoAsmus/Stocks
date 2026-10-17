@@ -313,8 +313,7 @@ html.light-mode .chart-period-selector-glass {
   box-shadow: 0 0 13px rgba(173, 250, 27, 0.48), 0 0 4px rgba(173, 250, 27, 0.68);
 }
 
-.stock-tools-icon { filter: brightness(0) invert(1); }
-html.light-mode .stock-tools-icon { filter: none; }
+.stock-tools-icon { filter: brightness(0) saturate(100%) invert(83%) sepia(64%) saturate(874%) hue-rotate(28deg) brightness(107%) contrast(98%); }
 
 .search-input-glass:focus {
   border-color: #ADFA1B !important;
