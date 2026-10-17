@@ -870,6 +870,56 @@ export function PriceChart({
   }, []);
   // dotCY: active dot's Y pixel inside the SVG, used to draw the pro-mode horizontal crosshair
   const [dotCY, setDotCY] = useState<number | null>(null);
+  const [linePlacementActive, setLinePlacementActive] = useState(false);
+  const [lineCursorPrice, setLineCursorPrice] = useState<number | null>(null);
+  const [lineTypedValue, setLineTypedValue] = useState<string | null>(null);
+  const [manualPriceLines, setManualPriceLines] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!hideMovingAverageControls) return;
+    function syncLineMode(event: Event) {
+      const detail = (event as CustomEvent<{ symbol: string; active: boolean }>).detail;
+      if (detail?.symbol !== symbol) return;
+      setLinePlacementActive(detail.active);
+      setLineTypedValue(null);
+      window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: detail.active } }));
+    }
+    window.addEventListener("watchlist-stock-line-mode", syncLineMode);
+    return () => window.removeEventListener("watchlist-stock-line-mode", syncLineMode);
+  }, [hideMovingAverageControls, symbol]);
+
+  useEffect(() => {
+    if (!linePlacementActive) return;
+    function handleLineKeys(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target?.matches("input, textarea, select, [contenteditable='true']")) return;
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (lineTypedValue !== null) {
+          setLineTypedValue(null);
+          return;
+        }
+        setLinePlacementActive(false);
+        window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: false } }));
+        return;
+      }
+      if (/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+        setLineTypedValue((previous) => `${previous ?? ""}${event.key}`);
+      } else if (event.key === "." || event.key === ",") {
+        event.preventDefault();
+        setLineTypedValue((previous) => {
+          const current = previous ?? "";
+          return current.includes(".") ? current : `${current || "0"}.`;
+        });
+      } else if (event.key === "Backspace") {
+        event.preventDefault();
+        setLineTypedValue((previous) => previous?.slice(0, -1) || null);
+      }
+    }
+    window.addEventListener("keydown", handleLineKeys);
+    return () => window.removeEventListener("keydown", handleLineKeys);
+  }, [linePlacementActive, lineTypedValue, symbol]);
 
   const onHover = useCallback((price: number | null, date: string | null) => {
     if (suppressRef.current) return;
@@ -1010,12 +1060,28 @@ export function PriceChart({
         className={cn(heightClassName, "relative", isPositive ? "stock-chart-positive" : "stock-chart-negative")}
         style={{ touchAction: "none" }}
         onMouseMove={(event) => {
+          if (linePlacementActive) {
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const plotTop = 8;
+            const y = Math.max(plotTop, Math.min(bounds.height, event.clientY - bounds.top));
+            const fraction = (y - plotTop) / Math.max(1, bounds.height - plotTop);
+            setLineCursorPrice(priceYDomain[1] - fraction * (priceYDomain[1] - priceYDomain[0]));
+          }
           // Phones retain the direct pointer position used by their custom
           // touch/hover treatment. Desktop is updated from Recharts below,
           // so both guides use the exact same snapped chart coordinate.
           if (window.matchMedia("(min-width: 1024px)").matches) return;
           const bounds = event.currentTarget.getBoundingClientRect();
           positionVolumeCrosshair(((event.clientX - bounds.left) / bounds.width) * 100);
+        }}
+        onClick={() => {
+          if (!linePlacementActive) return;
+          const typedPrice = lineTypedValue === null ? NaN : Number(lineTypedValue);
+          const price = Number.isFinite(typedPrice) ? typedPrice : lineCursorPrice;
+          if (price !== null && Number.isFinite(price)) setManualPriceLines((previous) => [...previous, price]);
+          setLinePlacementActive(false);
+          setLineTypedValue(null);
+          window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: false } }));
         }}
         onMouseLeave={() => { setDotCY(null); clearHover(); }}
       >
@@ -1164,6 +1230,23 @@ export function PriceChart({
             </ComposedChart>
           </ResponsiveContainer>
           </div>
+
+          {/* Manual price lines and the live placement preview are chart overlays. */}
+          {[...manualPriceLines, ...(linePlacementActive && lineCursorPrice !== null ? [lineTypedValue !== null && Number.isFinite(Number(lineTypedValue)) ? Number(lineTypedValue) : lineCursorPrice] : [])].map((price, index, lines) => {
+            const bounds = chartRef.current?.getBoundingClientRect();
+            const chartHeight = bounds?.height ?? 260;
+            const plotTop = 8;
+            const rawY = plotTop + ((priceYDomain[1] - price) / (priceYDomain[1] - priceYDomain[0])) * (chartHeight - plotTop);
+            const top = Math.max(0, Math.min(chartHeight, rawY));
+            const isPreview = linePlacementActive && index === lines.length - 1;
+            const shownValue = isPreview && lineTypedValue !== null ? lineTypedValue : formatPrice(price);
+            return (
+              <div key={`${isPreview ? "preview" : "manual"}-${index}`} className="pointer-events-none absolute inset-x-0 z-20" style={{ top }} aria-hidden="true">
+                <div className="absolute inset-x-0 border-t border-dashed" style={{ borderColor: isPreview ? "#ADFA1B" : "rgba(173,250,27,0.72)" }} />
+                <span className="absolute -top-3 left-0 rounded bg-black/80 px-1 text-[10px] leading-3 text-[#ADFA1B]">{shownValue}</span>
+              </div>
+            );
+          })}
 
           {/* ── Pro mode desktop horizontal crosshair — follows the active dot ── */}
           {proMode && !isTouching && dotCY !== null && (() => {
