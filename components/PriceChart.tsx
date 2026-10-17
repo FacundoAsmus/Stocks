@@ -1080,7 +1080,7 @@ export function PriceChart({
                   if (cx == null || cy == null) return <g key="no-dot2" />;
                   // Update horizontal crosshair position for pro mode
                   if (proMode && cy !== dotCY) setDotCY(cy);
-                  return <circle key="dot" className="stock-chart-hover-dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} />;
+                  return <circle key="dot" className="stock-chart-hover-dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} style={{ filter: "none" }} />;
                 }}
                 isAnimationActive={false}
               />
