@@ -224,9 +224,8 @@ export function MobileStockPage(props: MobileStockPageProps) {
           )}
 
           {stock.news.length > 0 && (
-            <section>
+            <section className="px-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-1">News</p>
-              <h2 className="mb-3 text-2xl font-semibold text-text-primary">Latest headlines</h2>
               <NewsSummary symbol={stock.symbol} articles={stock.news} />
               <div className="no-scrollbar -mx-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 pb-2">
                 {stock.news.slice(0, 8).map(article => (

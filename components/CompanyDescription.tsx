@@ -10,7 +10,7 @@ type DescriptionState =
 
 export function AISummaryLoader() {
   return (
-    <div className="flex h-20 items-center justify-center" aria-label="Loading description" role="status">
+    <div className="flex h-20 items-center justify-start" aria-label="Loading description" role="status">
       <AIStarLoader size="lg" label="Creating AI summary" />
     </div>
   );

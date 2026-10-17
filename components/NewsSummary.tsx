@@ -41,8 +41,7 @@ export function NewsSummary({ symbol, articles }: { symbol: string; articles: Co
   }, [symbol, fingerprint]);
 
   return (
-    <section className="mt-8 mb-6">
-      <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-accent">AI news summary</p>
+    <section className="mt-6 mb-6">
       {state.status === "loading" && <AISummaryLoader />}
       {state.status === "ready" && <AISummaryText text={state.text} />}
       {state.status === "error" && <p className="text-[1.05rem] text-text-muted">News summary is not available right now.</p>}
