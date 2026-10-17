@@ -62,6 +62,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
   function toggleLineMode() {
     const nextActive = !lineModeActive;
     setLineModeActive(nextActive);
+    setOpen(false);
     window.dispatchEvent(new CustomEvent("watchlist-stock-line-mode", { detail: { symbol, active: nextActive } }));
   }
 

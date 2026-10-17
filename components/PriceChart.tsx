@@ -1270,7 +1270,8 @@ export function PriceChart({
             const isSelected = selectedManualLineId === line.id;
             const shownValue = line.preview && lineTypedValue !== null ? lineTypedValue : formatPrice(line.price);
             return (
-              <div key={line.preview ? "preview" : line.id} className="pointer-events-none absolute inset-x-0 z-20" style={{ top }}>
+              <div key={line.preview ? "preview" : line.id} className="pointer-events-none absolute inset-x-0 z-20 flex h-3 items-center gap-1" style={{ top: top - 6 }}>
+                <span className="relative z-10 shrink-0 whitespace-nowrap text-[10px] leading-3 text-[#a0a0a0]">{shownValue}</span>
                 <button
                   type="button"
                   tabIndex={-1}
@@ -1280,10 +1281,9 @@ export function PriceChart({
                     event.stopPropagation();
                     setSelectedManualLineId(line.id);
                   }}
-                  className="pointer-events-auto absolute -top-1.5 inset-x-0 h-3 cursor-crosshair border-t border-dashed bg-transparent"
+                  className="pointer-events-auto h-3 min-w-0 flex-1 cursor-crosshair border-t border-dashed bg-transparent"
                   style={{ borderColor: line.preview ? "#858585" : isSelected ? "#c4c4c4" : "#858585" }}
                 />
-                <span className="absolute -top-3 left-0 px-1 text-[10px] leading-3 text-[#a0a0a0]">{shownValue}</span>
               </div>
             );
           })}
