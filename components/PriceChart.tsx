@@ -547,6 +547,9 @@ export function PriceChart({
   const [showPriceAlertLines, setShowPriceAlertLines] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-alert-lines") === "1" : false
   );
+  const [showChartGlow, setShowChartGlow] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("stock-chart-glow") !== "0" : true
+  );
   const [priceAlerts, setPriceAlerts] = useState<Array<{ id: string; symbol: string; price: number }>>([]);
   const [animatingAlertIds, setAnimatingAlertIds] = useState<Set<string>>(() => new Set());
   const lastAlertIdsRef = useRef<Set<string> | null>(null);
@@ -586,6 +589,16 @@ export function PriceChart({
     return () => {
       window.removeEventListener("pro-alert-lines-changed", syncAlertLines);
       window.removeEventListener("storage", syncAlertLines);
+    };
+  }, []);
+
+  useEffect(() => {
+    function syncChartGlow() { setShowChartGlow(localStorage.getItem("stock-chart-glow") !== "0"); }
+    window.addEventListener("stock-chart-glow-changed", syncChartGlow);
+    window.addEventListener("storage", syncChartGlow);
+    return () => {
+      window.removeEventListener("stock-chart-glow-changed", syncChartGlow);
+      window.removeEventListener("storage", syncChartGlow);
     };
   }, []);
 
@@ -960,7 +973,7 @@ export function PriceChart({
       {/* ── Chart area ────────────────────────────────────────────────── */}
       <div
         ref={chartRef}
-        className={cn(heightClassName, "relative", isPositive ? "stock-chart-positive" : "stock-chart-negative")}
+        className={cn(heightClassName, "relative", isPositive ? "stock-chart-positive" : "stock-chart-negative", !showChartGlow && "stock-chart-glow-disabled")}
         style={{ touchAction: "none" }}
         onMouseMove={(event) => {
           // Phones retain the direct pointer position used by their custom
@@ -1080,7 +1093,7 @@ export function PriceChart({
                   if (cx == null || cy == null) return <g key="no-dot2" />;
                   // Update horizontal crosshair position for pro mode
                   if (proMode && cy !== dotCY) setDotCY(cy);
-                  return <circle key="dot" className="stock-chart-hover-dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} style={{ filter: "none" }} />;
+                  return <circle key="dot" className="stock-chart-hover-dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} />;
                 }}
                 isAnimationActive={false}
               />

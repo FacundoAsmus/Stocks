@@ -62,6 +62,9 @@ function SettingsPanel({ closing, onClose }: { closing: boolean; onClose: () => 
   const [showAlertLines, setShowAlertLines] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-alert-lines") === "1" : false
   );
+  const [showChartGlow, setShowChartGlow] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("stock-chart-glow") !== "0" : true
+  );
 
   function changeTheme(t: Theme) {
     setTheme(t);
@@ -102,6 +105,13 @@ function SettingsPanel({ closing, onClose }: { closing: boolean; onClose: () => 
     setShowAlertLines(next);
     localStorage.setItem("pro-alert-lines", next ? "1" : "0");
     window.dispatchEvent(new Event("pro-alert-lines-changed"));
+  }
+
+  function toggleChartGlow() {
+    const next = !showChartGlow;
+    setShowChartGlow(next);
+    localStorage.setItem("stock-chart-glow", next ? "1" : "0");
+    window.dispatchEvent(new Event("stock-chart-glow-changed"));
   }
 
   const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
@@ -175,6 +185,10 @@ function SettingsPanel({ closing, onClose }: { closing: boolean; onClose: () => 
             <button onClick={toggleAlertLines} className="w-full flex items-center justify-between px-4 py-3.5 text-left border-t border-border-subtle">
               <span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Alert price lines</span><span className="text-xs text-text-muted">Show saved alert levels on stock charts</span></span>
               <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative" style={{ borderColor: showAlertLines ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: showAlertLines ? "var(--color-accent)" : "var(--color-panel-muted)" }}><span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: showAlertLines ? "calc(100% - 1.125rem)" : "0.125rem" }} /></span>
+            </button>
+            <button onClick={toggleChartGlow} className="w-full flex items-center justify-between px-4 py-3.5 text-left border-t border-border-subtle">
+              <span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Stock graph glow</span><span className="text-xs text-text-muted">Toggle the glow on stock price charts</span></span>
+              <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative" style={{ borderColor: showChartGlow ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: showChartGlow ? "var(--color-accent)" : "var(--color-panel-muted)" }}><span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: showChartGlow ? "calc(100% - 1.125rem)" : "0.125rem" }} /></span>
             </button>
           </div>
         </section>

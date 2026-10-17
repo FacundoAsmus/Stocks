@@ -267,22 +267,6 @@ html.light-mode .chart-period-selector-glass {
   box-shadow: 0 0 12px color-mix(in srgb, var(--color-negative) 48%, transparent);
 }
 
-.watchlist-change-badge.desktop-watchlist-price-badge {
-  box-shadow: none;
-}
-
-.watchlist-change-badge.desktop-watchlist-price-badge.watchlist-price-update-pulse {
-  animation: watchlist-price-update-glow 850ms ease-out both;
-}
-
-.desktop-watchlist-price-badge.is-positive { --watchlist-price-update-glow: rgba(0, 200, 5, 0.72); }
-.desktop-watchlist-price-badge.is-negative { --watchlist-price-update-glow: rgba(255, 48, 3, 0.72); }
-
-@keyframes watchlist-price-update-glow {
-  0%, 100% { box-shadow: none; }
-  35% { box-shadow: 0 0 14px var(--watchlist-price-update-glow); }
-}
-
 .chart-period-indicator {
   position: absolute;
   z-index: 0;
@@ -363,6 +347,12 @@ html.light-mode .stock-chart-positive .recharts-area-curve {
 
 html.light-mode .stock-chart-negative .recharts-area-curve {
   filter: drop-shadow(0 0 3px rgba(205, 38, 8, 0.46)) drop-shadow(0 0 6px rgba(205, 38, 8, 0.24)) !important;
+}
+
+.stock-chart-glow-disabled.stock-chart-positive .recharts-area-curve,
+.stock-chart-glow-disabled.stock-chart-negative .recharts-area-curve,
+.stock-chart-glow-disabled .stock-chart-hover-dot {
+  filter: none !important;
 }
 
 a {
