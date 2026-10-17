@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MA_OPTIONS = [7, 25, 99] as const;
@@ -85,7 +84,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
                 onClick={() => toggleMA(window)}
                 aria-pressed={active}
                 className={cn(
-                  "flex h-9 w-full items-center justify-center rounded-xl border text-[7px] font-semibold leading-none transition-colors disabled:cursor-not-allowed disabled:opacity-35",
+                  "flex h-9 w-full items-center justify-center rounded-xl border text-[6px] font-semibold leading-none transition-colors disabled:cursor-not-allowed disabled:opacity-35",
                   active ? "bg-white/10" : "bg-black/10 hover:bg-white/10"
                 )}
                 style={{ borderColor: active ? "#ADFA1B" : "rgba(255,255,255,0.14)", color: active ? "#ADFA1B" : undefined }}
@@ -104,7 +103,8 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
             )}
             title={lineModeActive ? "Cancel line placement" : "Place a horizontal price line"}
           >
-            <Minus className="h-3 w-3" aria-hidden />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/line-graph-simple-icon.svg" alt="" className="stock-tools-icon h-4 w-4 object-contain" />
             Line
           </button>
         </div>

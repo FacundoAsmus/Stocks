@@ -873,7 +873,9 @@ export function PriceChart({
   const [linePlacementActive, setLinePlacementActive] = useState(false);
   const [lineCursorPrice, setLineCursorPrice] = useState<number | null>(null);
   const [lineTypedValue, setLineTypedValue] = useState<string | null>(null);
-  const [manualPriceLines, setManualPriceLines] = useState<number[]>([]);
+  const [manualPriceLines, setManualPriceLines] = useState<Array<{ id: number; price: number }>>([]);
+  const [selectedManualLineId, setSelectedManualLineId] = useState<number | null>(null);
+  const nextManualLineId = useRef(1);
 
   useEffect(() => {
     if (!hideMovingAverageControls) return;
@@ -882,6 +884,7 @@ export function PriceChart({
       if (detail?.symbol !== symbol) return;
       setLinePlacementActive(detail.active);
       setLineTypedValue(null);
+      if (detail.active) setSelectedManualLineId(null);
       window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: detail.active } }));
     }
     window.addEventListener("watchlist-stock-line-mode", syncLineMode);
@@ -889,11 +892,12 @@ export function PriceChart({
   }, [hideMovingAverageControls, symbol]);
 
   useEffect(() => {
-    if (!linePlacementActive) return;
+    if (!linePlacementActive && selectedManualLineId === null) return;
     function handleLineKeys(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       if (target?.matches("input, textarea, select, [contenteditable='true']")) return;
       if (event.key === "Escape") {
+        if (!linePlacementActive) return;
         event.preventDefault();
         if (lineTypedValue !== null) {
           setLineTypedValue(null);
@@ -903,6 +907,25 @@ export function PriceChart({
         window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: false } }));
         return;
       }
+      if (event.key === "Enter" && linePlacementActive && lineTypedValue !== null) {
+        const typedPrice = Number(lineTypedValue);
+        if (Number.isFinite(typedPrice) && typedPrice > 0) {
+          event.preventDefault();
+          setManualPriceLines((previous) => [...previous, { id: nextManualLineId.current++, price: typedPrice }]);
+          setSelectedManualLineId(null);
+          setLinePlacementActive(false);
+          setLineTypedValue(null);
+          window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: false } }));
+        }
+        return;
+      }
+      if (!linePlacementActive && (event.key === "Delete" || event.key === "Backspace") && selectedManualLineId !== null) {
+        event.preventDefault();
+        setManualPriceLines((previous) => previous.filter((line) => line.id !== selectedManualLineId));
+        setSelectedManualLineId(null);
+        return;
+      }
+      if (!linePlacementActive) return;
       if (/^[0-9]$/.test(event.key)) {
         event.preventDefault();
         setLineTypedValue((previous) => `${previous ?? ""}${event.key}`);
@@ -919,7 +942,7 @@ export function PriceChart({
     }
     window.addEventListener("keydown", handleLineKeys);
     return () => window.removeEventListener("keydown", handleLineKeys);
-  }, [linePlacementActive, lineTypedValue, symbol]);
+  }, [linePlacementActive, lineTypedValue, selectedManualLineId, symbol]);
 
   const onHover = useCallback((price: number | null, date: string | null) => {
     if (suppressRef.current) return;
@@ -1078,7 +1101,10 @@ export function PriceChart({
           if (!linePlacementActive) return;
           const typedPrice = lineTypedValue === null ? NaN : Number(lineTypedValue);
           const price = Number.isFinite(typedPrice) ? typedPrice : lineCursorPrice;
-          if (price !== null && Number.isFinite(price)) setManualPriceLines((previous) => [...previous, price]);
+          if (price !== null && Number.isFinite(price) && price > 0) {
+            setManualPriceLines((previous) => [...previous, { id: nextManualLineId.current++, price }]);
+          }
+          setSelectedManualLineId(null);
           setLinePlacementActive(false);
           setLineTypedValue(null);
           window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: false } }));
@@ -1232,18 +1258,32 @@ export function PriceChart({
           </div>
 
           {/* Manual price lines and the live placement preview are chart overlays. */}
-          {[...manualPriceLines, ...(linePlacementActive && lineCursorPrice !== null ? [lineTypedValue !== null && Number.isFinite(Number(lineTypedValue)) ? Number(lineTypedValue) : lineCursorPrice] : [])].map((price, index, lines) => {
+          {[
+            ...manualPriceLines.map((line) => ({ id: line.id, price: line.price, preview: false })),
+            ...(linePlacementActive && (lineCursorPrice !== null || lineTypedValue !== null) ? [{ id: -1, price: lineTypedValue !== null && Number.isFinite(Number(lineTypedValue)) ? Number(lineTypedValue) : lineCursorPrice ?? currentPrice, preview: true }] : []),
+          ].map((line) => {
             const bounds = chartRef.current?.getBoundingClientRect();
             const chartHeight = bounds?.height ?? 260;
             const plotTop = 8;
-            const rawY = plotTop + ((priceYDomain[1] - price) / (priceYDomain[1] - priceYDomain[0])) * (chartHeight - plotTop);
+            const rawY = plotTop + ((priceYDomain[1] - line.price) / (priceYDomain[1] - priceYDomain[0])) * (chartHeight - plotTop);
             const top = Math.max(0, Math.min(chartHeight, rawY));
-            const isPreview = linePlacementActive && index === lines.length - 1;
-            const shownValue = isPreview && lineTypedValue !== null ? lineTypedValue : formatPrice(price);
+            const isSelected = selectedManualLineId === line.id;
+            const shownValue = line.preview && lineTypedValue !== null ? lineTypedValue : formatPrice(line.price);
             return (
-              <div key={`${isPreview ? "preview" : "manual"}-${index}`} className="pointer-events-none absolute inset-x-0 z-20" style={{ top }} aria-hidden="true">
-                <div className="absolute inset-x-0 border-t border-dashed" style={{ borderColor: isPreview ? "#ADFA1B" : "rgba(173,250,27,0.72)" }} />
-                <span className="absolute -top-3 left-0 rounded bg-black/80 px-1 text-[10px] leading-3 text-[#ADFA1B]">{shownValue}</span>
+              <div key={line.preview ? "preview" : line.id} className="pointer-events-none absolute inset-x-0 z-20" style={{ top }}>
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  aria-label={`${shownValue}${isSelected ? ", selected; press Delete to remove" : ", click to select for deletion"}`}
+                  onClick={(event) => {
+                    if (line.preview) return;
+                    event.stopPropagation();
+                    setSelectedManualLineId(line.id);
+                  }}
+                  className="pointer-events-auto absolute -top-1.5 inset-x-0 h-3 cursor-crosshair border-t border-dashed bg-transparent"
+                  style={{ borderColor: line.preview ? "#858585" : isSelected ? "#c4c4c4" : "#858585" }}
+                />
+                <span className="absolute -top-3 left-0 rounded bg-black/80 px-1 text-[10px] leading-3 text-[#a0a0a0]">{shownValue}</span>
               </div>
             );
           })}
