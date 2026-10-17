@@ -62,7 +62,7 @@ export function DesktopStockDetail({
             <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
           </div>
           {/* ── Logo + name row ── */}
-          <div className={`flex gap-4 ${watchlistDetailHeader ? "items-center pr-44" : "items-start"}`}>
+          <div className={`flex gap-4 ${watchlistDetailHeader ? "-ml-5 items-center pr-44" : "items-start"}`}>
             <div className="shrink-0">
               <StockLogo
                 logo={isEtf ? undefined : stock.profile.logo}
