@@ -89,7 +89,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
                 )}
                 style={{ borderColor: active ? "#ADFA1B" : "rgba(255,255,255,0.14)", color: active ? "#ADFA1B" : undefined }}
               >
-                <span>MA({window})</span>
+                <span style={{ fontSize: "50%" }}>MA({window})</span>
               </button>
             );
           })}
@@ -98,14 +98,13 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
             onClick={toggleLineMode}
             aria-pressed={lineModeActive}
             className={cn(
-              "flex h-9 w-full items-center justify-center gap-1 rounded-xl border text-[9px] font-semibold transition-colors",
+              "flex h-9 w-full items-center justify-center rounded-xl border transition-colors",
               lineModeActive ? "border-[#ADFA1B] bg-white/10 text-[#ADFA1B]" : "border-white/15 bg-black/10 hover:bg-white/10"
             )}
-            title={lineModeActive ? "Cancel line placement" : "Place a horizontal price line"}
+            aria-label={lineModeActive ? "Cancel line placement" : "Place a horizontal price line"}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/line-graph-simple-icon.svg" alt="" className="stock-tools-icon h-4 w-4 object-contain" />
-            Line
           </button>
         </div>
       </div>
