@@ -1,5 +1,7 @@
 "use client";
 
+import { MarketIcon } from "@/components/MarketIcon";
+
 // Small Client Component wrapper around the logo-with-fallback pattern.
 // DesktopStockDetail.tsx (which renders this) is a Server Component, and
 // Server Components can't attach event handlers (like onError) directly to
@@ -9,12 +11,10 @@
 // onError for the graceful image-fails-to-load fallback.
 export function StockLogo({
   logo,
-  label,
   sizeClassName = "h-14 w-14",
   shape = "rounded"
 }: {
   logo?: string;
-  label: string;
   sizeClassName?: string;
   shape?: "rounded" | "circle";
 }) {
@@ -33,11 +33,7 @@ export function StockLogo({
           }}
         />
       ) : null}
-      <span
-        className={`${sizeClassName} ${shapeClassName} flex items-center justify-center border border-border-subtle bg-panel-muted text-lg font-semibold text-text-primary ${logo ? "hidden" : ""}`}
-      >
-        {label}
-      </span>
+      <MarketIcon className={`${sizeClassName} ${shapeClassName} object-contain ${logo ? "hidden" : ""}`} />
     </>
   );
 }

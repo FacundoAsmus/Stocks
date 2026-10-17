@@ -65,8 +65,7 @@ export function DesktopStockDetail({
           <div className={`flex gap-4 ${watchlistDetailHeader ? "items-center pr-44" : "items-start"}`}>
             <div className="shrink-0">
               <StockLogo
-                logo={stock.profile.logo}
-                label={isEtf ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
+                logo={isEtf ? undefined : stock.profile.logo}
                 shape={watchlistDetailHeader ? "circle" : "rounded"}
               />
             </div>

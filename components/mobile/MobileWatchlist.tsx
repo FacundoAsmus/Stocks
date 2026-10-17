@@ -8,6 +8,7 @@ import { Star } from "lucide-react";
 
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
+import { MarketIcon } from "@/components/MarketIcon";
 import { formatPercent } from "@/lib/format";
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
 import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
@@ -69,9 +70,11 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
 
 function RowContent({ stock }: { stock: StockSummary }) {
   const isPos = (stock.changePercent ?? 0) >= 0;
+  const isEtf = SECTOR_ETFS.some((e) => e.symbol === stock.symbol);
+  const hasStockLogo = !!stock.logo && !isEtf;
   return (
     <>
-      {stock.logo ? (
+      {hasStockLogo ? (
         <img
           src={stock.logo}
           alt=""
@@ -82,13 +85,7 @@ function RowContent({ stock }: { stock: StockSummary }) {
           }}
         />
       ) : null}
-      <span className={cn(
-        "h-9 w-9 flex items-center justify-center rounded-3xl border border-border-subtle bg-panel-muted text-xs font-bold shrink-0 pointer-events-none",
-        stock.logo && "hidden",
-        SECTOR_ETFS.some(e => e.symbol === stock.symbol) ? "text-text-primary" : "text-text-primary"
-      )}>
-        {SECTOR_ETFS.some(e => e.symbol === stock.symbol) ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
-      </span>
+      <MarketIcon className={cn("h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none", hasStockLogo && "hidden")} />
       <span className="flex-1 min-w-0 pointer-events-none">
         <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
       </span>

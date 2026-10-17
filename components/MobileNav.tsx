@@ -7,6 +7,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { SECTOR_ETFS } from "@/lib/etfs";
+import { MarketIcon } from "@/components/MarketIcon";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 
 function GlobeIcon({ className }: { className?: string }) {
@@ -380,7 +382,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
                 borderTop: "1px solid var(--color-border-subtle)",
               }}
             >
-              {logos[r.symbol] ? (
+              {logos[r.symbol] && !SECTOR_ETFS.some((etf) => etf.symbol === r.symbol) ? (
                 <img
                   src={logos[r.symbol]}
                   alt=""
@@ -397,15 +399,9 @@ function MobileSearchPill({ origin }: { origin: string }) {
                   }}
                 />
               ) : null}
-              <span style={{
-                display: logos[r.symbol] ? "none" : "flex", alignItems: "center", justifyContent: "center",
-                height: 40, width: 40, borderRadius: 24, flexShrink: 0,
-                border: "1px solid var(--color-border-subtle)",
-                backgroundColor: "var(--color-panel-muted)",
-                fontSize: 11, fontWeight: 700, color: "var(--color-text-primary)",
-              }}>
-                {r.symbol.replace("^", "").slice(0, 2)}
-              </span>
+              <MarketIcon
+                className={`h-10 w-10 shrink-0 rounded-3xl object-contain ${logos[r.symbol] && !SECTOR_ETFS.some((etf) => etf.symbol === r.symbol) ? "hidden" : ""}`}
+              />
               <span style={{ minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>{r.symbol}</span>
                 <span style={{ display: "block", fontSize: 12, color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>

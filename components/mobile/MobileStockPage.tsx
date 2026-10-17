@@ -14,6 +14,7 @@ import { PriceChart } from "@/components/PriceChart";
 import { CompanyDescription } from "@/components/CompanyDescription";
 import { NewsSummary } from "@/components/NewsSummary";
 import { NewsCard } from "@/components/NewsCard";
+import { MarketIcon } from "@/components/MarketIcon";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
@@ -167,7 +168,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
       <div ref={pageRef} className="pb-36" style={{ opacity: 1 }} data-stock-page="">
 
         <div className="flex items-center gap-3 px-4 pt-5 pb-3">
-          {stock.profile.logo ? (
+          {!isEtf && stock.profile.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={stock.profile.logo} alt=""
               className="h-12 w-12 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0"
@@ -176,13 +177,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
                 e.currentTarget.nextElementSibling?.classList.remove("hidden");
               }} />
           ) : null}
-          <span className={cn(
-            "h-12 w-12 flex items-center justify-center rounded-3xl border border-border-subtle bg-panel-muted font-bold shrink-0",
-            stock.profile.logo && "hidden",
-            isEtf ? "text-sm text-text-primary" : "text-sm text-text-primary"
-          )}>
-            {isEtf ? "ETF" : stock.symbol.replace("^", "").slice(0, 2)}
-          </span>
+          <MarketIcon className={cn("h-12 w-12 shrink-0 rounded-3xl object-contain", !isEtf && stock.profile.logo && "hidden")} />
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-text-primary leading-tight truncate">{stock.profile.name ?? stock.symbol}</h1>
           </div>

@@ -8,6 +8,8 @@ import {
 import { BarChart2, ChevronDown } from "lucide-react";
 
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { SECTOR_ETFS } from "@/lib/etfs";
+import { MarketIcon } from "@/components/MarketIcon";
 import {
   TrackerHolding,
   AggregatedPosition,
@@ -383,12 +385,14 @@ function PositionRow({
     : 0;
   const dailyPct      = stock?.changePercent ?? 0;
   const isPos         = pnlDollar >= 0;
+  const isEtf         = SECTOR_ETFS.some((etf) => etf.symbol === position.ticker);
+  const hasStockLogo  = !!stock?.logo && !isEtf;
 
   return (
     <div className="border-b border-border-subtle/70 last:border-0 group">
       <div className="flex items-center gap-3 px-5 py-4">
         <Link href={`/stock/${position.ticker}`} className="flex items-center gap-3 flex-1 min-w-0">
-          {stock?.logo ? (
+          {hasStockLogo ? (
             <img
               src={stock.logo}
               alt=""
@@ -399,12 +403,7 @@ function PositionRow({
               }}
             />
           ) : null}
-          <span className={cn(
-            "h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0",
-            stock?.logo && "hidden"
-          )}>
-            {position.ticker.replace("^", "").slice(0, 2)}
-          </span>
+          <MarketIcon className={cn("h-9 w-9 shrink-0 rounded-md object-contain", hasStockLogo && "hidden")} />
           <span className="flex-1 min-w-0">
             <span className="block text-sm font-bold text-text-primary">{position.ticker}</span>
             <span className="block text-xs text-text-muted truncate">{position.companyName}</span>

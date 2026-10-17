@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 
 import { MARKET_HEATMAP_GROUPS } from "@/lib/marketHeatmap";
+import { MarketIcon } from "@/components/MarketIcon";
 import { cn } from "@/lib/utils";
 import { formatPercent } from "@/lib/format";
 
@@ -226,14 +227,13 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
       {/* Desktop uses a watchlist-style selector rail; mobile keeps the
           existing horizontal selector above the heatmap. */}
       {desktopLayout ? (
-        <aside className="watchlist-list-panel m-3 flex w-1/5 shrink-0 flex-col overflow-hidden rounded-3xl border border-border-subtle/70">
+        <aside className="watchlist-list-panel m-3 flex w-1/6 shrink-0 flex-col overflow-hidden rounded-3xl border border-border-subtle/70">
           <div className="shrink-0 px-6 pb-4 pt-6">
             <p className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Heatmaps</p>
             <h2 id="market-heatmap-title" className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market</h2>
           </div>
           <div className="no-scrollbar flex-1 overflow-y-auto px-2 pb-2" role="tablist" aria-label="Market groups" aria-orientation="vertical">
             {MARKET_HEATMAP_GROUPS.map((group) => {
-              const initials = group.label.split(/[\s-]+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase();
               const isActive = group.id === activeGroup;
               return (
                 <button
@@ -249,7 +249,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
                       : "watchlist-list-panel border-transparent hover:bg-panel-muted/50"
                   )}
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary">{initials}</span>
+                  <MarketIcon icon={group.icon} className="h-9 w-9 shrink-0 object-contain" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-bold text-text-primary">{group.label}</span>
                     <span className="mt-0.5 block text-xs text-text-muted">{group.symbols.length} stocks</span>

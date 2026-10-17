@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
 import { formatPercent } from "@/lib/format";
+import { MarketIcon } from "@/components/MarketIcon";
 import { SECTOR_ETFS, type EtfEntry } from "@/lib/etfs";
 import type { StockSummary } from "@/types/stock";
 
@@ -58,9 +59,7 @@ export function EtfRow({ etfs }: { etfs: StockSummary[] }) {
             className="group grid grid-cols-[34px_minmax(80px,0.8fr)_minmax(80px,0.8fr)_minmax(120px,1.5fr)_minmax(92px,auto)] items-center gap-3 rounded-md border border-transparent border-b-border-subtle/70 px-4 py-3 transition-all duration-200 hover:-translate-y-1 hover:border-positive/50 hover:bg-panel-muted/75 hover:shadow-2xl hover:shadow-black/25 hover:z-10 relative"
           >
             <Link href={`/stock/${etf.symbol}`} aria-label={`Open ${etf.symbol}`}>
-              <span className="flex h-9 w-9 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary">
-                ETF
-              </span>
+              <MarketIcon className="h-9 w-9 object-contain" />
             </Link>
             <Link href={`/stock/${etf.symbol}`} className="min-w-0">
               <span className="block truncate text-xs font-bold text-text-primary">{etf.symbol}</span>
@@ -111,9 +110,7 @@ export function EtfMobileList({ etfs }: { etfs: StockSummary[] }) {
           >
             {/* Symbol + name */}
             <div className="flex items-center gap-3 flex-1 min-w-0">
-              <span className="h-9 w-9 flex items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary shrink-0">
-                ETF
-              </span>
+              <MarketIcon className="h-9 w-9 shrink-0 object-contain" />
               <div className="min-w-0">
                 <span className="block text-sm font-bold text-text-primary">{etf.symbol}</span>
                 <span className="block text-xs text-text-muted truncate">{etf.name}</span>

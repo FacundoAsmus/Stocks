@@ -6,6 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { Search, Clock } from "lucide-react";
 
 import { SECTOR_ETFS } from "@/lib/etfs";
+import { MarketIcon } from "@/components/MarketIcon";
 
 const RECENT_KEY = "market-lens-recent-searches";
 const MAX_RECENT = 6;
@@ -39,9 +40,10 @@ type SearchResult = {
 // of the symbol) if there's no logo or the image fails to load.
 function ResultIcon({ symbol, logo }: { symbol: string; logo?: string }) {
   const isEtf = SECTOR_ETFS.some((e) => e.symbol === symbol);
+  const hasStockLogo = !!logo && !isEtf;
   return (
     <>
-      {logo ? (
+      {hasStockLogo ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={logo}
@@ -53,11 +55,7 @@ function ResultIcon({ symbol, logo }: { symbol: string; logo?: string }) {
           }}
         />
       ) : null}
-      <span
-        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-3xl border border-border-subtle bg-panel-muted text-xs font-bold text-text-primary ${logo ? "hidden" : ""}`}
-      >
-        {isEtf ? "ETF" : symbol.replace("^", "").slice(0, 2)}
-      </span>
+      <MarketIcon className={`h-10 w-10 shrink-0 rounded-3xl object-contain ${hasStockLogo ? "hidden" : ""}`} />
     </>
   );
 }

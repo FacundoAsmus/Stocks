@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { SECTOR_ETFS } from "@/lib/etfs";
+import { MarketIcon } from "@/components/MarketIcon";
 import type { StockSummary } from "@/types/stock";
 import { AddToWatchlistButton } from "./AddToWatchlistButton";
 
@@ -17,6 +19,8 @@ export function StockCard({
   style?: React.CSSProperties;
 }) {
   const isPositive = (stock.changePercent ?? 0) >= 0;
+  const isEtf = SECTOR_ETFS.some((e) => e.symbol === stock.symbol);
+  const hasStockLogo = !!stock.logo && !isEtf;
   
   // 1. Calculate yesterday's close price to act as our true visual baseline
   const currentPrice = stock.price ?? 0;
@@ -45,18 +49,19 @@ export function StockCard({
           {/* Header and Financials */}
           <div className="flex flex-col gap-1 sm:gap-2">
           <div className="min-w-0 flex items-center gap-2 sm:gap-3">
-            {stock.logo ? (
+            {hasStockLogo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={stock.logo}
                 alt=""
                 className="h-8 w-8 sm:h-12 sm:w-12 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                  e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                }}
               />
-            ) : (
-              <div className="flex h-8 w-8 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-md border border-border-subtle bg-panel-muted text-xs sm:text-sm font-semibold text-text-primary">
-                {stock.symbol.replace("^", "").slice(0, 2)}
-              </div>
-            )}
+            ) : null}
+            <MarketIcon className={`h-8 w-8 sm:h-12 sm:w-12 shrink-0 rounded-md object-contain ${hasStockLogo ? "hidden" : ""}`} />
             <div className="min-w-0">
               <h2 className="text-lg sm:text-2xl font-bold tracking-tight text-text-primary truncate">{stock.symbol}</h2>
               <p className="text-xs sm:text-sm font-medium text-text-muted truncate">{stock.name}</p>
