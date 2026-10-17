@@ -9,11 +9,11 @@ export function MarketIcon({ icon = "general_icon.svg", className }: MarketIconP
   return (
     <span
       aria-hidden="true"
-      className={`inline-flex shrink-0 items-center justify-center overflow-hidden border border-white/10 bg-white/5 ${frameClassName}`}
-      style={{ display: shouldStartHidden ? "none" : "inline-flex", borderRadius: "50%" }}
+      className={`inline-flex shrink-0 items-center justify-center overflow-hidden border border-white/10 ${frameClassName}`}
+      style={{ display: shouldStartHidden ? "none" : "inline-flex", borderRadius: "50%", backgroundColor: "#000000" }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`/market-icons/${icon}`} alt="" className="h-full w-full object-contain" />
+      <img src={`/market-icons/${icon}`} alt="" className="h-[72%] w-[72%] object-contain" />
     </span>
   );
 }
