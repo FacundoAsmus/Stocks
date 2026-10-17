@@ -237,45 +237,69 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
 
 
 /* ─── Number-wheel digit ─────────────────────────────────────────────────── */
-// A compact two-row wheel: the old and new glyph are the only rows rendered
-// during a transition. This avoids long-strip drift when chart hover updates
-// arrive quickly, while keeping 9 → 0 as a single forward turn.
-// Every wheel column has a fixed width. Besides matching a mechanical counter,
-// this prevents prices with decimals from visibly squeezing as digits change.
+// A short repeating wheel lets an in-flight CSS transition retarget from its
+// current interpolated position when prices change rapidly during graph hover.
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
 const WHEEL_SLOT_RATIO = 0.62;
+const DIGIT_WHEEL_ROWS = Array.from({ length: 21 }, (_, index) => String(index % 10)).join("\n");
 
-function Digit({ ch, size = "lg", compact = false }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg"; compact?: boolean }) {
+function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg"; compact?: boolean; animate?: boolean }) {
   const isDigit = DIGIT_CHARS.includes(ch);
   const idx     = isDigit ? parseInt(ch) : 0;
-  const previousDigitRef = useRef(idx);
-  const rollIdRef = useRef(0);
-  const [roll, setRoll] = useState<{
-    id: number;
-    from: number;
-    to: number;
-    direction: "up" | "down";
-  } | null>(null);
-
-  // Layout effect makes every updated wheel begin together, before the frame
-  // containing the new hovered price is painted.
-  useLayoutEffect(() => {
-    if (!isDigit || previousDigitRef.current === idx) return;
-
-    const previous = previousDigitRef.current;
-    // Normalise into -5…4 so every update takes the shortest route around
-    // the wheel. In particular, 9 → 0 is +1 and 0 → 9 is -1.
-    const shortestStep = ((idx - previous + 15) % 10) - 5;
-    previousDigitRef.current = idx;
-    setRoll({
-      id: ++rollIdRef.current,
-      from: previous,
-      to: idx,
-      direction: shortestStep >= 0 ? "up" : "down",
-    });
-  }, [idx, isDigit]);
-
   const rowPx     = size === "lg" ? 54 : size === "sm" ? 32 : size === "md" ? 30 : 22;
+  const previousDigitRef = useRef(idx);
+  const trackRef = useRef<HTMLSpanElement>(null);
+  const trackReadyRef = useRef(false);
+  const targetPositionRef = useRef(10 + idx);
+
+  // Retarget the persistent digit wheel from its currently rendered position.
+  // This lets rapid graph-hover updates redirect the wheel smoothly instead
+  // of restarting a keyframe animation from its beginning on every new value.
+  useLayoutEffect(() => {
+    if (!isDigit) return;
+    const track = trackRef.current;
+    if (!animate || !track) {
+      previousDigitRef.current = idx;
+      trackReadyRef.current = false;
+      return;
+    }
+    if (!trackReadyRef.current) {
+      const initialPosition = 10 + idx;
+      track.style.transition = "none";
+      track.style.transform = `translateY(-${initialPosition * rowPx}px)`;
+      targetPositionRef.current = initialPosition;
+      previousDigitRef.current = idx;
+      trackReadyRef.current = true;
+      return;
+    }
+    if (previousDigitRef.current === idx) return;
+
+    const computedTransform = window.getComputedStyle(track).transform;
+    let translateY = -targetPositionRef.current * rowPx;
+    if (computedTransform !== "none") {
+      const values = computedTransform.match(/^matrix(3d)?\((.+)\)$/);
+      if (values) {
+        const parts = values[2].split(",").map(Number);
+        translateY = values[1] ? parts[13] : parts[5];
+      }
+    }
+
+    // The wheel repeats every ten rows, so it can be recentered by whole
+    // cycles without changing the visible digit or causing a visual jump.
+    const currentPosition = -translateY / rowPx;
+    const rebasedPosition = currentPosition + Math.round((10 - currentPosition) / 10) * 10;
+    track.style.transition = "none";
+    track.style.transform = `translateY(-${rebasedPosition * rowPx}px)`;
+    void track.offsetHeight;
+
+    const nextPosition = idx + Math.round((rebasedPosition - idx) / 10) * 10;
+    previousDigitRef.current = idx;
+    targetPositionRef.current = nextPosition;
+    track.style.willChange = "transform";
+    track.style.transition = "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)";
+    track.style.transform = `translateY(-${nextPosition * rowPx}px)`;
+  }, [animate, idx, isDigit, rowPx]);
+
   const fontClass = size === "lg"
     ? "text-5xl font-semibold text-current"
     : size === "sm"
@@ -285,22 +309,18 @@ function Digit({ ch, size = "lg", compact = false }: { ch: string; size?: "xs" |
         : size === "badge"
           ? "text-sm font-bold text-current"
           : "text-xs font-semibold text-current";
+  const slotPx = Math.round((compact ? 0.49 : WHEEL_SLOT_RATIO) * rowPx);
 
-  if (!isDigit) {
+  if (!isDigit || !animate) {
     return (
       <span
         className={cn(fontClass, "inline-block leading-none")}
-        style={{ lineHeight: `${rowPx}px` }}
+        style={{ lineHeight: `${rowPx}px`, width: isDigit ? slotPx : undefined, textAlign: isDigit ? "center" : undefined }}
       >
         {ch}
       </span>
     );
   }
-
-  const slotPx = Math.round((compact ? 0.49 : WHEEL_SLOT_RATIO) * rowPx);
-  const rollingDigits = roll
-    ? (roll.direction === "up" ? [roll.from, roll.to] : [roll.to, roll.from])
-    : [idx];
 
   return (
     <span
@@ -311,27 +331,14 @@ function Digit({ ch, size = "lg", compact = false }: { ch: string; size?: "xs" |
       }}
     >
       <span
-        key={roll?.id ?? "settled"}
-        className="flex flex-col"
-        style={{
-          animation: roll
-            ? `price-digit-roll-${roll.direction} 280ms cubic-bezier(0.22, 1, 0.36, 1) both`
-            : "none",
-          willChange: "transform",
-        }}
-        onAnimationEnd={() => {
-          setRoll((activeRoll) => activeRoll?.id === roll?.id ? null : activeRoll);
+        ref={trackRef}
+        className={cn(fontClass, "block select-none text-center leading-none")}
+        style={{ height: rowPx * 21, lineHeight: `${rowPx}px`, width: slotPx, whiteSpace: "pre" }}
+        onTransitionEnd={(event) => {
+          if (event.propertyName === "transform") event.currentTarget.style.willChange = "auto";
         }}
       >
-        {rollingDigits.map((digit, digitIndex) => (
-          <span
-            key={digitIndex}
-            className={cn(fontClass, "block text-center select-none leading-none")}
-            style={{ height: rowPx, lineHeight: `${rowPx}px`, width: slotPx }}
-          >
-            {digit}
-          </span>
-        ))}
+        {DIGIT_WHEEL_ROWS}
       </span>
     </span>
   );
@@ -343,12 +350,15 @@ export function WheelPrice({
   size = "lg",
   colorClass,
   compact = false,
+  animate = true,
 }: {
   value: string;
   size?: "xs" | "badge" | "sm" | "md" | "lg";
   colorClass?: string;
   /** Tighter digit and punctuation spacing for compact metric readouts. */
   compact?: boolean;
+  /** Turn off digit rolling for values that should update without animation. */
+  animate?: boolean;
 }) {
   const chars = value.split("");
   const decimalIndex = chars.lastIndexOf(".");
@@ -360,17 +370,6 @@ export function WheelPrice({
   let fractionalDigitsSeen = 0;
 
   return (
-    <>
-      <style>{`
-        @keyframes price-digit-roll-up {
-          from { transform: translateY(0); }
-          to { transform: translateY(-50%); }
-        }
-        @keyframes price-digit-roll-down {
-          from { transform: translateY(-50%); }
-          to { transform: translateY(0); }
-        }
-      `}</style>
       <span className={cn("inline-flex items-end", colorClass ?? "text-text-primary")} style={{ letterSpacing: compact ? "-0.035em" : undefined }}>
         {chars.map((ch, index) => {
           let key: string;
@@ -390,10 +389,9 @@ export function WheelPrice({
           } else {
             key = `symbol-${index}-${ch}`;
           }
-          return <Digit key={key} ch={ch} size={size} compact={compact} />;
+          return <Digit key={key} ch={ch} size={size} compact={compact} animate={animate} />;
         })}
       </span>
-    </>
   );
 }
 
