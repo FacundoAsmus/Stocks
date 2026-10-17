@@ -272,11 +272,11 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
 
   return (
     <section
-      className={cn("overflow-hidden bg-black", desktopLayout ? "flex h-[calc(100dvh-var(--header-height,0px))] min-h-0" : "flex min-h-dvh flex-col")}
+      className={cn("overflow-hidden bg-black", desktopLayout ? "flex h-[calc(100dvh-var(--header-height,0px))] min-h-0" : "flex h-[100dvh] min-h-0 flex-col")}
       aria-labelledby="market-heatmap-title"
     >
-      {/* Desktop uses a watchlist-style selector rail; mobile keeps the
-          existing horizontal selector above the heatmap. */}
+      {/* Desktop uses a watchlist-style selector rail; mobile gets a compact
+          title bar followed by a horizontally swipeable group selector. */}
       {desktopLayout ? (
         <aside className="desktop-alert-glass desktop-list-holder m-3 flex w-1/6 shrink-0 flex-col overflow-hidden rounded-3xl border border-white/15">
           <div className="shrink-0 px-6 pb-4 pt-6">
@@ -306,20 +306,18 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
           </div>
         </aside>
       ) : (
-      <div className="relative z-20 shrink-0 border-b border-white/10 bg-black px-6 pb-5 pt-[max(1.5rem,env(safe-area-inset-top))]">
-        <div className="flex items-end justify-between gap-6">
-          <div>
-            <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market map</p>
-            <h2 id="market-heatmap-title" className="mt-1 text-3xl font-semibold text-text-primary">{selected.label}</h2>
-          </div>
+      <div className="relative z-20 shrink-0 border-b border-white/10 bg-black px-4 pb-0 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <div className="pb-2">
+          <p className="text-3xl font-semibold tracking-normal text-text-primary">Heatmaps</p>
+          <h2 id="market-heatmap-title" className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market</h2>
         </div>
-        <div className="mt-5 flex flex-wrap gap-2" role="tablist" aria-label="Market groups">
-        {MARKET_HEATMAP_GROUPS.map((group) => (
-          <button key={group.id} type="button" role="tab" aria-selected={group.id === activeGroup} onClick={() => setActiveGroup(group.id)} className={cn("inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors", group.id === activeGroup ? "border-accent bg-accent text-black" : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-text-primary")}>
-            <MarketIcon icon={group.icon} className="h-5 w-5 rounded-full bg-black/15" />
-            {group.label}
-          </button>
-        ))}
+        <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-3" role="tablist" aria-label="Market groups">
+          {MARKET_HEATMAP_GROUPS.map((group) => (
+            <button key={group.id} type="button" role="tab" aria-selected={group.id === activeGroup} onClick={() => setActiveGroup(group.id)} className={cn("inline-flex shrink-0 snap-start items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors", group.id === activeGroup ? "border-accent bg-accent text-black" : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-text-primary")}>
+              <MarketIcon icon={group.icon} className="h-5 w-5 rounded-full bg-black/15" />
+              {group.label}
+            </button>
+          ))}
         </div>
       </div>
       )}
@@ -333,7 +331,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
             : null}
         </div>
       ) : <>
-      <div ref={areaRef} className={cn("relative flex-1 overflow-hidden border border-white/10 bg-[#342606]", desktopLayout ? "mx-3 mt-2 min-h-0 rounded-3xl" : "mx-4 mt-4 min-h-[calc(100dvh-12rem)] rounded-2xl")} role="tabpanel" aria-live="polite">
+      <div ref={areaRef} className={cn("relative flex-1 overflow-hidden border border-white/10 bg-[#342606]", desktopLayout ? "mx-3 mt-3 min-h-0 rounded-3xl" : "min-h-0 rounded-none border-x-0 border-b-0")} role="tabpanel" aria-live="polite">
         {loading && !stocks.length && <LoadingHeatCanvas group={activeGroup} width={size.width} height={size.height} />}
         {!!previousStocks?.length && isTransitioning && previousRectangles && <HeatCanvas stocks={previousStocks} rectangles={previousRectangles} width={size.width} height={size.height} className="heatmap-fade-out" />}
         {!!stocks.length && !error && <HeatCanvas key={activeGroup} stocks={stocks} rectangles={rectangles} width={size.width} height={size.height} className={isTransitioning ? "heatmap-fade-in" : undefined} />}
@@ -361,7 +359,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
         </div>}
         {error && <div className="absolute inset-0 flex items-center justify-center text-sm text-negative">{error}</div>}
       </div>
-      <div className={cn("shrink-0", desktopLayout ? "mx-3 mb-3 pt-3" : "mx-4 min-h-40 py-4 pb-20")} aria-label="Sector fund">
+      <div className={cn("shrink-0", desktopLayout ? "mx-3 mb-3 pt-3" : "hidden")} aria-label="Sector fund">
         {selected.sectorFund && (
           <Link
             href={`/stock/${encodeURIComponent(selected.sectorFund.symbol)}`}
