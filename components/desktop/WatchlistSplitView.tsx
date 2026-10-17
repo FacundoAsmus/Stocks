@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Reorder } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
@@ -17,6 +17,7 @@ import { ErrorState } from "@/components/ErrorState";
 import type { getStockDetail } from "@/lib/finnhub";
 import { WheelPrice } from "@/components/PriceChart";
 import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
+import { revealSparklineOnDataChange } from "@/lib/sparklineReveal";
 
 const STORAGE_KEY = "market-lens-watchlist";
 
@@ -59,8 +60,13 @@ function RowSparkline({ stock }: { stock: StockSummary }) {
   const data = stock.sparkline?.length
     ? [{ close: yesterdayClose, time: 0 }, ...stock.sparkline]
     : [{ time: 0, close: yesterdayClose }, { time: 1, close: currentPrice }];
+  const graphDataKey = `${stock.price ?? ""}:${data.map((point) => `${point.time}:${point.close}`).join("|")}`;
+  const graphRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    revealSparklineOnDataChange(graphRef.current, stock.symbol, graphDataKey);
+  }, [stock.symbol, graphDataKey]);
   return (
-    <div className="h-10 w-20 shrink-0 pointer-events-none">
+    <div ref={graphRef} className="h-10 w-20 shrink-0 pointer-events-none">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ left: 0, right: 0, top: 2, bottom: 2 }}>
           <YAxis domain={["dataMin", "dataMax"]} hide width={0} />

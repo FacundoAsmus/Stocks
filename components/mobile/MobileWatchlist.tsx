@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Reorder, useDragControls } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
@@ -12,6 +12,7 @@ import { MarketIcon } from "@/components/MarketIcon";
 import { formatPercent } from "@/lib/format";
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
 import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
+import { revealSparklineOnDataChange } from "@/lib/sparklineReveal";
 import { WheelPrice } from "@/components/PriceChart";
 import { cn } from "@/lib/utils";
 import type { StockSummary } from "@/types/stock";
@@ -46,8 +47,13 @@ function MiniSparkline({ stock }: { stock: StockSummary }) {
   const data = stock.sparkline?.length
     ? [{ close: yesterdayClose, time: 0 }, ...stock.sparkline]
     : [{ time: 0, close: yesterdayClose }, { time: 1, close: currentPrice }];
+  const graphDataKey = `${stock.price ?? ""}:${data.map((point) => `${point.time}:${point.close}`).join("|")}`;
+  const graphRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    revealSparklineOnDataChange(graphRef.current, stock.symbol, graphDataKey);
+  }, [stock.symbol, graphDataKey]);
   return (
-    <div className="h-10 w-20 shrink-0 pointer-events-none">
+    <div ref={graphRef} className="h-10 w-20 shrink-0 pointer-events-none">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ left: 0, right: 0, top: 2, bottom: 2 }}>
           <YAxis domain={["dataMin", "dataMax"]} hide width={0} />
