@@ -237,69 +237,36 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
 
 
 /* ─── Number-wheel digit ─────────────────────────────────────────────────── */
-// A short repeating wheel lets an in-flight CSS transition retarget from its
-// current interpolated position when prices change rapidly during graph hover.
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
 const WHEEL_SLOT_RATIO = 0.62;
-const DIGIT_WHEEL_ROWS = Array.from({ length: 21 }, (_, index) => String(index % 10)).join("\n");
 
-function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg"; compact?: boolean; animate?: boolean }) {
+function Digit({ ch, size = "lg", compact = false }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg"; compact?: boolean }) {
   const isDigit = DIGIT_CHARS.includes(ch);
   const idx     = isDigit ? parseInt(ch) : 0;
-  const rowPx     = size === "lg" ? 54 : size === "sm" ? 32 : size === "md" ? 30 : 22;
   const previousDigitRef = useRef(idx);
-  const trackRef = useRef<HTMLSpanElement>(null);
-  const trackReadyRef = useRef(false);
-  const targetPositionRef = useRef(10 + idx);
+  const rollIdRef = useRef(0);
+  const [roll, setRoll] = useState<{
+    id: number;
+    from: number;
+    to: number;
+    direction: "up" | "down";
+  } | null>(null);
 
-  // Retarget the persistent digit wheel from its currently rendered position.
-  // This lets rapid graph-hover updates redirect the wheel smoothly instead
-  // of restarting a keyframe animation from its beginning on every new value.
   useLayoutEffect(() => {
-    if (!isDigit) return;
-    const track = trackRef.current;
-    if (!animate || !track) {
-      previousDigitRef.current = idx;
-      trackReadyRef.current = false;
-      return;
-    }
-    if (!trackReadyRef.current) {
-      const initialPosition = 10 + idx;
-      track.style.transition = "none";
-      track.style.transform = `translateY(-${initialPosition * rowPx}px)`;
-      targetPositionRef.current = initialPosition;
-      previousDigitRef.current = idx;
-      trackReadyRef.current = true;
-      return;
-    }
-    if (previousDigitRef.current === idx) return;
+    if (!isDigit || previousDigitRef.current === idx) return;
 
-    const computedTransform = window.getComputedStyle(track).transform;
-    let translateY = -targetPositionRef.current * rowPx;
-    if (computedTransform !== "none") {
-      const values = computedTransform.match(/^matrix(3d)?\((.+)\)$/);
-      if (values) {
-        const parts = values[2].split(",").map(Number);
-        translateY = values[1] ? parts[13] : parts[5];
-      }
-    }
-
-    // The wheel repeats every ten rows, so it can be recentered by whole
-    // cycles without changing the visible digit or causing a visual jump.
-    const currentPosition = -translateY / rowPx;
-    const rebasedPosition = currentPosition + Math.round((10 - currentPosition) / 10) * 10;
-    track.style.transition = "none";
-    track.style.transform = `translateY(-${rebasedPosition * rowPx}px)`;
-    void track.offsetHeight;
-
-    const nextPosition = idx + Math.round((rebasedPosition - idx) / 10) * 10;
+    const previous = previousDigitRef.current;
+    const shortestStep = ((idx - previous + 15) % 10) - 5;
     previousDigitRef.current = idx;
-    targetPositionRef.current = nextPosition;
-    track.style.willChange = "transform";
-    track.style.transition = "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)";
-    track.style.transform = `translateY(-${nextPosition * rowPx}px)`;
-  }, [animate, idx, isDigit, rowPx]);
+    setRoll({
+      id: ++rollIdRef.current,
+      from: previous,
+      to: idx,
+      direction: shortestStep >= 0 ? "up" : "down",
+    });
+  }, [idx, isDigit]);
 
+  const rowPx     = size === "lg" ? 54 : size === "sm" ? 32 : size === "md" ? 30 : 22;
   const fontClass = size === "lg"
     ? "text-5xl font-semibold text-current"
     : size === "sm"
@@ -309,18 +276,22 @@ function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: strin
         : size === "badge"
           ? "text-sm font-bold text-current"
           : "text-xs font-semibold text-current";
-  const slotPx = Math.round((compact ? 0.49 : WHEEL_SLOT_RATIO) * rowPx);
 
-  if (!isDigit || !animate) {
+  if (!isDigit) {
     return (
       <span
         className={cn(fontClass, "inline-block leading-none")}
-        style={{ lineHeight: `${rowPx}px`, width: isDigit ? slotPx : undefined, textAlign: isDigit ? "center" : undefined }}
+        style={{ lineHeight: `${rowPx}px` }}
       >
         {ch}
       </span>
     );
   }
+
+  const slotPx = Math.round((compact ? 0.49 : WHEEL_SLOT_RATIO) * rowPx);
+  const rollingDigits = roll
+    ? (roll.direction === "up" ? [roll.from, roll.to] : [roll.to, roll.from])
+    : [idx];
 
   return (
     <span
@@ -331,14 +302,27 @@ function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: strin
       }}
     >
       <span
-        ref={trackRef}
-        className={cn(fontClass, "block select-none text-center leading-none")}
-        style={{ height: rowPx * 21, lineHeight: `${rowPx}px`, width: slotPx, whiteSpace: "pre" }}
-        onTransitionEnd={(event) => {
-          if (event.propertyName === "transform") event.currentTarget.style.willChange = "auto";
+        key={roll?.id ?? "settled"}
+        className="flex flex-col"
+        style={{
+          animation: roll
+            ? `price-digit-roll-${roll.direction} 280ms cubic-bezier(0.22, 1, 0.36, 1) both`
+            : "none",
+          willChange: "transform",
+        }}
+        onAnimationEnd={() => {
+          setRoll((activeRoll) => activeRoll?.id === roll?.id ? null : activeRoll);
         }}
       >
-        {DIGIT_WHEEL_ROWS}
+        {rollingDigits.map((digit, digitIndex) => (
+          <span
+            key={digitIndex}
+            className={cn(fontClass, "block text-center select-none leading-none")}
+            style={{ height: rowPx, lineHeight: `${rowPx}px`, width: slotPx }}
+          >
+            {digit}
+          </span>
+        ))}
       </span>
     </span>
   );
@@ -350,15 +334,12 @@ export function WheelPrice({
   size = "lg",
   colorClass,
   compact = false,
-  animate = true,
 }: {
   value: string;
   size?: "xs" | "badge" | "sm" | "md" | "lg";
   colorClass?: string;
   /** Tighter digit and punctuation spacing for compact metric readouts. */
   compact?: boolean;
-  /** Turn off digit rolling for values that should update without animation. */
-  animate?: boolean;
 }) {
   const chars = value.split("");
   const decimalIndex = chars.lastIndexOf(".");
@@ -370,6 +351,17 @@ export function WheelPrice({
   let fractionalDigitsSeen = 0;
 
   return (
+    <>
+      <style>{`
+        @keyframes price-digit-roll-up {
+          from { transform: translateY(0); }
+          to { transform: translateY(-50%); }
+        }
+        @keyframes price-digit-roll-down {
+          from { transform: translateY(-50%); }
+          to { transform: translateY(0); }
+        }
+      `}</style>
       <span className={cn("inline-flex items-end", colorClass ?? "text-text-primary")} style={{ letterSpacing: compact ? "-0.035em" : undefined }}>
         {chars.map((ch, index) => {
           let key: string;
@@ -389,9 +381,10 @@ export function WheelPrice({
           } else {
             key = `symbol-${index}-${ch}`;
           }
-          return <Digit key={key} ch={ch} size={size} compact={compact} animate={animate} />;
+          return <Digit key={key} ch={ch} size={size} compact={compact} />;
         })}
       </span>
+    </>
   );
 }
 
@@ -436,12 +429,9 @@ function CrosshairTooltip({
 
   return (
     <div
-      className="rounded-md border border-white/25 px-2.5 py-1.5 text-xs text-text-muted pointer-events-none"
+      className="rounded-md border border-border-subtle bg-panel px-2.5 py-1.5 text-xs text-text-muted pointer-events-none"
       style={{
-        background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
-        backdropFilter: "blur(22px) saturate(160%)",
-        WebkitBackdropFilter: "blur(22px) saturate(160%)",
-        boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
       }}
     >
       {tooltipLabel(date, period)}
@@ -866,8 +856,9 @@ export function PriceChart({
     line.style.display = "block";
     line.style.left = `${Math.max(0, Math.min(100, percentage))}%`;
   }, []);
-  // dotCY: active dot's Y pixel inside the SVG, used to draw the pro-mode horizontal crosshair
-  const [dotCY, setDotCY] = useState<number | null>(null);
+  // Updated from the committed active-dot ref so pointer movement does not
+  // schedule a React render for the horizontal crosshair.
+  const proCrosshairRef = useRef<HTMLDivElement>(null);
   const [linePlacementActive, setLinePlacementActive] = useState(false);
   const [lineCursorPrice, setLineCursorPrice] = useState<number | null>(null);
   const [lineTypedValue, setLineTypedValue] = useState<string | null>(null);
@@ -1037,7 +1028,7 @@ export function PriceChart({
     };
   }, [clearHover, positionVolumeCrosshair]);
 
-  function PeriodButton({ option, index, desktop = false }: { option: ChartPeriod; index: number; desktop?: boolean }) {
+  function renderPeriodButton({ option, index, desktop = false, key }: { option: ChartPeriod; index: number; desktop?: boolean; key: string }) {
     const active = period === option;
     const hoveredIndex = hoveredPeriod === null ? -1 : [...SHORT_PERIODS, ...LONG_PERIODS].indexOf(hoveredPeriod);
     const distanceFromHovered = hoveredIndex < 0 ? -1 : Math.abs(hoveredIndex - index);
@@ -1046,6 +1037,7 @@ export function PriceChart({
       : 1;
     return (
       <button
+        key={key}
         type="button"
         onClick={() => { if (active) return; setPeriod(option); setChartKey(k => k + 1); }}
         onMouseEnter={() => {
@@ -1107,7 +1099,7 @@ export function PriceChart({
           setLineTypedValue(null);
           window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: false } }));
         }}
-        onMouseLeave={() => { setDotCY(null); clearHover(); }}
+        onMouseLeave={() => { if (proCrosshairRef.current) proCrosshairRef.current.style.display = "none"; clearHover(); }}
       >
         {isLoading ? (
           <div className="flex h-full flex-col items-center justify-center gap-5">
@@ -1180,7 +1172,7 @@ export function PriceChart({
                   if (isTouchDevice) return false;
                   if (proMode) {
                     // Vertical line only — drawn via SVG props (what Recharts cursor accepts).
-                    // The horizontal line is drawn as a separate overlay div using dotCY.
+                    // The horizontal line is positioned from the committed active-dot ref.
                     return { stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 };
                   }
                   return { stroke: "rgba(128,128,128,0.4)", strokeWidth: 1 };
@@ -1215,9 +1207,20 @@ export function PriceChart({
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return <g key="no-dot" />;
                   if (cx == null || cy == null) return <g key="no-dot2" />;
-                  // Update horizontal crosshair position for pro mode
-                  if (proMode && cy !== dotCY) setDotCY(cy);
-                  return <circle key="dot" className="stock-chart-hover-dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2} />;
+                  return <circle
+                    key="dot"
+                    ref={(node) => {
+                      const guide = proCrosshairRef.current;
+                      if (!guide) return;
+                      if (proMode && node) {
+                        guide.style.display = "block";
+                        guide.style.top = `${node.cy.baseVal.value}px`;
+                      } else {
+                        guide.style.display = "none";
+                      }
+                    }}
+                    className="stock-chart-hover-dot" cx={cx} cy={cy} r={5} fill={lineColor} stroke="#000" strokeWidth={2}
+                  />;
                 }}
                 isAnimationActive={false}
               />
@@ -1287,21 +1290,14 @@ export function PriceChart({
           })}
 
           {/* ── Pro mode desktop horizontal crosshair — follows the active dot ── */}
-          {proMode && !isTouching && dotCY !== null && (() => {
-            // dotCY is already an absolute pixel position within the chart SVG —
-            // Recharts bakes margin.top into cx/cy for activeDot, so no extra
-            // offset is needed here (adding one pushes the line below the dot).
-            const rect = chartRef.current?.getBoundingClientRect();
-            const containerH = rect?.height ?? 260;
-            const topPct = (dotCY / containerH) * 100;
-            return (
-              <div
-                className="absolute inset-x-0 pointer-events-none"
-                aria-hidden
-                style={{ top: `${topPct}%`, height: 1, background: "rgba(128,128,128,0.5)" }}
-              />
-            );
-          })()}
+          {proMode && !isTouching && (
+            <div
+              ref={proCrosshairRef}
+              className="absolute inset-x-0 pointer-events-none"
+              aria-hidden
+              style={{ display: "none", height: 1, background: "rgba(128,128,128,0.5)" }}
+            />
+          )}
 
           {/* ── Custom touch overlay: dot + crosshair line + date bubble ── */}
           {isTouching && touchOverlay && (() => {
@@ -1395,10 +1391,10 @@ export function PriceChart({
             style={{ transform: `translate(${SHORT_PERIODS.includes(period) ? SHORT_PERIODS.indexOf(period) * 40 : LONG_PERIODS.indexOf(period) * 40}px, ${SHORT_PERIODS.includes(period) ? 0 : 42}px)` }}
           />
           <div className="flex flex-nowrap items-center justify-center gap-1 whitespace-nowrap overflow-x-auto">
-            {SHORT_PERIODS.map((o, index) => <PeriodButton key={o} option={o} index={index} />)}
+            {SHORT_PERIODS.map((o, index) => renderPeriodButton({ key: o, option: o, index }))}
           </div>
           <div className="flex flex-nowrap items-center justify-center gap-1 whitespace-nowrap overflow-x-auto">
-            {LONG_PERIODS.map((o, index) => <PeriodButton key={o} option={o} index={SHORT_PERIODS.length + index} />)}
+            {LONG_PERIODS.map((o, index) => renderPeriodButton({ key: o, option: o, index: SHORT_PERIODS.length + index }))}
           </div>
         </div>
         {/* Desktop: unchanged, single row */}
@@ -1411,7 +1407,7 @@ export function PriceChart({
             aria-hidden="true"
             style={{ transform: `translate(${([...SHORT_PERIODS, ...LONG_PERIODS].indexOf(period)) * 40}px, 0)` }}
           />
-          {[...SHORT_PERIODS, ...LONG_PERIODS].map((o, index) => <PeriodButton key={o} option={o} index={index} desktop />)}
+          {[...SHORT_PERIODS, ...LONG_PERIODS].map((o, index) => renderPeriodButton({ key: o, option: o, index, desktop: true }))}
         </div>
       </div>
 
