@@ -29,7 +29,8 @@ export function StockLogo({
           className={`${sizeClassName} ${shapeClassName} border border-white/10 bg-white/5 object-contain`}
           onError={(e) => {
             e.currentTarget.style.display = "none";
-            e.currentTarget.nextElementSibling?.classList.remove("hidden");
+            const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+            if (fallback) fallback.style.display = "inline-flex";
           }}
         />
       ) : null}

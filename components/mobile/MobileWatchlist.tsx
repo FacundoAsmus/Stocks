@@ -81,7 +81,8 @@ function RowContent({ stock }: { stock: StockSummary }) {
           className="h-9 w-9 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0 pointer-events-none"
           onError={(e) => {
             e.currentTarget.style.display = "none";
-            e.currentTarget.nextElementSibling?.classList.remove("hidden");
+            const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+            if (fallback) fallback.style.display = "inline-flex";
           }}
         />
       ) : null}

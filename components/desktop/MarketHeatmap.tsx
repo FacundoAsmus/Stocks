@@ -249,7 +249,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
                       : "watchlist-list-panel border-transparent hover:bg-panel-muted/50"
                   )}
                 >
-                  <MarketIcon icon={group.icon} className="h-9 w-9 shrink-0 object-contain" />
+                  <MarketIcon icon={group.icon} className="h-9 w-9 rounded-full" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-bold text-text-primary">{group.label}</span>
                     <span className="mt-0.5 block text-xs text-text-muted">{group.symbols.length} stocks</span>

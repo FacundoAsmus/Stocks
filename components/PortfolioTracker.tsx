@@ -399,7 +399,8 @@ function PositionRow({
               className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
-                e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (fallback) fallback.style.display = "inline-flex";
               }}
             />
           ) : null}

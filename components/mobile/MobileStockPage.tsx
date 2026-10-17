@@ -174,7 +174,8 @@ export function MobileStockPage(props: MobileStockPageProps) {
               className="h-12 w-12 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
-                e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                if (fallback) fallback.style.display = "inline-flex";
               }} />
           ) : null}
           <MarketIcon className={cn("h-12 w-12 shrink-0 rounded-3xl object-contain", !isEtf && stock.profile.logo && "hidden")} />

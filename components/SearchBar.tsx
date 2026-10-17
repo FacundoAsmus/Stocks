@@ -51,7 +51,8 @@ function ResultIcon({ symbol, logo }: { symbol: string; logo?: string }) {
           className="h-10 w-10 shrink-0 rounded-3xl border border-border-subtle bg-panel-muted object-contain"
           onError={(e) => {
             e.currentTarget.style.display = "none";
-            e.currentTarget.nextElementSibling?.classList.remove("hidden");
+            const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+            if (fallback) fallback.style.display = "inline-flex";
           }}
         />
       ) : null}
