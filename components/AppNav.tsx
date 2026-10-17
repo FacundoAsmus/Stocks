@@ -69,9 +69,6 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
   const [showAlertLines, setShowAlertLines] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-alert-lines") === "1" : false
   );
-  const [showChartGlow, setShowChartGlow] = useState(() =>
-    typeof window !== "undefined" ? localStorage.getItem("stock-chart-glow") !== "0" : true
-  );
   const panelRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
 
@@ -136,12 +133,6 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
     window.dispatchEvent(new Event("pro-alert-lines-changed"));
   }
 
-  function toggleChartGlow() {
-    const next = !showChartGlow;
-    setShowChartGlow(next);
-    localStorage.setItem("stock-chart-glow", next ? "1" : "0");
-    window.dispatchEvent(new Event("stock-chart-glow-changed"));
-  }
 
   const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
     { value: "dark",   label: "Dark",   icon: <Moon className="h-4 w-4" /> },
@@ -203,10 +194,6 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
         <button onClick={toggleAlertLines} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
           <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Alert price lines</span><span className="text-xs text-text-muted">Show saved alert levels on stock charts</span></span>
           <Toggle enabled={showAlertLines} />
-        </button>
-        <button onClick={toggleChartGlow} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Stock graph glow</span><span className="text-xs text-text-muted">Toggle the glow on stock price charts</span></span>
-          <Toggle enabled={showChartGlow} />
         </button>
       </div>
 

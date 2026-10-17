@@ -349,12 +349,6 @@ html.light-mode .stock-chart-negative .recharts-area-curve {
   filter: drop-shadow(0 0 3px rgba(205, 38, 8, 0.46)) drop-shadow(0 0 6px rgba(205, 38, 8, 0.24)) !important;
 }
 
-.stock-chart-glow-disabled.stock-chart-positive .recharts-area-curve,
-.stock-chart-glow-disabled.stock-chart-negative .recharts-area-curve,
-.stock-chart-glow-disabled .stock-chart-hover-dot {
-  filter: none !important;
-}
-
 a {
   color: inherit;
   text-decoration: none;
