@@ -460,7 +460,8 @@ export function PriceChart({
   initialPeriod = "1D",
   heightClassName = "h-[320px]",
   priceIndent,
-  hideCursorDateTooltip = false
+  hideCursorDateTooltip = false,
+  hideMovingAverageControls = false
 }: {
   symbol: string;
   currentPrice: number;
@@ -470,6 +471,7 @@ export function PriceChart({
   heightClassName?: string;
   priceIndent?: string;
   hideCursorDateTooltip?: boolean;
+  hideMovingAverageControls?: boolean;
 }) {
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
   const [hoveredPeriod, setHoveredPeriod] = useState<ChartPeriod | null>(null);
@@ -496,6 +498,51 @@ export function PriceChart({
   useEffect(() => {
     activeMAsRef.current = activeMAs;
   }, [activeMAs]);
+
+  useEffect(() => {
+    function toggleExternalMA(event: Event) {
+      const detail = (event as CustomEvent<{ symbol: string; window: number }>).detail;
+      if (!detail || detail.symbol !== symbol) return;
+      const willEnable = !activeMAsRef.current.has(detail.window);
+      setPendingMAAnimations((previous) => {
+        const next = new Set(previous);
+        if (willEnable) next.add(detail.window); else next.delete(detail.window);
+        return next;
+      });
+      setActiveMAs((previous) => {
+        const next = new Set(previous);
+        if (next.has(detail.window)) next.delete(detail.window); else next.add(detail.window);
+        return next;
+      });
+    }
+    function reportMAState(event: Event) {
+      const detail = (event as CustomEvent<{ symbol: string }>).detail;
+      if (detail?.symbol !== symbol) return;
+      window.dispatchEvent(new CustomEvent("watchlist-stock-ma-state", {
+        detail: {
+          symbol,
+          active: [...activeMAsRef.current],
+          available: MA_AVAILABILITY[period] ?? [],
+        },
+      }));
+    }
+    window.addEventListener("watchlist-stock-ma-toggle", toggleExternalMA);
+    window.addEventListener("watchlist-stock-ma-request", reportMAState);
+    return () => {
+      window.removeEventListener("watchlist-stock-ma-toggle", toggleExternalMA);
+      window.removeEventListener("watchlist-stock-ma-request", reportMAState);
+    };
+  }, [period, symbol]);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("watchlist-stock-ma-state", {
+      detail: {
+        symbol,
+        active: [...activeMAs],
+        available: MA_AVAILABILITY[period] ?? [],
+      },
+    }));
+  }, [activeMAs, period, symbol]);
 
   // Buttons currently rendered (includes ones mid-exit-animation) and which
   // of those are actively exiting — kept mounted a bit longer than
@@ -1249,7 +1296,7 @@ export function PriceChart({
 
       {/* ── Moving average toggles — only shown when at least one MA makes
           sense for the currently selected period ── */}
-      {displayedMAWindows.length > 0 && (
+      {!hideMovingAverageControls && displayedMAWindows.length > 0 && (
         <>
         <style>{`
           @keyframes ma-btn-pop {
