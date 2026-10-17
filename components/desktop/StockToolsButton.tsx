@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-const MA_OPTIONS = [7, 25, 99] as const;
+const MA_OPTIONS = [
+  { window: 7, color: "#f59e0b", icon: "/line-graph-7-icon.svg" },
+  { window: 25, color: "#ec4899", icon: "/line-graph-25-icon.svg" },
+  { window: 99, color: "#8b5cf6", icon: "/line-graph-99-icon.svg" },
+] as const;
 
 type MAStateDetail = { symbol: string; active: number[]; available: number[] };
 type LineModeDetail = { symbol: string; active: boolean };
@@ -13,6 +17,16 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
   const [activeMAs, setActiveMAs] = useState<number[]>([]);
   const [availableMAs, setAvailableMAs] = useState<number[]>([]);
   const [lineModeActive, setLineModeActive] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function closeOnOutsideClick(event: PointerEvent) {
+      if (!panelRef.current?.contains(event.target as Node)) setOpen(false);
+    }
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => document.removeEventListener("pointerdown", closeOnOutsideClick);
+  }, [open]);
 
   useEffect(() => {
     function syncMAState(event: Event) {
@@ -24,7 +38,10 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
     window.addEventListener("watchlist-stock-ma-state", syncMAState);
     function syncLineMode(event: Event) {
       const detail = (event as CustomEvent<LineModeDetail>).detail;
-      if (detail?.symbol === symbol) setLineModeActive(detail.active);
+      if (detail?.symbol === symbol) {
+        setLineModeActive(detail.active);
+        if (!detail.active) setOpen(false);
+      }
     }
     window.addEventListener("watchlist-stock-line-state", syncLineMode);
     const refreshTimer = window.setTimeout(() => {
@@ -39,6 +56,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
 
   function toggleMA(maWindow: number) {
     window.dispatchEvent(new CustomEvent("watchlist-stock-ma-toggle", { detail: { symbol, window: maWindow } }));
+    setOpen(false);
   }
 
   function toggleLineMode() {
@@ -52,6 +70,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
   return (
     <div className="relative h-10 w-10 shrink-0">
       <div
+        ref={panelRef}
         className={cn(
           "desktop-alert-glass smoked-glass-surface absolute right-0 top-0 z-40 overflow-hidden rounded-3xl border border-white/15 text-text-primary",
           "w-10"
@@ -73,7 +92,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
           <img src="/tools-icon.svg" alt="" className="stock-tools-icon h-6 w-6 object-contain" />
         </button>
         <div className={cn("flex flex-col items-center gap-2 pt-2 transition-opacity duration-200", open ? "opacity-100" : "pointer-events-none opacity-0")}>
-          {MA_OPTIONS.map((window) => {
+          {MA_OPTIONS.map(({ window, color, icon }) => {
             const active = activeMAs.includes(window);
             const available = availableMAs.includes(window);
             return (
@@ -84,12 +103,27 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
                 onClick={() => toggleMA(window)}
                 aria-pressed={active}
                 className={cn(
-                  "flex h-9 w-full items-center justify-center rounded-xl border text-[6px] font-semibold leading-none transition-colors disabled:cursor-not-allowed disabled:opacity-35",
-                  active ? "bg-white/10" : "bg-black/10 hover:bg-white/10"
+                  "flex h-9 w-full items-center justify-center bg-transparent transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-30",
+                  active ? "opacity-100" : "opacity-65"
                 )}
-                style={{ borderColor: active ? "#ADFA1B" : "rgba(255,255,255,0.14)", color: active ? "#ADFA1B" : undefined }}
+                style={{ color, fontSize: "50%" }}
               >
-                <span style={{ fontSize: "50%" }}>MA({window})</span>
+                <span
+                  className="block h-5 w-7"
+                  role="img"
+                  aria-label={`MA(${window})`}
+                  style={{
+                    backgroundColor: color,
+                    maskImage: `url("${icon}")`,
+                    WebkitMaskImage: `url("${icon}")`,
+                    maskRepeat: "no-repeat",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskPosition: "center",
+                    WebkitMaskPosition: "center",
+                    maskSize: "contain",
+                    WebkitMaskSize: "contain",
+                  }}
+                />
               </button>
             );
           })}
@@ -98,8 +132,8 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
             onClick={toggleLineMode}
             aria-pressed={lineModeActive}
             className={cn(
-              "flex h-9 w-full items-center justify-center rounded-xl border transition-colors",
-              lineModeActive ? "border-[#ADFA1B] bg-white/10 text-[#ADFA1B]" : "border-white/15 bg-black/10 hover:bg-white/10"
+              "flex h-9 w-full items-center justify-center bg-transparent transition-opacity hover:opacity-80",
+              lineModeActive ? "opacity-100" : "opacity-65"
             )}
             aria-label={lineModeActive ? "Cancel line placement" : "Place a horizontal price line"}
           >

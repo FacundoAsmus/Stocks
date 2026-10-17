@@ -1283,7 +1283,7 @@ export function PriceChart({
                   className="pointer-events-auto absolute -top-1.5 inset-x-0 h-3 cursor-crosshair border-t border-dashed bg-transparent"
                   style={{ borderColor: line.preview ? "#858585" : isSelected ? "#c4c4c4" : "#858585" }}
                 />
-                <span className="absolute -top-3 left-0 rounded bg-black/80 px-1 text-[10px] leading-3 text-[#a0a0a0]">{shownValue}</span>
+                <span className="absolute -top-3 left-0 px-1 text-[10px] leading-3 text-[#a0a0a0]">{shownValue}</span>
               </div>
             );
           })}
