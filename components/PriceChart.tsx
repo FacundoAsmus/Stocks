@@ -308,7 +308,7 @@ function Digit({ ch, size = "lg", compact = false }: { ch: string; size?: "xs" |
           animation: roll
             ? `price-digit-roll-${roll.direction} 280ms cubic-bezier(0.22, 1, 0.36, 1) both`
             : "none",
-          willChange: "transform",
+          willChange: roll ? "transform" : "auto",
         }}
         onAnimationEnd={() => {
           setRoll((activeRoll) => activeRoll?.id === roll?.id ? null : activeRoll);

@@ -450,6 +450,34 @@ html.light-mode .watchlist-list-panel { background: #ececec; }
   html.light-mode .desktop-alert-glass.desktop-list-holder {
     background: linear-gradient(145deg, rgba(255,255,255,0.27), rgba(241,248,255,0.17) 52%, rgba(218,237,251,0.24)), #fff !important;
   }
+  .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item,
+  .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item:hover,
+  .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item:focus-visible,
+  .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item:active,
+  .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item.is-selected,
+  .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted {
+    background: linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54)), #000 !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item::before,
+  .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  html.light-mode .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item,
+  html.light-mode .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item:hover,
+  html.light-mode .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item:focus-visible,
+  html.light-mode .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item:active,
+  html.light-mode .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item.is-selected,
+  html.light-mode .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted {
+    background: linear-gradient(145deg, rgba(255,255,255,0.27), rgba(241,248,255,0.17) 52%, rgba(218,237,251,0.24)), #fff !important;
+  }
+  html.light-mode .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item::before,
+  html.light-mode .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item::after {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
   .desktop-alert-glass.desktop-alert-glass-list-item {
     border-color: transparent !important;
   }
