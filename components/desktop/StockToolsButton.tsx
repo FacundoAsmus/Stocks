@@ -73,7 +73,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
       <div
         ref={panelRef}
         className={cn(
-          "desktop-alert-glass desktop-stock-tools-panel smoked-glass-surface absolute right-0 top-0 z-40 overflow-hidden border-2 text-text-primary",
+          "desktop-alert-glass desktop-stock-tools-panel smoked-glass-surface absolute right-0 top-0 z-40 overflow-hidden border text-text-primary",
           "w-10"
         )}
         style={{
@@ -81,6 +81,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
           borderRadius: open ? 24 : "50%",
           transition: "height 0.32s cubic-bezier(0.2,0,0,1), border-radius 0.32s cubic-bezier(0.2,0,0,1)",
         }}
+        onMouseLeave={() => { if (open) setOpen(false); }}
       >
         <button
           type="button"
