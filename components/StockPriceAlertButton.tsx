@@ -74,7 +74,7 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
 
   return <>
     <button type="button" aria-label="Price alerts" title="Price alerts" onClick={() => setOpen(true)}
-      className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-accent transition hover:bg-white/5 ${mobile && !mobileHeader ? "fixed" : ""} ${mobileHeader ? "z-[50] ml-auto" : ""}`}
+      className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-accent transition hover:bg-white/5 lg:transition-transform lg:duration-200 lg:hover:-translate-y-1 lg:hover:scale-[1.12] ${mobile && !mobileHeader ? "fixed" : ""} ${mobileHeader ? "z-[50] ml-auto" : ""}`}
       style={mobile && !mobileHeader ? { top: "calc(0.75rem + env(safe-area-inset-top))", right: "1rem", zIndex: 500, background: "transparent" } : undefined}>
       <Bell className="h-4 w-4" />
       {ownAlerts.length > 0 && <span className="absolute -mt-7 ml-7 min-w-4 rounded-full bg-accent px-1 text-[9px] font-bold text-black">{ownAlerts.length}</span>}

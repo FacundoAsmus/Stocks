@@ -314,6 +314,9 @@ html.light-mode .chart-period-selector-glass {
 }
 
 .stock-tools-icon { filter: brightness(0) saturate(100%) invert(83%) sepia(64%) saturate(874%) hue-rotate(28deg) brightness(107%) contrast(98%); }
+.desktop-alert-glass.desktop-stock-tools-panel {
+  border-color: var(--color-accent) !important;
+}
 
 .search-input-glass:focus {
   border-color: #ADFA1B !important;

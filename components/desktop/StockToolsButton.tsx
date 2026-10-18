@@ -69,16 +69,17 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
   const expandedHeight = chartHeight + 72;
 
   return (
-    <div className="relative h-10 w-10 shrink-0">
+    <div className="relative h-10 w-10 shrink-0 transition-transform duration-200 hover:-translate-y-1 hover:scale-[1.12]">
       <div
         ref={panelRef}
         className={cn(
-          "desktop-alert-glass smoked-glass-surface absolute right-0 top-0 z-40 overflow-hidden rounded-3xl border border-white/15 text-text-primary",
+          "desktop-alert-glass desktop-stock-tools-panel smoked-glass-surface absolute right-0 top-0 z-40 overflow-hidden border-2 text-text-primary",
           "w-10"
         )}
         style={{
           height: open ? expandedHeight : 40,
-          transition: "height 0.32s cubic-bezier(0.2,0,0,1)",
+          borderRadius: open ? 24 : "50%",
+          transition: "height 0.32s cubic-bezier(0.2,0,0,1), border-radius 0.32s cubic-bezier(0.2,0,0,1)",
         }}
       >
         <button
@@ -86,7 +87,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
           onClick={() => setOpen((value) => !value)}
           aria-label={open ? "Close stock tools" : "Open stock tools"}
           aria-expanded={open}
-          className="flex h-10 w-full shrink-0 items-center justify-center"
+          className="flex h-10 w-10 shrink-0 items-center justify-center"
           title="Stock tools"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -104,8 +105,8 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
                 onClick={() => toggleMA(window)}
                 aria-pressed={active}
                 className={cn(
-                  "flex h-9 w-full items-center justify-center bg-transparent transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-30",
-                  active ? "opacity-100" : "opacity-65"
+                  "flex h-9 w-full items-center justify-center bg-transparent transition-opacity hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-20",
+                  active ? "opacity-100" : "opacity-35"
                 )}
                 style={{ color, fontSize: "50%" }}
               >
@@ -133,8 +134,8 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
             onClick={toggleLineMode}
             aria-pressed={lineModeActive}
             className={cn(
-              "flex h-9 w-full items-center justify-center bg-transparent transition-opacity hover:opacity-80",
-              lineModeActive ? "opacity-100" : "opacity-65"
+              "flex h-9 w-full items-center justify-center bg-transparent transition-opacity hover:opacity-100",
+              lineModeActive ? "opacity-100" : "opacity-35"
             )}
             aria-label={lineModeActive ? "Cancel line placement" : "Place a horizontal price line"}
           >
