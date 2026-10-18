@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Minus } from "lucide-react";
 
 import { ComparisonPriceChart, COMPARISON_COLORS } from "@/components/desktop/ComparisonPriceChart";
+import { ComparisonMarketSentiment } from "@/components/MarketSentiment";
+import { StockLogo } from "@/components/StockLogo";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { expectedRevenueGrowthPct, getNextReport } from "@/lib/earnings";
 import type { AnalystRecommendation, EarningsEvent } from "@/types/stock";
@@ -51,7 +53,7 @@ function PairedBarSection({ primary, secondary }: { primary: ComparisonDetailPay
     ["Comparison", secondary.stock.profile.name ?? secondary.stock.symbol, COMPARISON_COLORS.secondary, secondary.sentiment.score],
   ] as const;
   return (
-    <section className="rounded-xl bg-black p-5">
+    <section className="rounded-md bg-black p-5">
       <p className="mb-4 text-sm font-medium uppercase tracking-[0.18em] text-accent">Stock Sentiment</p>
       <div className="space-y-4">
         {items.map(([key, name, color, score]) => (
@@ -92,15 +94,15 @@ function ComparisonAnalysts({ primary, secondary }: { primary: StockDetail; seco
   const a = latestRecommendation(primary.recommendations);
   const b = latestRecommendation(secondary.recommendations);
   return (
-    <section className="rounded-xl bg-black p-5">
+    <section className="mt-6 rounded-xl bg-black p-5">
       <p className="mb-5 text-sm font-medium uppercase tracking-[0.18em] text-accent">Analysts</p>
       <div className="space-y-4">
         {ANALYST_ROWS.map(([label, key]) => (
           <div key={key}>
-            <p className="mb-2 text-xs text-text-muted">{label}</p>
+            <div className="mb-2 flex items-center justify-between text-sm"><span className="text-text-muted">{label}</span></div>
             <div className="space-y-1.5">
               {SERIES.map(({ key: seriesKey, color }) => (
-                <div key={seriesKey} className="h-1.5 rounded-full bg-panel-muted">
+                <div key={seriesKey} className="h-2 rounded-full bg-panel-muted">
                   <div className="h-full rounded-full" style={{ width: `${analystRatio(seriesKey === "a" ? a : b, key)}%`, backgroundColor: color, boxShadow: `0 0 8px ${color}55` }} />
                 </div>
               ))}
@@ -152,20 +154,13 @@ function ComparisonIndicators({ primary, secondary }: { primary: ComparisonDetai
   return (
     <section>
       <p className="mb-3 px-1 text-sm font-medium uppercase tracking-[0.18em] text-accent">Indicators</p>
-      <div className="mb-3 grid grid-cols-2 gap-2 text-xs font-semibold">
-        <span style={{ color: COMPARISON_COLORS.primary }}>{primary.stock.symbol}</span>
-        <span style={{ color: COMPARISON_COLORS.secondary }}>{secondary.stock.symbol}</span>
-      </div>
-      <div className="grid grid-cols-1 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {aItems.map(([label, value], index) => (
-          <div key={label} className="grid grid-cols-2 gap-2">
-            <div className="min-w-0 rounded-md bg-black p-3">
-              <p className="mb-2 truncate text-[10px] uppercase tracking-wide text-text-muted">{label}</p>
-              <p className="truncate text-base font-semibold" style={{ color: COMPARISON_COLORS.primary }}>{value}</p>
-            </div>
-            <div className="min-w-0 rounded-md bg-black p-3">
-              <p className="mb-2 truncate text-[10px] uppercase tracking-wide text-text-muted">{bItems[index]?.[0]}</p>
-              <p className="truncate text-base font-semibold" style={{ color: COMPARISON_COLORS.secondary }}>{bItems[index]?.[1] ?? "N/A"}</p>
+          <div key={label} className="min-w-0 rounded-md bg-black p-4">
+            <div className="mb-2 flex items-center gap-1.5"><span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: COMPARISON_COLORS.primary }} /><p className="truncate text-xs uppercase tracking-[0.12em] text-text-muted">{label}</p></div>
+            <div className="flex min-w-0 items-baseline gap-1.5 overflow-hidden">
+              <p className="min-w-0 truncate text-xl font-semibold" style={{ color: COMPARISON_COLORS.primary }}>{value}</p>
+              <p className="min-w-0 truncate text-xl font-semibold" style={{ color: COMPARISON_COLORS.secondary }}>{bItems[index]?.[1] ?? "N/A"}</p>
             </div>
           </div>
         ))}
@@ -195,11 +190,6 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
   if (!years.length) return null;
   return (
     <section className="rounded-xl bg-black p-5">
-      <p className="mb-5 text-sm font-medium uppercase tracking-[0.18em] text-accent">Filing Indicators</p>
-      <div className="mb-4 flex flex-wrap gap-4 text-xs">
-        <span style={{ color: COMPARISON_COLORS.primary }}>{primarySymbol}</span>
-        <span style={{ color: COMPARISON_COLORS.secondary }}>{secondarySymbol}</span>
-      </div>
       <div className="space-y-8">
         {specs.map(([title, key]) => {
           const aValues = years.map((year) => a.find((item) => item.year === year)?.[key] ?? null);
@@ -210,8 +200,8 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
           const baseline = hasNegative ? 55 : 86;
           return (
             <div key={key}>
-              <p className="mb-3 text-sm font-semibold text-text-primary">{title}</p>
-              <div className="relative h-40 border-y border-border-subtle">
+              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
+              <div className="relative h-64 border-y border-border-subtle">
                 <div className="absolute inset-x-0 border-t border-border-subtle" style={{ top: `${baseline}%` }} />
                 <div className="flex h-full">
                   {years.map((year, index) => {
@@ -224,14 +214,15 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
                           return (
                             <div
                               key={seriesIndex}
-                              className="absolute left-1/2 w-[28%] -translate-x-1/2 rounded-sm"
+                              className="absolute w-1/4 max-w-5 -translate-x-1/2 rounded-sm"
                               style={{
+                                left: seriesIndex === 0 ? "35%" : "65%",
                                 ...(value < 0 ? { top: `${baseline}%` } : { bottom: `${100 - baseline}%` }),
                                 height: `${height}%`,
                                 backgroundColor: seriesIndex === 0 ? COMPARISON_COLORS.primary : COMPARISON_COLORS.secondary,
                                 opacity: 0.58,
                               }}
-                              title={`${seriesIndex === 0 ? primarySymbol : secondarySymbol} ${year}: ${formatCurrency(value)}`}
+                              title={`${year}: ${formatCurrency(value)}`}
                             />
                           );
                         })}
@@ -261,26 +252,26 @@ export function StockComparisonView({
   onRemoveSecondary: () => void;
 }) {
   return (
-    <div className="space-y-6 px-6 pb-32 pt-3">
-      <header className="flex flex-col gap-3 rounded-xl bg-black/40 p-4">
+    <div className="relative space-y-6 px-6 pb-8 pt-3">
+      <section className="relative p-5">
+        <div className="space-y-3">
         {[primary, secondary].map((detail, index) => {
           const color = index === 0 ? COMPARISON_COLORS.primary : COMPARISON_COLORS.secondary;
           return (
             <div key={detail.stock.symbol} className="flex items-center gap-3">
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-lg font-semibold" style={{ color }}>{detail.stock.profile.name ?? detail.stock.symbol}</p>
-                <p className="text-xs text-text-muted">{detail.stock.symbol}</p>
-              </div>
+              <StockLogo logo={detail.stock.profile.logo} shape="circle" />
+              <h1 className="min-w-0 flex-1 truncate text-4xl font-semibold tracking-normal text-text-primary sm:text-5xl">{detail.stock.profile.name ?? detail.stock.symbol}</h1>
               <ColorRemoveButton symbol={detail.stock.symbol} color={color} onClick={index === 0 ? onRemovePrimary : onRemoveSecondary} />
             </div>
           );
         })}
-      </header>
+        </div>
+      </section>
 
-      <section className="relative rounded-xl bg-black/30 p-4">
+      <section className="relative p-5">
         <ComparisonPriceChart primarySymbol={primary.stock.symbol} secondarySymbol={secondary.stock.symbol} />
       </section>
-      <PairedBarSection primary={primary} secondary={secondary} />
+      <ComparisonMarketSentiment scores={[primary.sentiment.score, secondary.sentiment.score]} />
       <ComparisonAnalysts primary={primary.stock} secondary={secondary.stock} />
       <ComparisonIndicators primary={primary} secondary={secondary} />
       <FilingComparisonCharts primarySymbol={primary.stock.symbol} secondarySymbol={secondary.stock.symbol} />

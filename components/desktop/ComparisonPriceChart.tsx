@@ -196,11 +196,9 @@ export function ComparisonPriceChart({
         {latest ? (
           <>
             <div>
-              <p className="mb-1 text-xs font-semibold" style={{ color: COMPARISON_COLORS.primary }}>{primarySymbol}</p>
               <WheelPrice value={formatPercent(latest.aPct)} size="lg" colorClass={winnerIsPrimary ? "text-purple-400" : "text-purple-400/55"} />
             </div>
             <div>
-              <p className="mb-1 text-xs font-semibold" style={{ color: COMPARISON_COLORS.secondary }}>{secondarySymbol}</p>
               <WheelPrice value={formatPercent(latest.bPct)} size="lg" colorClass={!winnerIsPrimary ? "text-orange-400" : "text-orange-400/55"} />
             </div>
             <span className="pb-1 text-xs text-text-muted">{latest.date === "prev" ? "Previous close" : new Date(latest.time * 1000).toLocaleString()}</span>
@@ -266,17 +264,17 @@ export function ComparisonPriceChart({
         </div>
       )}
 
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-1">
-        {PERIODS.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => setPeriod(option)}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${period === option ? "bg-accent text-black" : "text-accent hover:bg-accent/10"}`}
-          >
-            {option}
-          </button>
-        ))}
+      <div className="mt-3 flex justify-center">
+        <div className="chart-period-selector-glass chart-period-selector-desktop relative hidden flex-nowrap items-center justify-center gap-1 rounded-full border p-1 lg:flex">
+          <span className="chart-period-indicator" aria-hidden="true" style={{ transform: `translate(${PERIODS.indexOf(period) * 40}px, 0)` }} />
+          {PERIODS.map((option, index) => (
+            <button key={option} type="button" onClick={() => setPeriod(option)}
+              className={`chart-period-option relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition ${period === option ? "text-black" : "text-accent hover:text-accent/80"}`}
+              onMouseEnter={(event) => { if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) { const buttons = Array.from(event.currentTarget.parentElement?.querySelectorAll("button") ?? []); buttons.forEach((button, i) => { button.style.transform = `scale(${Math.abs(i-index) === 0 ? 1.14 : 0.78})`; }); } }}
+              onMouseLeave={(event) => { const buttons = Array.from(event.currentTarget.parentElement?.querySelectorAll("button") ?? []); buttons.forEach((button) => { button.style.transform = "scale(1)"; }); }}
+            >{option}</button>
+          ))}
+        </div>
       </div>
     </div>
   );

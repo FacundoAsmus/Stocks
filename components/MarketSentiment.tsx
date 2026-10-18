@@ -181,3 +181,52 @@ export function MarketSentiment({
     </section>
   );
 }
+
+export function ComparisonMarketSentiment({ scores }: { scores: [number, number] }) {
+  const ref = useRef<HTMLElement>(null);
+  const [started, setStarted] = useState(false);
+  const colors = ["#a855f7", "#f97316"] as const;
+
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setStarted(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.3 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <section ref={ref} className="rounded-xl bg-black p-5">
+      <p className="mb-4 text-sm font-medium uppercase tracking-[0.18em] text-accent">Stock Sentiment</p>
+      <div className="space-y-4">
+        {scores.map((rawScore, index) => {
+          const score = Math.max(0, Math.min(100, Math.round(rawScore)));
+          const color = colors[index];
+          return (
+            <div key={index}>
+              <div className="mb-3 flex justify-end">
+                <RollingScore score={score} colorClass={index === 0 ? "text-purple-400" : "text-orange-400"} started={started} />
+              </div>
+              <div className="h-2 w-full rounded-full bg-panel-muted">
+                <div
+                  className="h-full rounded-full"
+                  style={{
+                    width: started ? `${score}%` : "0%",
+                    backgroundColor: color,
+                    boxShadow: `0 0 10px ${color}70`,
+                    transition: started ? "width 1.755s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
