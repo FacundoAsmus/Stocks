@@ -18,6 +18,7 @@ import type { getStockDetail } from "@/lib/finnhub";
 import { WheelPrice } from "@/components/PriceChart";
 import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
 import { revealSparklineOnDataChange } from "@/lib/sparklineReveal";
+import { StockComparisonView, type ComparisonDetailPayload } from "@/components/desktop/StockComparisonView";
 
 const STORAGE_KEY = "market-lens-watchlist";
 
@@ -249,6 +250,10 @@ export function WatchlistSplitView() {
   const [detail, setDetail] = useState<DetailPayload | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [comparisonSymbol, setComparisonSymbol] = useState<string | null>(null);
+  const [comparisonDetail, setComparisonDetail] = useState<ComparisonDetailPayload | null>(null);
+  const [isComparisonLoading, setIsComparisonLoading] = useState(false);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
   const detailPanelRef = useRef<HTMLDivElement>(null);
   const detailColumnRef = useRef<HTMLDivElement>(null);
   // Framer Motion's Reorder.Item doesn't suppress the native click event
@@ -324,11 +329,27 @@ export function WatchlistSplitView() {
   useEffect(() => {
     function handlePreview(e: Event) {
       const symbol = (e as CustomEvent<string>).detail;
-      if (symbol) setSelectedSymbol(symbol);
+      if (symbol) {
+        setComparisonSymbol(null);
+        setComparisonDetail(null);
+        setSelectedSymbol(symbol);
+      }
     }
     window.addEventListener("watchlist-preview-symbol", handlePreview);
     return () => window.removeEventListener("watchlist-preview-symbol", handlePreview);
   }, []);
+
+  useEffect(() => {
+    function handleCompare(e: Event) {
+      const nextSymbol = (e as CustomEvent<string>).detail?.trim().toUpperCase();
+      if (!nextSymbol || !selectedSymbol || nextSymbol === selectedSymbol.toUpperCase()) return;
+      setComparisonDetail(null);
+      setComparisonError(null);
+      setComparisonSymbol(nextSymbol);
+    }
+    window.addEventListener("watchlist-compare-symbol", handleCompare);
+    return () => window.removeEventListener("watchlist-compare-symbol", handleCompare);
+  }, [selectedSymbol]);
 
   const symbolQuery = useMemo(() => [...symbols].sort().join(","), [symbols]);
 
@@ -413,6 +434,31 @@ export function WatchlistSplitView() {
     loadDetail();
     return () => controller.abort();
   }, [selectedSymbol]);
+
+  useEffect(() => {
+    if (!comparisonSymbol || comparisonSymbol === selectedSymbol) return;
+    const controller = new AbortController();
+    setIsComparisonLoading(true);
+    setComparisonError(null);
+    setComparisonDetail(null);
+    async function loadComparison() {
+      try {
+        const response = await fetch(`/api/stock-detail?symbol=${encodeURIComponent(comparisonSymbol!)}&refresh=1`, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+        const payload = await response.json() as ComparisonDetailPayload & { error?: string };
+        if (!response.ok) throw new Error(payload.error ?? `Unable to load ${comparisonSymbol}.`);
+        if (!controller.signal.aborted) setComparisonDetail(payload);
+      } catch (error) {
+        if (!controller.signal.aborted) setComparisonError(error instanceof Error ? error.message : `Unable to load ${comparisonSymbol}.`);
+      } finally {
+        if (!controller.signal.aborted) setIsComparisonLoading(false);
+      }
+    }
+    loadComparison();
+    return () => controller.abort();
+  }, [comparisonSymbol, selectedSymbol]);
 
   useEffect(() => {
     if (!watchlistReady) return;
@@ -542,6 +588,8 @@ export function WatchlistSplitView() {
                 isDragging={stock.symbol === draggingSymbol}
                 onSelect={() => {
                   if (justDraggedRef.current) return;
+                  setComparisonSymbol(null);
+                  setComparisonDetail(null);
                   setSelectedSymbol(stock.symbol);
                 }}
               />
@@ -564,7 +612,35 @@ export function WatchlistSplitView() {
           matter how far the inner content is scrolled. */}
       <div ref={detailColumnRef} className="relative w-3/4 h-full">
         <div ref={detailPanelRef} className="no-scrollbar relative h-full overflow-y-auto">
-          {isDetailLoading ? (
+          {comparisonSymbol ? (
+            isDetailLoading || !detail ? (
+              <PanelLoader label={`Loading ${selectedSymbol ?? "stock"} comparison`} />
+            ) : isComparisonLoading ? (
+              <PanelLoader label={`Loading ${comparisonSymbol} comparison data`} />
+            ) : comparisonError ? (
+              <div className="p-8">
+                <ErrorState title={`Unable to compare ${comparisonSymbol}`} message={comparisonError} />
+                <button type="button" className="mt-4 text-sm text-accent underline" onClick={() => { setComparisonSymbol(null); setComparisonDetail(null); }}>
+                  Return to {selectedSymbol}
+                </button>
+              </div>
+            ) : comparisonDetail ? (
+              <StockComparisonView
+                primary={detail}
+                secondary={comparisonDetail}
+                onRemovePrimary={() => {
+                  setSelectedSymbol(comparisonDetail.stock.symbol);
+                  setDetail(comparisonDetail);
+                  setComparisonSymbol(null);
+                  setComparisonDetail(null);
+                }}
+                onRemoveSecondary={() => {
+                  setComparisonSymbol(null);
+                  setComparisonDetail(null);
+                }}
+              />
+            ) : null
+          ) : isDetailLoading ? (
             <PanelLoader label={`Loading ${selectedSymbol ?? "stock"} data`} />
           ) : detailError ? (
             <div className="p-8">
@@ -593,7 +669,7 @@ export function WatchlistSplitView() {
           ) : null}
         </div>
 
-        {detail && (
+        {detail && !comparisonSymbol && (
           <StockAIChat
             stock={detail.stock}
             currentPrice={detail.currentPrice}

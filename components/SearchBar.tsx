@@ -245,21 +245,44 @@ export function SearchBar() {
       ) : (
         <div ref={dropdownRef} className="search-results-glass desktop-alert-glass smoked-glass-surface fixed w-full overflow-auto rounded-2xl border border-white/15" style={{ ...dropdownStyle, background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
           {results.map((result) => (
-            <button
+            <div
               key={`${result.symbol}-${result.description}`}
-              type="button"
-              onClick={() => navigateToSymbol(result.symbol)}
-              className="flex w-full items-center gap-3 border-t border-border-subtle/40 px-4 py-3 text-left text-sm transition first:border-t-0 hover:bg-white/5"
+              className="flex w-full items-center gap-3 border-t border-border-subtle/40 px-4 py-2 first:border-t-0"
             >
-              <ResultIcon symbol={result.symbol} logo={logos[result.symbol]} />
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold text-text-primary">
-                  {result.displaySymbol ?? result.symbol}
+              <button
+                type="button"
+                onClick={() => navigateToSymbol(result.symbol)}
+                className="flex min-w-0 flex-1 items-center gap-3 py-1 text-left text-sm transition hover:bg-white/5"
+              >
+                <ResultIcon symbol={result.symbol} logo={logos[result.symbol]} />
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold text-text-primary">
+                    {result.displaySymbol ?? result.symbol}
+                  </span>
+                  <span className="block truncate text-text-muted">{result.description}</span>
                 </span>
-                <span className="block truncate text-text-muted">{result.description}</span>
-              </span>
-              <span className="shrink-0 text-xs uppercase text-text-muted">Open</span>
-            </button>
+                <span className="shrink-0 text-xs uppercase text-text-muted">Open</span>
+              </button>
+              {pathname === "/watchlist" && (
+                <button
+                  type="button"
+                  aria-label={`Compare ${result.displaySymbol ?? result.symbol} with the selected stock`}
+                  title="Compare with selected stock"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    const cleanSymbol = result.symbol.trim().toUpperCase();
+                    addRecentSearch(cleanSymbol);
+                    setQuery("");
+                    setIsOpen(false);
+                    window.dispatchEvent(new CustomEvent("watchlist-compare-symbol", { detail: cleanSymbol }));
+                  }}
+                  className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border border-accent/40 text-accent transition hover:-translate-y-0.5 hover:border-accent hover:bg-accent/10 lg:inline-flex"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/comparison-tilted-flipped-icon.svg" alt="" className="stock-tools-icon h-5 w-5 object-contain" />
+                </button>
+              )}
+            </div>
           ))}
         </div>
       ), document.body
