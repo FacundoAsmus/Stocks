@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -13,9 +13,10 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Minus } from "lucide-react";
 
 import { WheelPrice } from "@/components/PriceChart";
-import { formatCurrency, formatPercent } from "@/lib/format";
+import { formatPercent } from "@/lib/format";
 import type { CandlePoint, ChartPeriod } from "@/types/stock";
 
 export const COMPARISON_COLORS = { primary: "#a855f7", secondary: "#f97316" } as const;
@@ -107,9 +108,17 @@ export function mergeComparisonCandles(primaryInput: CandlePoint[], secondaryInp
 export function ComparisonPriceChart({
   primarySymbol,
   secondarySymbol,
+  primaryName,
+  secondaryName,
+  onRemovePrimary,
+  onRemoveSecondary,
 }: {
   primarySymbol: string;
   secondarySymbol: string;
+  primaryName: string;
+  secondaryName: string;
+  onRemovePrimary: () => void;
+  onRemoveSecondary: () => void;
 }) {
   const [period, setPeriod] = useState<ChartPeriod>("1M");
   const [primaryCandles, setPrimaryCandles] = useState<CandlePoint[]>([]);
@@ -117,6 +126,25 @@ export function ComparisonPriceChart({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hoveredRow, setHoveredRow] = useState<ComparisonRow | null>(null);
+  const [proMode, setProMode] = useState(() => typeof window !== "undefined" && localStorage.getItem("pro-mode") === "1");
+  const [showVolumeChart, setShowVolumeChart] = useState(() => typeof window === "undefined" || localStorage.getItem("pro-volume-chart") !== "0");
+  const horizontalCrosshairRef = useRef<HTMLDivElement>(null);
+  const volumeCrosshairRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const syncProMode = () => setProMode(localStorage.getItem("pro-mode") === "1");
+    const syncVolume = () => setShowVolumeChart(localStorage.getItem("pro-volume-chart") !== "0");
+    window.addEventListener("pro-mode-changed", syncProMode);
+    window.addEventListener("pro-volume-chart-changed", syncVolume);
+    window.addEventListener("storage", syncProMode);
+    window.addEventListener("storage", syncVolume);
+    return () => {
+      window.removeEventListener("pro-mode-changed", syncProMode);
+      window.removeEventListener("pro-volume-chart-changed", syncVolume);
+      window.removeEventListener("storage", syncProMode);
+      window.removeEventListener("storage", syncVolume);
+    };
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -163,27 +191,50 @@ export function ComparisonPriceChart({
   const volumeMax = useMemo(() => Math.max(1, ...rows.flatMap((row) => [row.aVolume ?? 0, row.bVolume ?? 0])), [rows]);
 
   const setHoveredFromState = (state: unknown) => {
-    const { activeTooltipIndex, isTooltipActive } = (state ?? {}) as { activeTooltipIndex?: number; isTooltipActive?: boolean };
+    const { activeTooltipIndex, isTooltipActive, activeCoordinate } = (state ?? {}) as { activeTooltipIndex?: number; isTooltipActive?: boolean; activeCoordinate?: { x?: number; y?: number } };
     setHoveredRow(isTooltipActive && activeTooltipIndex !== undefined ? rows[activeTooltipIndex] ?? null : null);
+    if (activeCoordinate?.y !== undefined && horizontalCrosshairRef.current) {
+      horizontalCrosshairRef.current.style.top = `${activeCoordinate.y}px`;
+      horizontalCrosshairRef.current.style.display = "block";
+    }
+    if (activeCoordinate?.x !== undefined && volumeCrosshairRef.current) {
+      volumeCrosshairRef.current.style.left = `${activeCoordinate.x}px`;
+      volumeCrosshairRef.current.style.display = "block";
+    }
+  };
+  const setHoveredFromVolumeState = (state: unknown) => {
+    const { activeTooltipIndex, isTooltipActive, activeCoordinate } = (state ?? {}) as { activeTooltipIndex?: number; isTooltipActive?: boolean; activeCoordinate?: { x?: number } };
+    setHoveredRow(isTooltipActive && activeTooltipIndex !== undefined ? rows[activeTooltipIndex] ?? null : null);
+    if (activeCoordinate?.x !== undefined && volumeCrosshairRef.current) {
+      volumeCrosshairRef.current.style.left = `${activeCoordinate.x}px`;
+      volumeCrosshairRef.current.style.display = "block";
+    }
+  };
+  const clearHovered = () => {
+    setHoveredRow(null);
+    if (horizontalCrosshairRef.current) horizontalCrosshairRef.current.style.display = "none";
+    if (volumeCrosshairRef.current) volumeCrosshairRef.current.style.display = "none";
   };
 
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-end gap-x-8 gap-y-3">
-        {latest ? (
-          <>
-            <div>
-              <WheelPrice value={formatPercent(latest.aPct)} size="lg" colorClass={winnerIsPrimary ? "text-purple-400" : "text-purple-400/55"} />
-            </div>
-            <div>
-              <WheelPrice value={formatPercent(latest.bPct)} size="lg" colorClass={!winnerIsPrimary ? "text-orange-400" : "text-orange-400/55"} />
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-text-muted">{loading ? "Loading comparison history…" : error ?? "These stocks have no overlapping price history for this period."}</p>
-        )}
+      <div className="mb-2 space-y-2">
+        {([
+          [primaryName, latest?.aPct ?? null, COMPARISON_COLORS.primary, "text-purple-400", onRemovePrimary],
+          [secondaryName, latest?.bPct ?? null, COMPARISON_COLORS.secondary, "text-orange-400", onRemoveSecondary],
+        ] as const).map(([name, percent, circleColor, textColor, remove]) => (
+              <div key={name} className="flex items-center gap-3">
+                <button type="button" aria-label={`Show ${name} alone`} title={`Show ${name} alone`} onClick={remove}
+                  className="group relative h-14 w-14 shrink-0 rounded-full transition hover:scale-110" style={{ backgroundColor: circleColor }}>
+                  <Minus className="absolute inset-0 m-auto h-5 w-5 text-black opacity-0 transition-opacity group-hover:opacity-100" strokeWidth={3} />
+                </button>
+                <p className="min-w-0 flex-1 truncate text-4xl font-semibold tracking-normal text-text-primary sm:text-5xl">{name}</p>
+                <WheelPrice value={percent === null ? "N/A" : formatPercent(percent)} size="lg" colorClass={winnerIsPrimary === (circleColor === COMPARISON_COLORS.primary) ? textColor : `${textColor}/55`} />
+              </div>
+        ))}
+        {!latest && <p className="text-sm text-text-muted">{loading ? "Loading comparison history…" : error ?? "These stocks have no overlapping price history for this period."}</p>}
       </div>
-      {latest && <p className="mb-3 -mt-2 text-xs text-text-muted">{latest.date === "prev" ? "Previous close" : new Date(latest.time * 1000).toLocaleString()}</p>}
+      {latest && <p className="mb-3 -mt-1 text-right text-xs text-text-muted">{latest.date === "prev" ? "Previous close" : new Date(latest.time * 1000).toLocaleString()}</p>}
 
       <div className="relative h-[384px] w-full">
         {loading ? (
@@ -193,12 +244,12 @@ export function ComparisonPriceChart({
         ) : rows.length ? (
           <div className="comparison-stock-chart h-full w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={rows} margin={{ top: 12, right: 12, bottom: 4, left: 12 }} onMouseMove={setHoveredFromState} onMouseLeave={() => setHoveredRow(null)}>
+              <LineChart data={rows} margin={{ top: 12, right: 12, bottom: 4, left: 12 }} onMouseMove={setHoveredFromState} onMouseLeave={clearHovered}>
                 <CartesianGrid vertical={false} stroke="rgba(128,128,128,0.12)" />
                 <XAxis dataKey="date" hide />
                 <YAxis type="number" domain={yDomain} hide />
                 <ReferenceLine y={0} stroke="rgba(150,150,150,0.55)" strokeDasharray="4 4" />
-                <Tooltip content={() => null} cursor={false} />
+                <Tooltip content={() => null} cursor={{ stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 }} />
                 <Line
                   className="comparison-series-a"
                   type="monotone" dataKey="aPct" stroke={COMPARISON_COLORS.primary} strokeWidth={2.5} dot={false} isAnimationActive={false}
@@ -219,6 +270,7 @@ export function ComparisonPriceChart({
                 />
               </LineChart>
             </ResponsiveContainer>
+            {proMode && <div ref={horizontalCrosshairRef} data-crosshair-h="" className="pointer-events-none absolute inset-x-0 h-px" style={{ background: "rgba(128,128,128,0.5)", display: "none" }} />}
           </div>
         ) : (
           <div className="flex h-full items-center justify-center rounded-xl border border-border-subtle/50 bg-panel/30 px-6 text-center text-sm text-text-muted">
@@ -227,10 +279,10 @@ export function ComparisonPriceChart({
         )}
       </div>
 
-      {rows.length > 0 && (
-      <div className="mt-3 h-20 w-full" aria-label="Overlaid comparison volume">
+      {showVolumeChart && rows.length > 0 && (
+      <div className="relative mt-3 h-20 w-full" aria-label="Overlaid comparison volume">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={rows} barCategoryGap="15%" barGap="-100%" margin={{ top: 2, right: 12, bottom: 0, left: 12 }} onMouseMove={setHoveredFromState} onMouseLeave={() => setHoveredRow(null)}>
+            <BarChart data={rows} barCategoryGap="15%" barGap="-100%" margin={{ top: 2, right: 12, bottom: 0, left: 12 }} onMouseMove={setHoveredFromVolumeState} onMouseLeave={clearHovered}>
               <XAxis dataKey="date" hide />
               <YAxis domain={[0, volumeMax]} hide />
               <Tooltip content={() => null} cursor={false} />
@@ -238,6 +290,7 @@ export function ComparisonPriceChart({
               <Bar dataKey="bVolume" fill={COMPARISON_COLORS.secondary} fillOpacity={0.54} maxBarSize={12} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
+          <div ref={volumeCrosshairRef} data-crosshair-v="" className="pointer-events-none absolute inset-y-0 hidden w-px bg-white/20" />
         </div>
       )}
 

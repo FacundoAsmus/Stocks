@@ -209,7 +209,7 @@ export function ComparisonMarketSentiment({ scores }: { scores: [number, number]
           const color = colors[index];
           return (
             <div key={index}>
-              <div className="mb-3 flex justify-end">
+              <div className="mb-3 flex justify-start">
                 <RollingScore score={score} colorClass={index === 0 ? "text-purple-400" : "text-orange-400"} started={started} />
               </div>
               <div className="h-2 w-full rounded-full bg-panel-muted">

@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Minus } from "lucide-react";
 
 import { ComparisonPriceChart, COMPARISON_COLORS } from "@/components/desktop/ComparisonPriceChart";
 import { ComparisonMarketSentiment } from "@/components/MarketSentiment";
-import { StockLogo } from "@/components/StockLogo";
 import { WheelPrice } from "@/components/PriceChart";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { expectedRevenueGrowthPct, getNextReport } from "@/lib/earnings";
@@ -32,21 +30,6 @@ const SERIES = [
   { key: "a" as const, color: COMPARISON_COLORS.primary },
   { key: "b" as const, color: COMPARISON_COLORS.secondary },
 ];
-
-function ColorRemoveButton({ symbol, color, onClick }: { symbol: string; color: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label={`Remove ${symbol} from comparison`}
-      title={`Show ${symbol} alone`}
-      onClick={onClick}
-      className="group relative h-8 w-8 shrink-0 rounded-full transition hover:scale-110"
-      style={{ backgroundColor: color }}
-    >
-      <Minus className="absolute inset-0 m-auto h-4 w-4 text-black opacity-0 transition-opacity group-hover:opacity-100" strokeWidth={3} />
-    </button>
-  );
-}
 
 function PairedBarSection({ primary, secondary }: { primary: ComparisonDetailPayload; secondary: ComparisonDetailPayload }) {
   const items = [
@@ -159,8 +142,9 @@ function ComparisonIndicators({ primary, secondary }: { primary: ComparisonDetai
         {aItems.map(([label, value], index) => (
           <div key={label} className="min-w-0 rounded-md bg-black p-4">
             <div className="mb-2 flex items-center gap-1.5"><span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: COMPARISON_COLORS.primary }} /><p className="truncate text-xs uppercase tracking-[0.12em] text-text-muted">{label}</p></div>
-            <div className="flex min-w-0 items-baseline gap-1.5 overflow-hidden">
+            <div className="grid min-w-0 grid-cols-[1fr_auto_1fr] items-baseline gap-2 overflow-hidden">
               <p className="min-w-0 truncate text-xl font-semibold" style={{ color: COMPARISON_COLORS.primary }}>{value}</p>
+              <span className="h-6 border-l border-border-subtle" aria-hidden="true" />
               <p className="min-w-0 truncate text-xl font-semibold" style={{ color: COMPARISON_COLORS.secondary }}>{bItems[index]?.[1] ?? "N/A"}</p>
             </div>
           </div>
@@ -173,7 +157,7 @@ function ComparisonIndicators({ primary, secondary }: { primary: ComparisonDetai
 function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySymbol: string; secondarySymbol: string }) {
   const [a, setA] = useState<FilingIndicator[]>([]);
   const [b, setB] = useState<FilingIndicator[]>([]);
-  const [hoverValues, setHoverValues] = useState<{ a: Partial<Record<FilingKey, number>>; b: Partial<Record<FilingKey, number>> }>({ a: {}, b: {} });
+  const [hoveredBar, setHoveredBar] = useState<{ key: FilingKey; series: "a" | "b"; value: number } | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     const fetchData = (symbol: string) => fetch(`/api/filing-indicators?symbol=${encodeURIComponent(symbol)}`, { signal: controller.signal })
@@ -196,23 +180,21 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
         {specs.map(([title, key]) => {
           const aValues = years.map((year) => a.find((item) => item.year === year)?.[key] ?? null);
           const bValues = years.map((year) => b.find((item) => item.year === year)?.[key] ?? null);
-          const [latestA, latestB] = [aValues, bValues].map((values) => [...values].reverse().find((value): value is number => value !== null) ?? null);
-          const hoverA = hoverValues.a[key];
-          const hoverB = hoverValues.b[key];
+          const latestA = [...aValues].reverse().find((value): value is number => value !== null) ?? null;
           if (aValues.every((value) => value === null) && bValues.every((value) => value === null)) return null;
-          const max = Math.max(1, ...aValues.map((value) => Math.abs(value ?? 0)), ...bValues.map((value) => Math.abs(value ?? 0)));
+          const maxMagnitude = Math.max(1, ...[...aValues, ...bValues].filter((value): value is number => value !== null).map((value) => Math.abs(value)));
           const hasNegative = [...aValues, ...bValues].some((value) => (value ?? 0) < 0);
-          const baseline = hasNegative ? 55 : 86;
+          const baseline = hasNegative ? 45 : 14;
+          const displayedValue = hoveredBar?.key === key ? hoveredBar.value : latestA;
+          const displayedColor = hoveredBar?.key === key ? (hoveredBar.series === "a" ? "text-purple-400" : "text-orange-400") : "text-purple-400";
           return (
             <div key={key}>
               <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
-              <div className="mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-text-primary">
-                <div className="min-w-0"><WheelPrice value={(hoverA ?? latestA) === null ? "N/A" : `$${formatCompact(hoverA ?? latestA!)}`} size="xs" compact colorClass="text-purple-400" /></div>
-                <span className="h-6 border-l border-border-subtle" aria-hidden="true" />
-                <div className="min-w-0"><WheelPrice value={(hoverB ?? latestB) === null ? "N/A" : `$${formatCompact(hoverB ?? latestB!)}`} size="xs" compact colorClass="text-orange-400" /></div>
+              <div className="mb-5 text-text-primary">
+                <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact colorClass={displayedColor} />
               </div>
               <div className="relative h-64 border-y border-border-subtle">
-                <div className="absolute inset-x-0 border-t border-border-subtle" style={{ top: `${baseline}%` }} />
+                <div className="absolute inset-x-0 border-t border-border-subtle" style={hasNegative ? { top: `${baseline}%` } : { bottom: `${baseline}%` }} />
                 <div className="flex h-full">
                   {years.map((year, index) => {
                     const values = [aValues[index], bValues[index]];
@@ -220,21 +202,25 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
                       <div key={year} className="relative min-w-0 flex-1 border-l border-border-subtle first:border-l-0">
                         {values.map((value, seriesIndex) => {
                           if (value === null) return null;
-                          const height = Math.max((Math.abs(value) / max) * (hasNegative ? 43 : 78), 2);
+                          const height = Math.max((Math.abs(value) / maxMagnitude) * (hasNegative ? 0.4 : 0.78), 3);
+                          const negative = value < 0;
+                          const color = seriesIndex === 0 ? COMPARISON_COLORS.primary : COMPARISON_COLORS.secondary;
                           return (
                             <div
                               key={seriesIndex}
                               className="absolute w-1/4 max-w-5 -translate-x-1/2 rounded-sm"
                               style={{
                                 left: seriesIndex === 0 ? "35%" : "65%",
-                                ...(value < 0 ? { top: `${baseline}%` } : { bottom: `${100 - baseline}%` }),
+                                ...(negative ? { top: `${baseline}%` } : { bottom: hasNegative ? "55%" : `${baseline}%` }),
                                 height: `${height}%`,
-                                backgroundColor: seriesIndex === 0 ? COMPARISON_COLORS.primary : COMPARISON_COLORS.secondary,
-                                opacity: 0.58,
+                                backgroundColor: color,
+                                boxShadow: seriesIndex === 0
+                                  ? "0 0 10px rgba(168, 85, 247, 0.55)"
+                                  : "0 0 10px rgba(249, 115, 22, 0.55)",
                               }}
                               title={`${year}: ${formatCurrency(value)}`}
-                              onMouseEnter={() => setHoverValues((current) => ({ ...current, [seriesIndex === 0 ? "a" : "b"]: { ...current[seriesIndex === 0 ? "a" : "b"], [key]: value } }))}
-                              onMouseLeave={() => setHoverValues((current) => { const series = seriesIndex === 0 ? "a" : "b"; const next = { ...current[series] }; delete next[key]; return { ...current, [series]: next }; })}
+                              onMouseEnter={() => setHoveredBar({ key, series: seriesIndex === 0 ? "a" : "b", value })}
+                              onMouseLeave={() => setHoveredBar(null)}
                             />
                           );
                         })}
@@ -266,22 +252,14 @@ export function StockComparisonView({
   return (
     <div className="relative space-y-6 px-6 pb-8 pt-3">
       <section className="relative p-5">
-        <div className="space-y-3">
-        {[primary, secondary].map((detail, index) => {
-          const color = index === 0 ? COMPARISON_COLORS.primary : COMPARISON_COLORS.secondary;
-          return (
-            <div key={detail.stock.symbol} className="flex items-center gap-3">
-              <StockLogo logo={detail.stock.profile.logo} shape="circle" />
-              <h1 className="min-w-0 flex-1 truncate text-4xl font-semibold tracking-normal text-text-primary sm:text-5xl">{detail.stock.profile.name ?? detail.stock.symbol}</h1>
-              <ColorRemoveButton symbol={detail.stock.symbol} color={color} onClick={index === 0 ? onRemovePrimary : onRemoveSecondary} />
-            </div>
-          );
-        })}
-        </div>
-      </section>
-
-      <section className="relative p-5">
-        <ComparisonPriceChart primarySymbol={primary.stock.symbol} secondarySymbol={secondary.stock.symbol} />
+        <ComparisonPriceChart
+          primarySymbol={primary.stock.symbol}
+          secondarySymbol={secondary.stock.symbol}
+          primaryName={primary.stock.profile.name ?? primary.stock.symbol}
+          secondaryName={secondary.stock.profile.name ?? secondary.stock.symbol}
+          onRemovePrimary={onRemovePrimary}
+          onRemoveSecondary={onRemoveSecondary}
+        />
       </section>
       <ComparisonMarketSentiment scores={[primary.sentiment.score, secondary.sentiment.score]} />
       <ComparisonAnalysts primary={primary.stock} secondary={secondary.stock} />
