@@ -153,6 +153,8 @@ export function ComparisonPriceChart({
     setPrimaryCandles([]);
     setSecondaryCandles([]);
     setHoveredRow(null);
+    if (horizontalCrosshairRef.current) horizontalCrosshairRef.current.style.display = "none";
+    if (volumeCrosshairRef.current) volumeCrosshairRef.current.style.display = "none";
     async function load() {
       try {
         const request = (symbol: string) => fetch(
@@ -220,16 +222,22 @@ export function ComparisonPriceChart({
     <div>
       <div className="mb-2 space-y-2">
         {([
-          [primaryName, latest?.aPct ?? null, COMPARISON_COLORS.primary, "text-purple-400", onRemovePrimary],
-          [secondaryName, latest?.bPct ?? null, COMPARISON_COLORS.secondary, "text-orange-400", onRemoveSecondary],
-        ] as const).map(([name, percent, circleColor, textColor, remove]) => (
+          [primaryName, latest?.aPct ?? null, COMPARISON_COLORS.primary, onRemovePrimary],
+          [secondaryName, latest?.bPct ?? null, COMPARISON_COLORS.secondary, onRemoveSecondary],
+        ] as const).map(([name, percent, circleColor, remove]) => (
               <div key={name} className="flex items-center gap-3">
                 <button type="button" aria-label={`Show ${name} alone`} title={`Show ${name} alone`} onClick={remove}
-                  className="group relative h-14 w-14 shrink-0 rounded-full transition hover:scale-110" style={{ backgroundColor: circleColor }}>
-                  <Minus className="absolute inset-0 m-auto h-5 w-5 text-black opacity-0 transition-opacity group-hover:opacity-100" strokeWidth={3} />
+                  className="group relative h-14 w-14 shrink-0 rounded-full transition hover:scale-110 hover:brightness-75" style={{ backgroundColor: circleColor }}>
+                  <Minus className="absolute inset-0 m-auto h-5 w-5 text-white opacity-0 transition-opacity group-hover:opacity-100" strokeWidth={3} />
                 </button>
                 <p className="min-w-0 flex-1 truncate text-4xl font-semibold tracking-normal text-text-primary sm:text-5xl">{name}</p>
-                <WheelPrice value={percent === null ? "N/A" : formatPercent(percent)} size="lg" colorClass={winnerIsPrimary === (circleColor === COMPARISON_COLORS.primary) ? textColor : `${textColor}/55`} />
+                <WheelPrice
+                  value={percent === null ? "N/A" : formatPercent(percent)}
+                  size="lg"
+                  colorClass={circleColor === COMPARISON_COLORS.primary
+                    ? winnerIsPrimary ? "text-purple-400" : "text-purple-400/50"
+                    : winnerIsPrimary ? "text-orange-400/50" : "text-orange-400"}
+                />
               </div>
         ))}
         {!latest && <p className="text-sm text-text-muted">{loading ? "Loading comparison history…" : error ?? "These stocks have no overlapping price history for this period."}</p>}
@@ -238,8 +246,26 @@ export function ComparisonPriceChart({
 
       <div className="relative h-[384px] w-full">
         {loading ? (
-          <div className="flex h-full items-end gap-2 rounded-xl border border-border-subtle/50 bg-panel/30 p-6 animate-pulse">
-            {Array.from({ length: 22 }, (_, index) => <div key={index} className="flex-1 rounded-t-sm bg-accent/20" style={{ height: `${24 + ((index * 37) % 70)}%` }} />)}
+          <div className="flex h-full items-center justify-center gap-3 rounded-md border border-border-subtle/50 bg-panel/30">
+            <style>{`
+              @keyframes chart-candle-breathe { 0%,100%{transform:scaleY(0.6)} 50%{transform:scaleY(1.4)} }
+              @keyframes chart-wick-breathe { 0%,100%{opacity:0.25;transform:scaleY(0.7)} 50%{opacity:0.9;transform:scaleY(1.3)} }
+              .comparison-cc-1{animation:chart-candle-breathe 1.8s ease-in-out infinite -1.8s;transform-origin:bottom}
+              .comparison-cc-2{animation:chart-candle-breathe 1.8s ease-in-out infinite -1.32s;transform-origin:bottom}
+              .comparison-cc-3{animation:chart-candle-breathe 1.8s ease-in-out infinite -0.84s;transform-origin:bottom}
+              .comparison-cw-1{animation:chart-wick-breathe 1.8s ease-in-out infinite -1.8s;transform-origin:bottom}
+              .comparison-cw-2{animation:chart-wick-breathe 1.8s ease-in-out infinite -1.32s;transform-origin:bottom}
+              .comparison-cw-3{animation:chart-wick-breathe 1.8s ease-in-out infinite -0.84s;transform-origin:bottom}
+            `}</style>
+            <div className="flex h-10 items-end gap-[5px]" aria-hidden="true">
+              {["comparison-1", "comparison-2", "comparison-3"].map((name, index) => (
+                <div key={name} className="flex flex-col items-center gap-[2px]">
+                  <div className={`comparison-cw-${index + 1} w-[2px] ${index === 0 ? "h-1.5" : index === 1 ? "h-2" : "h-2.5"} rounded-full bg-positive/${index === 0 ? "50" : index === 1 ? "70" : "100"}`} />
+                  <div className={`comparison-cc-${index + 1} w-3.5 ${index === 0 ? "h-4" : index === 1 ? "h-6" : "h-8"} rounded-sm bg-positive/${index === 0 ? "50" : index === 1 ? "70" : "100"}`} />
+                </div>
+              ))}
+            </div>
+            <span className="text-sm text-text-muted">Loading price history</span>
           </div>
         ) : rows.length ? (
           <div className="comparison-stock-chart h-full w-full">
