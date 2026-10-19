@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
-  CartesianGrid,
   Line,
   LineChart,
   ReferenceLine,
@@ -14,9 +13,12 @@ import {
   YAxis,
 } from "recharts";
 import { Minus } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { WheelPrice } from "@/components/PriceChart";
+import { StockLogo } from "@/components/StockLogo";
 import { formatPercent } from "@/lib/format";
+import { SECTOR_ETFS } from "@/lib/etfs";
 import type { CandlePoint, ChartPeriod } from "@/types/stock";
 
 export const COMPARISON_COLORS = { primary: "#a855f7", secondary: "#f97316" } as const;
@@ -110,6 +112,8 @@ export function ComparisonPriceChart({
   secondarySymbol,
   primaryName,
   secondaryName,
+  primaryLogo,
+  secondaryLogo,
   onRemovePrimary,
   onRemoveSecondary,
 }: {
@@ -117,6 +121,8 @@ export function ComparisonPriceChart({
   secondarySymbol: string;
   primaryName: string;
   secondaryName: string;
+  primaryLogo?: string;
+  secondaryLogo?: string;
   onRemovePrimary: () => void;
   onRemoveSecondary: () => void;
 }) {
@@ -222,36 +228,51 @@ export function ComparisonPriceChart({
     <div>
       <div className="mb-2 space-y-3">
         {([
-          [primaryName, COMPARISON_COLORS.primary, onRemovePrimary],
-          [secondaryName, COMPARISON_COLORS.secondary, onRemoveSecondary],
-        ] as const).map(([name, circleColor, remove]) => (
-              <div key={name} className="flex items-center gap-3">
+          [primaryName, primarySymbol, COMPARISON_COLORS.primary, onRemovePrimary],
+          [secondaryName, secondarySymbol, COMPARISON_COLORS.secondary, onRemoveSecondary],
+        ] as const).map(([name, symbol, identityColor, remove]) => (
+              <div key={symbol} className="flex items-center gap-3">
                 <button type="button" aria-label={`Show ${name} alone`} title={`Show ${name} alone`} onClick={remove}
-                  className="group relative h-14 w-14 shrink-0 rounded-full transition hover:scale-110 hover:brightness-75" style={{ backgroundColor: circleColor }}>
+                  className="group relative h-14 w-14 shrink-0 overflow-hidden rounded-full transition hover:scale-110 hover:brightness-75">
+                  <StockLogo
+                    logo={SECTOR_ETFS.some((entry) => entry.symbol === symbol) ? undefined : (symbol === primarySymbol ? primaryLogo : secondaryLogo)}
+                    sizeClassName="h-14 w-14"
+                    shape="circle"
+                  />
                   <Minus className="absolute inset-0 m-auto h-5 w-5 text-white opacity-0 transition-opacity group-hover:opacity-100" strokeWidth={3} />
                 </button>
-                <p className={`min-w-0 truncate text-4xl font-semibold tracking-normal sm:text-5xl ${circleColor === COMPARISON_COLORS.primary ? "text-purple-400" : "text-orange-400"}`}>{name}</p>
+                <p className={`min-w-0 truncate text-4xl font-semibold tracking-normal sm:text-5xl ${identityColor === COMPARISON_COLORS.primary ? "text-purple-400" : "text-orange-400"}`}>{name}</p>
               </div>
         ))}
         {!latest && <p className="text-sm text-text-muted">{loading ? "Loading comparison history…" : error ?? "These stocks have no overlapping price history for this period."}</p>}
         <div className="flex items-end gap-3">
-          <WheelPrice
-            value={latest ? formatPercent(winnerIsPrimary ? latest.aPct : latest.bPct) : "N/A"}
-            size="lg"
-            colorClass={winnerIsPrimary ? "text-purple-400" : "text-orange-400"}
-          />
-          <WheelPrice
-            value={latest ? formatPercent(winnerIsPrimary ? latest.bPct : latest.aPct) : "N/A"}
-            size="sm"
-            colorClass={winnerIsPrimary ? "text-orange-400/50" : "text-purple-400/50"}
-          />
+          {([
+            { series: winnerIsPrimary ? "a" : "b", value: latest ? (winnerIsPrimary ? latest.aPct : latest.bPct) : null, large: true },
+            { series: winnerIsPrimary ? "b" : "a", value: latest ? (winnerIsPrimary ? latest.bPct : latest.aPct) : null, large: false },
+          ] as const).map(({ series, value, large }) => (
+            <motion.div
+              key={series}
+              layout
+              initial={false}
+              transition={{ layout: { duration: 0.34, ease: [0.22, 1, 0.36, 1] } }}
+              className="flex items-end"
+            >
+              <WheelPrice
+                value={value === null ? "N/A" : formatPercent(value)}
+                size={large ? "lg" : "sm"}
+                colorClass={series === "a"
+                  ? large ? "text-purple-400 transition-colors duration-300" : "text-purple-400/50 transition-colors duration-300"
+                  : large ? "text-orange-400 transition-colors duration-300" : "text-orange-400/50 transition-colors duration-300"}
+              />
+            </motion.div>
+          ))}
         </div>
       </div>
       {latest && <p className="mb-3 text-sm text-text-muted">{latest.date === "prev" ? "Previous close" : new Date(latest.time * 1000).toLocaleString()}</p>}
 
       <div className="relative h-[384px] w-full">
         {loading ? (
-          <div className="flex h-full items-center justify-center gap-3 rounded-md border border-border-subtle/50 bg-panel/30">
+          <div className="flex h-full items-center justify-center gap-3">
             <style>{`
               @keyframes chart-candle-breathe { 0%,100%{transform:scaleY(0.6)} 50%{transform:scaleY(1.4)} }
               @keyframes chart-wick-breathe { 0%,100%{opacity:0.25;transform:scaleY(0.7)} 50%{opacity:0.9;transform:scaleY(1.3)} }
@@ -275,8 +296,7 @@ export function ComparisonPriceChart({
         ) : rows.length ? (
           <div className="comparison-stock-chart h-full w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={rows} margin={{ top: 12, right: 12, bottom: 4, left: 12 }} onMouseMove={setHoveredFromState} onMouseLeave={clearHovered}>
-                <CartesianGrid vertical={false} stroke="rgba(128,128,128,0.12)" />
+              <LineChart data={rows} margin={{ top: 8, right: 0, bottom: 0, left: 0 }} onMouseMove={setHoveredFromState} onMouseLeave={clearHovered}>
                 <XAxis dataKey="date" hide />
                 <YAxis type="number" domain={yDomain} hide />
                 <ReferenceLine y={0} stroke="rgba(150,150,150,0.55)" strokeDasharray="4 4" />
@@ -304,7 +324,7 @@ export function ComparisonPriceChart({
             {proMode && <div ref={horizontalCrosshairRef} data-crosshair-h="" className="pointer-events-none absolute inset-x-0 h-px" style={{ background: "rgba(128,128,128,0.5)", display: "none" }} />}
           </div>
         ) : (
-          <div className="flex h-full items-center justify-center rounded-xl border border-border-subtle/50 bg-panel/30 px-6 text-center text-sm text-text-muted">
+          <div className="flex h-full items-center justify-center px-6 text-center text-sm text-text-muted">
             {error ?? "These stocks have no overlapping price history for this period. Try another period."}
           </div>
         )}

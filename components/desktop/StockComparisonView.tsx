@@ -257,6 +257,8 @@ export function StockComparisonView({
           secondarySymbol={secondary.stock.symbol}
           primaryName={primary.stock.profile.name ?? primary.stock.symbol}
           secondaryName={secondary.stock.profile.name ?? secondary.stock.symbol}
+          primaryLogo={primary.stock.profile.logo}
+          secondaryLogo={secondary.stock.profile.logo}
           onRemovePrimary={onRemovePrimary}
           onRemoveSecondary={onRemoveSecondary}
         />

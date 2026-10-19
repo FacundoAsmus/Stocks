@@ -607,3 +607,10 @@ main.page-enter-right,
 .duration-350 {
   transition-duration: 350ms;
 }
+
+/* Product and fallback icons use a clean white tile in light mode while
+   preserving their existing gray borders. */
+html.light-mode .market-icon-frame,
+html.light-mode img[class*="object-contain"][class*="border"] {
+  background-color: #fff !important;
+}
