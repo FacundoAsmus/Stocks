@@ -669,12 +669,13 @@ export function WatchlistSplitView() {
           ) : null}
         </div>
 
-        {detail && !comparisonSymbol && (
+        {detail && (!comparisonSymbol || comparisonDetail) && (
           <StockAIChat
             stock={detail.stock}
             currentPrice={detail.currentPrice}
             sentiment={detail.sentiment}
             metrics={detail.metrics}
+            comparisonStock={comparisonSymbol && comparisonDetail ? comparisonDetail : undefined}
             containerRef={detailColumnRef}
           />
         )}

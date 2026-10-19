@@ -1231,7 +1231,8 @@ export async function buildStockContextAsync(
   stock: StockDetail,
   currentPrice: number,
   sentiment: { score: number; drivers: string[] },
-  metrics: Record<string, number | string | null> | undefined
+  metrics: Record<string, number | string | null> | undefined,
+  includeNews = true
 ): Promise<string> {
   const market = getMarketInfo();
   const now = new Date();
@@ -1265,7 +1266,7 @@ export async function buildStockContextAsync(
   // recent news items — all in parallel so total wait time is bounded by
   // the slowest single fetch, not their sum.
   const periods = ["1D","1W","1M","3M","5M","6M","1Y","2Y","5Y","ALL"];
-  const newsItems = stock.news?.slice(0, 8) ?? [];
+  const newsItems = includeNews ? stock.news?.slice(0, 8) ?? [] : [];
   const [stats, statsCandles, articleExtracts] = await Promise.all([
     Promise.all(periods.map(p => fetchPeriodStats(stock.symbol, p))),
     fetchCandlesForStats(stock.symbol),
@@ -1298,7 +1299,8 @@ function buildStockContext(
   stock: StockDetail,
   currentPrice: number,
   sentiment: { score: number; drivers: string[] },
-  metrics: Record<string, number | string | null> | undefined
+  metrics: Record<string, number | string | null> | undefined,
+  includeNews = true
 ): string {
   // Sync fallback used on first render — async version is fetched on open
   const market = getMarketInfo();
@@ -1324,7 +1326,7 @@ function buildStockContext(
   if (stock.priceTarget?.targetMean) lines.push(`Avg Price Target: $${stock.priceTarget.targetMean.toFixed(2)}`);
   const earningsBlock = formatEarningsForAIContext(stock.earnings);
   if (earningsBlock) lines.push(earningsBlock);
-  if (stock.news?.length) {
+  if (includeNews && stock.news?.length) {
     const h = stock.news.slice(0, 8).map((n, i) =>
       `[${i}] ${n.headline} (${n.source})${n.summary ? `\n    Summary: ${n.summary}` : ""}`
     ).join("\n");
@@ -1368,6 +1370,13 @@ interface Props {
   currentPrice: number;
   sentiment: { score: number; drivers: string[] };
   metrics: Record<string, number | string | null> | undefined;
+  /** Adds a second stock's data to the AI context without including either stock's news. */
+  comparisonStock?: {
+    stock: StockDetail;
+    currentPrice: number;
+    sentiment: { score: number; drivers: string[] };
+    metrics: Record<string, number | string | null> | undefined;
+  };
   /** If provided, open state is controlled externally (e.g. desktop's own button) instead of the built-in floating pill. */
   externalOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -1387,7 +1396,7 @@ interface Props {
   containerRef?: React.RefObject<HTMLElement | null>;
 }
 
-export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalOpen, onOpenChange, hideTrigger, containerRef }: Props) {
+export function StockAIChat({ stock, currentPrice, sentiment, metrics, comparisonStock, externalOpen, onOpenChange, hideTrigger, containerRef }: Props) {
   const [mounted, setMounted] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = externalOpen !== undefined;
@@ -1404,7 +1413,20 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
   const inputRef    = useRef<HTMLInputElement>(null);
   const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
   const welcomedStockRef = useRef<string | null>(null);
-  const [stockContext, setStockContext] = useState(() => buildStockContext(stock, currentPrice, sentiment, metrics));
+  const buildCurrentContext = async () => {
+    if (!comparisonStock) {
+      return buildStockContextAsync(stock, currentPrice, sentiment, metrics);
+    }
+    const [primary, secondary] = await Promise.all([
+      buildStockContextAsync(stock, currentPrice, sentiment, metrics, false),
+      buildStockContextAsync(comparisonStock.stock, comparisonStock.currentPrice, comparisonStock.sentiment, comparisonStock.metrics, false),
+    ]);
+    return `Comparison mode. Compare both stocks using the data below. News is intentionally omitted.\n\nStock 1 — ${stock.profile.name ?? stock.symbol} (${stock.symbol}):\n${primary}\n\nStock 2 — ${comparisonStock.stock.profile.name ?? comparisonStock.stock.symbol} (${comparisonStock.stock.symbol}):\n${secondary}`;
+  };
+  const buildCurrentContextFallback = () => comparisonStock
+    ? `Comparison mode. Compare both stocks using the data below. News is intentionally omitted.\n\nStock 1 — ${stock.profile.name ?? stock.symbol} (${stock.symbol}):\n${buildStockContext(stock, currentPrice, sentiment, metrics, false)}\n\nStock 2 — ${comparisonStock.stock.profile.name ?? comparisonStock.stock.symbol} (${comparisonStock.stock.symbol}):\n${buildStockContext(comparisonStock.stock, comparisonStock.currentPrice, comparisonStock.sentiment, comparisonStock.metrics, false)}`
+    : buildStockContext(stock, currentPrice, sentiment, metrics);
+  const [stockContext, setStockContext] = useState(() => buildCurrentContextFallback());
 
   // Desktop reuses one long-lived instance of this component across every
   // stock the user selects in the split view (mobile instead mounts a fresh
@@ -1414,19 +1436,23 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, externalO
   useEffect(() => {
     setMessages([]);
     setInput("");
-    setStockContext(buildStockContext(stock, currentPrice, sentiment, metrics));
+    setStockContext(buildCurrentContextFallback());
     if (open) {
-      buildStockContextAsync(stock, currentPrice, sentiment, metrics).then(ctx => setStockContext(ctx));
+      let active = true;
+      buildCurrentContext().then(ctx => { if (active) setStockContext(ctx); });
+      return () => { active = false; };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stock.symbol]);
+  }, [stock.symbol, comparisonStock?.stock.symbol]);
 
   // On first open, fetch full context with graph data (async)
   useEffect(() => {
     if (!open) return;
-    buildStockContextAsync(stock, currentPrice, sentiment, metrics).then(ctx => setStockContext(ctx));
+    let active = true;
+    buildCurrentContext().then(ctx => { if (active) setStockContext(ctx); });
+    return () => { active = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, stock.symbol, comparisonStock?.stock.symbol]);
 
   useEffect(() => {
     if (!open || welcomedStockRef.current === stock.symbol) return;
