@@ -20,7 +20,7 @@ export const MAJOR_INDICES = [
   { symbol: "NDX", displaySymbol: "NDX", description: "Nasdaq 100 Index", type: "Index" }
 ];
 
-export const DEFAULT_WATCHLIST = ["AAPL", "MSFT", "NVDA", "^GSPC"];
+export const DEFAULT_WATCHLIST = ["SPY", "AAPL", "NVDA", "GOOG"];
 
 export const MARKET_BAR_SYMBOLS = [
   "^GSPC",
