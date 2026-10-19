@@ -1126,7 +1126,7 @@ function ComparisonFilingGraph({ ctx, title, field }: { ctx: GraphCtx; title: st
         {pairs.map(pair => <div key={pair.year} className="relative min-w-0 flex-1 border-l border-border-subtle first:border-l-0">
           {([ ["primary", pair.a, COMPARISON_COLORS.primary], ["secondary", pair.b, COMPARISON_COLORS.secondary] ] as const).map(([series, value, color]) => {
             if (value === null) return null;
-            const height = Math.max((Math.abs(value) / maximum) * (hasNegative ? 0.4 : 0.78), 3);
+            const height = Math.max((Math.abs(value) / maximum) * 100 * (hasNegative ? 0.4 : 0.78), 3);
             const negative = value < 0;
             return <div key={series} className="absolute w-1/4 max-w-5 -translate-x-1/2 rounded-sm" style={{ left: series === "primary" ? "35%" : "65%", ...(negative ? { top: `${baseline}%` } : { bottom: hasNegative ? "55%" : `${baseline}%` }), height: `${height}%`, backgroundColor: color, boxShadow: series === "primary" ? "0 0 10px rgba(168, 85, 247, 0.55)" : "0 0 10px rgba(249, 115, 22, 0.55)" }} title={`${pair.year}: ${formatCurrency(value)}`} onMouseEnter={() => setHovered({ year: pair.year, series, value })} onMouseLeave={() => setHovered(null)} />;
           })}
@@ -1843,6 +1843,19 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
 
   return createPortal(
     <>
+      {containerRef && <div
+        aria-hidden="true"
+        style={{
+          position: "fixed", inset: 0, zIndex: 999,
+          background: open ? "rgba(0,0,0,0.16)" : "transparent",
+          backdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
+          WebkitBackdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
+          pointerEvents: open ? "auto" : "none",
+          opacity: open ? 1 : 0,
+          transition: "opacity 0.25s ease, backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
+        }}
+        onClick={handleDismiss}
+      />}
       {/* Backdrop + messages — pinned to the exact visual viewport rectangle */}
       <div
         style={{
@@ -1858,8 +1871,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           style={{
             position: "absolute", inset: 0,
             zIndex: 0,
-            backdropFilter:       open ? "blur(12px) brightness(0.97)" : "none",
-            WebkitBackdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
+            background: open && !containerRef ? "rgba(0,0,0,0.16)" : "transparent",
+            backdropFilter:       open && !containerRef ? "blur(12px) brightness(0.97)" : "none",
+            WebkitBackdropFilter: open && !containerRef ? "blur(12px) brightness(0.97)" : "none",
             transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
             transform: "translateZ(0)",
             WebkitTransform: "translateZ(0)",

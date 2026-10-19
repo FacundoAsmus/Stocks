@@ -182,11 +182,13 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
           const bValues = years.map((year) => b.find((item) => item.year === year)?.[key] ?? null);
           const latestA = [...aValues].reverse().find((value): value is number => value !== null) ?? null;
           if (aValues.every((value) => value === null) && bValues.every((value) => value === null)) return null;
-          // Match the watchlist's per-stock annual chart scale: each stock's
-          // yearly bars use that stock's own largest absolute value, so a
-          // larger company cannot flatten the other company's history.
-          const maxMagnitudes = [aValues, bValues].map((seriesValues) =>
-            Math.max(1, ...seriesValues.filter((value): value is number => value !== null).map((value) => Math.abs(value)))
+          // One shared scale per metric so matching bar heights represent
+          // matching dollar amounts across both stocks.
+          const sharedMax = Math.max(
+            1,
+            ...[...aValues, ...bValues]
+              .filter((value): value is number => value !== null)
+              .map((value) => Math.abs(value))
           );
           const hasNegative = [...aValues, ...bValues].some((value) => (value ?? 0) < 0);
           const baseline = hasNegative ? 45 : 14;
@@ -207,7 +209,7 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
                       <div key={year} className="relative min-w-0 flex-1 border-l border-border-subtle first:border-l-0">
                         {values.map((value, seriesIndex) => {
                           if (value === null) return null;
-                          const height = Math.max((Math.abs(value) / maxMagnitudes[seriesIndex]) * (hasNegative ? 0.4 : 0.78), 3);
+                          const height = Math.max((Math.abs(value) / sharedMax) * 100 * (hasNegative ? 0.4 : 0.78), 3);
                           const negative = value < 0;
                           const color = seriesIndex === 0 ? COMPARISON_COLORS.primary : COMPARISON_COLORS.secondary;
                           return (
