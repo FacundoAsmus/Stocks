@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { motion } from "framer-motion";
 import { Send, Sparkles } from "lucide-react";
-import { Area, ComposedChart, Line, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, ComposedChart, Line, LineChart, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { formatEarningsForAIContext } from "@/lib/earnings";
 import { AIStarLoader } from "@/components/AIStarLoader";
@@ -255,14 +256,14 @@ function computeDataPoint(key: DataKey, ctx: GraphCtx): { label: string; value: 
 
 // A small pill — fits inline content width only, so it can never push past
 // the chat bubble's own max-width. Fades/rises in on mount.
-function DataPill({ dataKey, ctx }: { dataKey: DataKey; ctx: GraphCtx }) {
+function DataPill({ dataKey, ctx, identityColor, symbol }: { dataKey: DataKey; ctx: GraphCtx; identityColor?: string; symbol?: string }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const raf = requestAnimationFrame(() => setMounted(true));
     return () => cancelAnimationFrame(raf);
   }, []);
   const point = computeDataPoint(dataKey, ctx);
-  const color = point.tone === "positive" ? "#00c805" : point.tone === "negative" ? "#ff3003" : "#9a9aa2";
+  const color = identityColor ?? (point.tone === "positive" ? "#00c805" : point.tone === "negative" ? "#ff3003" : "#9a9aa2");
   const pillBg = ctx.isLightMode ? "#ffffff" : "#000000";
   return (
     <div style={{
@@ -279,7 +280,7 @@ function DataPill({ dataKey, ctx }: { dataKey: DataKey; ctx: GraphCtx }) {
     }}>
       <span style={{ height: 7, width: 7, borderRadius: "50%", backgroundColor: color, flexShrink: 0 }} />
       <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em", color: "#9a9aa2", whiteSpace: "nowrap" }}>
-        {point.label}
+        {symbol ? `${symbol} · ${point.label}` : point.label}
       </span>
       <span style={{ fontSize: 15, fontWeight: 700, color, whiteSpace: "nowrap" }}>{point.value}</span>
     </div>
@@ -309,7 +310,7 @@ function GraphShimmer() {
 const DESKTOP_GRAPH_ASPECT_RATIO = 3.2;
 const MOBILE_GRAPH_ASPECT_RATIO = 1.46;
 
-function GraphFrame({ title, value, ready, tall, children }: { title: string; value?: React.ReactNode; ready: boolean; children: React.ReactNode; isLightMode?: boolean; tall?: boolean }) {
+function GraphFrame({ title, value, ready, tall, children }: { title?: string; value?: React.ReactNode; ready: boolean; children: React.ReactNode; isLightMode?: boolean; tall?: boolean }) {
   const measureRef = useRef<HTMLDivElement>(null);
   const minHeight = tall ? 150 : 108;
   const maxHeight = tall ? 260 : 220;
@@ -344,9 +345,7 @@ function GraphFrame({ title, value, ready, tall, children }: { title: string; va
       padding: "0 0 4px",
       overflow: "hidden",
     }}>
-      <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-accent)", margin: "0 0 4px" }}>
-        {title}
-      </p>
+      {title && <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-accent)", margin: "0 0 4px" }}>{title}</p>}
       {value !== undefined && <div style={{ marginBottom: 6, color: "var(--color-text-primary)", lineHeight: 1 }}>{typeof value === "string" ? <WheelPrice value={value} size="xs" /> : value}</div>}
       <div style={{ position: "relative", height, width: "100%" }}>
         {!ready && <GraphShimmer />}
@@ -951,19 +950,10 @@ function GraphVolume({ ctx }: { ctx: GraphCtx }) {
 function ComparisonDataWidget({ dataKey, ctx }: { dataKey: DataKey; ctx: GraphCtx }) {
   if (!ctx.comparisonStock) return null;
   const secondaryCtx: GraphCtx = { ...ctx, ...ctx.comparisonStock, comparisonStock: undefined };
-  const primary = computeDataPoint(dataKey, ctx);
-  const secondary = computeDataPoint(dataKey, secondaryCtx);
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, width: "100%", maxWidth: 420 }}>
-      {[
-        { symbol: ctx.stock.symbol, point: primary, color: COMPARISON_COLORS.primary },
-        { symbol: ctx.comparisonStock.stock.symbol, point: secondary, color: COMPARISON_COLORS.secondary },
-      ].map(({ symbol, point, color }) => (
-        <div key={symbol} style={{ minWidth: 0, border: `1px solid ${color}90`, borderRadius: 14, padding: "9px 12px", background: ctx.isLightMode ? "#fff" : "#000", boxShadow: `0 0 8px ${color}30` }}>
-          <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color, fontSize: 10, fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase" }}>{symbol} · {point.label}</div>
-          <div style={{ color, fontSize: 16, fontWeight: 700, lineHeight: 1.35 }}>{point.value}</div>
-        </div>
-      ))}
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, width: "100%" }}>
+      <DataPill dataKey={dataKey} ctx={ctx} identityColor={COMPARISON_COLORS.primary} symbol={ctx.stock.symbol} />
+      <DataPill dataKey={dataKey} ctx={secondaryCtx} identityColor={COMPARISON_COLORS.secondary} symbol={ctx.comparisonStock.stock.symbol} />
     </div>
   );
 }
@@ -1006,6 +996,7 @@ function ComparisonPriceGraph({ ctx, period, annotations }: { ctx: GraphCtx; per
 
   if (!secondary) return null;
   const active = hoveredRow ?? rows[rows.length - 1] ?? null;
+  const winnerIsPrimary = active ? active.aPct >= active.bPct : true;
   const vals = rows.flatMap(row => [row.aPct, row.bPct]);
   const low = Math.min(0, ...vals), high = Math.max(0, ...vals);
   const padding = Math.max((high - low) * 0.06, 0.5);
@@ -1017,53 +1008,76 @@ function ComparisonPriceGraph({ ctx, period, annotations }: { ctx: GraphCtx; per
     return rows.reduce((nearest, row) => Math.abs(row.time * 1000 - target) < Math.abs(nearest.time * 1000 - target) ? row : nearest, rows[0]);
   };
   const seriesBase = (series: "primary" | "secondary") => series === "secondary" ? rows[0]?.bPrice : rows[0]?.aPrice;
-  const valueLine = active ? (
-    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-      <span style={{ color: COMPARISON_COLORS.primary }}>{ctx.stock.symbol} {formatPercent(active.aPct)}</span>
-      <span style={{ color: COMPARISON_COLORS.secondary }}>{secondary.stock.symbol} {formatPercent(active.bPct)}</span>
+  return <div style={{ width: "100%", maxWidth: "100%" }}>
+    <div style={{ marginBottom: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+      <p className="min-w-0 truncate text-4xl font-semibold tracking-normal text-purple-400">{ctx.stock.profile.name ?? ctx.stock.symbol}</p>
+      <p className="min-w-0 truncate text-4xl font-semibold tracking-normal text-orange-400">{secondary.stock.profile.name ?? secondary.stock.symbol}</p>
     </div>
-  ) : undefined;
-
-  return <GraphFrame title={`Comparison — ${periodLabel[period] ?? period}`} value={valueLine} ready={ready} tall>
-    {failed || !rows.length ? <div style={{ display: "flex", alignItems: "center", height: "100%", color: "#9a9aa2", fontSize: 13 }}>Comparison price history unavailable.</div> : (
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={rows} margin={{ top: annotations?.length ? 14 : 4, right: 4, bottom: 0, left: 4 }} onMouseMove={(state: unknown) => {
-          const index = (state as { activeTooltipIndex?: number })?.activeTooltipIndex;
-          setHoveredRow(index === undefined ? null : rows[Number(index)] ?? null);
-        }} onMouseLeave={() => setHoveredRow(null)}>
-          <XAxis dataKey="date" hide />
-          <YAxis domain={domain} hide />
-          <Tooltip cursor={{ stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 }} formatter={(value, name) => [formatPercent(Number(value)), name === "aPct" ? ctx.stock.symbol : secondary.stock.symbol]} labelFormatter={label => new Date(String(label)).toLocaleDateString()} />
-          <ReferenceLine y={0} stroke="rgba(128,128,128,0.45)" strokeDasharray="3 3" />
-          <Line type="monotone" dataKey="aPct" stroke={COMPARISON_COLORS.primary} strokeWidth={2} dot={false} activeDot={{ r: 3 }} isAnimationActive={false} />
-          <Line type="monotone" dataKey="bPct" stroke={COMPARISON_COLORS.secondary} strokeWidth={2} dot={false} activeDot={{ r: 3 }} isAnimationActive={false} />
-          {annotations?.filter((item): item is RegionAnnotation => item.type === "region").map((item, index) => {
-            const start = nearestRow(item.start), end = nearestRow(item.end);
-            if (!start || !end) return null;
-            const color = ANNOTATION_COLOR[item.tone];
-            return <ReferenceArea key={`compare-region-${index}`} x1={start.date} x2={end.date} fill={color} fillOpacity={0.12} stroke={color} strokeOpacity={0.3} label={{ value: item.label, position: "insideTop", fontSize: 9, fontWeight: 600, fill: color }} />;
-          })}
-          {annotations?.filter((item): item is LevelAnnotation => item.type === "level").map((item, index) => {
-            const base = seriesBase(item.series ?? "primary");
-            if (!base) return null;
-            const levelPct = (item.price / base - 1) * 100;
-            const color = item.levelType === "support" ? "#00c805" : item.levelType === "resistance" ? "#ff3003" : "#9a9aa2";
-            return <ReferenceLine key={`compare-level-${index}`} y={levelPct} stroke={color} strokeDasharray="4 3" label={{ value: item.label, position: "insideTopRight", fontSize: 9, fill: color }} />;
-          })}
-          {annotations?.filter((item): item is MarkAnnotation => item.type === "mark").map((item, index) => {
-            const row = nearestRow(item.date);
-            const series = item.series ?? "primary";
-            if (!row) return null;
-            const base = seriesBase(series);
-            if (!base) return null;
-            const y = (item.price / base - 1) * 100;
-            const color = series === "secondary" ? COMPARISON_COLORS.secondary : COMPARISON_COLORS.primary;
-            return <ReferenceDot key={`compare-mark-${index}`} x={row.date} y={y} r={3.5} fill={MARK_COLOR} stroke={ctx.isLightMode ? "#fff" : "#000"} strokeWidth={1.5} label={markLabelRenderer(item.label, "right", y > (domain[0] + domain[1]) / 2 ? "below" : "above")} />;
-          })}
-        </ComposedChart>
-      </ResponsiveContainer>
-    )}
-  </GraphFrame>;
+    {ready && active && <>
+      <div className="mb-1 flex items-end gap-3">
+        {([
+          { series: winnerIsPrimary ? "a" : "b", value: winnerIsPrimary ? active.aPct : active.bPct, large: true },
+          { series: winnerIsPrimary ? "b" : "a", value: winnerIsPrimary ? active.bPct : active.aPct, large: false },
+        ] as const).map(({ series, value, large }) => (
+          <motion.div key={series} layout initial={false} transition={{ layout: { duration: 0.34, ease: [0.22, 1, 0.36, 1] } }} className="flex items-end">
+            <WheelPrice value={formatPercent(value)} size={large ? "lg" : "sm"} colorClass={series === "a"
+              ? large ? "text-purple-400 transition-colors duration-300" : "text-purple-400/50 transition-colors duration-300"
+              : large ? "text-orange-400 transition-colors duration-300" : "text-orange-400/50 transition-colors duration-300"} />
+          </motion.div>
+        ))}
+      </div>
+      <p className="mb-2 text-sm text-text-muted">{active.date === "prev" ? "Previous close" : new Date(active.time * 1000).toLocaleString()}</p>
+    </>}
+    <GraphFrame ready={ready} tall={!!annotations?.length}>
+      {failed || !rows.length ? <div style={{ display: "flex", alignItems: "center", height: "100%", color: "#9a9aa2", fontSize: 13 }}>Comparison price history unavailable.</div> : (
+        <div className="comparison-stock-chart h-full w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={rows} margin={{ top: annotations?.length ? 14 : 4, right: 4, bottom: 0, left: 4 }} onMouseMove={(state: unknown) => {
+              const index = (state as { activeTooltipIndex?: number })?.activeTooltipIndex;
+              setHoveredRow(index === undefined ? null : rows[Number(index)] ?? null);
+            }} onMouseLeave={() => setHoveredRow(null)}>
+              <XAxis dataKey="date" hide />
+              <YAxis type="number" domain={domain} hide />
+              <Tooltip content={() => null} cursor={{ stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 }} />
+              <ReferenceLine y={0} stroke="rgba(150,150,150,0.55)" strokeDasharray="4 4" />
+              <Line className="comparison-series-a" type="monotone" dataKey="aPct" stroke={COMPARISON_COLORS.primary} strokeWidth={2.5} dot={false} isAnimationActive={false} activeDot={(rawProps: unknown) => {
+                const props = rawProps as { cx?: number; cy?: number; payload?: ComparisonRow };
+                if (props.cx == null || props.cy == null || !props.payload || props.payload.aPct < props.payload.bPct) return <g />;
+                return <circle cx={props.cx} cy={props.cy} r={5} fill={COMPARISON_COLORS.primary} stroke="#000" strokeWidth={2} />;
+              }} />
+              <Line className="comparison-series-b" type="monotone" dataKey="bPct" stroke={COMPARISON_COLORS.secondary} strokeWidth={2.5} dot={false} isAnimationActive={false} activeDot={(rawProps: unknown) => {
+                const props = rawProps as { cx?: number; cy?: number; payload?: ComparisonRow };
+                if (props.cx == null || props.cy == null || !props.payload || props.payload.bPct <= props.payload.aPct) return <g />;
+                return <circle cx={props.cx} cy={props.cy} r={5} fill={COMPARISON_COLORS.secondary} stroke="#000" strokeWidth={2} />;
+              }} />
+              {annotations?.filter((item): item is RegionAnnotation => item.type === "region").map((item, index) => {
+                const start = nearestRow(item.start), end = nearestRow(item.end);
+                if (!start || !end) return null;
+                const color = ANNOTATION_COLOR[item.tone];
+                return <ReferenceArea key={`compare-region-${index}`} x1={start.date} x2={end.date} fill={color} fillOpacity={0.12} stroke={color} strokeOpacity={0.3} label={{ value: item.label, position: "insideTop", fontSize: 9, fontWeight: 600, fill: color }} />;
+              })}
+              {annotations?.filter((item): item is LevelAnnotation => item.type === "level").map((item, index) => {
+                const base = seriesBase(item.series ?? "primary");
+                if (!base) return null;
+                const levelPct = (item.price / base - 1) * 100;
+                const color = item.levelType === "support" ? "#00c805" : item.levelType === "resistance" ? "#ff3003" : "#9a9aa2";
+                return <ReferenceLine key={`compare-level-${index}`} y={levelPct} stroke={color} strokeDasharray="4 3" label={{ value: item.label, position: "insideTopRight", fontSize: 9, fill: color }} />;
+              })}
+              {annotations?.filter((item): item is MarkAnnotation => item.type === "mark").map((item, index) => {
+                const row = nearestRow(item.date);
+                const series = item.series ?? "primary";
+                if (!row) return null;
+                const base = seriesBase(series);
+                if (!base) return null;
+                const y = (item.price / base - 1) * 100;
+                return <ReferenceDot key={`compare-mark-${index}`} x={row.date} y={y} r={3.5} fill={MARK_COLOR} stroke={ctx.isLightMode ? "#fff" : "#000"} strokeWidth={1.5} label={markLabelRenderer(item.label, "right", y > (domain[0] + domain[1]) / 2 ? "below" : "above")} />;
+              })}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </GraphFrame>
+  </div>;
 }
 
 type ComparisonFilingPoint = { year: number; capex: number | null; researchAndDevelopment: number | null; freeCashFlow: number | null };
@@ -1097,26 +1111,30 @@ function ComparisonFilingGraph({ ctx, title, field }: { ctx: GraphCtx; title: st
   const maximum = Math.max(1, ...values.map(value => Math.abs(value)));
   const hasNegative = values.some(value => value < 0);
   const baseline = hasNegative ? 45 : 14;
-  const lastPrimary = [...pairs].reverse().find(pair => pair.a !== null)?.a ?? null;
-  const display = hovered ?? (lastPrimary === null ? null : { year: pairs[pairs.length - 1]?.year ?? 0, series: "primary" as const, value: lastPrimary });
-  const valueLine = <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-    {display ? <span style={{ color: display.series === "primary" ? COMPARISON_COLORS.primary : COMPARISON_COLORS.secondary }}>{display.year} · {display.series === "primary" ? ctx.stock.symbol : secondary.stock.symbol} · ${formatCompact(display.value)}</span> : <span style={{ color: "#9a9aa2" }}>Filing data unavailable</span>}
-  </div>;
-  return <GraphFrame title={title} value={valueLine} ready={ready} tall>
-    {!years.length ? <div style={{ height: "100%", display: "flex", alignItems: "center", color: "#9a9aa2", fontSize: 13 }}>SEC filing data unavailable.</div> : <div style={{ position: "relative", height: "100%", borderTop: "1px solid var(--color-border-subtle)", borderBottom: "1px solid var(--color-border-subtle)" }}>
-      <div style={{ position: "absolute", left: 0, right: 0, ...(hasNegative ? { top: `${baseline}%` } : { bottom: `${baseline}%` }), borderTop: "1px solid var(--color-border-subtle)" }} />
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${pairs.length}, minmax(0, 1fr))`, height: "100%" }}>
-        {pairs.map(pair => <div key={pair.year} style={{ position: "relative", borderLeft: "1px solid var(--color-border-subtle)" }}>
+  const latestA = [...pairs].reverse().find(pair => pair.a !== null)?.a ?? null;
+  const display = hovered ?? (latestA === null ? null : { year: pairs[pairs.length - 1]?.year ?? 0, series: "primary" as const, value: latestA });
+  if (!ready || !years.length || values.length === 0) return null;
+  const displayedColor = display?.series === "secondary" ? "text-orange-400" : "text-purple-400";
+  return <section className="rounded-xl bg-black p-5">
+    <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
+    <div className="mb-5 text-text-primary">
+      <WheelPrice value={display ? `$${formatCompact(display.value)}` : "N/A"} size="xs" compact colorClass={displayedColor} />
+    </div>
+    <div className="relative h-64 border-y border-border-subtle">
+      <div className="absolute inset-x-0 border-t border-border-subtle" style={hasNegative ? { top: `${baseline}%` } : { bottom: `${baseline}%` }} />
+      <div className="flex h-full">
+        {pairs.map(pair => <div key={pair.year} className="relative min-w-0 flex-1 border-l border-border-subtle first:border-l-0">
           {([ ["primary", pair.a, COMPARISON_COLORS.primary], ["secondary", pair.b, COMPARISON_COLORS.secondary] ] as const).map(([series, value, color]) => {
             if (value === null) return null;
-            const height = Math.max(Math.abs(value) / maximum * (hasNegative ? 40 : 78), 3);
-            return <div key={series} style={{ position: "absolute", left: series === "primary" ? "35%" : "65%", width: "25%", maxWidth: 20, borderRadius: 2, ...(value < 0 ? { top: `${baseline}%` } : { bottom: hasNegative ? "55%" : `${baseline}%` }), height: `${height}%`, background: color, boxShadow: `0 0 9px ${color}80`, cursor: "pointer" }} title={`${pair.year} ${series === "primary" ? ctx.stock.symbol : secondary.stock.symbol}: $${formatCompact(value)}`} onMouseEnter={() => setHovered({ year: pair.year, series, value })} onMouseLeave={() => setHovered(null)} />;
+            const height = Math.max((Math.abs(value) / maximum) * (hasNegative ? 0.4 : 0.78), 3);
+            const negative = value < 0;
+            return <div key={series} className="absolute w-1/4 max-w-5 -translate-x-1/2 rounded-sm" style={{ left: series === "primary" ? "35%" : "65%", ...(negative ? { top: `${baseline}%` } : { bottom: hasNegative ? "55%" : `${baseline}%` }), height: `${height}%`, backgroundColor: color, boxShadow: series === "primary" ? "0 0 10px rgba(168, 85, 247, 0.55)" : "0 0 10px rgba(249, 115, 22, 0.55)" }} title={`${pair.year}: ${formatCurrency(value)}`} onMouseEnter={() => setHovered({ year: pair.year, series, value })} onMouseLeave={() => setHovered(null)} />;
           })}
-          <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", fontSize: 10, fontWeight: 600, color: "var(--color-accent)" }}>{pair.year}</span>
+          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-text-muted">{pair.year}</span>
         </div>)}
       </div>
-    </div>}
-  </GraphFrame>;
+    </div>
+  </section>;
 }
 
 function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; annotations?: Annotation[]; ctx: GraphCtx }) {
