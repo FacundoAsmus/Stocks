@@ -6,13 +6,13 @@ import { motion } from "framer-motion";
 import { Send, Sparkles } from "lucide-react";
 import { Area, ComposedChart, Line, LineChart, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
-import { formatEarningsForAIContext } from "@/lib/earnings";
+import { formatEarningsForAIContext, getNextReport, todayStr } from "@/lib/earnings";
 import { AIStarLoader } from "@/components/AIStarLoader";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
-import { WheelPrice } from "@/components/PriceChart";
+import { WheelPrice, tooltipLabel } from "@/components/PriceChart";
 import { COMPARISON_COLORS, mergeComparisonCandles, type ComparisonRow } from "@/components/desktop/ComparisonPriceChart";
-import type { CandlePoint, StockDetail } from "@/types/stock";
+import type { CandlePoint, ChartPeriod, StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
 
@@ -77,6 +77,7 @@ const GRAPH_TYPES = [
   "comparePrice:1D", "comparePrice:1W", "comparePrice:1M", "comparePrice:3M", "comparePrice:5M", "comparePrice:6M", "comparePrice:1Y", "comparePrice:2Y", "comparePrice:5Y", "comparePrice:ALL",
   "compareData:marketCap", "compareData:peRatio", "compareData:forwardPe", "compareData:eps", "compareData:dividendYield", "compareData:beta", "compareData:high52", "compareData:low52", "compareData:avgVolume", "compareData:priceTarget",
   "compareGraph:capex", "compareGraph:rnd", "compareGraph:freeCashFlow",
+  "calendar",
 ] as const;
 type GraphType = typeof GRAPH_TYPES[number];
 
@@ -264,7 +265,7 @@ function DataPill({ dataKey, ctx, identityColor, symbol }: { dataKey: DataKey; c
   }, []);
   const point = computeDataPoint(dataKey, ctx);
   const color = identityColor ?? (point.tone === "positive" ? "#00c805" : point.tone === "negative" ? "#ff3003" : "#9a9aa2");
-  const pillBg = ctx.isLightMode ? "#ffffff" : "#000000";
+  const pillBg = "rgba(8,12,10,0.64)";
   return (
     <div style={{
       display: "inline-flex", alignItems: "center", gap: 8,
@@ -686,7 +687,7 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
           Price history unavailable.
         </div>
       ) : (
-        <div ref={chartRef} style={{ position: "relative", height: "100%" }} onMouseLeave={() => { if (!isTouching) { setHoverPrice(null); setDotCY(null); } }}>
+            <div ref={chartRef} className={positive ? "stock-chart-positive" : "stock-chart-negative"} style={{ position: "relative", height: "100%" }} onMouseLeave={() => { if (!isTouching) { setHoverPrice(null); setDotCY(null); } }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartPoints ?? []} margin={{ top: hasAnnotations ? 14 : 4, right: 4, bottom: 0, left: 4 }}>
             <defs>
@@ -1026,7 +1027,7 @@ function ComparisonPriceGraph({ ctx, period, annotations }: { ctx: GraphCtx; per
           </motion.div>
         ))}
       </div>
-      <p className="mb-2 text-sm text-text-muted">{active.date === "prev" ? "Previous close" : new Date(active.time * 1000).toLocaleString()}</p>
+      <p className="mb-2 text-sm text-text-muted">{tooltipLabel(active.date, period as ChartPeriod)}</p>
     </>}
     <GraphFrame ready={ready} tall={!!annotations?.length}>
       {failed || !rows.length ? <div style={{ display: "flex", alignItems: "center", height: "100%", color: "#9a9aa2", fontSize: 13 }}>Comparison price history unavailable.</div> : (
@@ -1115,7 +1116,7 @@ function ComparisonFilingGraph({ ctx, title, field }: { ctx: GraphCtx; title: st
   const display = hovered ?? (latestA === null ? null : { year: pairs[pairs.length - 1]?.year ?? 0, series: "primary" as const, value: latestA });
   if (!ready || !years.length || values.length === 0) return null;
   const displayedColor = display?.series === "secondary" ? "text-orange-400" : "text-purple-400";
-  return <section className="rounded-xl bg-black p-5">
+  return <section className="rounded-xl bg-transparent p-5">
     <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
     <div className="mb-5 text-text-primary">
       <WheelPrice value={display ? `$${formatCompact(display.value)}` : "N/A"} size="xs" compact colorClass={displayedColor} />
@@ -1135,6 +1136,44 @@ function ComparisonFilingGraph({ ctx, title, field }: { ctx: GraphCtx; title: st
       </div>
     </div>
   </section>;
+}
+
+function EarningsCalendarWidget({ ctx }: { ctx: GraphCtx }) {
+  const earnings = ctx.stock.earnings;
+  const report = getNextReport(earnings) ?? [...earnings].sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
+  const [year, month, reportDay] = (report?.date ?? todayStr()).split("-").map(Number);
+  const monthDate = new Date(year, month - 1, 1);
+  const monthLabel = new Intl.DateTimeFormat("en-US", { month: "long" }).format(monthDate);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const mondayFirstOffset = (monthDate.getDay() + 6) % 7;
+  const cells: (number | null)[] = [
+    ...Array(mondayFirstOffset).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
+  ];
+  const today = todayStr();
+  const reportDate = report?.date ?? "";
+
+  return <div aria-label={`${ctx.stock.symbol} earnings calendar for ${monthLabel}`} className="w-full max-w-[360px] rounded-3xl border p-4" style={{ borderColor: "#adfa1b", background: "rgba(0,0,0,0.56)", boxShadow: "0 0 14px rgba(173,250,27,0.42), inset 0 0 12px rgba(173,250,27,0.08)" }}>
+    <p className="mb-1.5 text-center text-xs font-bold uppercase tracking-widest" style={{ color: "#adfa1b" }}>{monthLabel}</p>
+    <div className="grid grid-cols-7 gap-y-0.5">
+      {["M", "T", "W", "T", "F", "S", "S"].map((weekday, index) => <p key={index} className="text-center text-[9px] font-bold uppercase text-text-muted">{weekday}</p>)}
+      {cells.map((day, index) => {
+        if (day === null) return <div key={`blank-${index}`} className="h-5" />;
+        const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const isToday = date === today;
+        const isPast = date < today;
+        const isReportDate = date === reportDate;
+        return <div key={date} className="flex h-5 items-center justify-center">
+          {isReportDate ? (
+            <span title={`Q${report?.quarter} ${report?.year} report date`} className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-black">{day}</span>
+          ) : (
+            <span className={`text-[9px] font-bold ${isToday ? "text-accent" : isPast ? "text-text-muted" : "text-text-primary"}`}>{day}</span>
+          )}
+        </div>;
+      })}
+    </div>
+    {report && <p className="mt-2 text-center text-[10px] font-medium text-text-muted">{ctx.stock.symbol} · Q{report.quarter} {report.year} report</p>}
+  </div>;
 }
 
 function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; annotations?: Annotation[]; ctx: GraphCtx }) {
@@ -1160,6 +1199,7 @@ function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; an
     case "analyst":   return <GraphAnalyst ctx={ctx} />;
     case "sentiment": return <GraphSentiment ctx={ctx} />;
     case "targets":   return <GraphTargets ctx={ctx} />;
+    case "calendar":  return <EarningsCalendarWidget ctx={ctx} />;
     default:          return null;
   }
 }

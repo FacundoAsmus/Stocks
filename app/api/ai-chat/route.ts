@@ -42,7 +42,7 @@ Guidelines:
       volume (non-interactive one-month trading-volume bars, with average daily volume),
       capex (annual capital-expenditure bars from SEC filings), rnd (annual research-and-development bars from SEC filings), freeCashFlow (annual free-cash-flow bars from SEC filings),
       earnings (quarterly revenue bars), eps (quarterly earnings-per-share bars),
-      analyst (analyst buy/hold/sell breakdown), sentiment (this app's computed sentiment score), targets (analyst price target range vs. current price).
+      analyst (analyst buy/hold/sell breakdown), sentiment (this app's computed sentiment score), targets (analyst price target range vs. current price), calendar (one-month earnings calendar with the next known report date marked; use when asked when the stock reports).
   In comparison mode (the context contains two labeled stocks), comparison widgets are also available:
       [[graph:comparePrice:PERIOD]] — both stocks' percent-change lines on one shared chart for PERIOD (1D, 1W, 1M, 3M, 5M, 6M, 1Y, 2Y, 5Y, or ALL). Use this instead of a single-stock price graph when discussing their relative performance.
       [[graph:compareData:KEY]] — paired values for both stocks. KEY can be marketCap, peRatio, forwardPe, eps, dividendYield, beta, high52, low52, avgVolume, or priceTarget.
