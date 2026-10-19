@@ -10,6 +10,7 @@ import { AIStarLoader } from "@/components/AIStarLoader";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { WheelPrice } from "@/components/PriceChart";
+import { COMPARISON_COLORS, mergeComparisonCandles, type ComparisonRow } from "@/components/desktop/ComparisonPriceChart";
 import type { CandlePoint, StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
@@ -20,6 +21,12 @@ interface GraphCtx {
   currentPrice: number;
   sentiment: { score: number; drivers: string[] };
   metrics: Record<string, number | string | null> | undefined;
+  comparisonStock?: {
+    stock: StockDetail;
+    currentPrice: number;
+    sentiment: { score: number; drivers: string[] };
+    metrics: Record<string, number | string | null> | undefined;
+  };
   isLightMode: boolean;
 }
 
@@ -66,6 +73,9 @@ type DataKey = typeof DATA_KEYS[number];
 const GRAPH_TYPES = [
   "price:1D", "price:1W", "price:1M", "price:3M", "price:5M", "price:6M", "price:1Y", "price:2Y", "price:5Y", "price:ALL",
   "ma7", "ma25", "ma99", "volume", "capex", "rnd", "freeCashFlow", "earnings", "eps", "analyst", "sentiment", "targets",
+  "comparePrice:1D", "comparePrice:1W", "comparePrice:1M", "comparePrice:3M", "comparePrice:5M", "comparePrice:6M", "comparePrice:1Y", "comparePrice:2Y", "comparePrice:5Y", "comparePrice:ALL",
+  "compareData:marketCap", "compareData:peRatio", "compareData:forwardPe", "compareData:eps", "compareData:dividendYield", "compareData:beta", "compareData:high52", "compareData:low52", "compareData:avgVolume", "compareData:priceTarget",
+  "compareGraph:capex", "compareGraph:rnd", "compareGraph:freeCashFlow",
 ] as const;
 type GraphType = typeof GRAPH_TYPES[number];
 
@@ -79,8 +89,8 @@ type GraphType = typeof GRAPH_TYPES[number];
 //   [[region:...]] up to 1  — a shaded date-range band
 // ─────────────────────────────────────────────────────────────────────────
 
-interface MarkAnnotation   { type: "mark";   date: string; price: number; label: string; color: "positive" | "negative" | "neutral" }
-interface LevelAnnotation  { type: "level";  price: number; label: string; levelType: "support" | "resistance" | "level" }
+interface MarkAnnotation   { type: "mark";   date: string; price: number; label: string; color: "positive" | "negative" | "neutral"; series?: "primary" | "secondary" }
+interface LevelAnnotation  { type: "level";  price: number; label: string; levelType: "support" | "resistance" | "level"; series?: "primary" | "secondary" }
 interface RegionAnnotation { type: "region"; start: string; end: string; label: string; tone: "positive" | "negative" | "neutral" }
 type Annotation = MarkAnnotation | LevelAnnotation | RegionAnnotation;
 
@@ -123,7 +133,7 @@ function extractAnnotations(text: string): { cleaned: string; annotations: Annot
     const f = parseAnnotationFields(raw);
     const price = Number(f.price);
     if (!f.date || !f.label || Number.isNaN(price)) return "";
-    annotations.push({ type: "mark", date: f.date, price, label: f.label, color: asTone(f.color) });
+    annotations.push({ type: "mark", date: f.date, price, label: f.label, color: asTone(f.color), series: f.series === "secondary" ? "secondary" : f.series === "primary" ? "primary" : undefined });
     return "";
   });
 
@@ -133,7 +143,7 @@ function extractAnnotations(text: string): { cleaned: string; annotations: Annot
     const price = Number(f.price);
     if (!f.label || Number.isNaN(price)) return "";
     const levelType = f.type === "support" || f.type === "resistance" ? f.type : "level";
-    annotations.push({ type: "level", price, label: f.label, levelType });
+    annotations.push({ type: "level", price, label: f.label, levelType, series: f.series === "secondary" ? "secondary" : f.series === "primary" ? "primary" : undefined });
     return "";
   });
 
@@ -175,7 +185,7 @@ function parseSegments(text: string): Segment[] {
       seenPills.add(m[1]);
     } else if (m[2] && GRAPH_TYPES.includes(m[2] as GraphType) && !seenGraphs.has(m[2])) {
       const seg: Segment = { kind: "graph", graphType: m[2] as GraphType };
-      if (m[2].startsWith("price") && annotations.length) seg.annotations = annotations;
+      if ((m[2].startsWith("price") || m[2].startsWith("comparePrice")) && annotations.length) seg.annotations = annotations;
       segments.push(seg);
       seenGraphs.add(m[2]);
     } else if (m[3] !== undefined) {
@@ -299,7 +309,7 @@ function GraphShimmer() {
 const DESKTOP_GRAPH_ASPECT_RATIO = 3.2;
 const MOBILE_GRAPH_ASPECT_RATIO = 1.46;
 
-function GraphFrame({ title, value, ready, tall, children }: { title: string; value?: string; ready: boolean; children: React.ReactNode; isLightMode?: boolean; tall?: boolean }) {
+function GraphFrame({ title, value, ready, tall, children }: { title: string; value?: React.ReactNode; ready: boolean; children: React.ReactNode; isLightMode?: boolean; tall?: boolean }) {
   const measureRef = useRef<HTMLDivElement>(null);
   const minHeight = tall ? 150 : 108;
   const maxHeight = tall ? 260 : 220;
@@ -337,7 +347,7 @@ function GraphFrame({ title, value, ready, tall, children }: { title: string; va
       <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-accent)", margin: "0 0 4px" }}>
         {title}
       </p>
-      {value && <div style={{ marginBottom: 6, color: "var(--color-text-primary)", lineHeight: 1 }}><WheelPrice value={value} size="xs" /></div>}
+      {value !== undefined && <div style={{ marginBottom: 6, color: "var(--color-text-primary)", lineHeight: 1 }}>{typeof value === "string" ? <WheelPrice value={value} size="xs" /> : value}</div>}
       <div style={{ position: "relative", height, width: "100%" }}>
         {!ready && <GraphShimmer />}
         <div style={{ height: "100%", width: "100%", opacity: ready ? 1 : 0, transition: "opacity 0.25s ease" }}>
@@ -809,6 +819,7 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
 }
 
 function NewsCard({ index, ctx }: { index: number; ctx: GraphCtx }) {
+  if (ctx.comparisonStock) return null;
   const article = ctx.stock.news?.[index];
   if (!article) return null;
   return (
@@ -937,7 +948,183 @@ function GraphVolume({ ctx }: { ctx: GraphCtx }) {
   </GraphFrame>;
 }
 
+function ComparisonDataWidget({ dataKey, ctx }: { dataKey: DataKey; ctx: GraphCtx }) {
+  if (!ctx.comparisonStock) return null;
+  const secondaryCtx: GraphCtx = { ...ctx, ...ctx.comparisonStock, comparisonStock: undefined };
+  const primary = computeDataPoint(dataKey, ctx);
+  const secondary = computeDataPoint(dataKey, secondaryCtx);
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, width: "100%", maxWidth: 420 }}>
+      {[
+        { symbol: ctx.stock.symbol, point: primary, color: COMPARISON_COLORS.primary },
+        { symbol: ctx.comparisonStock.stock.symbol, point: secondary, color: COMPARISON_COLORS.secondary },
+      ].map(({ symbol, point, color }) => (
+        <div key={symbol} style={{ minWidth: 0, border: `1px solid ${color}90`, borderRadius: 14, padding: "9px 12px", background: ctx.isLightMode ? "#fff" : "#000", boxShadow: `0 0 8px ${color}30` }}>
+          <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color, fontSize: 10, fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase" }}>{symbol} · {point.label}</div>
+          <div style={{ color, fontSize: 16, fontWeight: 700, lineHeight: 1.35 }}>{point.value}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ComparisonPriceGraph({ ctx, period, annotations }: { ctx: GraphCtx; period: string; annotations?: Annotation[] }) {
+  const secondary = ctx.comparisonStock;
+  const [rows, setRows] = useState<ComparisonRow[]>([]);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [hoveredRow, setHoveredRow] = useState<ComparisonRow | null>(null);
+  useEffect(() => {
+    if (!secondary) return;
+    const controller = new AbortController();
+    setReady(false);
+    setFailed(false);
+    setRows([]);
+    setHoveredRow(null);
+    const load = async () => {
+      try {
+        const fetchPeriod = async (symbol: string) => {
+          const response = await fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}&period=${period}`, { signal: controller.signal });
+          const data = await response.json() as { candles?: CandlePoint[] };
+          if (!response.ok) throw new Error("Unable to load comparison candles");
+          return data.candles ?? [];
+        };
+        const [primaryCandles, secondaryCandles] = await Promise.all([fetchPeriod(ctx.stock.symbol), fetchPeriod(secondary.stock.symbol)]);
+        if (controller.signal.aborted) return;
+        const merged = mergeComparisonCandles(primaryCandles, secondaryCandles);
+        setRows(merged);
+        setFailed(!merged.length);
+      } catch {
+        if (!controller.signal.aborted) setFailed(true);
+      } finally {
+        if (!controller.signal.aborted) setReady(true);
+      }
+    };
+    load();
+    return () => controller.abort();
+  }, [ctx.stock.symbol, secondary?.stock.symbol, period]);
+
+  if (!secondary) return null;
+  const active = hoveredRow ?? rows[rows.length - 1] ?? null;
+  const vals = rows.flatMap(row => [row.aPct, row.bPct]);
+  const low = Math.min(0, ...vals), high = Math.max(0, ...vals);
+  const padding = Math.max((high - low) * 0.06, 0.5);
+  const domain: [number, number] = [low - padding, high + padding];
+  const periodLabel: Record<string, string> = { "1D": "Today", "1W": "1 Week", "1M": "1 Month", "3M": "3 Months", "5M": "5 Months", "6M": "6 Months", "1Y": "1 Year", "2Y": "2 Years", "5Y": "5 Years", ALL: "All Time" };
+  const nearestRow = (date: string) => {
+    const target = Date.parse(date);
+    if (!Number.isFinite(target) || !rows.length) return null;
+    return rows.reduce((nearest, row) => Math.abs(row.time * 1000 - target) < Math.abs(nearest.time * 1000 - target) ? row : nearest, rows[0]);
+  };
+  const seriesBase = (series: "primary" | "secondary") => series === "secondary" ? rows[0]?.bPrice : rows[0]?.aPrice;
+  const valueLine = active ? (
+    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <span style={{ color: COMPARISON_COLORS.primary }}>{ctx.stock.symbol} {formatPercent(active.aPct)}</span>
+      <span style={{ color: COMPARISON_COLORS.secondary }}>{secondary.stock.symbol} {formatPercent(active.bPct)}</span>
+    </div>
+  ) : undefined;
+
+  return <GraphFrame title={`Comparison — ${periodLabel[period] ?? period}`} value={valueLine} ready={ready} tall>
+    {failed || !rows.length ? <div style={{ display: "flex", alignItems: "center", height: "100%", color: "#9a9aa2", fontSize: 13 }}>Comparison price history unavailable.</div> : (
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={rows} margin={{ top: annotations?.length ? 14 : 4, right: 4, bottom: 0, left: 4 }} onMouseMove={(state: unknown) => {
+          const index = (state as { activeTooltipIndex?: number })?.activeTooltipIndex;
+          setHoveredRow(index === undefined ? null : rows[Number(index)] ?? null);
+        }} onMouseLeave={() => setHoveredRow(null)}>
+          <XAxis dataKey="date" hide />
+          <YAxis domain={domain} hide />
+          <Tooltip cursor={{ stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 }} formatter={(value, name) => [formatPercent(Number(value)), name === "aPct" ? ctx.stock.symbol : secondary.stock.symbol]} labelFormatter={label => new Date(String(label)).toLocaleDateString()} />
+          <ReferenceLine y={0} stroke="rgba(128,128,128,0.45)" strokeDasharray="3 3" />
+          <Line type="monotone" dataKey="aPct" stroke={COMPARISON_COLORS.primary} strokeWidth={2} dot={false} activeDot={{ r: 3 }} isAnimationActive={false} />
+          <Line type="monotone" dataKey="bPct" stroke={COMPARISON_COLORS.secondary} strokeWidth={2} dot={false} activeDot={{ r: 3 }} isAnimationActive={false} />
+          {annotations?.filter((item): item is RegionAnnotation => item.type === "region").map((item, index) => {
+            const start = nearestRow(item.start), end = nearestRow(item.end);
+            if (!start || !end) return null;
+            const color = ANNOTATION_COLOR[item.tone];
+            return <ReferenceArea key={`compare-region-${index}`} x1={start.date} x2={end.date} fill={color} fillOpacity={0.12} stroke={color} strokeOpacity={0.3} label={{ value: item.label, position: "insideTop", fontSize: 9, fontWeight: 600, fill: color }} />;
+          })}
+          {annotations?.filter((item): item is LevelAnnotation => item.type === "level").map((item, index) => {
+            const base = seriesBase(item.series ?? "primary");
+            if (!base) return null;
+            const levelPct = (item.price / base - 1) * 100;
+            const color = item.levelType === "support" ? "#00c805" : item.levelType === "resistance" ? "#ff3003" : "#9a9aa2";
+            return <ReferenceLine key={`compare-level-${index}`} y={levelPct} stroke={color} strokeDasharray="4 3" label={{ value: item.label, position: "insideTopRight", fontSize: 9, fill: color }} />;
+          })}
+          {annotations?.filter((item): item is MarkAnnotation => item.type === "mark").map((item, index) => {
+            const row = nearestRow(item.date);
+            const series = item.series ?? "primary";
+            if (!row) return null;
+            const base = seriesBase(series);
+            if (!base) return null;
+            const y = (item.price / base - 1) * 100;
+            const color = series === "secondary" ? COMPARISON_COLORS.secondary : COMPARISON_COLORS.primary;
+            return <ReferenceDot key={`compare-mark-${index}`} x={row.date} y={y} r={3.5} fill={MARK_COLOR} stroke={ctx.isLightMode ? "#fff" : "#000"} strokeWidth={1.5} label={markLabelRenderer(item.label, "right", y > (domain[0] + domain[1]) / 2 ? "below" : "above")} />;
+          })}
+        </ComposedChart>
+      </ResponsiveContainer>
+    )}
+  </GraphFrame>;
+}
+
+type ComparisonFilingPoint = { year: number; capex: number | null; researchAndDevelopment: number | null; freeCashFlow: number | null };
+type ComparisonFilingField = "capex" | "researchAndDevelopment" | "freeCashFlow";
+
+function ComparisonFilingGraph({ ctx, title, field }: { ctx: GraphCtx; title: string; field: ComparisonFilingField }) {
+  const secondary = ctx.comparisonStock;
+  const [primaryRows, setPrimaryRows] = useState<ComparisonFilingPoint[]>([]);
+  const [secondaryRows, setSecondaryRows] = useState<ComparisonFilingPoint[]>([]);
+  const [ready, setReady] = useState(false);
+  const [hovered, setHovered] = useState<{ year: number; series: "primary" | "secondary"; value: number } | null>(null);
+  useEffect(() => {
+    if (!secondary) return;
+    const controller = new AbortController();
+    setReady(false);
+    setHovered(null);
+    const fetchIndicators = (symbol: string) => fetch(`/api/filing-indicators?symbol=${encodeURIComponent(symbol)}`, { signal: controller.signal })
+      .then(response => response.ok ? response.json() as Promise<{ indicators?: ComparisonFilingPoint[] }> : { indicators: [] })
+      .then(data => data.indicators ?? []);
+    Promise.all([fetchIndicators(ctx.stock.symbol), fetchIndicators(secondary.stock.symbol)]).then(([a, b]) => {
+      if (!controller.signal.aborted) { setPrimaryRows(a); setSecondaryRows(b); }
+    }).catch(() => {
+      if (!controller.signal.aborted) { setPrimaryRows([]); setSecondaryRows([]); }
+    }).finally(() => { if (!controller.signal.aborted) setReady(true); });
+    return () => controller.abort();
+  }, [ctx.stock.symbol, secondary?.stock.symbol]);
+  if (!secondary) return null;
+  const years = [...new Set([...primaryRows, ...secondaryRows].map(item => item.year))].sort((a, b) => a - b);
+  const pairs = years.map(year => ({ year, a: primaryRows.find(item => item.year === year)?.[field] ?? null, b: secondaryRows.find(item => item.year === year)?.[field] ?? null }));
+  const values = pairs.flatMap(pair => [pair.a, pair.b]).filter((value): value is number => value !== null);
+  const maximum = Math.max(1, ...values.map(value => Math.abs(value)));
+  const hasNegative = values.some(value => value < 0);
+  const baseline = hasNegative ? 45 : 14;
+  const lastPrimary = [...pairs].reverse().find(pair => pair.a !== null)?.a ?? null;
+  const display = hovered ?? (lastPrimary === null ? null : { year: pairs[pairs.length - 1]?.year ?? 0, series: "primary" as const, value: lastPrimary });
+  const valueLine = <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+    {display ? <span style={{ color: display.series === "primary" ? COMPARISON_COLORS.primary : COMPARISON_COLORS.secondary }}>{display.year} · {display.series === "primary" ? ctx.stock.symbol : secondary.stock.symbol} · ${formatCompact(display.value)}</span> : <span style={{ color: "#9a9aa2" }}>Filing data unavailable</span>}
+  </div>;
+  return <GraphFrame title={title} value={valueLine} ready={ready} tall>
+    {!years.length ? <div style={{ height: "100%", display: "flex", alignItems: "center", color: "#9a9aa2", fontSize: 13 }}>SEC filing data unavailable.</div> : <div style={{ position: "relative", height: "100%", borderTop: "1px solid var(--color-border-subtle)", borderBottom: "1px solid var(--color-border-subtle)" }}>
+      <div style={{ position: "absolute", left: 0, right: 0, ...(hasNegative ? { top: `${baseline}%` } : { bottom: `${baseline}%` }), borderTop: "1px solid var(--color-border-subtle)" }} />
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${pairs.length}, minmax(0, 1fr))`, height: "100%" }}>
+        {pairs.map(pair => <div key={pair.year} style={{ position: "relative", borderLeft: "1px solid var(--color-border-subtle)" }}>
+          {([ ["primary", pair.a, COMPARISON_COLORS.primary], ["secondary", pair.b, COMPARISON_COLORS.secondary] ] as const).map(([series, value, color]) => {
+            if (value === null) return null;
+            const height = Math.max(Math.abs(value) / maximum * (hasNegative ? 40 : 78), 3);
+            return <div key={series} style={{ position: "absolute", left: series === "primary" ? "35%" : "65%", width: "25%", maxWidth: 20, borderRadius: 2, ...(value < 0 ? { top: `${baseline}%` } : { bottom: hasNegative ? "55%" : `${baseline}%` }), height: `${height}%`, background: color, boxShadow: `0 0 9px ${color}80`, cursor: "pointer" }} title={`${pair.year} ${series === "primary" ? ctx.stock.symbol : secondary.stock.symbol}: $${formatCompact(value)}`} onMouseEnter={() => setHovered({ year: pair.year, series, value })} onMouseLeave={() => setHovered(null)} />;
+          })}
+          <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", fontSize: 10, fontWeight: 600, color: "var(--color-accent)" }}>{pair.year}</span>
+        </div>)}
+      </div>
+    </div>}
+  </GraphFrame>;
+}
+
 function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; annotations?: Annotation[]; ctx: GraphCtx }) {
+  if (graphType.startsWith("comparePrice:")) return <ComparisonPriceGraph ctx={ctx} period={graphType.split(":")[1] ?? "1M"} annotations={annotations} />;
+  if (graphType.startsWith("compareData:")) return <ComparisonDataWidget ctx={ctx} dataKey={graphType.split(":")[1] as DataKey} />;
+  if (graphType === "compareGraph:capex") return <ComparisonFilingGraph ctx={ctx} title="CapEx Comparison" field="capex" />;
+  if (graphType === "compareGraph:rnd") return <ComparisonFilingGraph ctx={ctx} title="R&D Comparison" field="researchAndDevelopment" />;
+  if (graphType === "compareGraph:freeCashFlow") return <ComparisonFilingGraph ctx={ctx} title="Free Cash Flow Comparison" field="freeCashFlow" />;
   if (graphType.startsWith("price")) {
     const period = graphType.includes(":") ? graphType.split(":")[1] : "1M";
     return <GraphPrice ctx={ctx} period={period} annotations={annotations} />;
@@ -1468,7 +1655,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     };
   }, [open, stock.symbol]);
   const isLightMode = typeof document !== "undefined" && document.documentElement.classList.contains("light-mode");
-  const graphCtx: GraphCtx = { stock, currentPrice, sentiment, metrics, isLightMode };
+  const graphCtx: GraphCtx = { stock, currentPrice, sentiment, metrics, comparisonStock, isLightMode };
 
   // Render via a portal straight into <body> — bypasses ancestor elements
   // (like <main>) that can pick up a transient CSS `transform` from page

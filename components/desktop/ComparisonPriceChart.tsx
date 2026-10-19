@@ -244,8 +244,8 @@ export function ComparisonPriceChart({
                 <p className={`min-w-0 truncate text-4xl font-semibold tracking-normal sm:text-5xl ${identityColor === COMPARISON_COLORS.primary ? "text-purple-400" : "text-orange-400"}`}>{name}</p>
               </div>
         ))}
-        {!latest && <p className="text-sm text-text-muted">{loading ? "Loading comparison history…" : error ?? "These stocks have no overlapping price history for this period."}</p>}
-        <div className="flex items-end gap-3">
+        {!latest && !loading && <p className="text-sm text-text-muted">{error ?? "These stocks have no overlapping price history for this period."}</p>}
+        {!loading && latest && <div className="flex items-end gap-3">
           {([
             { series: winnerIsPrimary ? "a" : "b", value: latest ? (winnerIsPrimary ? latest.aPct : latest.bPct) : null, large: true },
             { series: winnerIsPrimary ? "b" : "a", value: latest ? (winnerIsPrimary ? latest.bPct : latest.aPct) : null, large: false },
@@ -266,9 +266,9 @@ export function ComparisonPriceChart({
               />
             </motion.div>
           ))}
-        </div>
+        </div>}
       </div>
-      {latest && <p className="mb-3 text-sm text-text-muted">{latest.date === "prev" ? "Previous close" : new Date(latest.time * 1000).toLocaleString()}</p>}
+      {!loading && latest && <p className="mb-3 text-sm text-text-muted">{latest.date === "prev" ? "Previous close" : new Date(latest.time * 1000).toLocaleString()}</p>}
 
       <div className="relative h-[384px] w-full">
         {loading ? (
