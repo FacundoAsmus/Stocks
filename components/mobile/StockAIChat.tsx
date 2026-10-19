@@ -265,7 +265,6 @@ function DataPill({ dataKey, ctx, identityColor, symbol }: { dataKey: DataKey; c
   }, []);
   const point = computeDataPoint(dataKey, ctx);
   const color = identityColor ?? (point.tone === "positive" ? "#00c805" : point.tone === "negative" ? "#ff3003" : "#9a9aa2");
-  const pillBg = "rgba(8,12,10,0.64)";
   return (
     <div style={{
       display: "inline-flex", alignItems: "center", gap: 8,
@@ -273,7 +272,7 @@ function DataPill({ dataKey, ctx, identityColor, symbol }: { dataKey: DataKey; c
       padding: "8px 14px",
       borderRadius: 999,
       border: `2px solid ${color}`,
-      backgroundColor: pillBg,
+      backgroundColor: "transparent",
       boxShadow: `0 0 10px ${color}70`,
       opacity: mounted ? 1 : 0,
       transform: mounted ? "translateY(0) scale(1)" : "translateY(4px) scale(0.96)",
@@ -1141,7 +1140,7 @@ function ComparisonFilingGraph({ ctx, title, field }: { ctx: GraphCtx; title: st
 function EarningsCalendarWidget({ ctx }: { ctx: GraphCtx }) {
   const earnings = ctx.stock.earnings;
   const report = getNextReport(earnings) ?? [...earnings].sort((a, b) => b.date.localeCompare(a.date))[0] ?? null;
-  const [year, month, reportDay] = (report?.date ?? todayStr()).split("-").map(Number);
+  const [year, month] = (report?.date ?? todayStr()).split("-").map(Number);
   const monthDate = new Date(year, month - 1, 1);
   const monthLabel = new Intl.DateTimeFormat("en-US", { month: "long" }).format(monthDate);
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -1153,26 +1152,25 @@ function EarningsCalendarWidget({ ctx }: { ctx: GraphCtx }) {
   const today = todayStr();
   const reportDate = report?.date ?? "";
 
-  return <div aria-label={`${ctx.stock.symbol} earnings calendar for ${monthLabel}`} className="w-full max-w-[360px] rounded-3xl border p-4" style={{ borderColor: "#adfa1b", background: "rgba(0,0,0,0.56)", boxShadow: "0 0 14px rgba(173,250,27,0.42), inset 0 0 12px rgba(173,250,27,0.08)" }}>
-    <p className="mb-1.5 text-center text-xs font-bold uppercase tracking-widest" style={{ color: "#adfa1b" }}>{monthLabel}</p>
+  return <div aria-label={`${ctx.stock.symbol} earnings calendar for ${monthLabel}`} className="aspect-square w-full max-w-[300px] rounded-3xl border p-5" style={{ borderColor: "rgba(145,150,150,0.62)", background: "transparent", boxShadow: "0 0 12px rgba(145,150,150,0.2), inset 0 0 8px rgba(145,150,150,0.05)" }}>
+    <p className="mb-3 text-left text-xs font-bold uppercase tracking-widest" style={{ color: "#adfa1b" }}>{monthLabel}</p>
     <div className="grid grid-cols-7 gap-y-0.5">
-      {["M", "T", "W", "T", "F", "S", "S"].map((weekday, index) => <p key={index} className="text-center text-[9px] font-bold uppercase text-text-muted">{weekday}</p>)}
+      {["M", "T", "W", "T", "F", "S", "S"].map((weekday, index) => <p key={index} className="text-center text-[10px] font-bold uppercase text-text-muted">{weekday}</p>)}
       {cells.map((day, index) => {
         if (day === null) return <div key={`blank-${index}`} className="h-5" />;
         const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         const isToday = date === today;
         const isPast = date < today;
         const isReportDate = date === reportDate;
-        return <div key={date} className="flex h-5 items-center justify-center">
+        return <div key={date} className="flex h-7 items-center justify-center">
           {isReportDate ? (
-            <span title={`Q${report?.quarter} ${report?.year} report date`} className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-black">{day}</span>
+            <span title={`Q${report?.quarter} ${report?.year} report date`} className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-xs font-bold text-black">{day}</span>
           ) : (
-            <span className={`text-[9px] font-bold ${isToday ? "text-accent" : isPast ? "text-text-muted" : "text-text-primary"}`}>{day}</span>
+            <span className={`text-xs font-bold ${isToday ? "text-accent" : isPast ? "text-text-muted" : "text-text-primary"}`}>{day}</span>
           )}
         </div>;
       })}
     </div>
-    {report && <p className="mt-2 text-center text-[10px] font-medium text-text-muted">{ctx.stock.symbol} · Q{report.quarter} {report.year} report</p>}
   </div>;
 }
 
