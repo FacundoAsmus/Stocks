@@ -220,29 +220,34 @@ export function ComparisonPriceChart({
 
   return (
     <div>
-      <div className="mb-2 space-y-2">
+      <div className="mb-2 space-y-3">
         {([
-          [primaryName, latest?.aPct ?? null, COMPARISON_COLORS.primary, onRemovePrimary],
-          [secondaryName, latest?.bPct ?? null, COMPARISON_COLORS.secondary, onRemoveSecondary],
-        ] as const).map(([name, percent, circleColor, remove]) => (
+          [primaryName, COMPARISON_COLORS.primary, onRemovePrimary],
+          [secondaryName, COMPARISON_COLORS.secondary, onRemoveSecondary],
+        ] as const).map(([name, circleColor, remove]) => (
               <div key={name} className="flex items-center gap-3">
                 <button type="button" aria-label={`Show ${name} alone`} title={`Show ${name} alone`} onClick={remove}
                   className="group relative h-14 w-14 shrink-0 rounded-full transition hover:scale-110 hover:brightness-75" style={{ backgroundColor: circleColor }}>
                   <Minus className="absolute inset-0 m-auto h-5 w-5 text-white opacity-0 transition-opacity group-hover:opacity-100" strokeWidth={3} />
                 </button>
-                <p className="min-w-0 flex-1 truncate text-4xl font-semibold tracking-normal text-text-primary sm:text-5xl">{name}</p>
-                <WheelPrice
-                  value={percent === null ? "N/A" : formatPercent(percent)}
-                  size="lg"
-                  colorClass={circleColor === COMPARISON_COLORS.primary
-                    ? winnerIsPrimary ? "text-purple-400" : "text-purple-400/50"
-                    : winnerIsPrimary ? "text-orange-400/50" : "text-orange-400"}
-                />
+                <p className={`min-w-0 truncate text-4xl font-semibold tracking-normal sm:text-5xl ${circleColor === COMPARISON_COLORS.primary ? "text-purple-400" : "text-orange-400"}`}>{name}</p>
               </div>
         ))}
         {!latest && <p className="text-sm text-text-muted">{loading ? "Loading comparison history…" : error ?? "These stocks have no overlapping price history for this period."}</p>}
+        <div className="flex items-end gap-3">
+          <WheelPrice
+            value={latest ? formatPercent(winnerIsPrimary ? latest.aPct : latest.bPct) : "N/A"}
+            size="lg"
+            colorClass={winnerIsPrimary ? "text-purple-400" : "text-orange-400"}
+          />
+          <WheelPrice
+            value={latest ? formatPercent(winnerIsPrimary ? latest.bPct : latest.aPct) : "N/A"}
+            size="sm"
+            colorClass={winnerIsPrimary ? "text-orange-400/50" : "text-purple-400/50"}
+          />
+        </div>
       </div>
-      {latest && <p className="mb-3 -mt-1 text-right text-xs text-text-muted">{latest.date === "prev" ? "Previous close" : new Date(latest.time * 1000).toLocaleString()}</p>}
+      {latest && <p className="mb-3 text-sm text-text-muted">{latest.date === "prev" ? "Previous close" : new Date(latest.time * 1000).toLocaleString()}</p>}
 
       <div className="relative h-[384px] w-full">
         {loading ? (

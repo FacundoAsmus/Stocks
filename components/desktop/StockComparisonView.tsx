@@ -142,7 +142,7 @@ function ComparisonIndicators({ primary, secondary }: { primary: ComparisonDetai
         {aItems.map(([label, value], index) => (
           <div key={label} className="min-w-0 rounded-md bg-black p-4">
             <div className="mb-2 flex items-center gap-1.5"><span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: COMPARISON_COLORS.primary }} /><p className="truncate text-xs uppercase tracking-[0.12em] text-text-muted">{label}</p></div>
-            <div className="flex min-w-0 items-baseline justify-center gap-2 overflow-hidden">
+            <div className="flex min-w-0 items-baseline justify-start gap-2 overflow-hidden">
               <p className="max-w-[45%] truncate text-xl font-semibold" style={{ color: COMPARISON_COLORS.primary }}>{value}</p>
               <span className="h-6 border-l border-border-subtle" aria-hidden="true" />
               <p className="max-w-[45%] truncate text-xl font-semibold" style={{ color: COMPARISON_COLORS.secondary }}>{bItems[index]?.[1] ?? "N/A"}</p>
@@ -182,8 +182,7 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
           const bValues = years.map((year) => b.find((item) => item.year === year)?.[key] ?? null);
           const latestA = [...aValues].reverse().find((value): value is number => value !== null) ?? null;
           if (aValues.every((value) => value === null) && bValues.every((value) => value === null)) return null;
-          const maxMagnitudeA = Math.max(1, ...aValues.filter((value): value is number => value !== null).map((value) => Math.abs(value)));
-          const maxMagnitudeB = Math.max(1, ...bValues.filter((value): value is number => value !== null).map((value) => Math.abs(value)));
+          const maxMagnitude = Math.max(1, ...[...aValues, ...bValues].filter((value): value is number => value !== null).map((value) => Math.abs(value)));
           const hasNegative = [...aValues, ...bValues].some((value) => (value ?? 0) < 0);
           const baseline = hasNegative ? 45 : 14;
           const displayedValue = hoveredBar?.key === key ? hoveredBar.value : latestA;
@@ -203,8 +202,7 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
                       <div key={year} className="relative min-w-0 flex-1 border-l border-border-subtle first:border-l-0">
                         {values.map((value, seriesIndex) => {
                           if (value === null) return null;
-                          const seriesMagnitude = seriesIndex === 0 ? maxMagnitudeA : maxMagnitudeB;
-                          const height = Math.max((Math.abs(value) / seriesMagnitude) * (hasNegative ? 0.4 : 0.78), 3);
+                          const height = Math.max((Math.abs(value) / maxMagnitude) * (hasNegative ? 0.4 : 0.78), 3);
                           const negative = value < 0;
                           const color = seriesIndex === 0 ? COMPARISON_COLORS.primary : COMPARISON_COLORS.secondary;
                           return (
