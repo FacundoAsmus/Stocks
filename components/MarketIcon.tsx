@@ -13,7 +13,12 @@ export function MarketIcon({ icon = "general_icon.svg", className }: MarketIconP
       style={{ display: shouldStartHidden ? "none" : "inline-flex", borderRadius: "50%" }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={`/market-icons/${icon}`} alt="" className="h-[72%] w-[72%] object-contain" />
+      <img
+        src={`/market-icons/${icon}`}
+        alt=""
+        className="h-[72%] w-[72%] object-contain"
+        style={icon === "tech_icon.svg" ? { filter: "invert(87%) sepia(94%) saturate(671%) hue-rotate(29deg) brightness(102%) contrast(106%)" } : undefined}
+      />
     </span>
   );
 }

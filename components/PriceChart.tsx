@@ -240,7 +240,7 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
 const WHEEL_SLOT_RATIO = 0.62;
 
-function Digit({ ch, size = "lg", compact = false }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg"; compact?: boolean }) {
+function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg"; compact?: boolean; animate?: boolean }) {
   const isDigit = DIGIT_CHARS.includes(ch);
   const idx     = isDigit ? parseInt(ch) : 0;
   const previousDigitRef = useRef(idx);
@@ -253,7 +253,13 @@ function Digit({ ch, size = "lg", compact = false }: { ch: string; size?: "xs" |
   } | null>(null);
 
   useLayoutEffect(() => {
-    if (!isDigit || previousDigitRef.current === idx) return;
+    if (!isDigit) return;
+    if (!animate) {
+      previousDigitRef.current = idx;
+      setRoll(null);
+      return;
+    }
+    if (previousDigitRef.current === idx) return;
 
     const previous = previousDigitRef.current;
     const shortestStep = ((idx - previous + 15) % 10) - 5;
@@ -264,7 +270,7 @@ function Digit({ ch, size = "lg", compact = false }: { ch: string; size?: "xs" |
       to: idx,
       direction: shortestStep >= 0 ? "up" : "down",
     });
-  }, [idx, isDigit]);
+  }, [idx, isDigit, animate]);
 
   const rowPx     = size === "lg" ? 54 : size === "sm" ? 32 : size === "md" ? 30 : 22;
   const fontClass = size === "lg"
@@ -334,12 +340,15 @@ export function WheelPrice({
   size = "lg",
   colorClass,
   compact = false,
+  animate = true,
 }: {
   value: string;
   size?: "xs" | "badge" | "sm" | "md" | "lg";
   colorClass?: string;
   /** Tighter digit and punctuation spacing for compact metric readouts. */
   compact?: boolean;
+  /** Disable digit rolling while the chart is in manual line-placement mode. */
+  animate?: boolean;
 }) {
   const chars = value.split("");
   const decimalIndex = chars.lastIndexOf(".");
@@ -381,7 +390,7 @@ export function WheelPrice({
           } else {
             key = `symbol-${index}-${ch}`;
           }
-          return <Digit key={key} ch={ch} size={size} compact={compact} />;
+          return <Digit key={key} ch={ch} size={size} compact={compact} animate={animate} />;
         })}
       </span>
     </>
@@ -843,28 +852,37 @@ export function PriceChart({
   // touchOverlay: the computed X% and Y% for the custom dot/crosshair overlay (touch only)
   const [touchOverlay, setTouchOverlay] = useState<{ xPct: number; yPct: number } | null>(null);
   const volumeCrosshairRef = useRef<HTMLDivElement>(null);
+  const [linePlacementActive, setLinePlacementActive] = useState(false);
 
   // This is deliberately a direct DOM update: pointer movement should never
   // cause React to redraw a price chart or hundreds of volume bars.
   const positionVolumeCrosshair = useCallback((percentage: number | null) => {
     const line = volumeCrosshairRef.current;
     if (!line) return;
-    if (percentage === null) {
+    if (percentage === null || linePlacementActive) {
       line.style.display = "none";
       return;
     }
     line.style.display = "block";
     line.style.left = `${Math.max(0, Math.min(100, percentage))}%`;
-  }, []);
+  }, [linePlacementActive]);
   // Updated from the committed active-dot ref so pointer movement does not
   // schedule a React render for the horizontal crosshair.
   const proCrosshairRef = useRef<HTMLDivElement>(null);
-  const [linePlacementActive, setLinePlacementActive] = useState(false);
   const [lineCursorPrice, setLineCursorPrice] = useState<number | null>(null);
   const [lineTypedValue, setLineTypedValue] = useState<string | null>(null);
   const [manualPriceLines, setManualPriceLines] = useState<Array<{ id: number; price: number }>>([]);
   const [selectedManualLineId, setSelectedManualLineId] = useState<number | null>(null);
   const nextManualLineId = useRef(1);
+
+  useEffect(() => {
+    if (!linePlacementActive) return;
+    setHoverPrice(null);
+    setHoverDate(null);
+    setTouchOverlay(null);
+    positionVolumeCrosshair(null);
+    if (proCrosshairRef.current) proCrosshairRef.current.style.display = "none";
+  }, [linePlacementActive, positionVolumeCrosshair]);
 
   useEffect(() => {
     if (!hideMovingAverageControls) return;
@@ -934,10 +952,10 @@ export function PriceChart({
   }, [linePlacementActive, lineTypedValue, selectedManualLineId, symbol]);
 
   const onHover = useCallback((price: number | null, date: string | null) => {
-    if (suppressRef.current) return;
+    if (suppressRef.current || linePlacementActive) return;
     setHoverPrice(price);
     setHoverDate(date);
-  }, []);
+  }, [linePlacementActive]);
 
   const clearHover = useCallback(() => {
     suppressRef.current = true;
@@ -1059,8 +1077,8 @@ export function PriceChart({
       {/* ── Price header — indented to align with name when priceIndent is set ── */}
       <div className="mb-6 price-block-fade" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible ? 1 : 0, transition: "opacity 0.18s ease", WebkitTransition: "opacity 0.18s ease" }}>
         <div className="flex items-end gap-3">
-          <WheelPrice value={priceStr} size="lg" />
-          <WheelPrice value={pctStr} size="sm" colorClass={pctColor} />
+          <WheelPrice value={priceStr} size="lg" animate={!linePlacementActive} />
+          <WheelPrice value={pctStr} size="sm" colorClass={pctColor} animate={!linePlacementActive} />
         </div>
         <p className="mt-2 text-sm text-text-muted">
           {hoverDate ? tooltipLabel(hoverDate, period) : "Current price"}
@@ -1079,6 +1097,7 @@ export function PriceChart({
             const y = Math.max(plotTop, Math.min(bounds.height, event.clientY - bounds.top));
             const fraction = (y - plotTop) / Math.max(1, bounds.height - plotTop);
             setLineCursorPrice(priceYDomain[1] - fraction * (priceYDomain[1] - priceYDomain[0]));
+            return;
           }
           // Phones retain the direct pointer position used by their custom
           // touch/hover treatment. Desktop is updated from Recharts below,
@@ -1155,6 +1174,7 @@ export function PriceChart({
               data={chartData}
               margin={{ left: 0, right: 0, top: 8, bottom: 0 }}
               onMouseMove={(state) => {
+                if (linePlacementActive) return;
                 if (!window.matchMedia("(min-width: 1024px)").matches) return;
                 const x = (state as { activeCoordinate?: { x?: number } }).activeCoordinate?.x;
                 const width = chartRef.current?.getBoundingClientRect().width;
@@ -1168,6 +1188,7 @@ export function PriceChart({
 
               <Tooltip
                 cursor={(() => {
+                  if (linePlacementActive) return false;
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return false;
                   if (proMode) {
@@ -1203,6 +1224,7 @@ export function PriceChart({
                 strokeLinejoin="round"
                 dot={false}
                 activeDot={(props: Record<string, unknown>) => {
+                  if (linePlacementActive) return <g key="line-placement-no-dot" />;
                   const { cx, cy } = props as { cx?: number; cy?: number };
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return <g key="no-dot" />;
@@ -1290,7 +1312,7 @@ export function PriceChart({
           })}
 
           {/* ── Pro mode desktop horizontal crosshair — follows the active dot ── */}
-          {proMode && !isTouching && (
+              {proMode && !isTouching && !linePlacementActive && (
             <div
               ref={proCrosshairRef}
               className="absolute inset-x-0 pointer-events-none"
@@ -1300,7 +1322,7 @@ export function PriceChart({
           )}
 
           {/* ── Custom touch overlay: dot + crosshair line + date bubble ── */}
-          {isTouching && touchOverlay && (() => {
+          {isTouching && touchOverlay && !linePlacementActive && (() => {
             const xPct = touchOverlay.xPct * 100;
             // Recharts renders the data area with margin top:8 bottom:0.
             // Convert yPct (0=top of data area) into % of the full container height.

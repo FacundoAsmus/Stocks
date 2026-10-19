@@ -1152,12 +1152,12 @@ function EarningsCalendarWidget({ ctx }: { ctx: GraphCtx }) {
   const today = todayStr();
   const reportDate = report?.date ?? "";
 
-  return <div aria-label={`${ctx.stock.symbol} earnings calendar for ${monthLabel}`} className="aspect-square w-full max-w-[300px] rounded-3xl border p-5" style={{ borderColor: "rgba(145,150,150,0.62)", background: "transparent", boxShadow: "0 0 12px rgba(145,150,150,0.2), inset 0 0 8px rgba(145,150,150,0.05)" }}>
+  return <div aria-label={`${ctx.stock.symbol} earnings calendar for ${monthLabel}`} className="w-full max-w-[300px] rounded-3xl border p-5" style={{ borderColor: "rgba(145,150,150,0.62)", background: "transparent", boxShadow: "0 0 12px rgba(145,150,150,0.2), inset 0 0 8px rgba(145,150,150,0.05)" }}>
     <p className="mb-3 text-left text-xs font-bold uppercase tracking-widest" style={{ color: "#adfa1b" }}>{monthLabel}</p>
     <div className="grid grid-cols-7 gap-y-0.5">
       {["M", "T", "W", "T", "F", "S", "S"].map((weekday, index) => <p key={index} className="text-center text-[10px] font-bold uppercase text-text-muted">{weekday}</p>)}
       {cells.map((day, index) => {
-        if (day === null) return <div key={`blank-${index}`} className="h-5" />;
+        if (day === null) return <div key={`blank-${index}`} className="h-7" />;
         const date = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
         const isToday = date === today;
         const isPast = date < today;
