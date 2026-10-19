@@ -15,7 +15,7 @@ import {
 import { Minus } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { WheelPrice } from "@/components/PriceChart";
+import { WheelPrice, tooltipLabel } from "@/components/PriceChart";
 import { StockLogo } from "@/components/StockLogo";
 import { formatPercent } from "@/lib/format";
 import { SECTOR_ETFS } from "@/lib/etfs";
@@ -268,7 +268,7 @@ export function ComparisonPriceChart({
           ))}
         </div>}
       </div>
-      {!loading && latest && <p className="mb-3 text-sm text-text-muted">{latest.date === "prev" ? "Previous close" : new Date(latest.time * 1000).toLocaleString()}</p>}
+      {!loading && latest && <p className="mb-3 text-sm text-text-muted">{tooltipLabel(latest.date, period)}</p>}
 
       <div className="relative h-[384px] w-full">
         {loading ? (

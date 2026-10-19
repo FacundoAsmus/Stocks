@@ -207,7 +207,7 @@ function computeMA(points: CandlePoint[], windowDays: number): (number | null)[]
 }
 
 /* ─── Date label for tooltip crosshair ──────────────────────────────────── */
-function tooltipLabel(dateStr: string, period: ChartPeriod): string {
+export function tooltipLabel(dateStr: string, period: ChartPeriod): string {
   if (dateStr === "prev") return "Yesterday";
   const d = new Date(dateStr);
   if (period === "1D")
