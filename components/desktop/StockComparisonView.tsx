@@ -6,6 +6,7 @@ import { Minus } from "lucide-react";
 import { ComparisonPriceChart, COMPARISON_COLORS } from "@/components/desktop/ComparisonPriceChart";
 import { ComparisonMarketSentiment } from "@/components/MarketSentiment";
 import { StockLogo } from "@/components/StockLogo";
+import { WheelPrice } from "@/components/PriceChart";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { expectedRevenueGrowthPct, getNextReport } from "@/lib/earnings";
 import type { AnalystRecommendation, EarningsEvent } from "@/types/stock";
@@ -172,6 +173,7 @@ function ComparisonIndicators({ primary, secondary }: { primary: ComparisonDetai
 function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySymbol: string; secondarySymbol: string }) {
   const [a, setA] = useState<FilingIndicator[]>([]);
   const [b, setB] = useState<FilingIndicator[]>([]);
+  const [hoverValues, setHoverValues] = useState<{ a: Partial<Record<FilingKey, number>>; b: Partial<Record<FilingKey, number>> }>({ a: {}, b: {} });
   useEffect(() => {
     const controller = new AbortController();
     const fetchData = (symbol: string) => fetch(`/api/filing-indicators?symbol=${encodeURIComponent(symbol)}`, { signal: controller.signal })
@@ -194,6 +196,9 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
         {specs.map(([title, key]) => {
           const aValues = years.map((year) => a.find((item) => item.year === year)?.[key] ?? null);
           const bValues = years.map((year) => b.find((item) => item.year === year)?.[key] ?? null);
+          const [latestA, latestB] = [aValues, bValues].map((values) => [...values].reverse().find((value): value is number => value !== null) ?? null);
+          const hoverA = hoverValues.a[key];
+          const hoverB = hoverValues.b[key];
           if (aValues.every((value) => value === null) && bValues.every((value) => value === null)) return null;
           const max = Math.max(1, ...aValues.map((value) => Math.abs(value ?? 0)), ...bValues.map((value) => Math.abs(value ?? 0)));
           const hasNegative = [...aValues, ...bValues].some((value) => (value ?? 0) < 0);
@@ -201,6 +206,11 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
           return (
             <div key={key}>
               <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
+              <div className="mb-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-text-primary">
+                <div className="min-w-0"><WheelPrice value={(hoverA ?? latestA) === null ? "N/A" : `$${formatCompact(hoverA ?? latestA!)}`} size="xs" compact colorClass="text-purple-400" /></div>
+                <span className="h-6 border-l border-border-subtle" aria-hidden="true" />
+                <div className="min-w-0"><WheelPrice value={(hoverB ?? latestB) === null ? "N/A" : `$${formatCompact(hoverB ?? latestB!)}`} size="xs" compact colorClass="text-orange-400" /></div>
+              </div>
               <div className="relative h-64 border-y border-border-subtle">
                 <div className="absolute inset-x-0 border-t border-border-subtle" style={{ top: `${baseline}%` }} />
                 <div className="flex h-full">
@@ -223,6 +233,8 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
                                 opacity: 0.58,
                               }}
                               title={`${year}: ${formatCurrency(value)}`}
+                              onMouseEnter={() => setHoverValues((current) => ({ ...current, [seriesIndex === 0 ? "a" : "b"]: { ...current[seriesIndex === 0 ? "a" : "b"], [key]: value } }))}
+                              onMouseLeave={() => setHoverValues((current) => { const series = seriesIndex === 0 ? "a" : "b"; const next = { ...current[series] }; delete next[key]; return { ...current, [series]: next }; })}
                             />
                           );
                         })}

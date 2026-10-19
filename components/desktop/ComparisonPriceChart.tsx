@@ -104,29 +104,6 @@ export function mergeComparisonCandles(primaryInput: CandlePoint[], secondaryInp
   return rows;
 }
 
-function ComparisonTooltip({
-  active,
-  payload,
-  primarySymbol,
-  secondarySymbol,
-}: {
-  active?: boolean;
-  payload?: Array<{ payload?: ComparisonRow }>;
-  primarySymbol: string;
-  secondarySymbol: string;
-}) {
-  const row = payload?.[0]?.payload;
-  if (!active || !row) return null;
-  const dateLabel = new Date(row.time * 1000).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-  return (
-    <div className="rounded-lg border border-border-subtle bg-panel px-3 py-2 text-xs shadow-xl">
-      <p className="mb-2 text-text-muted">{dateLabel}</p>
-      <p style={{ color: COMPARISON_COLORS.primary }}>{primarySymbol}: {formatCurrency(row.aPrice)} ({formatPercent(row.aPct)})</p>
-      <p style={{ color: COMPARISON_COLORS.secondary }}>{secondarySymbol}: {formatCurrency(row.bPrice)} ({formatPercent(row.bPct)})</p>
-    </div>
-  );
-}
-
 export function ComparisonPriceChart({
   primarySymbol,
   secondarySymbol,
@@ -201,14 +178,14 @@ export function ComparisonPriceChart({
             <div>
               <WheelPrice value={formatPercent(latest.bPct)} size="lg" colorClass={!winnerIsPrimary ? "text-orange-400" : "text-orange-400/55"} />
             </div>
-            <span className="pb-1 text-xs text-text-muted">{latest.date === "prev" ? "Previous close" : new Date(latest.time * 1000).toLocaleString()}</span>
           </>
         ) : (
           <p className="text-sm text-text-muted">{loading ? "Loading comparison history…" : error ?? "These stocks have no overlapping price history for this period."}</p>
         )}
       </div>
+      {latest && <p className="mb-3 -mt-2 text-xs text-text-muted">{latest.date === "prev" ? "Previous close" : new Date(latest.time * 1000).toLocaleString()}</p>}
 
-      <div className="relative h-[330px] w-full">
+      <div className="relative h-[384px] w-full">
         {loading ? (
           <div className="flex h-full items-end gap-2 rounded-xl border border-border-subtle/50 bg-panel/30 p-6 animate-pulse">
             {Array.from({ length: 22 }, (_, index) => <div key={index} className="flex-1 rounded-t-sm bg-accent/20" style={{ height: `${24 + ((index * 37) % 70)}%` }} />)}
@@ -218,10 +195,10 @@ export function ComparisonPriceChart({
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={rows} margin={{ top: 12, right: 12, bottom: 4, left: 12 }} onMouseMove={setHoveredFromState} onMouseLeave={() => setHoveredRow(null)}>
                 <CartesianGrid vertical={false} stroke="rgba(128,128,128,0.12)" />
-                <XAxis dataKey="time" type="number" scale="time" domain={["dataMin", "dataMax"]} hide />
-                <YAxis type="number" domain={yDomain} tickFormatter={(value: number) => `${value.toFixed(0)}%`} stroke="rgba(150,150,150,0.65)" width={44} tick={{ fontSize: 11 }} />
+                <XAxis dataKey="date" hide />
+                <YAxis type="number" domain={yDomain} hide />
                 <ReferenceLine y={0} stroke="rgba(150,150,150,0.55)" strokeDasharray="4 4" />
-                <Tooltip content={<ComparisonTooltip primarySymbol={primarySymbol} secondarySymbol={secondarySymbol} />} />
+                <Tooltip content={() => null} cursor={false} />
                 <Line
                   className="comparison-series-a"
                   type="monotone" dataKey="aPct" stroke={COMPARISON_COLORS.primary} strokeWidth={2.5} dot={false} isAnimationActive={false}
@@ -253,10 +230,10 @@ export function ComparisonPriceChart({
       {rows.length > 0 && (
       <div className="mt-3 h-20 w-full" aria-label="Overlaid comparison volume">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={rows} barCategoryGap="15%" barGap="-100%" margin={{ top: 2, right: 12, bottom: 0, left: 12 }}>
-              <XAxis dataKey="time" type="number" scale="time" domain={["dataMin", "dataMax"]} hide />
+            <BarChart data={rows} barCategoryGap="15%" barGap="-100%" margin={{ top: 2, right: 12, bottom: 0, left: 12 }} onMouseMove={setHoveredFromState} onMouseLeave={() => setHoveredRow(null)}>
+              <XAxis dataKey="date" hide />
               <YAxis domain={[0, volumeMax]} hide />
-              <Tooltip content={<ComparisonTooltip primarySymbol={primarySymbol} secondarySymbol={secondarySymbol} />} />
+              <Tooltip content={() => null} cursor={false} />
               <Bar dataKey="aVolume" fill={COMPARISON_COLORS.primary} fillOpacity={0.54} maxBarSize={12} isAnimationActive={false} />
               <Bar dataKey="bVolume" fill={COMPARISON_COLORS.secondary} fillOpacity={0.54} maxBarSize={12} isAnimationActive={false} />
             </BarChart>
