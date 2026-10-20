@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
-import { Search, Clock } from "lucide-react";
+import { Search } from "lucide-react";
 
 import { SECTOR_ETFS } from "@/lib/etfs";
 import { MarketIcon } from "@/components/MarketIcon";
@@ -230,16 +230,35 @@ export function SearchBar() {
         <div ref={dropdownRef} className="search-results-glass desktop-alert-glass smoked-glass-surface fixed w-full overflow-auto rounded-2xl border border-white/15" style={{ ...dropdownStyle, background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
           <p className="px-4 py-2 text-xs uppercase tracking-widest text-text-muted">Recent</p>
           {recentSearches.map((symbol) => (
-            <button
-              key={symbol}
-              type="button"
-              onClick={() => navigateToSymbol(symbol)}
-              className="flex w-full items-center gap-3 border-t border-border-subtle/40 px-4 py-3 text-left text-sm transition hover:bg-white/5"
-            >
-              <ResultIcon symbol={symbol} logo={logos[symbol]} />
-              <span className="font-semibold text-text-primary">{symbol}</span>
-              <Clock className="ml-auto h-4 w-4 shrink-0 text-text-muted" />
-            </button>
+            <div key={symbol} className="flex w-full items-center gap-2 border-t border-border-subtle/40 px-4 py-2">
+              <button
+                type="button"
+                onClick={() => navigateToSymbol(symbol)}
+                className="flex min-w-0 flex-1 items-center gap-3 py-1 text-left text-sm transition hover:bg-white/5"
+              >
+                <ResultIcon symbol={symbol} logo={logos[symbol]} />
+                <span className="truncate font-semibold text-text-primary">{symbol}</span>
+              </button>
+              {pathname === "/watchlist" && (
+                <button
+                  type="button"
+                  aria-label={`Compare ${symbol} with the selected stock`}
+                  title="Compare with selected stock"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    const cleanSymbol = symbol.trim().toUpperCase();
+                    addRecentSearch(cleanSymbol);
+                    setQuery("");
+                    setIsOpen(false);
+                    window.dispatchEvent(new CustomEvent("watchlist-compare-symbol", { detail: cleanSymbol }));
+                  }}
+                  className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 text-accent transition hover:-translate-y-0.5 hover:bg-accent/10 lg:inline-flex"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/comparison-tilted-flipped-icon.svg" alt="" className="stock-tools-icon h-5 w-5 object-contain" />
+                </button>
+              )}
+            </div>
           ))}
         </div>
       ) : (
@@ -261,7 +280,6 @@ export function SearchBar() {
                   </span>
                   <span className="block truncate text-text-muted">{result.description}</span>
                 </span>
-                <span className="shrink-0 text-xs uppercase text-text-muted">Open</span>
               </button>
               {pathname === "/watchlist" && (
                 <button

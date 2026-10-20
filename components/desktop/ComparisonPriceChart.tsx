@@ -364,7 +364,8 @@ export function ComparisonPriceChart({
       </div>
 
       {showVolumeChart && rows.length > 0 && (
-      <div ref={volumeRevealRef} className="relative mt-3 h-20 w-full" aria-label="Overlaid comparison volume" style={{ animation: volumeEntered ? "comparison-chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" : "none", clipPath: volumeEntered ? undefined : "inset(0 100% 0 0)" }}>
+      <div ref={volumeRevealRef} className="relative mt-3 h-20 w-full" aria-label="Overlaid comparison volume">
+        <div className="absolute inset-0" style={{ animation: volumeEntered ? "comparison-chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" : "none", clipPath: volumeEntered ? undefined : "inset(0 100% 0 0)" }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={rows} barCategoryGap="15%" barGap="-100%" margin={{ top: 2, right: 12, bottom: 0, left: 12 }} onMouseMove={setHoveredFromVolumeState} onMouseLeave={clearHovered}>
               <XAxis dataKey="date" hide />
@@ -376,6 +377,7 @@ export function ComparisonPriceChart({
           </ResponsiveContainer>
           <div ref={volumeCrosshairRef} data-crosshair-v="" className="pointer-events-none absolute inset-y-0 hidden w-px bg-white/20" />
         </div>
+      </div>
       )}
 
       <div className="mt-3 flex justify-center">
