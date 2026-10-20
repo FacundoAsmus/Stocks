@@ -48,6 +48,8 @@ const MA_COLORS: Record<number, string> = {
 const MAX_VOLUME_BARS = 240;
 
 type VolumeBucket = { volume: number; isUp: boolean };
+export type ComparisonVolumeBucket = { aVolume: number | null; bVolume: number | null };
+const EMPTY_VOLUME_BUCKETS: VolumeBucket[] = [];
 
 // Recharts has no built-in OHLC series. This layer uses the chart's actual
 // Y-axis scale, rather than approximating it from a bar's zero baseline, so
@@ -120,7 +122,17 @@ function buildVolumeBuckets(points: CandlePoint[]): VolumeBucket[] {
   return buckets;
 }
 
-function VolumeChartCanvas({ buckets, colorBars }: { buckets: VolumeBucket[]; colorBars: boolean }) {
+export function VolumeChartCanvas({
+  buckets = EMPTY_VOLUME_BUCKETS,
+  colorBars = false,
+  comparisonBuckets,
+  onComparisonHover,
+}: {
+  buckets?: VolumeBucket[];
+  colorBars?: boolean;
+  comparisonBuckets?: ComparisonVolumeBucket[];
+  onComparisonHover?: (index: number | null, x: number | null) => void;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -143,6 +155,27 @@ function VolumeChartCanvas({ buckets, colorBars }: { buckets: VolumeBucket[]; co
       context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
       context.clearRect(0, 0, width, height);
 
+      if (comparisonBuckets) {
+        const maxVolume = Math.max(1, ...comparisonBuckets.flatMap((bucket) => [bucket.aVolume ?? 0, bucket.bVolume ?? 0]));
+        const step = width / comparisonBuckets.length;
+        const barWidth = Math.max(1, step * 0.72);
+        comparisonBuckets.forEach((bucket, index) => {
+          const x = index * step + (step - barWidth) / 2;
+          if (bucket.aVolume !== null) {
+            const barHeight = Math.max(1, (bucket.aVolume / maxVolume) * height * progress);
+            context.fillStyle = "rgba(168, 85, 247, 0.54)";
+            context.fillRect(x, height - barHeight, barWidth, barHeight);
+          }
+          if (bucket.bVolume !== null) {
+            const barHeight = Math.max(1, (bucket.bVolume / maxVolume) * height * progress);
+            context.fillStyle = "rgba(249, 115, 22, 0.54)";
+            context.fillRect(x, height - barHeight, barWidth, barHeight);
+          }
+        });
+        return;
+      }
+
+      if (!buckets.length) return;
       const maxVolume = Math.max(...buckets.map((bucket) => bucket.volume), 1);
       const step = width / buckets.length;
       const barWidth = Math.max(1, step * 0.72);
@@ -170,9 +203,43 @@ function VolumeChartCanvas({ buckets, colorBars }: { buckets: VolumeBucket[]; co
       observer.disconnect();
       cancelAnimationFrame(animationFrame);
     };
-  }, [buckets, colorBars]);
+  }, [buckets, colorBars, comparisonBuckets]);
 
-  return <canvas ref={canvasRef} className="block h-full w-full" aria-hidden />;
+  return <canvas
+    ref={canvasRef}
+    className="block h-full w-full"
+    aria-hidden
+    onMouseMove={comparisonBuckets && onComparisonHover ? (event) => {
+      const bounds = event.currentTarget.getBoundingClientRect();
+      const x = event.clientX - bounds.left;
+      const index = Math.min(comparisonBuckets.length - 1, Math.floor((x / bounds.width) * comparisonBuckets.length));
+      if (index >= 0) onComparisonHover(index, x);
+    } : undefined}
+    onMouseLeave={comparisonBuckets && onComparisonHover ? () => onComparisonHover(null, null) : undefined}
+  />;
+}
+
+export function PriceHistoryLoadingAnimation() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-5">
+      <style>{`
+        @keyframes chart-candle-breathe { 0%,100%{transform:scaleY(0.6)} 50%{transform:scaleY(1.4)} }
+        @keyframes chart-wick-breathe   { 0%,100%{opacity:0.25;transform:scaleY(0.7)} 50%{opacity:0.9;transform:scaleY(1.3)} }
+        .cc-1{animation:chart-candle-breathe 1.8s ease-in-out infinite -1.8s;transform-origin:bottom}
+        .cc-2{animation:chart-candle-breathe 1.8s ease-in-out infinite -1.32s;transform-origin:bottom}
+        .cc-3{animation:chart-candle-breathe 1.8s ease-in-out infinite -0.84s;transform-origin:bottom}
+        .cw-1{animation:chart-wick-breathe 1.8s ease-in-out infinite -1.8s;transform-origin:bottom}
+        .cw-2{animation:chart-wick-breathe 1.8s ease-in-out infinite -1.32s;transform-origin:bottom}
+        .cw-3{animation:chart-wick-breathe 1.8s ease-in-out infinite -0.84s;transform-origin:bottom}
+      `}</style>
+      <div className="flex items-end gap-[5px] h-10">
+        <div className="flex flex-col items-center gap-[2px]"><div className="cw-1 w-[2px] h-1.5 rounded-full bg-positive/50" /><div className="cc-1 w-3.5 h-4 rounded-sm bg-positive/50" /></div>
+        <div className="flex flex-col items-center gap-[2px]"><div className="cw-2 w-[2px] h-2 rounded-full bg-positive/70" /><div className="cc-2 w-3.5 h-6 rounded-sm bg-positive/70" /></div>
+        <div className="flex flex-col items-center gap-[2px]"><div className="cw-3 w-[2px] h-2.5 rounded-full bg-positive" /><div className="cc-3 w-3.5 h-8 rounded-sm bg-positive" /></div>
+      </div>
+      <span className="text-sm text-text-muted">Loading price history</span>
+    </div>
+  );
 }
 
 // `windowDays` is a number of *days*, not points — periods have wildly
@@ -1121,33 +1188,7 @@ export function PriceChart({
         onMouseLeave={() => { if (proCrosshairRef.current) proCrosshairRef.current.style.display = "none"; clearHover(); }}
       >
         {isLoading ? (
-          <div className="flex h-full flex-col items-center justify-center gap-5">
-            <style>{`
-              @keyframes chart-candle-breathe { 0%,100%{transform:scaleY(0.6)} 50%{transform:scaleY(1.4)} }
-              @keyframes chart-wick-breathe   { 0%,100%{opacity:0.25;transform:scaleY(0.7)} 50%{opacity:0.9;transform:scaleY(1.3)} }
-              .cc-1{animation:chart-candle-breathe 1.8s ease-in-out infinite -1.8s;transform-origin:bottom}
-              .cc-2{animation:chart-candle-breathe 1.8s ease-in-out infinite -1.32s;transform-origin:bottom}
-              .cc-3{animation:chart-candle-breathe 1.8s ease-in-out infinite -0.84s;transform-origin:bottom}
-              .cw-1{animation:chart-wick-breathe 1.8s ease-in-out infinite -1.8s;transform-origin:bottom}
-              .cw-2{animation:chart-wick-breathe 1.8s ease-in-out infinite -1.32s;transform-origin:bottom}
-              .cw-3{animation:chart-wick-breathe 1.8s ease-in-out infinite -0.84s;transform-origin:bottom}
-            `}</style>
-            <div className="flex items-end gap-[5px] h-10">
-              <div className="flex flex-col items-center gap-[2px]">
-                <div className="cw-1 w-[2px] h-1.5 rounded-full bg-positive/50" />
-                <div className="cc-1 w-3.5 h-4 rounded-sm bg-positive/50" />
-              </div>
-              <div className="flex flex-col items-center gap-[2px]">
-                <div className="cw-2 w-[2px] h-2 rounded-full bg-positive/70" />
-                <div className="cc-2 w-3.5 h-6 rounded-sm bg-positive/70" />
-              </div>
-              <div className="flex flex-col items-center gap-[2px]">
-                <div className="cw-3 w-[2px] h-2.5 rounded-full bg-positive" />
-                <div className="cc-3 w-3.5 h-8 rounded-sm bg-positive" />
-              </div>
-            </div>
-            <span className="text-sm text-text-muted">Loading price history</span>
-          </div>
+          <PriceHistoryLoadingAnimation />
         ) : error ? (
           <div className="flex h-full flex-col items-center justify-center rounded-md border border-dashed border-negative/30 bg-negative/5 px-4 text-center">
             <p className="text-sm font-medium text-text-primary">Chart unavailable</p>

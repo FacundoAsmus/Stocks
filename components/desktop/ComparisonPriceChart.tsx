@@ -2,8 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Bar,
-  BarChart,
   Line,
   LineChart,
   ReferenceLine,
@@ -15,7 +13,7 @@ import {
 import { Minus } from "lucide-react";
 import { motion } from "framer-motion";
 
-import { WheelPrice, tooltipLabel } from "@/components/PriceChart";
+import { PriceHistoryLoadingAnimation, VolumeChartCanvas, WheelPrice, tooltipLabel } from "@/components/PriceChart";
 import { StockLogo } from "@/components/StockLogo";
 import { formatPercent } from "@/lib/format";
 import { SECTOR_ETFS } from "@/lib/etfs";
@@ -135,9 +133,7 @@ export function ComparisonPriceChart({
   const [proMode, setProMode] = useState(() => typeof window !== "undefined" && localStorage.getItem("pro-mode") === "1");
   const [showVolumeChart, setShowVolumeChart] = useState(() => typeof window === "undefined" || localStorage.getItem("pro-volume-chart") !== "0");
   const chartRevealRef = useRef<HTMLDivElement>(null);
-  const volumeRevealRef = useRef<HTMLDivElement>(null);
   const [chartEntered, setChartEntered] = useState(false);
-  const [volumeEntered, setVolumeEntered] = useState(false);
   const horizontalCrosshairRef = useRef<HTMLDivElement>(null);
   const volumeCrosshairRef = useRef<HTMLDivElement>(null);
 
@@ -204,20 +200,7 @@ export function ComparisonPriceChart({
   }, [primarySymbol, secondarySymbol, period]);
 
   const rows = useMemo(() => mergeComparisonCandles(primaryCandles, secondaryCandles), [primaryCandles, secondaryCandles]);
-  useEffect(() => {
-    if (!showVolumeChart || !rows.length) return;
-    setVolumeEntered(false);
-    const element = volumeRevealRef.current;
-    if (!element) return;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        setVolumeEntered(true);
-        observer.disconnect();
-      }
-    }, { threshold: 0.25 });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [period, showVolumeChart, rows.length]);
+  const comparisonVolumeBuckets = useMemo(() => rows.map(({ aVolume, bVolume }) => ({ aVolume, bVolume })), [rows]);
   const yDomain = useMemo<[number, number]>(() => {
     if (!rows.length) return [-1, 1];
     const values = rows.flatMap((row) => [row.aPct, row.bPct]);
@@ -228,7 +211,6 @@ export function ComparisonPriceChart({
   }, [rows]);
   const latest = hoveredRow ?? rows[rows.length - 1] ?? null;
   const winnerIsPrimary = latest ? latest.aPct >= latest.bPct : true;
-  const volumeMax = useMemo(() => Math.max(1, ...rows.flatMap((row) => [row.aVolume ?? 0, row.bVolume ?? 0])), [rows]);
 
   const setHoveredFromState = (state: unknown) => {
     const { activeTooltipIndex, isTooltipActive, activeCoordinate } = (state ?? {}) as { activeTooltipIndex?: number; isTooltipActive?: boolean; activeCoordinate?: { x?: number; y?: number } };
@@ -242,12 +224,13 @@ export function ComparisonPriceChart({
       volumeCrosshairRef.current.style.display = "block";
     }
   };
-  const setHoveredFromVolumeState = (state: unknown) => {
-    const { activeTooltipIndex, isTooltipActive, activeCoordinate } = (state ?? {}) as { activeTooltipIndex?: number; isTooltipActive?: boolean; activeCoordinate?: { x?: number } };
-    setHoveredRow(isTooltipActive && activeTooltipIndex !== undefined ? rows[activeTooltipIndex] ?? null : null);
-    if (activeCoordinate?.x !== undefined && volumeCrosshairRef.current) {
-      volumeCrosshairRef.current.style.left = `${activeCoordinate.x}px`;
+  const setHoveredFromVolumeIndex = (index: number | null, x: number | null) => {
+    setHoveredRow(index === null ? null : rows[index] ?? null);
+    if (x !== null && volumeCrosshairRef.current) {
+      volumeCrosshairRef.current.style.left = `${x}px`;
       volumeCrosshairRef.current.style.display = "block";
+    } else if (volumeCrosshairRef.current) {
+      volumeCrosshairRef.current.style.display = "none";
     }
   };
   const clearHovered = () => {
@@ -305,27 +288,7 @@ export function ComparisonPriceChart({
       <style>{`@keyframes comparison-chart-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }`}</style>
       <div ref={chartRevealRef} className="relative h-[384px] w-full">
         {loading ? (
-          <div className="flex h-full items-center justify-center gap-3">
-            <style>{`
-              @keyframes chart-candle-breathe { 0%,100%{transform:scaleY(0.6)} 50%{transform:scaleY(1.4)} }
-              @keyframes chart-wick-breathe { 0%,100%{opacity:0.25;transform:scaleY(0.7)} 50%{opacity:0.9;transform:scaleY(1.3)} }
-              .comparison-cc-1{animation:chart-candle-breathe 1.8s ease-in-out infinite -1.8s;transform-origin:bottom}
-              .comparison-cc-2{animation:chart-candle-breathe 1.8s ease-in-out infinite -1.32s;transform-origin:bottom}
-              .comparison-cc-3{animation:chart-candle-breathe 1.8s ease-in-out infinite -0.84s;transform-origin:bottom}
-              .comparison-cw-1{animation:chart-wick-breathe 1.8s ease-in-out infinite -1.8s;transform-origin:bottom}
-              .comparison-cw-2{animation:chart-wick-breathe 1.8s ease-in-out infinite -1.32s;transform-origin:bottom}
-              .comparison-cw-3{animation:chart-wick-breathe 1.8s ease-in-out infinite -0.84s;transform-origin:bottom}
-            `}</style>
-            <div className="flex h-10 items-end gap-[5px]" aria-hidden="true">
-              {["comparison-1", "comparison-2", "comparison-3"].map((name, index) => (
-                <div key={name} className="flex flex-col items-center gap-[2px]">
-                  <div className={`comparison-cw-${index + 1} w-[2px] ${index === 0 ? "h-1.5" : index === 1 ? "h-2" : "h-2.5"} rounded-full bg-positive/${index === 0 ? "50" : index === 1 ? "70" : "100"}`} />
-                  <div className={`comparison-cc-${index + 1} w-3.5 ${index === 0 ? "h-4" : index === 1 ? "h-6" : "h-8"} rounded-sm bg-positive/${index === 0 ? "50" : index === 1 ? "70" : "100"}`} />
-                </div>
-              ))}
-            </div>
-            <span className="text-sm text-text-muted">Loading price history</span>
-          </div>
+          <PriceHistoryLoadingAnimation />
         ) : rows.length ? (
           <div className="comparison-stock-chart h-full w-full" style={{ animation: chartEntered ? "comparison-chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" : "none", clipPath: chartEntered ? undefined : "inset(0 100% 0 0)" }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -364,19 +327,9 @@ export function ComparisonPriceChart({
       </div>
 
       {showVolumeChart && rows.length > 0 && (
-      <div ref={volumeRevealRef} className="relative mt-3 h-20 w-full" aria-label="Overlaid comparison volume">
-        <div className="absolute inset-0" style={{ animation: volumeEntered ? "comparison-chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" : "none", clipPath: volumeEntered ? undefined : "inset(0 100% 0 0)" }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={rows} barCategoryGap="15%" barGap="-100%" margin={{ top: 2, right: 12, bottom: 0, left: 12 }} onMouseMove={setHoveredFromVolumeState} onMouseLeave={clearHovered}>
-              <XAxis dataKey="date" hide />
-              <YAxis domain={[0, volumeMax]} hide />
-              <Tooltip content={() => null} cursor={false} />
-              <Bar dataKey="aVolume" fill={COMPARISON_COLORS.primary} fillOpacity={0.54} maxBarSize={12} isAnimationActive={false} />
-              <Bar dataKey="bVolume" fill={COMPARISON_COLORS.secondary} fillOpacity={0.54} maxBarSize={12} isAnimationActive={false} />
-            </BarChart>
-          </ResponsiveContainer>
-          <div ref={volumeCrosshairRef} data-crosshair-v="" className="pointer-events-none absolute inset-y-0 hidden w-px bg-white/20" />
-        </div>
+      <div className="relative mt-3 h-20 w-full" aria-label="Overlaid comparison volume">
+        <VolumeChartCanvas comparisonBuckets={comparisonVolumeBuckets} onComparisonHover={setHoveredFromVolumeIndex} />
+        <div ref={volumeCrosshairRef} data-crosshair-v="" className="pointer-events-none absolute inset-y-0 hidden w-px bg-white/20" />
       </div>
       )}
 
