@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { ComparisonPriceChart, COMPARISON_COLORS } from "@/components/desktop/ComparisonPriceChart";
 import { ComparisonMarketSentiment } from "@/components/MarketSentiment";
@@ -74,11 +74,48 @@ function analystRatio(item: AnalystRecommendation | undefined, key: (typeof ANAL
   return total ? (item[key] / total) * 100 : 0;
 }
 
+function ComparisonAnalystBar({ targetWidth, color, delay, started }: { targetWidth: number; color: string; delay: number; started: boolean }) {
+  const [width, setWidth] = useState(0);
+  useEffect(() => {
+    if (!started) return;
+    let frame = 0;
+    const timer = window.setTimeout(() => {
+      const start = performance.now();
+      function step(now: number) {
+        const progress = Math.min(1, (now - start) / 910);
+        setWidth((1 - Math.pow(1 - progress, 3)) * targetWidth);
+        if (progress < 1) frame = requestAnimationFrame(step);
+      }
+      frame = requestAnimationFrame(step);
+    }, delay);
+    return () => {
+      window.clearTimeout(timer);
+      cancelAnimationFrame(frame);
+    };
+  }, [delay, started, targetWidth]);
+
+  return <div className="h-full rounded-full" style={{ width: `${width}%`, backgroundColor: color, boxShadow: `0 0 8px ${color}55` }} />;
+}
+
 function ComparisonAnalysts({ primary, secondary }: { primary: StockDetail; secondary: StockDetail }) {
   const a = latestRecommendation(primary.recommendations);
   const b = latestRecommendation(secondary.recommendations);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [started, setStarted] = useState(false);
+  useEffect(() => {
+    const element = sectionRef.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setStarted(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.25 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   return (
-    <section className="mt-6 rounded-xl bg-black p-5">
+    <section ref={sectionRef} className="mt-6 rounded-xl bg-black p-5">
       <p className="mb-5 text-sm font-medium uppercase tracking-[0.18em] text-accent">Analysts</p>
       <div className="space-y-4">
         {ANALYST_ROWS.map(([label, key]) => (
@@ -87,7 +124,7 @@ function ComparisonAnalysts({ primary, secondary }: { primary: StockDetail; seco
             <div className="space-y-1.5">
               {SERIES.map(({ key: seriesKey, color }) => (
                 <div key={seriesKey} className="h-2 rounded-full bg-panel-muted">
-                  <div className="h-full rounded-full" style={{ width: `${analystRatio(seriesKey === "a" ? a : b, key)}%`, backgroundColor: color, boxShadow: `0 0 8px ${color}55` }} />
+                  <ComparisonAnalystBar targetWidth={analystRatio(seriesKey === "a" ? a : b, key)} color={color} delay={ANALYST_ROWS.findIndex((row) => row[1] === key) * 80} started={started} />
                 </div>
               ))}
             </div>
@@ -158,6 +195,9 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
   const [a, setA] = useState<FilingIndicator[]>([]);
   const [b, setB] = useState<FilingIndicator[]>([]);
   const [hoveredBar, setHoveredBar] = useState<{ key: FilingKey; series: "a" | "b"; value: number } | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const [started, setStarted] = useState(false);
+  const years = useMemo(() => [...new Set([...a, ...b].map((item) => item.year))].sort((x, y) => x - y), [a, b]);
   useEffect(() => {
     const controller = new AbortController();
     const fetchData = (symbol: string) => fetch(`/api/filing-indicators?symbol=${encodeURIComponent(symbol)}`, { signal: controller.signal })
@@ -171,11 +211,23 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
     return () => controller.abort();
   }, [primarySymbol, secondarySymbol]);
 
-  const years = useMemo(() => [...new Set([...a, ...b].map((item) => item.year))].sort((x, y) => x - y), [a, b]);
+  useEffect(() => {
+    const element = sectionRef.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setStarted(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.25 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [years.length]);
+
   const specs: Array<[string, FilingKey]> = [["CapEx", "capex"], ["R&D", "researchAndDevelopment"], ["Free cash flow", "freeCashFlow"]];
   if (!years.length) return null;
   return (
-    <section className="rounded-xl bg-black p-5">
+    <section ref={sectionRef} className="rounded-xl bg-black p-5">
       <div className="space-y-8">
         {specs.map(([title, key]) => {
           const aValues = years.map((year) => a.find((item) => item.year === year)?.[key] ?? null);
@@ -219,11 +271,12 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
                               style={{
                                 left: seriesIndex === 0 ? "35%" : "65%",
                                 ...(negative ? { top: `${baseline}%` } : { bottom: hasNegative ? "55%" : `${baseline}%` }),
-                                height: `${height}%`,
+                                height: started ? `${height}%` : "0%",
                                 backgroundColor: color,
                                 boxShadow: seriesIndex === 0
                                   ? "0 0 10px rgba(168, 85, 247, 0.55)"
                                   : "0 0 10px rgba(249, 115, 22, 0.55)",
+                                transition: "height 1.657s cubic-bezier(0.22, 1, 0.36, 1)",
                               }}
                               title={`${year}: ${formatCurrency(value)}`}
                               onMouseEnter={() => setHoveredBar({ key, series: seriesIndex === 0 ? "a" : "b", value })}

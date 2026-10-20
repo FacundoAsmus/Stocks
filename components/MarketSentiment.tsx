@@ -185,6 +185,7 @@ export function MarketSentiment({
 export function ComparisonMarketSentiment({ scores }: { scores: [number, number] }) {
   const ref = useRef<HTMLElement>(null);
   const [started, setStarted] = useState(false);
+  const [animatedScores, setAnimatedScores] = useState<[number, number]>([0, 0]);
   const colors = ["#a855f7", "#f97316"] as const;
 
   useEffect(() => {
@@ -199,6 +200,22 @@ export function ComparisonMarketSentiment({ scores }: { scores: [number, number]
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!started) return;
+    const targets = scores.map((score) => Math.min(99, Math.max(1, score))) as [number, number];
+    const duration = 1755;
+    const start = performance.now();
+    let frame = 0;
+    function step(now: number) {
+      const progress = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setAnimatedScores([targets[0] * eased, targets[1] * eased]);
+      if (progress < 1) frame = requestAnimationFrame(step);
+    }
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [started, scores[0], scores[1]]);
 
   return (
     <section ref={ref} className="rounded-xl bg-black p-5">
@@ -216,10 +233,10 @@ export function ComparisonMarketSentiment({ scores }: { scores: [number, number]
                 <div
                   className="h-full rounded-full"
                   style={{
-                    width: started ? `${score}%` : "0%",
+                    width: `${animatedScores[index]}%`,
                     backgroundColor: color,
                     boxShadow: `0 0 10px ${color}70`,
-                    transition: started ? "width 1.755s cubic-bezier(0.22, 1, 0.36, 1)" : "none",
+                    transition: "none",
                   }}
                 />
               </div>

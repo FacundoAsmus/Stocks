@@ -134,8 +134,26 @@ export function ComparisonPriceChart({
   const [hoveredRow, setHoveredRow] = useState<ComparisonRow | null>(null);
   const [proMode, setProMode] = useState(() => typeof window !== "undefined" && localStorage.getItem("pro-mode") === "1");
   const [showVolumeChart, setShowVolumeChart] = useState(() => typeof window === "undefined" || localStorage.getItem("pro-volume-chart") !== "0");
+  const chartRevealRef = useRef<HTMLDivElement>(null);
+  const volumeRevealRef = useRef<HTMLDivElement>(null);
+  const [chartEntered, setChartEntered] = useState(false);
+  const [volumeEntered, setVolumeEntered] = useState(false);
   const horizontalCrosshairRef = useRef<HTMLDivElement>(null);
   const volumeCrosshairRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setChartEntered(false);
+    const element = chartRevealRef.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setChartEntered(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.25 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [period]);
 
   useEffect(() => {
     const syncProMode = () => setProMode(localStorage.getItem("pro-mode") === "1");
@@ -186,6 +204,20 @@ export function ComparisonPriceChart({
   }, [primarySymbol, secondarySymbol, period]);
 
   const rows = useMemo(() => mergeComparisonCandles(primaryCandles, secondaryCandles), [primaryCandles, secondaryCandles]);
+  useEffect(() => {
+    if (!showVolumeChart || !rows.length) return;
+    setVolumeEntered(false);
+    const element = volumeRevealRef.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setVolumeEntered(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.25 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [period, showVolumeChart, rows.length]);
   const yDomain = useMemo<[number, number]>(() => {
     if (!rows.length) return [-1, 1];
     const values = rows.flatMap((row) => [row.aPct, row.bPct]);
@@ -270,7 +302,8 @@ export function ComparisonPriceChart({
       </div>
       {!loading && latest && <p className="mb-3 text-sm text-text-muted">{tooltipLabel(latest.date, period)}</p>}
 
-      <div className="relative h-[384px] w-full">
+      <style>{`@keyframes comparison-chart-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }`}</style>
+      <div ref={chartRevealRef} className="relative h-[384px] w-full">
         {loading ? (
           <div className="flex h-full items-center justify-center gap-3">
             <style>{`
@@ -294,7 +327,7 @@ export function ComparisonPriceChart({
             <span className="text-sm text-text-muted">Loading price history</span>
           </div>
         ) : rows.length ? (
-          <div className="comparison-stock-chart h-full w-full">
+          <div className="comparison-stock-chart h-full w-full" style={{ animation: chartEntered ? "comparison-chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" : "none", clipPath: chartEntered ? undefined : "inset(0 100% 0 0)" }}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={rows} margin={{ top: 8, right: 0, bottom: 0, left: 0 }} onMouseMove={setHoveredFromState} onMouseLeave={clearHovered}>
                 <XAxis dataKey="date" hide />
@@ -331,7 +364,7 @@ export function ComparisonPriceChart({
       </div>
 
       {showVolumeChart && rows.length > 0 && (
-      <div className="relative mt-3 h-20 w-full" aria-label="Overlaid comparison volume">
+      <div ref={volumeRevealRef} className="relative mt-3 h-20 w-full" aria-label="Overlaid comparison volume" style={{ animation: volumeEntered ? "comparison-chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both" : "none", clipPath: volumeEntered ? undefined : "inset(0 100% 0 0)" }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={rows} barCategoryGap="15%" barGap="-100%" margin={{ top: 2, right: 12, bottom: 0, left: 12 }} onMouseMove={setHoveredFromVolumeState} onMouseLeave={clearHovered}>
               <XAxis dataKey="date" hide />
