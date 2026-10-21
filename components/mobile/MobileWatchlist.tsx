@@ -327,7 +327,7 @@ function WatchlistRow({
             aria-label={`Remove ${stock.symbol}`}
             className="flex items-center justify-center text-accent active:scale-90 transition-transform"
           >
-            <OptionalSvgIcon name="star" className="h-5 w-5" />
+            <OptionalSvgIcon name="star" selected fallbackToBaseWhenSelected className="h-5 w-5" />
           </button>
         </div>
 

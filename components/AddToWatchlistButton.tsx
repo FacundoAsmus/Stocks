@@ -66,10 +66,7 @@ export function AddToWatchlistButton({
         aria-label={isSaved ? `Remove ${name} from watchlist` : `Add ${name} to watchlist`}
         onClick={toggleWatchlist}
         className={cn(
-          "group relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border p-0 transition-all duration-200 hover:-translate-y-1 hover:scale-[1.12]",
-          isSaved
-            ? "border-border-subtle bg-transparent text-accent"
-            : "border-border-subtle text-text-muted hover:text-accent"
+          "group relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 text-accent transition-all duration-200 hover:-translate-y-1 hover:scale-[1.12] hover:bg-white/5"
         )}
       >
         <OptionalSvgIcon name="star" selected={isSaved} fallbackToBaseWhenSelected className="h-6 w-6" />
