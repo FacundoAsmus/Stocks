@@ -561,7 +561,7 @@ export function MobileNav() {
     setTimeout(() => setSettingsPhase("closed"), SLIDE_DURATION);
   }
 
-  const iconWrapClass = "relative z-10 flex items-center justify-center transition-colors duration-300";
+  const iconWrapClass = "relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 transition-colors duration-300";
   function iconClass(active: boolean) {
     return cn("transition-colors duration-300", active ? "text-black" : "text-accent");
   }
@@ -570,17 +570,17 @@ export function MobileNav() {
     <>
       {settingsPhase !== "closed" && <SettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} />}
 
-      {/* One unified bubble: Market / Watchlist / Settings, with a sliding
-          green indicator behind the active section. Height-matched to the
-          search pill so everything along the bottom bar lines up. */}
+      {/* Bottom dock: navigation stays grouped in the capsule, while search
+          keeps its separate circle so it can morph into the existing search bar. */}
       <nav
-        className="fixed bottom-0 inset-x-0 z-[60] flex lg:hidden items-center justify-start px-5 pointer-events-none"
+        className="fixed bottom-0 inset-x-0 z-[60] flex lg:hidden items-center px-5 pointer-events-none"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 0.5rem)", paddingTop: "1rem" }}
       >
         <div
-          className="smoked-glass-surface relative flex items-center rounded-full border border-white/25 overflow-hidden pointer-events-auto"
+          className="smoked-glass-surface relative flex min-w-0 flex-1 items-center rounded-full border border-white/25 overflow-hidden pointer-events-auto"
           style={{
             height: BUBBLE_SIZE,
+            marginRight: "0.75rem",
             background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
             backdropFilter: "blur(24px) saturate(180%)",
             WebkitBackdropFilter: "blur(24px) saturate(180%)",
@@ -591,34 +591,34 @@ export function MobileNav() {
           <span
             aria-hidden
             className="absolute left-0 top-0 rounded-full bg-accent transition-transform duration-300 ease-out"
-            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE, transform: `translateX(${activeIndex * 3.5}rem)`, boxShadow: "0 0 14px rgba(173,250,27,0.48), 0 0 5px rgba(173,250,27,0.7)" }}
+            style={{ width: "33.3333%", height: BUBBLE_SIZE, transform: `translateX(${activeIndex * 100}%)`, boxShadow: "0 0 14px rgba(173,250,27,0.48), 0 0 5px rgba(173,250,27,0.7)" }}
           />
 
           <button
             className={iconWrapClass}
-            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE }}
             onClick={() => navigateTo("/")}
             aria-label="Market"
           >
-            <GlobeIcon className={cn("h-6 w-6", iconClass(activeIndex === 0))} />
+            <GlobeIcon className={cn("h-5 w-5", iconClass(activeIndex === 0))} />
+            <span className={cn("text-[10px] font-medium leading-none", iconClass(activeIndex === 0))}>Market</span>
           </button>
 
           <button
             className={iconWrapClass}
-            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE }}
             onClick={() => navigateTo("/watchlist")}
             aria-label="Watchlist"
           >
-            <List className={cn("h-6 w-6", iconClass(activeIndex === 1))} />
+            <List className={cn("h-5 w-5", iconClass(activeIndex === 1))} />
+            <span className={cn("text-[10px] font-medium leading-none", iconClass(activeIndex === 1))}>Watchlist</span>
           </button>
 
           <button
             className={iconWrapClass}
-            style={{ width: BUBBLE_SIZE, height: BUBBLE_SIZE }}
             onClick={openSettings}
             aria-label="Settings"
           >
-            <Settings className={cn("h-6 w-6", iconClass(activeIndex === 2))} />
+            <Settings className={cn("h-5 w-5", iconClass(activeIndex === 2))} />
+            <span className={cn("text-[10px] font-medium leading-none", iconClass(activeIndex === 2))}>Settings</span>
           </button>
         </div>
       </nav>
