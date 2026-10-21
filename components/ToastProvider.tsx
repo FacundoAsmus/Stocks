@@ -49,7 +49,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               className="rounded-md p-1 text-text-muted transition hover:bg-panel-muted hover:text-text-primary"
               onClick={() => dismiss(toast.id)}
             >
-              <OptionalSvgIcon name="close" className="h-4 w-4" colorClassName="text-text-muted" />
+              <OptionalSvgIcon name="close" className="h-4 w-4" colorClassName="text-black" />
             </button>
           </div>
         ))}

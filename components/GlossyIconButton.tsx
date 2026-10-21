@@ -46,5 +46,5 @@ export function GlossyIconButton({
 }
 
 export function GlossyCloseIcon() {
-  return <OptionalSvgIcon name="close" className="glossy-icon-button__close-icon" colorClassName="text-text-primary" />;
+  return <OptionalSvgIcon name="close" className="glossy-icon-button__close-icon" colorClassName="text-black" />;
 }

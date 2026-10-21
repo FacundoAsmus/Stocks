@@ -62,7 +62,7 @@ export function DesktopStockDetail({
           <div className="absolute right-5 top-5 z-50 flex items-center gap-2">
             <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} />
             {watchlistDetailHeader && <StockToolsButton symbol={stock.symbol} chartHeight={384} />}
-            <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
+            <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact hoverRemoveIcon={watchlistDetailHeader} />
           </div>
           {/* ── Logo + name row ── */}
           <div className={`flex gap-4 ${watchlistDetailHeader ? "-ml-5 items-center pr-44" : "items-start"}`}>

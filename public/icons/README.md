@@ -41,8 +41,11 @@ Use the group id for the unselected and selected versions:
 - `calendar.svg`
 - `ai.svg`
 - `alerts.svg`
+- `filled-bell.svg`
 - `tools.svg`
 - `star.svg`, `star-selected.svg`
+- `star-crossed.svg`
+- `cancel-alert.svg`
 - `close.svg`
 
 ## Settings

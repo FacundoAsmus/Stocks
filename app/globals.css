@@ -321,6 +321,15 @@ html.light-mode .chart-period-selector-glass {
   filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.78)) drop-shadow(0 0 9px rgba(249, 115, 22, 0.42));
 }
 .desktop-alert-glass.desktop-stock-tools-panel {
+  border-color: color-mix(in srgb, var(--color-accent) 40%, transparent) !important;
+}
+.desktop-alert-glass.desktop-stock-tools-panel:not(.is-open) {
+  background: transparent !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+}
+.desktop-alert-glass.desktop-stock-tools-panel.is-open {
   border-color: var(--color-accent) !important;
 }
 

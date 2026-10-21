@@ -75,7 +75,8 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
         ref={panelRef}
         className={cn(
           "desktop-alert-glass desktop-stock-tools-panel smoked-glass-surface absolute right-0 top-0 z-40 overflow-hidden border text-text-primary",
-          "w-10"
+          "w-10",
+          open && "is-open"
         )}
         style={{
           height: open ? expandedHeight : 40,
