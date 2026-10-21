@@ -152,7 +152,7 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
                   : "border-border-subtle text-text-muted hover:border-accent/40"
               )}
             >
-              <OptionalSvgIcon name={opt.iconName} className="h-4 w-4" colorClassName="text-text-muted" />
+              <OptionalSvgIcon name={opt.iconName} className="h-4 w-4" colorClassName="text-accent" />
               {opt.label}
             </button>
           ))}
@@ -162,23 +162,23 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
       <div className="px-4 py-3 border-t border-border-subtle">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-2">Pro Features</p>
         <button onClick={toggleProMode} className="w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="horizontal-crosshair" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Horizontal crosshair</span><span className="text-xs text-text-muted">Adds horizontal line at hovered price level</span></span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="horizontal-crosshair" className="h-5 w-5" colorClassName="text-accent" /><span className="text-sm text-text-primary font-medium">Horizontal crosshair</span></span>
           <Toggle enabled={proMode} />
         </button>
         <button onClick={toggleCandlesticks} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="candlestick-chart" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Candlestick chart</span><span className="text-xs text-text-muted">Shows open, high, low, and close for each interval</span></span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="candlestick-chart" className="h-5 w-5" colorClassName="text-accent" /><span className="text-sm text-text-primary font-medium">Candlestick chart</span></span>
           <Toggle enabled={useCandlesticks} />
         </button>
         <button onClick={toggleVolumeChart} className="w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="volume-chart" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Volume chart</span><span className="text-xs text-text-muted">Shows trading volume below the timeframes</span></span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="volume-chart" className="h-5 w-5" colorClassName="text-accent" /><span className="text-sm text-text-primary font-medium">Volume chart</span></span>
           <Toggle enabled={showVolumeChart} />
         </button>
         <button onClick={toggleVolumeBarColors} disabled={!showVolumeChart} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed">
-          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="color-bars" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Color bars</span><span className="text-xs text-text-muted">Uses green for up intervals and muted red for down intervals</span></span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="color-bars" className="h-5 w-5" colorClassName="text-accent" /><span className="text-sm text-text-primary font-medium">Color bars</span></span>
           <Toggle enabled={colorVolumeBars} />
         </button>
         <button onClick={toggleAlertLines} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="alert-price-lines" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Alert price lines</span><span className="text-xs text-text-muted">Show saved alert levels on stock charts</span></span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="alert-price-lines" className="h-5 w-5" colorClassName="text-accent" /><span className="text-sm text-text-primary font-medium">Alert price lines</span></span>
           <Toggle enabled={showAlertLines} />
         </button>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { AnalystRecommendation, PriceTarget } from "@/types/stock";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 // ── Rolling digit wheel (same mechanic as PriceChart) ────────────────────
 const DIGITS = ["0","1","2","3","4","5","6","7","8","9"];
@@ -157,7 +158,7 @@ export function AnalystSection({
     <section ref={ref} className="rounded-md bg-black p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Analysts</p>
+          <p className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="analyst" className="h-5 w-5" />Analysts</p>
         </div>
         {priceTarget.lastUpdated ? (
           <p className="text-sm text-text-muted">Updated {priceTarget.lastUpdated}</p>

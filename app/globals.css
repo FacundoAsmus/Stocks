@@ -231,8 +231,10 @@ html.light-mode .ai-button-icon {
 }
 
 .glossy-icon-button__icon > .glossy-icon-button__close-icon {
-  width: 58%;
-  height: 58%;
+  display: block;
+  width: 44%;
+  height: 44%;
+  margin: auto;
 }
 
 html:not(.light-mode) .glossy-icon-button__icon > .glossy-icon-button__close-icon {

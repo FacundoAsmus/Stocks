@@ -58,3 +58,11 @@ Use the group id for the unselected and selected versions:
 - `theme-dark.svg`
 - `theme-light.svg`
 - `theme-system.svg`
+
+## Analyst and stock tools
+
+- `analyst.svg` — Analyst section heading (desktop and comparison)
+- `tools-ma-7.svg` — MA(7) action in the desktop Tools panel
+- `tools-ma-25.svg` — MA(25) action in the desktop Tools panel
+- `tools-ma-99.svg` — MA(99) action in the desktop Tools panel
+- `tools-line.svg` — Draw price line action in the desktop Tools panel

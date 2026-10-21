@@ -5,9 +5,9 @@ import { cn } from "@/lib/utils";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 const MA_OPTIONS = [
-  { window: 7, color: "#f59e0b", icon: "/line-graph-7-icon.svg" },
-  { window: 25, color: "#ec4899", icon: "/line-graph-25-icon.svg" },
-  { window: 99, color: "#8b5cf6", icon: "/line-graph-99-icon.svg" },
+  { window: 7, color: "#f59e0b", iconName: "tools-ma-7" },
+  { window: 25, color: "#ec4899", iconName: "tools-ma-25" },
+  { window: 99, color: "#8b5cf6", iconName: "tools-ma-99" },
 ] as const;
 
 type MAStateDetail = { symbol: string; active: number[]; available: number[] };
@@ -96,7 +96,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
           <OptionalSvgIcon name="tools" className="stock-tools-icon h-6 w-6" />
         </button>
         <div className={cn("flex flex-col items-center gap-2 pt-2 transition-opacity duration-200", open ? "opacity-100" : "pointer-events-none opacity-0")}>
-          {MA_OPTIONS.map(({ window, color, icon }) => {
+          {MA_OPTIONS.map(({ window, color, iconName }) => {
             const active = activeMAs.includes(window);
             const available = availableMAs.includes(window);
             return (
@@ -112,22 +112,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
                 )}
                 style={{ color, fontSize: "50%" }}
               >
-                <span
-                  className="block h-5 w-7"
-                  role="img"
-                  aria-label={`MA(${window})`}
-                  style={{
-                    backgroundColor: color,
-                    maskImage: `url("${icon}")`,
-                    WebkitMaskImage: `url("${icon}")`,
-                    maskRepeat: "no-repeat",
-                    WebkitMaskRepeat: "no-repeat",
-                    maskPosition: "center",
-                    WebkitMaskPosition: "center",
-                    maskSize: "contain",
-                    WebkitMaskSize: "contain",
-                  }}
-                />
+                <OptionalSvgIcon name={iconName} className="h-5 w-7" color={color} />
               </button>
             );
           })}
@@ -141,8 +126,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
             )}
             aria-label={lineModeActive ? "Cancel line placement" : "Place a horizontal price line"}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/line-graph-simple-icon.svg" alt="" className="stock-tools-icon h-4 w-4 object-contain" />
+            <OptionalSvgIcon name="tools-line" className="stock-tools-icon h-5 w-5" />
           </button>
         </div>
       </div>

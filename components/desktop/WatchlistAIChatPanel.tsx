@@ -205,7 +205,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
             className="absolute top-0 left-[18%] right-[18%] pointer-events-none"
             style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)" }}
           />
-          <OptionalSvgIcon name="ai" className="ai-button-icon relative h-6 w-6" />
+          <OptionalSvgIcon name="ai" className="ai-button-icon relative h-7 w-7" />
         </button>
       )}
 

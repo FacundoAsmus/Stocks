@@ -76,7 +76,7 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
     <button type="button" aria-label="Price alerts" title="Price alerts" onClick={() => setOpen(true)}
       className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent text-accent transition hover:bg-white/5 lg:transition-transform lg:duration-200 lg:hover:-translate-y-1 lg:hover:scale-[1.12] ${mobile && !mobileHeader ? "fixed" : ""} ${mobileHeader ? "z-[50] ml-auto" : ""}`}
       style={mobile && !mobileHeader ? { top: "calc(0.75rem + env(safe-area-inset-top))", right: "1rem", zIndex: 500, background: "transparent" } : undefined}>
-      <OptionalSvgIcon name={ownAlerts.length > 0 ? "filled-bell" : "alerts"} className="h-4 w-4" />
+<OptionalSvgIcon name={ownAlerts.length > 0 ? "filled-bell" : "alerts"} className="h-5 w-5" />
     </button>
     {mounted && open && createPortal(
       <div className="smoked-glass-backdrop fixed inset-0 z-[1200] flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }} onClick={closeAlert}>

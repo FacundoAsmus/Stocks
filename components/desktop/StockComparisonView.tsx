@@ -117,7 +117,7 @@ function ComparisonAnalysts({ primary, secondary }: { primary: StockDetail; seco
   }, []);
   return (
     <section ref={sectionRef} className="mt-6 rounded-xl bg-black p-5">
-      <p className="mb-5 text-sm font-medium uppercase tracking-[0.18em] text-accent">Analysts</p>
+      <p className="mb-5 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="analyst" className="h-5 w-5" />Analysts</p>
       <div className="space-y-4">
         {ANALYST_ROWS.map(([label, key]) => (
           <div key={key}>
@@ -175,7 +175,7 @@ function ComparisonIndicators({ primary, secondary }: { primary: ComparisonDetai
   const bItems = fundamentalRows(secondary);
   return (
     <section>
-      <p className="mb-3 inline-flex items-center gap-2 px-1 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="indicators" className="h-5 w-5" />Indicators</p>
+      <p className="mb-3 inline-flex items-center gap-2 px-1 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="indicators" className="h-6 w-6" />Indicators</p>
       <div className="grid grid-cols-2 gap-2">
         {aItems.map(([label, value], index) => (
           <div key={label} className="min-w-0 rounded-md bg-black p-4">

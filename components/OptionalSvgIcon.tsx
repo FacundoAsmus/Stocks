@@ -10,6 +10,7 @@ type OptionalSvgIconProps = {
   fallbackToBaseWhenSelected?: boolean;
   className: string;
   colorClassName?: string;
+  color?: string;
 };
 
 /**
@@ -22,6 +23,7 @@ export function OptionalSvgIcon({
   fallbackToBaseWhenSelected = false,
   className,
   colorClassName = "text-accent",
+  color,
 }: OptionalSvgIconProps) {
   const fileName = `${name}${selected ? "-selected" : ""}`;
   const src = `/icons/${fileName}.svg`;
@@ -53,7 +55,7 @@ export function OptionalSvgIcon({
       aria-hidden="true"
       className={cn("inline-block shrink-0", colorClassName, className)}
       style={{
-        backgroundColor: "currentColor",
+        backgroundColor: color ?? "currentColor",
         maskImage: `url("${visibleSrc}")`,
         maskPosition: "center",
         maskRepeat: "no-repeat",

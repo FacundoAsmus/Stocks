@@ -2029,7 +2029,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             transition: "opacity 0.16s ease",
           }}
         >
-          <OptionalSvgIcon name="ai" className="h-7 w-7" />
+          <OptionalSvgIcon name="ai" className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2" />
         </button>
 
         {/* Open state: the actual input row */}
