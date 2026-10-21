@@ -563,7 +563,7 @@ export function MobileNav() {
 
   const iconWrapClass = "relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 transition-colors duration-300";
   function iconClass(active: boolean) {
-    return cn("transition-colors duration-300", active ? "text-black" : "text-accent");
+    return cn("transition-colors duration-300", active ? "text-accent" : "text-text-muted");
   }
 
   return (
@@ -577,7 +577,7 @@ export function MobileNav() {
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 0.5rem)", paddingTop: "1rem" }}
       >
         <div
-          className="smoked-glass-surface relative flex min-w-0 flex-1 items-center rounded-full border border-white/25 overflow-hidden pointer-events-auto"
+          className="smoked-glass-surface relative flex h-14 w-[calc(100%-4.25rem)] flex-none items-center rounded-full border border-white/25 overflow-hidden pointer-events-auto"
           style={{
             height: BUBBLE_SIZE,
             marginRight: "0.75rem",
@@ -587,13 +587,6 @@ export function MobileNav() {
             boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
           }}
         >
-          {/* Sliding green indicator */}
-          <span
-            aria-hidden
-            className="absolute left-0 top-0 rounded-full bg-accent transition-transform duration-300 ease-out"
-            style={{ width: "33.3333%", height: BUBBLE_SIZE, transform: `translateX(${activeIndex * 100}%)`, boxShadow: "0 0 14px rgba(173,250,27,0.48), 0 0 5px rgba(173,250,27,0.7)" }}
-          />
-
           <button
             className={iconWrapClass}
             onClick={() => navigateTo("/")}
