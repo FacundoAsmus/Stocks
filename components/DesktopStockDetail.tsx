@@ -13,6 +13,7 @@ import { PriceChart } from "@/components/PriceChart";
 import { StockLogo } from "@/components/StockLogo";
 import { StockPriceAlertButton } from "@/components/StockPriceAlertButton";
 import { StockToolsButton } from "@/components/desktop/StockToolsButton";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { SECTOR_ETFS } from "@/lib/etfs";
 import type { getStockDetail } from "@/lib/finnhub";
 
@@ -121,7 +122,7 @@ export function DesktopStockDetail({
         <section className="px-5">
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <p className="text-sm font-medium uppercase tracking-[0.18em] text-accent">News</p>
+              <p className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">News<OptionalSvgIcon name="news" className="h-4 w-4" /></p>
             </div>
           </div>
           {stock.news.length > 0 && <NewsSummary symbol={stock.symbol} articles={stock.news} />}

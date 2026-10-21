@@ -9,6 +9,7 @@ import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/li
 import { expectedRevenueGrowthPct, getNextReport } from "@/lib/earnings";
 import type { AnalystRecommendation, EarningsEvent } from "@/types/stock";
 import type { getStockDetail } from "@/lib/finnhub";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 type StockDetail = Awaited<ReturnType<typeof getStockDetail>>;
 export type ComparisonDetailPayload = {
@@ -38,7 +39,7 @@ function PairedBarSection({ primary, secondary }: { primary: ComparisonDetailPay
   ] as const;
   return (
     <section className="rounded-md bg-black p-5">
-      <p className="mb-4 text-sm font-medium uppercase tracking-[0.18em] text-accent">Stock Sentiment</p>
+      <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">Stock Sentiment<OptionalSvgIcon name="stock-sentiment" className="h-4 w-4" /></p>
       <div className="space-y-4">
         {items.map(([key, name, color, score]) => (
           <div key={key}>
@@ -174,7 +175,7 @@ function ComparisonIndicators({ primary, secondary }: { primary: ComparisonDetai
   const bItems = fundamentalRows(secondary);
   return (
     <section>
-      <p className="mb-3 px-1 text-sm font-medium uppercase tracking-[0.18em] text-accent">Indicators</p>
+      <p className="mb-3 inline-flex items-center gap-2 px-1 text-sm font-medium uppercase tracking-[0.18em] text-accent">Indicators<OptionalSvgIcon name="indicators" className="h-4 w-4" /></p>
       <div className="grid grid-cols-2 gap-2">
         {aItems.map(([label, value], index) => (
           <div key={label} className="min-w-0 rounded-md bg-black p-4">
@@ -224,12 +225,12 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
     return () => observer.disconnect();
   }, [years.length]);
 
-  const specs: Array<[string, FilingKey]> = [["CapEx", "capex"], ["R&D", "researchAndDevelopment"], ["Free cash flow", "freeCashFlow"]];
+  const specs: Array<[string, FilingKey, string]> = [["CapEx", "capex", "capex"], ["R&D", "researchAndDevelopment", "r-and-d"], ["Free cash flow", "freeCashFlow", "free-cash-flow"]];
   if (!years.length) return null;
   return (
     <section ref={sectionRef} className="rounded-xl bg-black p-5">
       <div className="space-y-8">
-        {specs.map(([title, key]) => {
+        {specs.map(([title, key, iconName]) => {
           const aValues = years.map((year) => a.find((item) => item.year === year)?.[key] ?? null);
           const bValues = years.map((year) => b.find((item) => item.year === year)?.[key] ?? null);
           const latestA = [...aValues].reverse().find((value): value is number => value !== null) ?? null;
@@ -248,7 +249,7 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
           const displayedColor = hoveredBar?.key === key ? (hoveredBar.series === "a" ? "text-purple-400" : "text-orange-400") : "text-purple-400";
           return (
             <div key={key}>
-              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
+              <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}<OptionalSvgIcon name={iconName} className="h-4 w-4" /></p>
               <div className="mb-5 text-text-primary">
                 <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact colorClass={displayedColor} />
               </div>

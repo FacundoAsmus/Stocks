@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
 
 import { StockAIChat } from "@/components/mobile/StockAIChat";
 import type { StockDetail } from "@/types/stock";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 interface Props {
   stock: StockDetail;
@@ -24,7 +24,7 @@ export function DesktopAIChatButton({ stock, currentPrice, sentiment, metrics }:
         aria-label={`Ask AI about ${stock.symbol}`}
         className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-positive/40 bg-positive/10 text-positive transition-all duration-200 hover:-translate-y-1 hover:scale-[1.12]"
       >
-        <Sparkles className="ai-button-icon h-4 w-4" />
+        <OptionalSvgIcon name="ai" className="ai-button-icon h-4 w-4" />
       </button>
 
       <StockAIChat

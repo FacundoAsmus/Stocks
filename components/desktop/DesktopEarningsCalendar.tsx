@@ -3,13 +3,14 @@
 import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { RefObject } from "react";
 import { createPortal } from "react-dom";
-import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { todayStr } from "@/lib/earnings";
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { WEEKDAYS } from "@/components/mobile/EarningsCalendarButton";
 import { WheelPrice } from "@/components/PriceChart";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import type { EarningsEvent } from "@/types/stock";
 
 type QuarterMetric = "revenue" | "eps";
@@ -313,7 +314,7 @@ export function DesktopEarningsCalendar({
         aria-label="Earnings calendar"
         className="flex h-7 w-7 items-center justify-center text-accent active:opacity-60"
       >
-        <CalendarDays className="h-[18px] w-[18px]" />
+        <OptionalSvgIcon name="calendar" className="h-[18px] w-[18px]" />
       </button>
 
       {open && portalTarget && createPortal(
@@ -339,8 +340,7 @@ export function DesktopEarningsCalendar({
           >
             <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
               <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-accent" />
-                <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Earnings Calendar</h2>
+                <h2 className="mt-2 inline-flex items-center gap-2 text-3xl font-semibold tracking-normal text-text-primary">Earnings Calendar<OptionalSvgIcon name="calendar" className="h-4 w-4" /></h2>
               </div>
               <div className="flex items-center gap-3">
                 <button

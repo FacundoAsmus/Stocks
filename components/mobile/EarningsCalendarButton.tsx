@@ -3,11 +3,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { createPortal } from "react-dom";
-import { CalendarDays } from "lucide-react";
 
 import { formatCompact, formatCurrency } from "@/lib/format";
 import { WheelPrice } from "@/components/PriceChart";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import {
   todayStr
 } from "@/lib/earnings";
@@ -259,7 +259,7 @@ export function EarningsCalendarButton({
         aria-label="Earnings calendar"
         className="flex h-7 w-7 items-center justify-center text-accent active:opacity-60"
       >
-        <CalendarDays className="h-[18px] w-[18px]" />
+        <OptionalSvgIcon name="calendar" className="h-[18px] w-[18px]" />
       </button>
 
       {open && portalTarget && createPortal(
@@ -282,7 +282,7 @@ export function EarningsCalendarButton({
             }}
           >
             <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
-              <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Earnings Calendar</h2>
+              <h2 className="mt-2 inline-flex items-center gap-2 text-3xl font-semibold tracking-normal text-text-primary">Earnings Calendar<OptionalSvgIcon name="calendar" className="h-5 w-5" /></h2>
               <GlossyIconButton aria-label="Close earnings calendar" onClick={closeCalendar}><GlossyCloseIcon /></GlossyIconButton>
             </div>
 

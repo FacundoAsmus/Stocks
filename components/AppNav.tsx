@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { List, Settings, Moon, Sun, Monitor } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { cn } from "@/lib/utils";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 type Theme = "dark" | "light" | "system";
 
@@ -35,20 +35,6 @@ function applyTheme(theme: Theme) {
   // Keep Safari's status-bar/dynamic-island color matching the app's actual
   // resolved theme — not the OS's — so a light-mode page never shows a
   // stray gray/dark bar just because the phone itself is set to dark mode.
-}
-
-function GlobeIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <line x1="12" y1="3" x2="12" y2="21" />
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <path d="M4.5 7.5 Q12 6 19.5 7.5" />
-      <path d="M4.5 16.5 Q12 18 19.5 16.5" />
-      <path d="M12 3 Q6.5 12 12 21" />
-      <path d="M12 3 Q17.5 12 12 21" />
-    </svg>
-  );
 }
 
 // Desktop settings dropdown
@@ -134,10 +120,10 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
   }
 
 
-  const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
-    { value: "dark",   label: "Dark",   icon: <Moon className="h-4 w-4" /> },
-    { value: "light",  label: "Light",  icon: <Sun  className="h-4 w-4" /> },
-    { value: "system", label: "System", icon: <Monitor className="h-4 w-4" /> },
+  const themeOptions: { value: Theme; label: string; iconName: string }[] = [
+    { value: "dark",   label: "Dark",   iconName: "theme-dark" },
+    { value: "light",  label: "Light",  iconName: "theme-light" },
+    { value: "system", label: "System", iconName: "theme-system" },
   ];
 
   return typeof document === "undefined" ? null : createPortal((
@@ -166,7 +152,7 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
                   : "border-border-subtle text-text-muted hover:border-accent/40"
               )}
             >
-              {opt.icon}
+              <OptionalSvgIcon name={opt.iconName} className="h-4 w-4" colorClassName="text-text-muted" />
               {opt.label}
             </button>
           ))}
@@ -176,23 +162,23 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
       <div className="px-4 py-3 border-t border-border-subtle">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-2">Pro Features</p>
         <button onClick={toggleProMode} className="w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Horizontal crosshair</span><span className="text-xs text-text-muted">Adds horizontal line at hovered price level</span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="horizontal-crosshair" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Horizontal crosshair</span><span className="text-xs text-text-muted">Adds horizontal line at hovered price level</span></span></span>
           <Toggle enabled={proMode} />
         </button>
         <button onClick={toggleCandlesticks} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Candlestick chart</span><span className="text-xs text-text-muted">Shows open, high, low, and close for each interval</span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="candlestick-chart" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Candlestick chart</span><span className="text-xs text-text-muted">Shows open, high, low, and close for each interval</span></span></span>
           <Toggle enabled={useCandlesticks} />
         </button>
         <button onClick={toggleVolumeChart} className="w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Volume chart</span><span className="text-xs text-text-muted">Shows trading volume below the timeframes</span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="volume-chart" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Volume chart</span><span className="text-xs text-text-muted">Shows trading volume below the timeframes</span></span></span>
           <Toggle enabled={showVolumeChart} />
         </button>
         <button onClick={toggleVolumeBarColors} disabled={!showVolumeChart} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed">
-          <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Color bars</span><span className="text-xs text-text-muted">Uses green for up intervals and muted red for down intervals</span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="color-bars" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Color bars</span><span className="text-xs text-text-muted">Uses green for up intervals and muted red for down intervals</span></span></span>
           <Toggle enabled={colorVolumeBars} />
         </button>
         <button onClick={toggleAlertLines} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex flex-col gap-0.5 text-left"><span className="text-sm text-text-primary font-medium">Alert price lines</span><span className="text-xs text-text-muted">Show saved alert levels on stock charts</span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="alert-price-lines" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Alert price lines</span><span className="text-xs text-text-muted">Show saved alert levels on stock charts</span></span></span>
           <Toggle enabled={showAlertLines} />
         </button>
       </div>
@@ -208,8 +194,8 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
 }
 
 const navItems = [
-  { href: "/", label: "Market", icon: "globe" as const },
-  { href: "/watchlist", label: "Watchlist", icon: "list" as const },
+  { href: "/", label: "Market", icon: "market" as const },
+  { href: "/watchlist", label: "Watchlist", icon: "watchlist" as const },
 ] as const;
 
 type AppNavProps = {
@@ -247,10 +233,7 @@ export function AppNav({ variant = "full" }: AppNavProps) {
                 ? "border-accent bg-accent text-black"
                 : "border-transparent bg-transparent text-accent group-hover:border-transparent"
             )}>
-              {item.icon === "globe"
-                ? <GlobeIcon className="h-5 w-5" />
-                : <List className="h-5 w-5" aria-hidden />
-              }
+              <OptionalSvgIcon name={item.icon} selected={isActive} className="h-5 w-5" colorClassName={isActive ? "text-black" : "text-accent"} />
             </span>
             <span>{item.label}</span>
           </Link>
@@ -276,7 +259,7 @@ export function AppNav({ variant = "full" }: AppNavProps) {
             ? "border-accent bg-accent text-black"
             : "border-transparent bg-transparent text-accent group-hover:border-transparent"
         )}>
-          <Settings className="h-5 w-5" />
+          <OptionalSvgIcon name="settings" selected={settingsOpen} className="h-5 w-5" colorClassName={settingsOpen ? "text-black" : "text-accent"} />
         </span>
         {variant !== "settings" && <span>Settings</span>}
       </button>

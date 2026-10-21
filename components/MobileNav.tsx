@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element -- stock logos use dynamic external URLs and a local fallback. */
 
-import { List, Search, Settings, Monitor, Sun, Moon } from "lucide-react";
+import { Search } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -10,20 +10,7 @@ import { cn } from "@/lib/utils";
 import { SECTOR_ETFS } from "@/lib/etfs";
 import { MarketIcon } from "@/components/MarketIcon";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
-
-function GlobeIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <circle cx="12" cy="12" r="9" />
-      <line x1="12" y1="3" x2="12" y2="21" />
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <path d="M4.5 7.5 Q12 6 19.5 7.5" />
-      <path d="M4.5 16.5 Q12 18 19.5 16.5" />
-      <path d="M12 3 Q6.5 12 12 21" />
-      <path d="M12 3 Q17.5 12 12 21" />
-    </svg>
-  );
-}
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 // ─── Theme management ─────────────────────────────────────────────────────
 type Theme = "dark" | "light" | "system";
@@ -105,10 +92,10 @@ function SettingsPanel({ closing, onClose }: { closing: boolean; onClose: () => 
   }
 
 
-  const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
-    { value: "dark",   label: "Dark",   icon: <Moon className="h-4 w-4" /> },
-    { value: "light",  label: "Light",  icon: <Sun className="h-4 w-4" /> },
-    { value: "system", label: "System", icon: <Monitor className="h-4 w-4" /> },
+  const themeOptions: { value: Theme; label: string; iconName: string }[] = [
+    { value: "dark",   label: "Dark",   iconName: "theme-dark" },
+    { value: "light",  label: "Light",  iconName: "theme-light" },
+    { value: "system", label: "System", iconName: "theme-system" },
   ];
 
   return (
@@ -142,7 +129,7 @@ function SettingsPanel({ closing, onClose }: { closing: boolean; onClose: () => 
                 className="w-full flex items-center justify-between px-4 py-3.5 text-left"
               >
                 <span className="flex items-center gap-3 text-sm text-text-primary">
-                  <span className="text-text-muted">{opt.icon}</span>
+                  <OptionalSvgIcon name={opt.iconName} className="h-4 w-4" colorClassName="text-text-muted" />
                   {opt.label} Mode
                 </span>
                 <span className={cn(
@@ -158,23 +145,23 @@ function SettingsPanel({ closing, onClose }: { closing: boolean; onClose: () => 
           <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">Pro Features</p>
           <div className="rounded-3xl border border-border-subtle bg-panel overflow-hidden">
             <button onClick={toggleProMode} className="w-full flex items-center justify-between px-4 py-3.5 text-left">
-              <span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Horizontal crosshair</span><span className="text-xs text-text-muted">Adds a horizontal line at the hovered price to identify floors and ceilings</span></span>
+              <span className="flex items-center gap-3"><OptionalSvgIcon name="horizontal-crosshair" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Horizontal crosshair</span><span className="text-xs text-text-muted">Adds a horizontal line at the hovered price to identify floors and ceilings</span></span></span>
               <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative" style={{ borderColor: proMode ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: proMode ? "var(--color-accent)" : "var(--color-panel-muted)" }}><span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: proMode ? "calc(100% - 1.125rem)" : "0.125rem" }} /></span>
             </button>
             <button onClick={toggleCandlesticks} className="w-full flex items-center justify-between px-4 py-3.5 text-left border-t border-border-subtle">
-              <span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Candlestick chart</span><span className="text-xs text-text-muted">Shows open, high, low, and close for each interval</span></span>
+              <span className="flex items-center gap-3"><OptionalSvgIcon name="candlestick-chart" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Candlestick chart</span><span className="text-xs text-text-muted">Shows open, high, low, and close for each interval</span></span></span>
               <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative" style={{ borderColor: useCandlesticks ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: useCandlesticks ? "var(--color-accent)" : "var(--color-panel-muted)" }}><span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: useCandlesticks ? "calc(100% - 1.125rem)" : "0.125rem" }} /></span>
             </button>
             <button onClick={toggleVolumeChart} className="w-full flex items-center justify-between px-4 py-3.5 text-left border-t border-border-subtle">
-              <span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Volume chart</span><span className="text-xs text-text-muted">Shows trading volume below the timeframes</span></span>
+              <span className="flex items-center gap-3"><OptionalSvgIcon name="volume-chart" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Volume chart</span><span className="text-xs text-text-muted">Shows trading volume below the timeframes</span></span></span>
               <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative" style={{ borderColor: showVolumeChart ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: showVolumeChart ? "var(--color-accent)" : "var(--color-panel-muted)" }}><span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: showVolumeChart ? "calc(100% - 1.125rem)" : "0.125rem" }} /></span>
             </button>
             <button onClick={toggleVolumeBarColors} disabled={!showVolumeChart} className="w-full flex items-center justify-between px-4 py-3.5 text-left border-t border-border-subtle transition-opacity disabled:opacity-35 disabled:cursor-not-allowed">
-              <span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Color bars</span><span className="text-xs text-text-muted">Uses green for up intervals and muted red for down intervals</span></span>
+              <span className="flex items-center gap-3"><OptionalSvgIcon name="color-bars" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Color bars</span><span className="text-xs text-text-muted">Uses green for up intervals and muted red for down intervals</span></span></span>
               <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative" style={{ borderColor: colorVolumeBars ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: colorVolumeBars ? "var(--color-accent)" : "var(--color-panel-muted)" }}><span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: colorVolumeBars ? "calc(100% - 1.125rem)" : "0.125rem" }} /></span>
             </button>
             <button onClick={toggleAlertLines} className="w-full flex items-center justify-between px-4 py-3.5 text-left border-t border-border-subtle">
-              <span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Alert price lines</span><span className="text-xs text-text-muted">Show saved alert levels on stock charts</span></span>
+              <span className="flex items-center gap-3"><OptionalSvgIcon name="alert-price-lines" className="h-5 w-5" colorClassName="text-text-muted" /><span className="flex flex-col gap-0.5"><span className="text-sm text-text-primary font-medium">Alert price lines</span><span className="text-xs text-text-muted">Show saved alert levels on stock charts</span></span></span>
               <span className="ml-4 shrink-0 h-6 w-11 rounded-full border-2 transition-colors relative" style={{ borderColor: showAlertLines ? "var(--color-accent)" : "var(--color-border-subtle)", backgroundColor: showAlertLines ? "var(--color-accent)" : "var(--color-panel-muted)" }}><span className="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all duration-200" style={{ left: showAlertLines ? "calc(100% - 1.125rem)" : "0.125rem" }} /></span>
             </button>
           </div>
@@ -592,7 +579,7 @@ export function MobileNav() {
             onClick={() => navigateTo("/")}
             aria-label="Market"
           >
-            <GlobeIcon className={cn("h-6 w-6", iconClass(activeIndex === 0))} />
+            <OptionalSvgIcon name="market" selected={activeIndex === 0} className="h-6 w-6" colorClassName={activeIndex === 0 ? "text-accent" : "text-text-muted"} />
             <span className={cn("text-xs font-medium leading-none", iconClass(activeIndex === 0))}>Market</span>
           </button>
 
@@ -601,7 +588,7 @@ export function MobileNav() {
             onClick={() => navigateTo("/watchlist")}
             aria-label="Watchlist"
           >
-            <List className={cn("h-6 w-6", iconClass(activeIndex === 1))} />
+            <OptionalSvgIcon name="watchlist" selected={activeIndex === 1} className="h-6 w-6" colorClassName={activeIndex === 1 ? "text-accent" : "text-text-muted"} />
             <span className={cn("text-xs font-medium leading-none", iconClass(activeIndex === 1))}>Watchlist</span>
           </button>
 
@@ -610,7 +597,7 @@ export function MobileNav() {
             onClick={openSettings}
             aria-label="Settings"
           >
-            <Settings className={cn("h-6 w-6", iconClass(activeIndex === 2))} />
+            <OptionalSvgIcon name="settings" selected={activeIndex === 2} className="h-6 w-6" colorClassName={activeIndex === 2 ? "text-accent" : "text-text-muted"} />
             <span className={cn("text-xs font-medium leading-none", iconClass(activeIndex === 2))}>Settings</span>
           </button>
         </div>

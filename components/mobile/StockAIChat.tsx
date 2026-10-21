@@ -8,6 +8,7 @@ import { Area, ComposedChart, Line, LineChart, ReferenceArea, ReferenceDot, Refe
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { formatEarningsForAIContext, getNextReport, todayStr } from "@/lib/earnings";
 import { AIStarLoader } from "@/components/AIStarLoader";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { WheelPrice, tooltipLabel } from "@/components/PriceChart";
@@ -2028,7 +2029,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             transition: "opacity 0.16s ease",
           }}
         >
-          <Sparkles className="h-7 w-7 text-accent" />
+          <OptionalSvgIcon name="ai" className="h-7 w-7" />
         </button>
 
         {/* Open state: the actual input row */}

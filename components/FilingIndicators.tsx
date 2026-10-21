@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { formatCompact } from "@/lib/format";
 import { WheelPrice } from "@/components/PriceChart";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 type FilingIndicator = {
   year: number;
@@ -73,7 +74,7 @@ function AnnualIndicatorChart({
 
   return (
     <section>
-      <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}</p>
+      <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}<OptionalSvgIcon name={field === "capex" ? "capex" : field === "researchAndDevelopment" ? "r-and-d" : "free-cash-flow"} className="h-4 w-4" /></p>
       <div className="mb-5 text-text-primary">
         <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact />
       </div>

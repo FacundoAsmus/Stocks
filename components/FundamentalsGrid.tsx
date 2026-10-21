@@ -2,6 +2,7 @@ import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/li
 import { WheelPrice } from "@/components/PriceChart";
 import { expectedRevenueGrowthPct, getNextReport } from "@/lib/earnings";
 import type { EarningsEvent } from "@/types/stock";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 type MetricValue = number | string | null;
 
@@ -157,7 +158,7 @@ export function FundamentalsGrid({
 
   return (
     <section>
-      <p className="mb-3 px-5 text-sm font-medium uppercase tracking-[0.18em] text-accent">Indicators</p>
+      <p className="mb-3 inline-flex items-center gap-2 px-5 text-sm font-medium uppercase tracking-[0.18em] text-accent">Indicators<OptionalSvgIcon name="indicators" className="h-4 w-4" /></p>
       <div className="grid grid-cols-2 gap-2">
         {visibleItems.map((item) => (
           <div key={item.label} className="rounded-md bg-black p-4">

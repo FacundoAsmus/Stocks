@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Sparkles, Send } from "lucide-react";
+import { Send, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AIStarLoader } from "@/components/AIStarLoader";
 import type { StockDetail } from "@/types/stock";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 // ─── Types ────────────────────────────────────────────────────────────────
 interface Message {
@@ -209,7 +210,7 @@ export function StockAIChat(props: StockAIChatProps) {
         className="flex items-center justify-center h-8 w-8 rounded-lg bg-positive/15 border border-positive/40 text-positive transition-all active:scale-90"
         aria-label="Ask AI about this stock"
       >
-        <Sparkles className="ai-button-icon h-4 w-4" />
+        <OptionalSvgIcon name="ai" className="ai-button-icon h-4 w-4" />
       </button>
 
       {open && (

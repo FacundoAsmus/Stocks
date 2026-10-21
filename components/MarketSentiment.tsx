@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 function labelForScore(score: number) {
   if (score <= 20) return "Extreme Fear";
@@ -173,8 +174,9 @@ export function MarketSentiment({
 }) {
   return (
     <section className="rounded-xl bg-black p-5">
-      <p className="mb-4 text-sm font-medium uppercase tracking-[0.18em] text-accent">
+      <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">
         Stock Sentiment
+        <OptionalSvgIcon name="stock-sentiment" className="h-4 w-4" />
       </p>
 
       <SentimentBar score={score} />
@@ -219,7 +221,7 @@ export function ComparisonMarketSentiment({ scores }: { scores: [number, number]
 
   return (
     <section ref={ref} className="rounded-xl bg-black p-5">
-      <p className="mb-4 text-sm font-medium uppercase tracking-[0.18em] text-accent">Stock Sentiment</p>
+      <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">Stock Sentiment<OptionalSvgIcon name="stock-sentiment" className="h-4 w-4" /></p>
       <div className="space-y-4">
         {scores.map((rawScore, index) => {
           const score = Math.max(0, Math.min(100, Math.round(rawScore)));

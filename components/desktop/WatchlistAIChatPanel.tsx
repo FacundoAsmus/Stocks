@@ -6,6 +6,7 @@ import { Send, Sparkles } from "lucide-react";
 
 import { buildStockContextAsync } from "@/components/mobile/StockAIChat";
 import { AIStarLoader } from "@/components/AIStarLoader";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { cn } from "@/lib/utils";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
@@ -204,7 +205,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
             className="absolute top-0 left-[18%] right-[18%] pointer-events-none"
             style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)" }}
           />
-          <Sparkles className="ai-button-icon h-6 w-6 relative" />
+          <OptionalSvgIcon name="ai" className="ai-button-icon relative h-6 w-6" />
         </button>
       )}
 
