@@ -340,7 +340,7 @@ export function DesktopEarningsCalendar({
           >
             <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-5 py-4">
               <div className="flex items-center gap-2">
-                <h2 className="mt-2 inline-flex items-center gap-2 text-3xl font-semibold tracking-normal text-text-primary">Earnings Calendar<OptionalSvgIcon name="calendar" className="h-4 w-4" /></h2>
+                <h2 className="mt-2 inline-flex items-center gap-2 text-3xl font-semibold tracking-normal text-text-primary"><OptionalSvgIcon name="calendar" className="h-6 w-6" />Earnings Calendar</h2>
               </div>
               <div className="flex items-center gap-3">
                 <button

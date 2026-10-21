@@ -39,7 +39,7 @@ function PairedBarSection({ primary, secondary }: { primary: ComparisonDetailPay
   ] as const;
   return (
     <section className="rounded-md bg-black p-5">
-      <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">Stock Sentiment<OptionalSvgIcon name="stock-sentiment" className="h-4 w-4" /></p>
+      <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="stock-sentiment" className="h-5 w-5" />Stock Sentiment</p>
       <div className="space-y-4">
         {items.map(([key, name, color, score]) => (
           <div key={key}>
@@ -175,7 +175,7 @@ function ComparisonIndicators({ primary, secondary }: { primary: ComparisonDetai
   const bItems = fundamentalRows(secondary);
   return (
     <section>
-      <p className="mb-3 inline-flex items-center gap-2 px-1 text-sm font-medium uppercase tracking-[0.18em] text-accent">Indicators<OptionalSvgIcon name="indicators" className="h-4 w-4" /></p>
+      <p className="mb-3 inline-flex items-center gap-2 px-1 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="indicators" className="h-5 w-5" />Indicators</p>
       <div className="grid grid-cols-2 gap-2">
         {aItems.map(([label, value], index) => (
           <div key={label} className="min-w-0 rounded-md bg-black p-4">
@@ -249,7 +249,7 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
           const displayedColor = hoveredBar?.key === key ? (hoveredBar.series === "a" ? "text-purple-400" : "text-orange-400") : "text-purple-400";
           return (
             <div key={key}>
-              <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}<OptionalSvgIcon name={iconName} className="h-4 w-4" /></p>
+              <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name={iconName} className="h-5 w-5" />{title}</p>
               <div className="mb-5 text-text-primary">
                 <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact colorClass={displayedColor} />
               </div>

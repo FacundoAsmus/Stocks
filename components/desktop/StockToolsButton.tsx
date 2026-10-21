@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 const MA_OPTIONS = [
   { window: 7, color: "#f59e0b", icon: "/line-graph-7-icon.svg" },
@@ -91,8 +92,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
           className="flex h-10 w-10 shrink-0 items-center justify-center"
           title="Stock tools"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/tools-icon.svg" alt="" className="stock-tools-icon h-6 w-6 object-contain" />
+          <OptionalSvgIcon name="tools" className="stock-tools-icon h-6 w-6" />
         </button>
         <div className={cn("flex flex-col items-center gap-2 pt-2 transition-opacity duration-200", open ? "opacity-100" : "pointer-events-none opacity-0")}>
           {MA_OPTIONS.map(({ window, color, icon }) => {

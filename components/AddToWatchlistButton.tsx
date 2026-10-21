@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Star, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 const STORAGE_KEY = "market-lens-watchlist";
 
@@ -69,7 +70,7 @@ export function AddToWatchlistButton({
             : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-accent"
         )}
       >
-        <Star className="h-4 w-4" fill={isSaved ? "currentColor" : "none"} />
+        <OptionalSvgIcon name="star" selected={isSaved} fallbackToBaseWhenSelected className="h-4 w-4" />
       </button>
     );
   }
@@ -85,7 +86,7 @@ export function AddToWatchlistButton({
           : "border-accent/40 bg-accent/10 text-accent hover:bg-accent/15"
       )}
     >
-      {isSaved ? <Trash2 className="h-4 w-4" /> : <Star className="h-4 w-4" />}
+      {isSaved ? <Trash2 className="h-4 w-4" /> : <OptionalSvgIcon name="star" className="h-4 w-4" />}
       {isSaved ? "Remove" : "Add to watchlist"}
     </button>
   );

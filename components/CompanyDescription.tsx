@@ -85,7 +85,7 @@ export function CompanyDescription({ symbol, className = "" }: { symbol: string;
 
   return (
     <section className={className}>
-      <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">Description<OptionalSvgIcon name="description" className="h-4 w-4" /></p>
+      <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="description" className="h-5 w-5" />Description</p>
       {state.status === "loading" && <AISummaryLoader />}
       {state.status === "ready" && <AISummaryText text={state.text} />}
       {state.status === "error" && <p className="text-[1.05rem] text-text-muted">Descriptions are not avaliable right now</p>}

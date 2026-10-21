@@ -40,6 +40,10 @@ Use the group id for the unselected and selected versions:
 - `description.svg`
 - `calendar.svg`
 - `ai.svg`
+- `alerts.svg`
+- `tools.svg`
+- `star.svg`, `star-selected.svg`
+- `close.svg`
 
 ## Settings
 

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 type OptionalSvgIconProps = {
   name: string;
   selected?: boolean;
+  fallbackToBaseWhenSelected?: boolean;
   className: string;
   colorClassName?: string;
 };
@@ -15,33 +16,49 @@ type OptionalSvgIconProps = {
  * Loads user-provided SVGs from public/icons, tinting the SVG through a mask.
  * Missing files render no element, so optional icon slots do not leave gaps.
  */
-export function OptionalSvgIcon({ name, selected = false, className, colorClassName = "text-accent" }: OptionalSvgIconProps) {
+export function OptionalSvgIcon({
+  name,
+  selected = false,
+  fallbackToBaseWhenSelected = false,
+  className,
+  colorClassName = "text-accent",
+}: OptionalSvgIconProps) {
   const fileName = `${name}${selected ? "-selected" : ""}`;
   const src = `/icons/${fileName}.svg`;
-  const [available, setAvailable] = useState(false);
+  const baseSrc = `/icons/${name}.svg`;
+  const [loadedSources, setLoadedSources] = useState<string[]>([]);
 
   useEffect(() => {
     let alive = true;
-    setAvailable(false);
-    const probe = new window.Image();
-    probe.onload = () => { if (alive) setAvailable(true); };
-    probe.onerror = () => { if (alive) setAvailable(false); };
-    probe.src = src;
+    const probe = (source: string) => {
+      const image = new window.Image();
+      image.onload = () => {
+        if (alive) setLoadedSources((sources) => sources.includes(source) ? sources : [...sources, source]);
+      };
+      image.src = source;
+    };
+    probe(src);
+    if (selected && fallbackToBaseWhenSelected && src !== baseSrc) probe(baseSrc);
     return () => { alive = false; };
-  }, [src]);
+  }, [baseSrc, fallbackToBaseWhenSelected, selected, src]);
 
-  if (!available) return null;
+  const visibleSrc = loadedSources.includes(src)
+    ? src
+    : selected && fallbackToBaseWhenSelected && loadedSources.includes(baseSrc)
+      ? baseSrc
+      : null;
+  if (!visibleSrc) return null;
   return (
     <span
       aria-hidden="true"
       className={cn("inline-block shrink-0", colorClassName, className)}
       style={{
         backgroundColor: "currentColor",
-        maskImage: `url("${src}")`,
+        maskImage: `url("${visibleSrc}")`,
         maskPosition: "center",
         maskRepeat: "no-repeat",
         maskSize: "contain",
-        WebkitMaskImage: `url("${src}")`,
+        WebkitMaskImage: `url("${visibleSrc}")`,
         WebkitMaskPosition: "center",
         WebkitMaskRepeat: "no-repeat",
         WebkitMaskSize: "contain",

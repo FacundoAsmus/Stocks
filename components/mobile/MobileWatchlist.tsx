@@ -4,7 +4,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Reorder, useDragControls } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
-import { Star } from "lucide-react";
 
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
@@ -15,6 +14,7 @@ import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
 import { revealSparklineOnDataChange } from "@/lib/sparklineReveal";
 import { WheelPrice } from "@/components/PriceChart";
 import { cn } from "@/lib/utils";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import type { StockSummary } from "@/types/stock";
 
 const STORAGE_KEY = "market-lens-watchlist";
@@ -327,7 +327,7 @@ function WatchlistRow({
             aria-label={`Remove ${stock.symbol}`}
             className="flex items-center justify-center text-accent active:scale-90 transition-transform"
           >
-            <Star className="h-5 w-5 fill-current" />
+            <OptionalSvgIcon name="star" className="h-5 w-5" />
           </button>
         </div>
 

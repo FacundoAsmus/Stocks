@@ -282,7 +282,7 @@ export function EarningsCalendarButton({
             }}
           >
             <div className="flex items-center justify-between px-4 pt-4 pb-3 shrink-0">
-              <h2 className="mt-2 inline-flex items-center gap-2 text-3xl font-semibold tracking-normal text-text-primary">Earnings Calendar<OptionalSvgIcon name="calendar" className="h-5 w-5" /></h2>
+              <h2 className="mt-2 inline-flex items-center gap-2 text-3xl font-semibold tracking-normal text-text-primary"><OptionalSvgIcon name="calendar" className="h-6 w-6" />Earnings Calendar</h2>
               <GlossyIconButton aria-label="Close earnings calendar" onClick={closeCalendar}><GlossyCloseIcon /></GlossyIconButton>
             </div>
 

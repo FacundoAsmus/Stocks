@@ -122,7 +122,7 @@ export function DesktopStockDetail({
         <section className="px-5">
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <p className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">News<OptionalSvgIcon name="news" className="h-4 w-4" /></p>
+              <p className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="news" className="h-5 w-5" />News</p>
             </div>
           </div>
           {stock.news.length > 0 && <NewsSummary symbol={stock.symbol} articles={stock.news} />}

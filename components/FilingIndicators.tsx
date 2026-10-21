@@ -74,7 +74,7 @@ function AnnualIndicatorChart({
 
   return (
     <section>
-      <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">{title}<OptionalSvgIcon name={field === "capex" ? "capex" : field === "researchAndDevelopment" ? "r-and-d" : "free-cash-flow"} className="h-4 w-4" /></p>
+      <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name={field === "capex" ? "capex" : field === "researchAndDevelopment" ? "r-and-d" : "free-cash-flow"} className="h-5 w-5" />{title}</p>
       <div className="mb-5 text-text-primary">
         <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact />
       </div>

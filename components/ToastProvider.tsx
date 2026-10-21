@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { CheckCircle2, X } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 type Toast = {
   id: number;
@@ -48,7 +49,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               className="rounded-md p-1 text-text-muted transition hover:bg-panel-muted hover:text-text-primary"
               onClick={() => dismiss(toast.id)}
             >
-              <X className="h-4 w-4" aria-hidden />
+              <OptionalSvgIcon name="close" className="h-4 w-4" colorClassName="text-text-muted" />
             </button>
           </div>
         ))}

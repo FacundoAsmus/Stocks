@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 type GlossyIconButtonProps = {
   "aria-label": string;
@@ -45,9 +46,5 @@ export function GlossyIconButton({
 }
 
 export function GlossyCloseIcon() {
-  return (
-    <svg className="glossy-icon-button__close-icon" viewBox="0 0 24 24" fill="none">
-      <path d="M5 5L19 19M19 5L5 19" />
-    </svg>
-  );
+  return <OptionalSvgIcon name="close" className="glossy-icon-button__close-icon" colorClassName="text-text-primary" />;
 }
