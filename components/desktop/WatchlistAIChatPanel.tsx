@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Send, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 import { buildStockContextAsync } from "@/components/mobile/StockAIChat";
 import { AIStarLoader } from "@/components/AIStarLoader";
@@ -285,7 +285,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
               aria-label="Send"
               className="ai-send-button-glow flex h-9 w-9 items-center justify-center rounded-lg bg-positive text-black disabled:opacity-40"
             >
-              <Send className="h-4 w-4" />
+              <OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-black" />
             </button>
           </div>
         </div>

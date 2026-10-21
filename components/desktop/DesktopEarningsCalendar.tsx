@@ -312,7 +312,7 @@ export function DesktopEarningsCalendar({
         type="button"
         onClick={() => { setClosing(false); setOpen(true); }}
         aria-label="Earnings calendar"
-        className="flex h-7 w-7 items-center justify-center text-accent active:opacity-60"
+        className="flex h-7 w-7 items-center justify-center text-accent transition-transform duration-200 hover:-translate-y-1 hover:scale-110 active:translate-y-0 active:scale-100"
       >
         <OptionalSvgIcon name="calendar" className="h-[18px] w-[18px]" />
       </button>

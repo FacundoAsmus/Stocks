@@ -68,3 +68,5 @@ Use the group id for the unselected and selected versions:
 - `tools-line.svg` — Draw price line action in the desktop Tools panel
 - `compare.svg` — Compare-stock action in desktop watchlist search results and recents
 - `server-error.svg` — AI server-error notice shown after the automatic retry fails
+- `back.svg` — Back control on the phone individual stock page
+- `send.svg` — Send action in AI chat input buttons

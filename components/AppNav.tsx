@@ -152,7 +152,7 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
                   : "border-border-subtle text-text-muted hover:border-accent/40"
               )}
             >
-              <OptionalSvgIcon name={opt.iconName} className="h-4 w-4" colorClassName="text-accent" />
+              <OptionalSvgIcon name={opt.iconName} className="h-4 w-4" colorClassName={theme === opt.value ? "text-accent" : "text-text-muted"} />
               {opt.label}
             </button>
           ))}

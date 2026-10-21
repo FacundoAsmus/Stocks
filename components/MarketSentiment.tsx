@@ -175,7 +175,7 @@ export function MarketSentiment({
   return (
     <section className="rounded-xl bg-black p-5">
       <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">
-        <OptionalSvgIcon name="stock-sentiment" className="h-5 w-5" />
+        <OptionalSvgIcon name="stock-sentiment" className="h-6 w-6" />
         Stock Sentiment
       </p>
 
@@ -221,7 +221,7 @@ export function ComparisonMarketSentiment({ scores }: { scores: [number, number]
 
   return (
     <section ref={ref} className="rounded-xl bg-black p-5">
-      <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="stock-sentiment" className="h-5 w-5" />Stock Sentiment</p>
+      <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="stock-sentiment" className="h-6 w-6" />Stock Sentiment</p>
       <div className="space-y-4">
         {scores.map((rawScore, index) => {
           const score = Math.max(0, Math.min(100, Math.round(rawScore)));

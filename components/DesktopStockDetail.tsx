@@ -111,13 +111,13 @@ export function DesktopStockDetail({
           isEtf={isEtf}
         />
 
-        {!isEtf && <FilingIndicators symbol={stock.symbol} />}
-
         {!isEtf && (
-          <div className="flex justify-end -mt-2">
+          <div className="flex justify-end -mb-4">
             <DesktopEarningsCalendar symbol={stock.symbol} earnings={stock.earnings} containerRef={earningsCalendarContainerRef} />
           </div>
         )}
+
+        {!isEtf && <FilingIndicators symbol={stock.symbol} />}
 
         <section className="px-5">
           <div className="mb-4 flex items-end justify-between">

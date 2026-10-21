@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-import { Send, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Area, ComposedChart, Line, LineChart, ReferenceArea, ReferenceDot, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
 import { formatEarningsForAIContext, getNextReport, todayStr } from "@/lib/earnings";
@@ -2079,7 +2079,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
                 transition: "background-color 0.18s, color 0.18s",
               }}
             >
-              <Send style={{ height: 15, width: 15 }} />
+              <OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-black" />
             </button>
           ) : (
             <GlossyIconButton aria-label="Close chat" onClick={handleDismiss} size={38}><GlossyCloseIcon /></GlossyIconButton>
@@ -2134,7 +2134,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
                   cursor: !loading ? "pointer" : "default",
                 }}
               >
-                <Send style={{ height: 15, width: 15 }} />
+                <OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-black" />
               </button>
             ) : (
               <GlossyIconButton aria-label="Close chat" onClick={handleDismiss} size={38}><GlossyCloseIcon /></GlossyIconButton>

@@ -129,7 +129,7 @@ function SettingsPanel({ closing, onClose }: { closing: boolean; onClose: () => 
                 className="w-full flex items-center justify-between px-4 py-3.5 text-left"
               >
                 <span className="flex items-center gap-3 text-sm text-text-primary">
-                  <OptionalSvgIcon name={opt.iconName} className="h-4 w-4" colorClassName="text-accent" />
+                  <OptionalSvgIcon name={opt.iconName} className="h-4 w-4" colorClassName={theme === opt.value ? "text-accent" : "text-text-muted"} />
                   {opt.label} Mode
                 </span>
                 <span className={cn(

@@ -39,7 +39,7 @@ function PairedBarSection({ primary, secondary }: { primary: ComparisonDetailPay
   ] as const;
   return (
     <section className="rounded-md bg-black p-5">
-      <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="stock-sentiment" className="h-5 w-5" />Stock Sentiment</p>
+      <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="stock-sentiment" className="h-6 w-6" />Stock Sentiment</p>
       <div className="space-y-4">
         {items.map(([key, name, color, score]) => (
           <div key={key}>

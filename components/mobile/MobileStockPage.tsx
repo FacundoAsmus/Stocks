@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
 import { AnalystSection } from "@/components/AnalystSection";
@@ -138,7 +137,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
         {/* Invisible — exists only to hold the same layout height as the
             real button below, so page content doesn't jump. */}
         <span className="invisible flex items-center justify-center h-[2.45rem] w-[2.45rem] rounded-full" aria-hidden>
-          <ChevronLeft className="h-5 w-5" />
+          <OptionalSvgIcon name="back" className="h-5 w-5" />
         </span>
         <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} mobile mobileHeader />
       </div>
@@ -161,7 +160,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             background: "transparent",
           }}
         >
-          <ChevronLeft className="h-5 w-5" />
+          <OptionalSvgIcon name="back" className="h-5 w-5" />
         </button>,
         document.body
       )}
@@ -216,13 +215,13 @@ export function MobileStockPage(props: MobileStockPageProps) {
             isEtf={isEtf}
           />
 
-          {!isEtf && <FilingIndicators symbol={stock.symbol} compact />}
-
           {!isEtf && (
-            <div className="flex justify-end -mt-2">
+            <div className="flex justify-end -mb-4">
               <EarningsCalendarButton earnings={stock.earnings} />
             </div>
           )}
+
+          {!isEtf && <FilingIndicators symbol={stock.symbol} compact />}
 
           {stock.news.length > 0 && (
             <section className="px-3">
