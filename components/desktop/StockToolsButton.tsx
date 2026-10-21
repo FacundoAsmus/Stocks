@@ -67,7 +67,12 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
     window.dispatchEvent(new CustomEvent("watchlist-stock-line-mode", { detail: { symbol, active: nextActive } }));
   }
 
-  const expandedHeight = chartHeight + 72;
+  function clearLines() {
+    setOpen(false);
+    window.dispatchEvent(new CustomEvent("watchlist-stock-lines-clear", { detail: { symbol } }));
+  }
+
+  const expandedHeight = chartHeight + 32;
 
   return (
     <div className="relative h-10 w-10 shrink-0 transition-transform duration-200 hover:-translate-y-1 hover:scale-[1.12]">
@@ -127,6 +132,15 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
             aria-label={lineModeActive ? "Cancel line placement" : "Place a horizontal price line"}
           >
             <OptionalSvgIcon name="tools-line" className="stock-tools-icon h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            onClick={clearLines}
+            className="flex h-9 w-full items-center justify-center bg-transparent opacity-35 transition-opacity hover:opacity-100"
+            aria-label="Erase all drawn price lines"
+            title="Erase all lines"
+          >
+            <OptionalSvgIcon name="tools-erase" className="h-5 w-5" />
           </button>
         </div>
       </div>

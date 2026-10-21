@@ -962,7 +962,20 @@ export function PriceChart({
       window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: detail.active } }));
     }
     window.addEventListener("watchlist-stock-line-mode", syncLineMode);
-    return () => window.removeEventListener("watchlist-stock-line-mode", syncLineMode);
+    function clearManualLines(event: Event) {
+      const detail = (event as CustomEvent<{ symbol: string }>).detail;
+      if (detail?.symbol !== symbol) return;
+      setManualPriceLines([]);
+      setSelectedManualLineId(null);
+      setLineTypedValue(null);
+      setLinePlacementActive(false);
+      window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: false } }));
+    }
+    window.addEventListener("watchlist-stock-lines-clear", clearManualLines);
+    return () => {
+      window.removeEventListener("watchlist-stock-line-mode", syncLineMode);
+      window.removeEventListener("watchlist-stock-lines-clear", clearManualLines);
+    };
   }, [hideMovingAverageControls, symbol]);
 
   useEffect(() => {

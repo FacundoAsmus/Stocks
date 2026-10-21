@@ -15,7 +15,7 @@ type OptionalSvgIconProps = {
 
 /**
  * Loads user-provided SVGs from public/icons, tinting the SVG through a mask.
- * Missing files render no element, so optional icon slots do not leave gaps.
+ * Missing files fall back to the red `icon-error.svg` marker.
  */
 export function OptionalSvgIcon({
   name,
@@ -29,6 +29,7 @@ export function OptionalSvgIcon({
   const src = `/icons/${fileName}.svg`;
   const baseSrc = `/icons/${name}.svg`;
   const [loadedSources, setLoadedSources] = useState<string[]>([]);
+  const [failedSources, setFailedSources] = useState<string[]>([]);
 
   useEffect(() => {
     let alive = true;
@@ -36,6 +37,9 @@ export function OptionalSvgIcon({
       const image = new window.Image();
       image.onload = () => {
         if (alive) setLoadedSources((sources) => sources.includes(source) ? sources : [...sources, source]);
+      };
+      image.onerror = () => {
+        if (alive) setFailedSources((sources) => sources.includes(source) ? sources : [...sources, source]);
       };
       image.src = source;
     };
@@ -49,7 +53,12 @@ export function OptionalSvgIcon({
     : selected && fallbackToBaseWhenSelected && loadedSources.includes(baseSrc)
       ? baseSrc
       : null;
-  if (!visibleSrc) return null;
+  if (!visibleSrc) {
+    const candidatesFailed = failedSources.includes(src)
+      && (!selected || !fallbackToBaseWhenSelected || src === baseSrc || failedSources.includes(baseSrc));
+    if (name === "icon-error" || !candidatesFailed) return null;
+    return <OptionalSvgIcon name="icon-error" className={className} colorClassName="text-negative" />;
+  }
   return (
     <span
       aria-hidden="true"

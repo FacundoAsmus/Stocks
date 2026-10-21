@@ -66,7 +66,9 @@ Use the group id for the unselected and selected versions:
 - `tools-ma-25.svg` — MA(25) action in the desktop Tools panel
 - `tools-ma-99.svg` — MA(99) action in the desktop Tools panel
 - `tools-line.svg` — Draw price line action in the desktop Tools panel
+- `tools-erase.svg` — Erase all manually drawn price lines in the desktop Tools panel
 - `compare.svg` — Compare-stock action in desktop watchlist search results and recents
 - `server-error.svg` — AI server-error notice shown after the automatic retry fails
 - `back.svg` — Back control on the phone individual stock page
 - `send.svg` — Send action in AI chat input buttons
+- `icon-error.svg` — Red fallback displayed whenever a requested UI icon file is missing
