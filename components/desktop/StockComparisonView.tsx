@@ -117,7 +117,7 @@ function ComparisonAnalysts({ primary, secondary }: { primary: StockDetail; seco
   }, []);
   return (
     <section ref={sectionRef} className="mt-6 rounded-xl bg-black p-5">
-      <p className="mb-5 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="analyst" className="h-5 w-5" />Analysts</p>
+      <p className="mb-5 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="analyst" className="h-6 w-6" />Analysts</p>
       <div className="space-y-4">
         {ANALYST_ROWS.map(([label, key]) => (
           <div key={key}>

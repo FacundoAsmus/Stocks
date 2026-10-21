@@ -162,23 +162,23 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
       <div className="px-4 py-3 border-t border-border-subtle">
         <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-2">Pro Features</p>
         <button onClick={toggleProMode} className="w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="horizontal-crosshair" className="h-5 w-5" colorClassName="text-accent" /><span className="text-sm text-text-primary font-medium">Horizontal crosshair</span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="horizontal-crosshair" className="h-5 w-5" colorClassName={proMode ? "text-accent" : "text-text-muted"} /><span className="text-sm text-text-primary font-medium">Horizontal crosshair</span></span>
           <Toggle enabled={proMode} />
         </button>
         <button onClick={toggleCandlesticks} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="candlestick-chart" className="h-5 w-5" colorClassName="text-accent" /><span className="text-sm text-text-primary font-medium">Candlestick chart</span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="candlestick-chart" className="h-5 w-5" colorClassName={useCandlesticks ? "text-accent" : "text-text-muted"} /><span className="text-sm text-text-primary font-medium">Candlestick chart</span></span>
           <Toggle enabled={useCandlesticks} />
         </button>
         <button onClick={toggleVolumeChart} className="w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="volume-chart" className="h-5 w-5" colorClassName="text-accent" /><span className="text-sm text-text-primary font-medium">Volume chart</span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="volume-chart" className="h-5 w-5" colorClassName={showVolumeChart ? "text-accent" : "text-text-muted"} /><span className="text-sm text-text-primary font-medium">Volume chart</span></span>
           <Toggle enabled={showVolumeChart} />
         </button>
         <button onClick={toggleVolumeBarColors} disabled={!showVolumeChart} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5 transition-opacity disabled:opacity-35 disabled:cursor-not-allowed">
-          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="color-bars" className="h-5 w-5" colorClassName="text-accent" /><span className="text-sm text-text-primary font-medium">Color bars</span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="color-bars" className="h-5 w-5" colorClassName={colorVolumeBars ? "text-accent" : "text-text-muted"} /><span className="text-sm text-text-primary font-medium">Color bars</span></span>
           <Toggle enabled={colorVolumeBars} />
         </button>
         <button onClick={toggleAlertLines} className="mt-2 w-full flex items-center justify-between gap-3 rounded-3xl border border-border-subtle px-3 py-2.5">
-          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="alert-price-lines" className="h-5 w-5" colorClassName="text-accent" /><span className="text-sm text-text-primary font-medium">Alert price lines</span></span>
+          <span className="flex items-center gap-3 text-left"><OptionalSvgIcon name="alert-price-lines" className="h-5 w-5" colorClassName={showAlertLines ? "text-accent" : "text-text-muted"} /><span className="text-sm text-text-primary font-medium">Alert price lines</span></span>
           <Toggle enabled={showAlertLines} />
         </button>
       </div>

@@ -159,7 +159,7 @@ export function FundamentalsGrid({
   return (
     <section>
       <p className="mb-3 inline-flex items-center gap-2 px-5 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="indicators" className="h-6 w-6" />Indicators</p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="mx-5 grid grid-cols-2 gap-2">
         {visibleItems.map((item) => (
           <div key={item.label} className="rounded-md bg-black p-4">
             <div className="flex items-center gap-1.5 mb-2">
