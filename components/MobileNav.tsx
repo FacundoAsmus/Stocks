@@ -592,8 +592,8 @@ export function MobileNav() {
             onClick={() => navigateTo("/")}
             aria-label="Market"
           >
-            <GlobeIcon className={cn("h-5 w-5", iconClass(activeIndex === 0))} />
-            <span className={cn("text-[10px] font-medium leading-none", iconClass(activeIndex === 0))}>Market</span>
+            <GlobeIcon className={cn("h-6 w-6", iconClass(activeIndex === 0))} />
+            <span className={cn("text-xs font-medium leading-none", iconClass(activeIndex === 0))}>Market</span>
           </button>
 
           <button
@@ -601,8 +601,8 @@ export function MobileNav() {
             onClick={() => navigateTo("/watchlist")}
             aria-label="Watchlist"
           >
-            <List className={cn("h-5 w-5", iconClass(activeIndex === 1))} />
-            <span className={cn("text-[10px] font-medium leading-none", iconClass(activeIndex === 1))}>Watchlist</span>
+            <List className={cn("h-6 w-6", iconClass(activeIndex === 1))} />
+            <span className={cn("text-xs font-medium leading-none", iconClass(activeIndex === 1))}>Watchlist</span>
           </button>
 
           <button
@@ -610,8 +610,8 @@ export function MobileNav() {
             onClick={openSettings}
             aria-label="Settings"
           >
-            <Settings className={cn("h-5 w-5", iconClass(activeIndex === 2))} />
-            <span className={cn("text-[10px] font-medium leading-none", iconClass(activeIndex === 2))}>Settings</span>
+            <Settings className={cn("h-6 w-6", iconClass(activeIndex === 2))} />
+            <span className={cn("text-xs font-medium leading-none", iconClass(activeIndex === 2))}>Settings</span>
           </button>
         </div>
       </nav>
