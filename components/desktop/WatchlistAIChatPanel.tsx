@@ -7,6 +7,8 @@ import { Send, Sparkles } from "lucide-react";
 import { buildStockContextAsync } from "@/components/mobile/StockAIChat";
 import { AIStarLoader } from "@/components/AIStarLoader";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
+import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
+import { requestAIChat } from "@/lib/aiChatRequest";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { cn } from "@/lib/utils";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
@@ -122,6 +124,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState(false);
   const [stockContext, setStockContext] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -134,6 +137,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
   useEffect(() => {
     setMessages([]);
     setInput("");
+    setServerError(false);
     let cancelled = false;
     buildStockContextAsync(stock, currentPrice, sentiment, metrics).then(ctx => {
       if (!cancelled) setStockContext(ctx);
@@ -171,16 +175,12 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
     const next: Message[] = [...messages, { role: "user", text }];
     setMessages(next);
     setLoading(true);
+    setServerError(false);
     try {
-      const res = await fetch("/api/ai-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next.map(m => ({ role: m.role, text: m.text })), stockContext }),
-      });
-      const data = await res.json() as { text?: string; error?: string };
-      setMessages(prev => [...prev, { role: "model", text: data.text ?? data.error ?? "No response." }]);
+      const reply = await requestAIChat({ messages: next.map(m => ({ role: m.role, text: m.text })), stockContext });
+      setMessages(prev => [...prev, { role: "model", text: reply }]);
     } catch {
-      setMessages(prev => [...prev, { role: "model", text: "Connection error. Please try again." }]);
+      setServerError(true);
     } finally {
       setLoading(false);
     }
@@ -261,6 +261,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
                 {m.role === "model" ? <AIMessageContent text={m.text} stock={stock} animating={m.animating} /> : m.text}
               </div>
             ))}
+            {serverError && <AIUnavailableNotice />}
             {loading && (
               <div className="ai-response-bubble self-start rounded-3xl border border-accent/70 px-3 py-2" style={{ boxShadow: "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent)" }}>
                 <AIStarLoader size="md" />

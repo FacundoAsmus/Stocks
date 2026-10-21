@@ -7,6 +7,7 @@ import { Search } from "lucide-react";
 
 import { SECTOR_ETFS } from "@/lib/etfs";
 import { MarketIcon } from "@/components/MarketIcon";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 const RECENT_KEY = "market-lens-recent-searches";
 const MAX_RECENT = 6;
@@ -254,8 +255,7 @@ export function SearchBar() {
                   }}
                   className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 text-accent transition hover:-translate-y-0.5 hover:bg-accent/10 lg:inline-flex"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/comparison-tilted-flipped-icon.svg" alt="" className="stock-tools-icon h-5 w-5 object-contain" />
+                  <OptionalSvgIcon name="compare" className="h-5 w-5" />
                 </button>
               )}
             </div>
@@ -296,8 +296,7 @@ export function SearchBar() {
                   }}
                   className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 text-accent transition hover:-translate-y-0.5 hover:bg-accent/10 lg:inline-flex"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/comparison-tilted-flipped-icon.svg" alt="" className="stock-tools-icon h-5 w-5 object-contain" />
+                  <OptionalSvgIcon name="compare" className="h-5 w-5" />
                 </button>
               )}
             </div>

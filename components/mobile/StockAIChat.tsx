@@ -9,6 +9,8 @@ import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/li
 import { formatEarningsForAIContext, getNextReport, todayStr } from "@/lib/earnings";
 import { AIStarLoader } from "@/components/AIStarLoader";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
+import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
+import { requestAIChat } from "@/lib/aiChatRequest";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { WheelPrice, tooltipLabel } from "@/components/PriceChart";
@@ -1652,6 +1654,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput]       = useState("");
   const [loading, setLoading]   = useState(false);
+  const [serverError, setServerError] = useState(false);
   const [vp, setVp] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const scrollRef   = useRef<HTMLDivElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
@@ -1680,6 +1683,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   useEffect(() => {
     setMessages([]);
     setInput("");
+    setServerError(false);
     setStockContext(buildCurrentContextFallback());
     if (open) {
       let active = true;
@@ -1803,16 +1807,12 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     const newMessages: Message[] = [...messages, { role: "user", text }];
     setMessages(newMessages);
     setLoading(true);
+    setServerError(false);
     try {
-      const res = await fetch("/api/ai-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages.map(m => ({ role: m.role, text: m.text })), stockContext }),
-      });
-      const data = await res.json() as { text?: string; error?: string };
-      setMessages(prev => [...prev, { role: "model", text: data.text ?? data.error ?? "No response.", animating: true }]);
+      const reply = await requestAIChat({ messages: newMessages.map(m => ({ role: m.role, text: m.text })), stockContext });
+      setMessages(prev => [...prev, { role: "model", text: reply, animating: true }]);
     } catch {
-      setMessages(prev => [...prev, { role: "model", text: "Connection error. Please try again." }]);
+      setServerError(true);
     } finally {
       setLoading(false);
     }
@@ -1978,6 +1978,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
               </div>
             </div>
           ))}
+
+          {serverError && <AIUnavailableNotice />}
 
           {loading && (
             <div style={{ display: "flex", justifyContent: "flex-start" }}>
