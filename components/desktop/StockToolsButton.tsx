@@ -160,16 +160,16 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
               "flex h-9 w-full items-center justify-center bg-transparent transition-opacity hover:opacity-100",
               squareModeActive ? "opacity-100" : "opacity-35"
             )}
-            aria-label={squareModeActive ? "Cancel square placement" : "Draw a square on the stock chart"}
-            title="Draw square"
+            aria-label={squareModeActive ? "Cancel rectangle placement" : "Draw a rectangle on the stock chart"}
+            title="Draw rectangle"
           >
-            <OptionalSvgIcon name="tools-square" className="h-5 w-5" />
+            <OptionalSvgIcon name="tools-rectangle" className="h-5 w-5" />
           </button>
           <button
             type="button"
             onClick={clearLines}
             className="flex h-9 w-full items-center justify-center bg-transparent opacity-35 transition-opacity hover:opacity-100"
-            aria-label="Erase all drawn chart lines and squares"
+            aria-label="Erase all chart drawings"
             title="Erase drawings"
           >
             <OptionalSvgIcon name="tools-erase" className="h-5 w-5" />

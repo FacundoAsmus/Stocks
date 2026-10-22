@@ -50,22 +50,12 @@ const MAX_VOLUME_BARS = 240;
 type VolumeBucket = { volume: number; isUp: boolean };
 type SquareRect = { left: number; top: number; width: number; height: number };
 
-function getSquareRect(anchor: { x: number; y: number }, point: { x: number; y: number }, bounds: { width: number; height: number }): SquareRect {
-  const dx = point.x - anchor.x;
-  const dy = point.y - anchor.y;
-  const directionX = dx < 0 ? -1 : 1;
-  const directionY = dy < 0 ? -1 : 1;
-  const maxSide = Math.max(Math.abs(dx), Math.abs(dy));
-  const maxSideX = directionX > 0 ? bounds.width - anchor.x : anchor.x;
-  const maxSideY = directionY > 0 ? bounds.height - anchor.y : anchor.y;
-  const side = Math.min(maxSide, maxSideX, maxSideY);
-  const oppositeX = anchor.x + directionX * side;
-  const oppositeY = anchor.y + directionY * side;
+function getDrawingRect(anchor: { x: number; y: number }, point: { x: number; y: number }): SquareRect {
   return {
-    left: Math.min(anchor.x, oppositeX),
-    top: Math.min(anchor.y, oppositeY),
-    width: side,
-    height: side,
+    left: Math.min(anchor.x, point.x),
+    top: Math.min(anchor.y, point.y),
+    width: Math.abs(point.x - anchor.x),
+    height: Math.abs(point.y - anchor.y),
   };
 }
 
@@ -943,6 +933,7 @@ export function PriceChart({
   const [linePlacementActive, setLinePlacementActive] = useState(false);
   const [squarePlacementActive, setSquarePlacementActive] = useState(false);
   const [manualSquares, setManualSquares] = useState<Array<{ id: number; x: number; y: number; width: number; height: number }>>([]);
+  const [selectedManualSquareId, setSelectedManualSquareId] = useState<number | null>(null);
   const squareStartRef = useRef<{ x: number; y: number } | null>(null);
   const squarePreviewRef = useRef<HTMLDivElement>(null);
   const nextSquareId = useRef(1);
@@ -987,7 +978,10 @@ export function PriceChart({
       setSquarePlacementActive(false);
       squareStartRef.current = null;
       if (squarePreviewRef.current) squarePreviewRef.current.style.display = "none";
-      if (detail.active) setSelectedManualLineId(null);
+      if (detail.active) {
+        setSelectedManualLineId(null);
+        setSelectedManualSquareId(null);
+      }
       window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: detail.active } }));
     }
     window.addEventListener("watchlist-stock-line-mode", syncLineMode);
@@ -999,7 +993,10 @@ export function PriceChart({
       setLineTypedValue(null);
       squareStartRef.current = null;
       if (squarePreviewRef.current) squarePreviewRef.current.style.display = "none";
-      if (detail.active) setSelectedManualLineId(null);
+      if (detail.active) {
+        setSelectedManualLineId(null);
+        setSelectedManualSquareId(null);
+      }
       window.dispatchEvent(new CustomEvent("watchlist-stock-square-state", { detail: { symbol, active: detail.active } }));
     }
     window.addEventListener("watchlist-stock-square-mode", syncSquareMode);
@@ -1009,6 +1006,7 @@ export function PriceChart({
       setManualPriceLines([]);
       setManualSquares([]);
       setSelectedManualLineId(null);
+      setSelectedManualSquareId(null);
       setLineTypedValue(null);
       setLinePlacementActive(false);
       setSquarePlacementActive(false);
@@ -1026,7 +1024,7 @@ export function PriceChart({
   }, [hideMovingAverageControls, symbol]);
 
   useEffect(() => {
-    if (!linePlacementActive && !squarePlacementActive && selectedManualLineId === null) return;
+    if (!linePlacementActive && !squarePlacementActive && selectedManualLineId === null && selectedManualSquareId === null) return;
     function handleLineKeys(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       if (target?.matches("input, textarea, select, [contenteditable='true']")) return;
@@ -1055,6 +1053,7 @@ export function PriceChart({
           event.preventDefault();
           setManualPriceLines((previous) => [...previous, { id: nextManualLineId.current++, price: typedPrice }]);
           setSelectedManualLineId(null);
+          setSelectedManualSquareId(null);
           setLinePlacementActive(false);
           setLineTypedValue(null);
           window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: false } }));
@@ -1064,7 +1063,14 @@ export function PriceChart({
       if (!linePlacementActive && (event.key === "Delete" || event.key === "Backspace") && selectedManualLineId !== null) {
         event.preventDefault();
         setManualPriceLines((previous) => previous.filter((line) => line.id !== selectedManualLineId));
-        setSelectedManualLineId(null);
+          setSelectedManualLineId(null);
+          setSelectedManualSquareId(null);
+        return;
+      }
+      if (!linePlacementActive && !squarePlacementActive && (event.key === "Delete" || event.key === "Backspace") && selectedManualSquareId !== null) {
+        event.preventDefault();
+        setManualSquares((previous) => previous.filter((square) => square.id !== selectedManualSquareId));
+        setSelectedManualSquareId(null);
         return;
       }
       if (!linePlacementActive) return;
@@ -1084,7 +1090,7 @@ export function PriceChart({
     }
     window.addEventListener("keydown", handleLineKeys);
     return () => window.removeEventListener("keydown", handleLineKeys);
-  }, [linePlacementActive, lineTypedValue, selectedManualLineId, squarePlacementActive, symbol]);
+  }, [linePlacementActive, lineTypedValue, selectedManualLineId, selectedManualSquareId, squarePlacementActive, symbol]);
 
   const onHover = useCallback((price: number | null, date: string | null) => {
     if (suppressRef.current || linePlacementActive || squarePlacementActive) return;
@@ -1118,7 +1124,7 @@ export function PriceChart({
       x: Math.max(0, Math.min(bounds.width, clientX - bounds.left)),
       y: Math.max(0, Math.min(bounds.height, clientY - bounds.top)),
     };
-    const rect = getSquareRect(anchor, point, bounds);
+    const rect = getDrawingRect(anchor, point);
     preview.style.display = "block";
     preview.style.left = `${rect.left}px`;
     preview.style.top = `${rect.top}px`;
@@ -1280,8 +1286,8 @@ export function PriceChart({
               }
               return;
             }
-            const rect = getSquareRect(anchor, point, bounds);
-            if (rect.width >= 2) {
+            const rect = getDrawingRect(anchor, point);
+            if (rect.width >= 2 && rect.height >= 2) {
               setManualSquares((previous) => [...previous, {
                 id: nextSquareId.current++,
                 x: rect.left / bounds.width,
@@ -1302,7 +1308,8 @@ export function PriceChart({
           if (price !== null && Number.isFinite(price) && price > 0) {
             setManualPriceLines((previous) => [...previous, { id: nextManualLineId.current++, price }]);
           }
-          setSelectedManualLineId(null);
+            setSelectedManualLineId(null);
+            setSelectedManualSquareId(null);
           setLinePlacementActive(false);
           setLineTypedValue(null);
           window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: false } }));
@@ -1466,6 +1473,7 @@ export function PriceChart({
                     if (line.preview) return;
                     event.stopPropagation();
                     setSelectedManualLineId(line.id);
+                    setSelectedManualSquareId(null);
                   }}
                   className="pointer-events-auto absolute inset-x-0 top-0 h-px min-w-0 cursor-crosshair border-0 border-t border-dashed bg-transparent p-0"
                   style={{ borderColor: line.preview ? "#858585" : isSelected ? "#c4c4c4" : "#858585" }}
@@ -1474,20 +1482,30 @@ export function PriceChart({
             );
           })}
 
-          {manualSquares.map((square) => (
-            <div
+          {manualSquares.map((square) => {
+            const isSelected = selectedManualSquareId === square.id;
+            return <button
               key={square.id}
-              aria-hidden="true"
-              className="pointer-events-none absolute z-10 border border-dashed border-[#858585]"
+              type="button"
+              aria-label={isSelected ? "Selected rectangle; press Delete to remove" : "Select rectangle; press Delete to remove"}
+              title={isSelected ? "Press Delete or Backspace to remove" : "Select rectangle"}
+              onClick={(event) => {
+                event.stopPropagation();
+                setSelectedManualLineId(null);
+                setSelectedManualSquareId(square.id);
+              }}
+              className="pointer-events-auto absolute z-10 m-0 cursor-pointer border border-dashed bg-transparent p-0"
               style={{
                 left: `${square.x * 100}%`,
                 top: `${square.y * 100}%`,
                 width: `${square.width * 100}%`,
                 height: `${square.height * 100}%`,
+                borderColor: isSelected ? "#c4c4c4" : "#858585",
                 backgroundColor: "rgba(173,250,27,0.10)",
+                appearance: "none",
               }}
-            />
-          ))}
+            />;
+          })}
           <div
             ref={squarePreviewRef}
             aria-hidden="true"
