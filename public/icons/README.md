@@ -62,12 +62,13 @@ Use the group id for the unselected and selected versions:
 ## Analyst and stock tools
 
 - `analyst.svg` — Analyst section heading (desktop and comparison)
-- `tools-ma-7.svg` — MA(7) action in the desktop Tools panel
-- `tools-ma-25.svg` — MA(25) action in the desktop Tools panel
-- `tools-ma-99.svg` — MA(99) action in the desktop Tools panel
-- `tools-line.svg` — Draw price line action in the desktop Tools panel
-- `tools-rectangle.svg` — Draw a dashed rectangle area on the desktop stock chart
-- `tools-erase.svg` — Erase all manually drawn price lines in the desktop Tools panel
+- `tools-ma-7.svg` — MA(7) action in the desktop Function menu
+- `tools-ma-25.svg` — MA(25) action in the desktop Function menu
+- `tools-ma-99.svg` — MA(99) action in the desktop Function menu
+- `tools-line.svg` — Draw price line action in the right-click chart tools menu
+- `tools-rectangle.svg` — Draw a rectangle in the right-click chart tools menu
+- `tools-diagonal.svg` — Draw a diagonal line in the right-click chart tools menu
+- `tools-erase.svg` — Erase chart drawings in the right-click chart tools menu
 - `compare.svg` — Compare-stock action in desktop watchlist search results and recents
 - `server-error.svg` — AI server-error notice shown after the automatic retry fails
 - `back.svg` — Back control on the phone individual stock page
