@@ -32,7 +32,7 @@ function applyTheme(theme: Theme) {
 }
 
 // ─── Settings panel ───────────────────────────────────────────────────────
-function SettingsPanel({ closing, onClose }: { closing: boolean; onClose: () => void }) {
+export function MobileSettingsPanel({ closing, onClose }: { closing: boolean; onClose: () => void }) {
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
   const [proMode, setProMode] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
@@ -555,7 +555,7 @@ export function MobileNav() {
 
   return (
     <>
-      {settingsPhase !== "closed" && <SettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} />}
+      {settingsPhase !== "closed" && <MobileSettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} />}
 
       {/* Bottom dock: navigation stays grouped in the capsule, while search
           keeps its separate circle so it can morph into the existing search bar. */}

@@ -134,10 +134,12 @@ export function ComparisonPriceChart({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hoveredRow, setHoveredRow] = useState<ComparisonRow | null>(null);
+  const [isTouching, setIsTouching] = useState(false);
   const [proMode, setProMode] = useState(() => typeof window !== "undefined" && localStorage.getItem("pro-mode") === "1");
   const [showVolumeChart, setShowVolumeChart] = useState(() => typeof window === "undefined" || localStorage.getItem("pro-volume-chart") !== "0");
   const chartRevealRef = useRef<HTMLDivElement>(null);
   const [chartEntered, setChartEntered] = useState(false);
+  const touchCrosshairRef = useRef<HTMLDivElement>(null);
   const horizontalCrosshairRef = useRef<HTMLDivElement>(null);
   const volumeCrosshairRef = useRef<HTMLDivElement>(null);
 
@@ -217,6 +219,7 @@ export function ComparisonPriceChart({
   const winnerIsPrimary = latest ? latest.aPct >= latest.bPct : true;
 
   const setHoveredFromState = (state: unknown) => {
+    if (mobile && !isTouching) return;
     const { activeTooltipIndex, isTooltipActive, activeCoordinate } = (state ?? {}) as { activeTooltipIndex?: number; isTooltipActive?: boolean; activeCoordinate?: { x?: number; y?: number } };
     setHoveredRow(isTooltipActive && activeTooltipIndex !== undefined ? rows[activeTooltipIndex] ?? null : null);
     if (activeCoordinate?.y !== undefined && horizontalCrosshairRef.current) {
@@ -239,9 +242,70 @@ export function ComparisonPriceChart({
   };
   const clearHovered = () => {
     setHoveredRow(null);
+    if (touchCrosshairRef.current) touchCrosshairRef.current.style.display = "none";
     if (horizontalCrosshairRef.current) horizontalCrosshairRef.current.style.display = "none";
     if (volumeCrosshairRef.current) volumeCrosshairRef.current.style.display = "none";
   };
+
+  // Match the individual phone stock chart: keep the crosshair/values only
+  // for the duration of a finger gesture, then clear them on lift/cancel.
+  useEffect(() => {
+    const chart = chartRevealRef.current;
+    if (!mobile || !chart || !rows.length) return;
+    const updateFromTouch = (touch: Touch) => {
+      const bounds = chart.getBoundingClientRect();
+      const xRatio = Math.max(0, Math.min(1, (touch.clientX - bounds.left) / Math.max(1, bounds.width)));
+      const index = Math.min(rows.length - 1, Math.round(xRatio * (rows.length - 1)));
+      setHoveredRow(rows[index] ?? null);
+      if (touchCrosshairRef.current) {
+        touchCrosshairRef.current.style.left = `${xRatio * 100}%`;
+        touchCrosshairRef.current.style.display = "block";
+      }
+      if (proMode && horizontalCrosshairRef.current) {
+        horizontalCrosshairRef.current.style.top = `${Math.max(8, touch.clientY - bounds.top)}px`;
+        horizontalCrosshairRef.current.style.display = "block";
+      }
+      if (volumeCrosshairRef.current) {
+        volumeCrosshairRef.current.style.left = `${xRatio * 100}%`;
+        volumeCrosshairRef.current.style.display = "block";
+      }
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches[0]) updateFromTouch(event.touches[0]);
+    };
+    const onTouchEnd = () => {
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+      document.removeEventListener("touchcancel", onTouchEnd);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onTouchEnd);
+      setIsTouching(false);
+      setHoveredRow(null);
+      if (touchCrosshairRef.current) touchCrosshairRef.current.style.display = "none";
+      if (horizontalCrosshairRef.current) horizontalCrosshairRef.current.style.display = "none";
+      if (volumeCrosshairRef.current) volumeCrosshairRef.current.style.display = "none";
+    };
+    const onVisibilityChange = () => { if (document.hidden) onTouchEnd(); };
+    const onTouchStart = (event: TouchEvent) => {
+      if (!event.touches[0]) return;
+      setIsTouching(true);
+      updateFromTouch(event.touches[0]);
+      document.addEventListener("touchmove", onTouchMove, { passive: true });
+      document.addEventListener("touchend", onTouchEnd);
+      document.addEventListener("touchcancel", onTouchEnd);
+      document.addEventListener("visibilitychange", onVisibilityChange);
+      window.addEventListener("blur", onTouchEnd);
+    };
+    chart.addEventListener("touchstart", onTouchStart, { passive: true });
+    return () => {
+      chart.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+      document.removeEventListener("touchcancel", onTouchEnd);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("blur", onTouchEnd);
+    };
+  }, [mobile, proMode, rows]);
 
   return (
     <div>
@@ -290,7 +354,7 @@ export function ComparisonPriceChart({
       {!loading && latest && <p className="mb-3 text-sm text-text-muted">{tooltipLabel(latest.date, period)}</p>}
 
       <style>{`@keyframes comparison-chart-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }`}</style>
-      <div ref={chartRevealRef} className={`relative w-full ${mobile ? "h-[260px]" : "h-[384px]"}`}>
+      <div ref={chartRevealRef} className={`relative w-full ${mobile ? "h-[260px]" : "h-[384px]"}`} style={mobile ? { touchAction: "none" } : undefined}>
         {loading ? (
           <PriceHistoryLoadingAnimation />
         ) : rows.length ? (
@@ -300,13 +364,13 @@ export function ComparisonPriceChart({
                 <XAxis dataKey="date" hide />
                 <YAxis type="number" domain={yDomain} hide />
                 <ReferenceLine y={0} stroke="rgba(150,150,150,0.55)" strokeDasharray="4 4" />
-                <Tooltip content={() => null} cursor={{ stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 }} />
+                <Tooltip content={() => null} cursor={mobile ? false : { stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 }} />
                 <Line
                   className="comparison-series-a"
                   type="monotone" dataKey="aPct" stroke={COMPARISON_COLORS.primary} strokeWidth={2.5} dot={false} isAnimationActive={false}
                   activeDot={(rawProps: unknown) => {
                     const props = rawProps as { cx?: number; cy?: number; payload?: ComparisonRow };
-                    if (props.cx == null || props.cy == null || !props.payload || props.payload.aPct < props.payload.bPct) return <g />;
+                    if ((mobile && !isTouching) || props.cx == null || props.cy == null || !props.payload || props.payload.aPct < props.payload.bPct) return <g />;
                     return <circle cx={props.cx} cy={props.cy} r={5} fill={COMPARISON_COLORS.primary} stroke="#000" strokeWidth={2} />;
                   }}
                 />
@@ -315,12 +379,13 @@ export function ComparisonPriceChart({
                   type="monotone" dataKey="bPct" stroke={COMPARISON_COLORS.secondary} strokeWidth={2.5} dot={false} isAnimationActive={false}
                   activeDot={(rawProps: unknown) => {
                     const props = rawProps as { cx?: number; cy?: number; payload?: ComparisonRow };
-                    if (props.cx == null || props.cy == null || !props.payload || props.payload.bPct <= props.payload.aPct) return <g />;
+                    if ((mobile && !isTouching) || props.cx == null || props.cy == null || !props.payload || props.payload.bPct <= props.payload.aPct) return <g />;
                     return <circle cx={props.cx} cy={props.cy} r={5} fill={COMPARISON_COLORS.secondary} stroke="#000" strokeWidth={2} />;
                   }}
                 />
               </LineChart>
             </ResponsiveContainer>
+            {mobile && <div ref={touchCrosshairRef} className="pointer-events-none absolute inset-y-0 z-10 hidden w-px bg-white/40" />}
             {proMode && <div ref={horizontalCrosshairRef} data-crosshair-h="" className="pointer-events-none absolute inset-x-0 h-px" style={{ background: "rgba(128,128,128,0.5)", display: "none" }} />}
           </div>
         ) : (

@@ -27,8 +27,26 @@ export function MobileCompareSearch({
   const [viewport, setViewport] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => setMounted(true), []);
+
+  // Leave the AI pill visible while compare mode is idle. When activated,
+  // show the orange pill at the same position for a frame, then expand it
+  // with the exact width/easing used by the phone AI input.
+  useEffect(() => {
+    if (open) {
+      setVisible(true);
+      setExpanded(false);
+      const frame = window.requestAnimationFrame(() => setExpanded(true));
+      return () => window.cancelAnimationFrame(frame);
+    }
+    setExpanded(false);
+    if (!visible) return;
+    const timer = window.setTimeout(() => setVisible(false), 320);
+    return () => window.clearTimeout(timer);
+  }, [open, visible]);
 
   useEffect(() => {
     const updateViewport = () => {
@@ -120,7 +138,7 @@ export function MobileCompareSearch({
     onSelect(symbol);
   }
 
-  if (!mounted) return null;
+  if (!mounted || !visible) return null;
   const viewportWidth = viewport.width || window.innerWidth;
   const viewportHeight = viewport.height || window.innerHeight;
   const keyboardInset = Math.max(0, window.innerHeight - viewportHeight - viewport.top);
@@ -170,17 +188,17 @@ export function MobileCompareSearch({
 
       <div className="smoked-glass-surface fixed lg:hidden overflow-hidden rounded-full border border-orange-400/35 text-[#f97316]"
         style={{
-          zIndex: 1004, bottom, right: open ? "1rem" : "1.25rem", width: open ? "calc(100vw - 2rem)" : "3.5rem", height: "3.5rem",
+          zIndex: 1004, bottom, right: expanded ? "1rem" : "1.25rem", width: expanded ? "calc(100vw - 2rem)" : "3.5rem", height: "3.5rem",
           background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
           backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)",
-          boxShadow: open ? "0 0 14px rgba(249,115,22,0.42), 0 0 5px rgba(249,115,22,0.65), 0 24px 60px rgba(0,0,0,0.24), inset 0 0 16px rgba(0,0,0,0.18)" : "0 24px 60px rgba(0,0,0,0.24), inset 0 0 16px rgba(0,0,0,0.18)",
+          boxShadow: expanded ? "0 0 14px rgba(249,115,22,0.42), 0 0 5px rgba(249,115,22,0.65), 0 24px 60px rgba(0,0,0,0.24), inset 0 0 16px rgba(0,0,0,0.18)" : "0 24px 60px rgba(0,0,0,0.24), inset 0 0 16px rgba(0,0,0,0.18)",
           transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease, box-shadow 0.22s ease",
         }}>
         <button type="button" aria-label="Compare stocks" onClick={() => onOpenChange(true)}
-          style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: open ? 0 : 1, pointerEvents: open ? "none" : "auto", transition: "opacity 0.16s ease" }}>
+          style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: expanded ? 0 : 1, pointerEvents: expanded ? "none" : "auto", transition: "opacity 0.16s ease" }}>
           <OptionalSvgIcon name="compare" className="h-7 w-7" color="#f97316" />
         </button>
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 8, padding: "0 18px", opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none", transition: "opacity 0.22s ease", transitionDelay: open ? "0.14s" : "0s" }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 8, padding: "0 18px", opacity: expanded ? 1 : 0, pointerEvents: expanded ? "auto" : "none", transition: "opacity 0.22s ease", transitionDelay: expanded ? "0.14s" : "0s" }}>
           <input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") close(); }}
             placeholder={`Compare ${primarySymbol} with`} aria-label={`Compare ${primarySymbol} with another stock`}
             className="min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-[#ff9f2e]" style={{ caretColor: "#f97316" }} />

@@ -9,7 +9,7 @@ import { AnalystSection } from "@/components/AnalystSection";
 import { FundamentalsGrid } from "@/components/FundamentalsGrid";
 import { FilingIndicators } from "@/components/FilingIndicators";
 import { MarketSentiment } from "@/components/MarketSentiment";
-import { PriceChart } from "@/components/PriceChart";
+import { PriceChart, PriceHistoryLoadingAnimation } from "@/components/PriceChart";
 import { CompanyDescription } from "@/components/CompanyDescription";
 import { NewsSummary } from "@/components/NewsSummary";
 import { NewsCard } from "@/components/NewsCard";
@@ -21,6 +21,7 @@ import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { StockPriceAlertButton } from "@/components/StockPriceAlertButton";
 import { MobileCompareSearch } from "@/components/mobile/MobileCompareSearch";
 import { StockComparisonView, type ComparisonDetailPayload } from "@/components/desktop/StockComparisonView";
+import { MobileSettingsPanel } from "@/components/MobileNav";
 import { cn } from "@/lib/utils";
 import { isUsEquityMarketOpen } from "@/lib/usMarketHours";
 import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
@@ -47,6 +48,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
   const [comparisonDetail, setComparisonDetail] = useState<ComparisonDetailPayload | null>(null);
   const [comparisonLoading, setComparisonLoading] = useState(false);
   const [comparisonError, setComparisonError] = useState<string | null>(null);
+  const [settingsPhase, setSettingsPhase] = useState<"closed" | "open" | "closing">("closed");
   // ETFs don't file earnings reports the way individual companies do, so an
   // earnings calendar doesn't apply to them.
   const isEtf = SECTOR_ETFS.some(e => e.symbol === stock.symbol);
@@ -139,6 +141,12 @@ export function MobileStockPage(props: MobileStockPageProps) {
     }
   }
 
+  function closeSettings() {
+    if (settingsPhase !== "open") return;
+    setSettingsPhase("closing");
+    window.setTimeout(() => setSettingsPhase("closed"), 260);
+  }
+
   return (
     <>
       {/* AI Chat — self-contained floating pill + overlay, mounted always */}
@@ -148,8 +156,9 @@ export function MobileStockPage(props: MobileStockPageProps) {
         sentiment={sentiment}
         metrics={metrics}
         comparisonStock={comparisonDetail ?? undefined}
-        hideTrigger={compareSearchOpen}
+        hideTrigger={settingsPhase !== "closed"}
       />
+      {settingsPhase !== "closed" && <MobileSettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} />}
       <MobileCompareSearch
         primarySymbol={stock.symbol}
         open={compareSearchOpen}
@@ -185,8 +194,12 @@ export function MobileStockPage(props: MobileStockPageProps) {
         </span>
         <div className="ml-auto flex items-center gap-1">
           <button type="button" aria-label={`Compare ${stock.symbol} with another stock`} title="Compare stocks" onClick={() => setCompareSearchOpen(true)}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#f97316] transition hover:bg-white/5">
-            <OptionalSvgIcon name="compare" className="h-6 w-6" color="#f97316" />
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-accent transition hover:bg-white/5">
+            <OptionalSvgIcon name="compare" className="h-6 w-6" color="var(--color-accent)" />
+          </button>
+          <button type="button" aria-label="Settings" title="Settings" onClick={() => { setCompareSearchOpen(false); setSettingsPhase("open"); }}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-accent transition hover:bg-white/5">
+            <OptionalSvgIcon name="settings" className="h-6 w-6" />
           </button>
           <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} mobile mobileHeader />
         </div>
@@ -198,7 +211,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
           context. That local nesting is what kept letting the blur end up
           rendered over the button despite z-index/isolate/transform
           attempts from inside the header itself. */}
-      {mounted && createPortal(
+      {mounted && settingsPhase === "closed" && createPortal(
         <button
           onClick={handleBack}
           aria-label="Back"
@@ -218,7 +231,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
       <div ref={pageRef} className="pb-36" style={{ opacity: 1 }} data-stock-page="">
         {comparisonSymbol ? (
           comparisonLoading ? (
-            <div className="flex min-h-[60vh] items-center justify-center px-6 text-center text-sm text-text-muted">Loading {stock.symbol} and {comparisonSymbol} comparison…</div>
+            <div className="h-[260px] px-3"><PriceHistoryLoadingAnimation /></div>
           ) : comparisonError ? (
             <div className="px-5 py-12 text-center">
               <p className="text-sm text-text-muted">Unable to compare {comparisonSymbol}: {comparisonError}</p>
