@@ -963,7 +963,7 @@ export function PriceChart({
   const volumeCrosshairRef = useRef<HTMLDivElement>(null);
   const [linePlacementActive, setLinePlacementActive] = useState(false);
   const [squarePlacementActive, setSquarePlacementActive] = useState(false);
-  const [manualSquares, setManualSquares] = useState<Array<{ id: number; x: number; y: number; width: number; height: number; trend: RectangleTrend }>>([]);
+  const [manualSquares, setManualSquares] = useState<Array<{ id: number; x1: number; x2: number; y1: number; y2: number; trend: RectangleTrend }>>([]);
   const [selectedManualSquareId, setSelectedManualSquareId] = useState<number | null>(null);
   const squareStartRef = useRef<{ x: number; y: number } | null>(null);
   const squarePreviewRef = useRef<HTMLDivElement>(null);
@@ -1147,6 +1147,30 @@ export function PriceChart({
   // prevented by touch-action on the chart itself rather than a global
   // preventDefault listener, which could remain stuck if iOS misses touchend.
   const chartRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const onWheel = (event: WheelEvent) => {
+      if (!useCandlesticks || data.length < 2 || event.deltaY === 0 || linePlacementActive || squarePlacementActive) return;
+      event.preventDefault();
+      const count = visibleRange.end - visibleRange.start;
+      const minimumCount = Math.min(8, data.length);
+      const nextCount = Math.max(minimumCount, Math.min(data.length, Math.round(count * (event.deltaY < 0 ? 0.8 : 1.25))));
+      if (nextCount === count) return;
+      if (nextCount >= data.length) {
+        setCandleViewRange(null);
+        return;
+      }
+      const bounds = chart.getBoundingClientRect();
+      const pointerRatio = Math.max(0, Math.min(1, (event.clientX - bounds.left) / Math.max(1, bounds.width)));
+      const focusIndex = visibleRange.start + pointerRatio * Math.max(0, count - 1);
+      const start = Math.max(0, Math.min(data.length - nextCount, Math.round(focusIndex - pointerRatio * (nextCount - 1))));
+      setCandleViewRange({ start, end: start + nextCount });
+    };
+    chart.addEventListener("wheel", onWheel, { passive: false });
+    return () => chart.removeEventListener("wheel", onWheel);
+  }, [data.length, linePlacementActive, squarePlacementActive, useCandlesticks, visibleRange]);
+
   const updateSquarePreview = useCallback((clientX: number, clientY: number, bounds: DOMRect) => {
     const anchor = squareStartRef.current;
     const preview = squarePreviewRef.current;
@@ -1278,23 +1302,6 @@ export function PriceChart({
         ref={chartRef}
         className={cn(heightClassName, "relative", isPositive ? "stock-chart-positive" : "stock-chart-negative", useCandlesticks && (candlePanning ? "cursor-grabbing" : "cursor-grab"))}
         style={{ touchAction: "none" }}
-        onWheel={(event) => {
-          if (!useCandlesticks || data.length < 2 || event.deltaY === 0 || linePlacementActive || squarePlacementActive) return;
-          event.preventDefault();
-          const count = visibleRange.end - visibleRange.start;
-          const minimumCount = Math.min(8, data.length);
-          const nextCount = Math.max(minimumCount, Math.min(data.length, Math.round(count * (event.deltaY < 0 ? 0.8 : 1.25))));
-          if (nextCount === count) return;
-          if (nextCount >= data.length) {
-            setCandleViewRange(null);
-            return;
-          }
-          const bounds = event.currentTarget.getBoundingClientRect();
-          const pointerRatio = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
-          const focusIndex = visibleRange.start + pointerRatio * Math.max(0, count - 1);
-          const start = Math.max(0, Math.min(data.length - nextCount, Math.round(focusIndex - pointerRatio * (nextCount - 1))));
-          setCandleViewRange({ start, end: start + nextCount });
-        }}
         onPointerDown={(event) => {
           if (!useCandlesticks || event.pointerType !== "mouse" || event.button !== 0 || data.length < 2 || linePlacementActive || squarePlacementActive) return;
           event.preventDefault();
@@ -1367,12 +1374,18 @@ export function PriceChart({
             }
             const rect = getDrawingRect(anchor, point);
             if (rect.width >= 2 && rect.height >= 2) {
+              const visibleCount = Math.max(1, visibleRange.end - visibleRange.start);
+              const toIndex = (x: number) => visibleRange.start + (x / Math.max(1, bounds.width)) * visibleCount;
+              const toPrice = (y: number) => {
+                const fraction = Math.max(0, Math.min(1, (y - 8) / Math.max(1, bounds.height - 8)));
+                return priceYDomain[1] - fraction * (priceYDomain[1] - priceYDomain[0]);
+              };
               setManualSquares((previous) => [...previous, {
                 id: nextSquareId.current++,
-                x: rect.left / bounds.width,
-                y: rect.top / bounds.height,
-                width: rect.width / bounds.width,
-                height: rect.height / bounds.height,
+                x1: toIndex(anchor.x),
+                x2: toIndex(point.x),
+                y1: toPrice(anchor.y),
+                y2: toPrice(point.y),
                 trend: point.y <= anchor.y ? "up" : "down",
               }]);
             }
@@ -1538,12 +1551,13 @@ export function PriceChart({
             const bounds = chartRef.current?.getBoundingClientRect();
             const chartHeight = bounds?.height ?? 260;
             const plotTop = 8;
+            if (line.price < priceYDomain[0] || line.price > priceYDomain[1]) return null;
             const rawY = plotTop + ((priceYDomain[1] - line.price) / (priceYDomain[1] - priceYDomain[0])) * (chartHeight - plotTop);
-            const top = Math.max(0, Math.min(chartHeight, rawY));
+            const top = rawY;
             const isSelected = selectedManualLineId === line.id;
             const shownValue = line.preview && lineTypedValue !== null ? lineTypedValue : formatPrice(line.price);
             return (
-              <div key={line.preview ? "preview" : line.id} className="pointer-events-none absolute inset-x-0 z-20 h-px" style={{ top }}>
+              <div key={line.preview ? "preview" : line.id} className="pointer-events-none absolute inset-x-0 z-20 h-px" style={{ top: `${(top / chartHeight) * 100}%` }}>
                 <span className="absolute bottom-[calc(100%+4px)] left-0 z-10 whitespace-nowrap text-[10px] leading-3 text-[#a0a0a0]">{shownValue}</span>
                 <button
                   type="button"
@@ -1566,6 +1580,22 @@ export function PriceChart({
           })}
 
           {manualSquares.map((square) => {
+            const bounds = chartRef.current?.getBoundingClientRect();
+            if (!bounds || visibleRange.end <= visibleRange.start) return null;
+            const indexStart = Math.max(Math.min(square.x1, square.x2), visibleRange.start);
+            const indexEnd = Math.min(Math.max(square.x1, square.x2), visibleRange.end);
+            if (indexEnd <= indexStart) return null;
+            const priceTop = Math.max(square.y1, square.y2);
+            const priceBottom = Math.min(square.y1, square.y2);
+            if (priceTop < priceYDomain[0] || priceBottom > priceYDomain[1]) return null;
+            const clippedTopPrice = Math.min(priceTop, priceYDomain[1]);
+            const clippedBottomPrice = Math.max(priceBottom, priceYDomain[0]);
+            const plotHeight = Math.max(1, bounds.height - 8);
+            const yForPrice = (price: number) => 8 + ((priceYDomain[1] - price) / (priceYDomain[1] - priceYDomain[0])) * plotHeight;
+            const top = yForPrice(clippedTopPrice);
+            const bottom = yForPrice(clippedBottomPrice);
+            if (bottom <= top) return null;
+            const visibleCount = visibleRange.end - visibleRange.start;
             const isSelected = selectedManualSquareId === square.id;
             return <button
               key={square.id}
@@ -1579,10 +1609,10 @@ export function PriceChart({
               }}
               className="pointer-events-auto absolute z-10 m-0 cursor-pointer p-0"
               style={{
-                left: `${square.x * 100}%`,
-                top: `${square.y * 100}%`,
-                width: `${square.width * 100}%`,
-                height: `${square.height * 100}%`,
+                left: `${((indexStart - visibleRange.start) / visibleCount) * 100}%`,
+                top: `${(top / bounds.height) * 100}%`,
+                width: `${((indexEnd - indexStart) / visibleCount) * 100}%`,
+                height: `${((bottom - top) / bounds.height) * 100}%`,
                 ...getDrawingAreaStyle(square.trend, isSelected ? "#c4c4c4" : "#858585"),
                 appearance: "none",
               }}
