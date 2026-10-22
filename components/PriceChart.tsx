@@ -52,15 +52,15 @@ type SquareRect = { left: number; top: number; width: number; height: number };
 type RectangleTrend = "up" | "down";
 
 function getDrawingAreaStyle(trend: RectangleTrend, stroke: string) {
-  const horizontalDashes = `repeating-linear-gradient(90deg, ${stroke} 0 14px, transparent 14px 24px)`;
-  const verticalDashes = `repeating-linear-gradient(180deg, ${stroke} 0 14px, transparent 14px 24px)`;
+  const horizontalDashes = `repeating-linear-gradient(90deg, ${stroke} 0 8px, transparent 8px 14px)`;
+  const verticalDashes = `repeating-linear-gradient(180deg, ${stroke} 0 8px, transparent 8px 14px)`;
   return {
     border: "none",
     borderRadius: "24px",
     backgroundColor: trend === "up" ? "rgba(0,200,5,0.10)" : "rgba(255,48,3,0.10)",
     backgroundImage: `${horizontalDashes}, ${horizontalDashes}, ${verticalDashes}, ${verticalDashes}`,
     backgroundPosition: "top left, bottom left, top left, top right",
-    backgroundSize: "100% 3px, 100% 3px, 3px 100%, 3px 100%",
+    backgroundSize: "100% 1px, 100% 1px, 1px 100%, 1px 100%",
     backgroundRepeat: "repeat-x, repeat-x, repeat-y, repeat-y",
   };
 }
@@ -1124,10 +1124,10 @@ export function PriceChart({
   }, [linePlacementActive, lineTypedValue, selectedManualLineId, selectedManualSquareId, squarePlacementActive, symbol]);
 
   const onHover = useCallback((price: number | null, date: string | null) => {
-    if (suppressRef.current || linePlacementActive || squarePlacementActive) return;
+    if (suppressRef.current || linePlacementActive || squarePlacementActive || useCandlesticks) return;
     setHoverPrice(price);
     setHoverDate(date);
-  }, [linePlacementActive, squarePlacementActive]);
+  }, [linePlacementActive, squarePlacementActive, useCandlesticks]);
 
   const clearHover = useCallback(() => {
     suppressRef.current = true;
@@ -1304,8 +1304,8 @@ export function PriceChart({
         style={{ touchAction: "none" }}
         onPointerDown={(event) => {
           if (!useCandlesticks || event.pointerType !== "mouse" || event.button !== 0 || data.length < 2 || linePlacementActive || squarePlacementActive) return;
-          event.preventDefault();
-          event.currentTarget.setPointerCapture(event.pointerId);
+          const target = event.target as Element;
+          if (target.closest("button, input, textarea, select, a, [role='button']")) return;
           candlePanRef.current = {
             pointerId: event.pointerId,
             startX: event.clientX,
@@ -1317,6 +1317,11 @@ export function PriceChart({
         onPointerMove={(event) => {
           const pan = candlePanRef.current;
           if (!useCandlesticks || !pan || pan.pointerId !== event.pointerId) return;
+          if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+            const movedX = event.clientX - pan.startX;
+            if (Math.abs(movedX) < 3) return;
+            event.currentTarget.setPointerCapture(event.pointerId);
+          }
           const bounds = event.currentTarget.getBoundingClientRect();
           const count = pan.endIndex - pan.startIndex;
           const offset = Math.round(((pan.startX - event.clientX) / Math.max(1, bounds.width)) * count);
@@ -1342,6 +1347,21 @@ export function PriceChart({
             const y = Math.max(plotTop, Math.min(bounds.height, event.clientY - bounds.top));
             const fraction = (y - plotTop) / Math.max(1, bounds.height - plotTop);
             setLineCursorPrice(priceYDomain[1] - fraction * (priceYDomain[1] - priceYDomain[0]));
+            return;
+          }
+          if (useCandlesticks) {
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const fraction = Math.max(0, Math.min(1, (event.clientY - bounds.top - 8) / Math.max(1, bounds.height - 8)));
+            const cursorPrice = priceYDomain[1] - fraction * (priceYDomain[1] - priceYDomain[0]);
+            const visibleCount = Math.max(1, visibleRange.end - visibleRange.start);
+            const xRatio = Math.max(0, Math.min(0.999999, (event.clientX - bounds.left) / Math.max(1, bounds.width)));
+            const candle = data[Math.min(data.length - 1, visibleRange.start + Math.floor(xRatio * visibleCount))];
+            setHoverPrice(cursorPrice);
+            setHoverDate(candle?.date ?? null);
+            if (proCrosshairRef.current && proMode) {
+              proCrosshairRef.current.style.display = "block";
+              proCrosshairRef.current.style.top = `${event.clientY - bounds.top}px`;
+            }
             return;
           }
           // Phones retain the direct pointer position used by their custom
@@ -1569,10 +1589,13 @@ export function PriceChart({
                     setSelectedManualLineId(line.id);
                     setSelectedManualSquareId(null);
                   }}
-                  className="pointer-events-auto absolute inset-x-0 top-0 h-[3px] min-w-0 cursor-crosshair border-0 bg-transparent p-0"
+                  className="pointer-events-auto absolute inset-x-0 top-1/2 h-3 min-w-0 -translate-y-1/2 cursor-crosshair border-0 bg-transparent p-0"
                   style={{
                     backgroundColor: "transparent",
-                    backgroundImage: `repeating-linear-gradient(90deg, ${line.preview ? "#858585" : isSelected ? "#c4c4c4" : "#858585"} 0 14px, transparent 14px 24px)`,
+                    backgroundImage: `repeating-linear-gradient(90deg, ${line.preview ? "#858585" : isSelected ? "#c4c4c4" : "#858585"} 0 8px, transparent 8px 14px)`,
+                    backgroundSize: "auto 1px",
+                    backgroundPosition: "center",
+                    backgroundRepeat: "repeat-x",
                   }}
                 />
               </div>
