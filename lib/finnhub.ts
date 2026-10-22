@@ -1024,11 +1024,13 @@ export async function getStockSummary(symbol: string, forceRefresh = false): Pro
 
 export async function getStockDetail(symbol: string, forceRefresh = false): Promise<StockDetail> {
   const normalizedSymbol = cleanSymbol(symbol);
-  const [quote, profile, financials, news, recommendations, priceTarget, earnings] = await Promise.all([
+  const [quote, profile, financials, newsResult, recommendations, priceTarget, earnings] = await Promise.all([
     getQuote(normalizedSymbol, forceRefresh),
     getCompanyProfile(normalizedSymbol).catch(() => ({} as CompanyProfile)),
     getBasicFinancials(normalizedSymbol).catch(() => ({} as BasicFinancials)),
-    getCompanyNews(normalizedSymbol).catch(() => []),
+    getCompanyNews(normalizedSymbol)
+      .then((news) => ({ news, unavailable: false }))
+      .catch(() => ({ news: [] as CompanyNewsArticle[], unavailable: true })),
     getAnalystRecommendations(normalizedSymbol).catch(() => []),
     getPriceTarget(normalizedSymbol).catch(() => ({} as PriceTarget)),
     getEarningsCalendar(normalizedSymbol).catch(() => [] as EarningsEvent[]),
@@ -1045,7 +1047,8 @@ export async function getStockDetail(symbol: string, forceRefresh = false): Prom
     quote,
     profile,
     financials,
-    news: news.slice(0, 8),
+    news: newsResult.news.slice(0, 8),
+    newsUnavailable: newsResult.unavailable,
     recommendations: recommendations.slice(0, 6),
     priceTarget,
     earnings,

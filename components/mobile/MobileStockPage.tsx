@@ -13,6 +13,7 @@ import { PriceChart, PriceHistoryLoadingAnimation } from "@/components/PriceChar
 import { CompanyDescription } from "@/components/CompanyDescription";
 import { NewsSummary } from "@/components/NewsSummary";
 import { NewsCard } from "@/components/NewsCard";
+import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 import { MarketIcon } from "@/components/MarketIcon";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
@@ -311,17 +312,19 @@ export function MobileStockPage(props: MobileStockPageProps) {
 
           {!isEtf && <FilingIndicators symbol={stock.symbol} compact />}
 
-          {stock.news.length > 0 && (
+          {(stock.news.length > 0 || stock.newsUnavailable) && (
             <section className="px-3">
               <p className="mb-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent"><OptionalSvgIcon name="news" className="h-5 w-5" />News</p>
-              <NewsSummary symbol={stock.symbol} articles={stock.news} />
-              <div className="no-scrollbar -mx-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 pb-2">
-                {stock.news.slice(0, 8).map(article => (
-                  <div key={article.id} className="w-[38vw] max-w-[140px] shrink-0 snap-start">
-                    <NewsCard article={article} />
-                  </div>
-                ))}
-              </div>
+              {stock.newsUnavailable ? <AIUnavailableNotice /> : <>
+                <NewsSummary symbol={stock.symbol} articles={stock.news} />
+                <div className="no-scrollbar -mx-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 pb-2">
+                  {stock.news.slice(0, 8).map(article => (
+                    <div key={article.id} className="w-[38vw] max-w-[140px] shrink-0 snap-start">
+                      <NewsCard article={article} />
+                    </div>
+                  ))}
+                </div>
+              </>}
             </section>
           )}
 

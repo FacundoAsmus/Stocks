@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AIStarLoader } from "@/components/AIStarLoader";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
+import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 
 type DescriptionState =
   | { status: "loading"; text: "" }
@@ -88,7 +89,7 @@ export function CompanyDescription({ symbol, className = "" }: { symbol: string;
       <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="description" className="h-5 w-5" />Description</p>
       {state.status === "loading" && <AISummaryLoader />}
       {state.status === "ready" && <AISummaryText text={state.text} />}
-      {state.status === "error" && <p className="text-[1.05rem] text-text-muted">Descriptions are not avaliable right now</p>}
+      {state.status === "error" && <AIUnavailableNotice />}
     </section>
   );
 }

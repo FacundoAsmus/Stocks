@@ -61,7 +61,7 @@ export function StockFunctionButton({ symbol, name, currentPrice, chartHeight = 
     <div className="relative h-10 w-10 shrink-0 transition-transform duration-200 hover:-translate-y-1 hover:scale-[1.12]">
       <div
         ref={panelRef}
-        className={cn("desktop-alert-glass desktop-stock-tools-panel smoked-glass-surface absolute bottom-0 right-0 z-40 flex w-10 flex-col-reverse overflow-hidden border text-text-primary", open && "is-open")}
+        className={cn("desktop-alert-glass desktop-stock-tools-panel smoked-glass-surface absolute right-0 top-0 z-40 w-10 overflow-hidden border text-text-primary", open && "is-open")}
         style={{ height: open ? expandedHeight : 40, borderRadius: open ? 24 : "50%", transition: "height 0.32s cubic-bezier(0.2,0,0,1), border-radius 0.32s cubic-bezier(0.2,0,0,1)" }}
         onMouseLeave={() => { if (open) setOpen(false); }}
       >
@@ -85,7 +85,7 @@ export function StockFunctionButton({ symbol, name, currentPrice, chartHeight = 
               <OptionalSvgIcon name={iconName} className="h-5 w-7" color={color} />
             </button>;
           })}
-          <div className="flex h-10 w-full items-center justify-center opacity-35 transition-opacity hover:opacity-100">
+          <div className="flex h-10 w-full items-center justify-center">
             <StockPriceAlertButton symbol={symbol} name={name} currentPrice={currentPrice} />
           </div>
         </div>
@@ -100,7 +100,7 @@ type DrawingAction = "line" | "rectangle" | "diagonal" | "erase";
 export function StockChartToolsMenu({ symbol }: { symbol: string }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [position, setPosition] = useState({ left: 0, top: 0 });
+  const [position, setPosition] = useState({ left: 0, bottom: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
   const menuHeight = 4 * 36 + 3 * 8 + 20;
 
@@ -110,7 +110,7 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
       if (!detail || detail.symbol !== symbol) return;
       setPosition({
         left: Math.max(8, Math.min(detail.clientX + 12, window.innerWidth - 48)),
-        top: Math.max(8, Math.min(detail.clientY - menuHeight - 12, window.innerHeight - menuHeight - 8)),
+        bottom: Math.max(8, Math.min(window.innerHeight - detail.clientY + 12, window.innerHeight - 8)),
       });
       setOpen(true);
       setExpanded(false);
@@ -162,7 +162,7 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
   return (
     <div ref={panelRef} role="toolbar" aria-label="Chart drawing tools"
       className="desktop-alert-glass desktop-stock-tools-panel smoked-glass-surface fixed z-[1200] overflow-hidden border text-text-primary"
-      style={{ left: position.left, top: position.top, width: expanded ? 40 : 0, height: expanded ? menuHeight : 0, borderRadius: expanded ? 24 : 0, opacity: expanded ? 1 : 0, pointerEvents: expanded ? "auto" : "none", transition: "width 0.32s cubic-bezier(0.2,0,0,1), height 0.32s cubic-bezier(0.2,0,0,1), border-radius 0.32s cubic-bezier(0.2,0,0,1), opacity 0.18s ease" }}>
+      style={{ left: position.left, bottom: position.bottom, width: expanded ? 40 : 0, height: expanded ? menuHeight : 0, borderRadius: expanded ? 24 : 0, opacity: expanded ? 1 : 0, pointerEvents: expanded ? "auto" : "none", transition: "width 0.32s cubic-bezier(0.2,0,0,1), height 0.32s cubic-bezier(0.2,0,0,1), border-radius 0.32s cubic-bezier(0.2,0,0,1), opacity 0.18s ease" }}>
       <div className="flex flex-col items-center gap-2 px-0.5 pt-2">
         {actions.map(({ action, label, icon, color }) => <button key={action} type="button" aria-label={label} title={label}
           onClick={() => choose(action)} className="flex h-9 w-full items-center justify-center bg-transparent opacity-45 transition-opacity hover:opacity-100">

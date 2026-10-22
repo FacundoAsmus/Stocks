@@ -12,6 +12,7 @@ import { NewsSummary } from "@/components/NewsSummary";
 import { PriceChart } from "@/components/PriceChart";
 import { StockLogo } from "@/components/StockLogo";
 import { StockPriceAlertButton } from "@/components/StockPriceAlertButton";
+import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 import { StockFunctionButton, StockChartToolsMenu } from "@/components/desktop/StockToolsButton";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { SECTOR_ETFS } from "@/lib/etfs";
@@ -61,9 +62,10 @@ export function DesktopStockDetail({
         <section className="relative p-5">
           <div className="absolute right-5 top-5 z-50 flex flex-col items-end gap-1">
             <div className="flex items-center gap-2">
-              {!watchlistDetailHeader && <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} />}
+              <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} />
               <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact hoverRemoveIcon={watchlistDetailHeader} />
             </div>
+            {watchlistDetailHeader && <StockFunctionButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} chartHeight={384} />}
           </div>
           {watchlistDetailHeader && <StockChartToolsMenu symbol={stock.symbol} />}
           {/* ── Logo + name row ── */}
@@ -91,7 +93,6 @@ export function DesktopStockDetail({
               heightClassName={chartHeightClassName}
               hideCursorDateTooltip={hideCursorDateTooltip}
               hideMovingAverageControls={watchlistDetailHeader}
-              desktopPeriodAction={watchlistDetailHeader ? <StockFunctionButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} chartHeight={384} /> : undefined}
             />
           </div>
         </section>
@@ -128,11 +129,11 @@ export function DesktopStockDetail({
               <p className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="news" className="h-5 w-5" />News</p>
             </div>
           </div>
-          {stock.news.length > 0 && <NewsSummary symbol={stock.symbol} articles={stock.news} />}
+          {stock.newsUnavailable ? <AIUnavailableNotice /> : stock.news.length > 0 && <NewsSummary symbol={stock.symbol} articles={stock.news} />}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {stock.news.length ? (
               stock.news.map((article) => <NewsCard key={article.id} article={article} />)
-            ) : (
+            ) : stock.newsUnavailable ? null : (
               <div className="rounded-md  p-5 text-sm text-text-muted">
                 No recent Finnhub news was available for this symbol.
               </div>

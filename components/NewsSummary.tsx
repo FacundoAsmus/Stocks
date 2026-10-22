@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { CompanyNewsArticle } from "@/types/stock";
 import { AISummaryLoader, AISummaryText } from "@/components/CompanyDescription";
+import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 
 type SummaryState = { status: "loading" } | { status: "ready"; text: string } | { status: "error" };
 
@@ -44,7 +45,7 @@ export function NewsSummary({ symbol, articles }: { symbol: string; articles: Co
     <section className="mt-6 mb-6">
       {state.status === "loading" && <AISummaryLoader />}
       {state.status === "ready" && <AISummaryText text={state.text} />}
-      {state.status === "error" && <p className="text-[1.05rem] text-text-muted">News summary is not available right now.</p>}
+      {state.status === "error" && <AIUnavailableNotice />}
     </section>
   );
 }

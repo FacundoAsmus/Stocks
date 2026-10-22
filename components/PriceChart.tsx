@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { ReactNode } from "react";
 import {
   Area,
   ComposedChart,
@@ -15,6 +14,7 @@ import {
   YAxis
 } from "recharts";
 import { RotateCcw } from "lucide-react";
+import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 
 import { cn } from "@/lib/utils";
 import type { CandlePoint, ChartPeriod } from "@/types/stock";
@@ -552,8 +552,7 @@ export function PriceChart({
   heightClassName = "h-[320px]",
   priceIndent,
   hideCursorDateTooltip = false,
-  hideMovingAverageControls = false,
-  desktopPeriodAction
+  hideMovingAverageControls = false
 }: {
   symbol: string;
   currentPrice: number;
@@ -564,7 +563,6 @@ export function PriceChart({
   priceIndent?: string;
   hideCursorDateTooltip?: boolean;
   hideMovingAverageControls?: boolean;
-  desktopPeriodAction?: ReactNode;
 }) {
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
   const [hoveredPeriod, setHoveredPeriod] = useState<ChartPeriod | null>(null);
@@ -1551,8 +1549,7 @@ export function PriceChart({
           <PriceHistoryLoadingAnimation />
         ) : error ? (
           <div className="flex h-full flex-col items-center justify-center rounded-md border border-dashed border-negative/30 bg-negative/5 px-4 text-center">
-            <p className="text-sm font-medium text-text-primary">Chart unavailable</p>
-            <p className="mt-2 max-w-md text-sm leading-6 text-text-muted">{error}</p>
+            <AIUnavailableNotice />
             <button type="button" onClick={() => setReloadNonce((n) => n + 1)}
               className="mt-4 inline-flex items-center gap-2 rounded-md border border-border-subtle px-3 py-2 text-sm text-text-primary transition hover:bg-panel-muted">
               <RotateCcw className="h-4 w-4" aria-hidden /> Retry
@@ -1874,7 +1871,7 @@ export function PriceChart({
           </>
         ) : (
           <div className="flex h-full items-center justify-center rounded-md border border-dashed border-border-subtle px-4 text-center text-sm text-text-muted">
-            Price history is not available for this symbol and period.
+            <AIUnavailableNotice />
           </div>
         )}
       </div>
@@ -1895,7 +1892,7 @@ export function PriceChart({
       )}
 
       {/* ── Period selector — centred below charts ───────────────────── */}
-      <div className="relative mt-4 flex w-full justify-center">
+      <div className="mt-4 flex justify-center">
         {/* Phone only: years (1Y/2Y/5Y/ALL) on their own row below the rest */}
         <div className="chart-period-selector-glass chart-period-selector-phone relative flex flex-col items-center gap-1.5 rounded-3xl border p-1.5 lg:hidden">
           <span
@@ -1922,7 +1919,6 @@ export function PriceChart({
           />
           {[...SHORT_PERIODS, ...LONG_PERIODS].map((o, index) => renderPeriodButton({ key: o, option: o, index, desktop: true }))}
         </div>
-        {desktopPeriodAction && <div className="absolute right-0 top-1/2 hidden -translate-y-1/2 lg:block">{desktopPeriodAction}</div>}
       </div>
 
       {/* ── Moving average toggles — only shown when at least one MA makes
