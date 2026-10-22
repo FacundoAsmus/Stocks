@@ -64,7 +64,6 @@ export function DesktopStockDetail({
               {!watchlistDetailHeader && <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} />}
               <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact hoverRemoveIcon={watchlistDetailHeader} />
             </div>
-            {watchlistDetailHeader && <StockFunctionButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} chartHeight={384} />}
           </div>
           {watchlistDetailHeader && <StockChartToolsMenu symbol={stock.symbol} />}
           {/* ── Logo + name row ── */}
@@ -92,6 +91,7 @@ export function DesktopStockDetail({
               heightClassName={chartHeightClassName}
               hideCursorDateTooltip={hideCursorDateTooltip}
               hideMovingAverageControls={watchlistDetailHeader}
+              desktopPeriodAction={watchlistDetailHeader ? <StockFunctionButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} chartHeight={384} /> : undefined}
             />
           </div>
         </section>

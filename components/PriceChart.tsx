@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import {
   Area,
   ComposedChart,
@@ -551,7 +552,8 @@ export function PriceChart({
   heightClassName = "h-[320px]",
   priceIndent,
   hideCursorDateTooltip = false,
-  hideMovingAverageControls = false
+  hideMovingAverageControls = false,
+  desktopPeriodAction
 }: {
   symbol: string;
   currentPrice: number;
@@ -562,6 +564,7 @@ export function PriceChart({
   priceIndent?: string;
   hideCursorDateTooltip?: boolean;
   hideMovingAverageControls?: boolean;
+  desktopPeriodAction?: ReactNode;
 }) {
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
   const [hoveredPeriod, setHoveredPeriod] = useState<ChartPeriod | null>(null);
@@ -1892,7 +1895,7 @@ export function PriceChart({
       )}
 
       {/* ── Period selector — centred below charts ───────────────────── */}
-      <div className="mt-4 flex justify-center">
+      <div className="relative mt-4 flex w-full justify-center">
         {/* Phone only: years (1Y/2Y/5Y/ALL) on their own row below the rest */}
         <div className="chart-period-selector-glass chart-period-selector-phone relative flex flex-col items-center gap-1.5 rounded-3xl border p-1.5 lg:hidden">
           <span
@@ -1919,6 +1922,7 @@ export function PriceChart({
           />
           {[...SHORT_PERIODS, ...LONG_PERIODS].map((o, index) => renderPeriodButton({ key: o, option: o, index, desktop: true }))}
         </div>
+        {desktopPeriodAction && <div className="absolute right-0 top-1/2 hidden -translate-y-1/2 lg:block">{desktopPeriodAction}</div>}
       </div>
 
       {/* ── Moving average toggles — only shown when at least one MA makes

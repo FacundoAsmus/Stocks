@@ -61,7 +61,7 @@ export function StockFunctionButton({ symbol, name, currentPrice, chartHeight = 
     <div className="relative h-10 w-10 shrink-0 transition-transform duration-200 hover:-translate-y-1 hover:scale-[1.12]">
       <div
         ref={panelRef}
-        className={cn("desktop-alert-glass desktop-stock-tools-panel smoked-glass-surface absolute right-0 top-0 z-40 overflow-hidden border text-text-primary", "w-10", open && "is-open")}
+        className={cn("desktop-alert-glass desktop-stock-tools-panel smoked-glass-surface absolute bottom-0 right-0 z-40 flex w-10 flex-col-reverse overflow-hidden border text-text-primary", open && "is-open")}
         style={{ height: open ? expandedHeight : 40, borderRadius: open ? 24 : "50%", transition: "height 0.32s cubic-bezier(0.2,0,0,1), border-radius 0.32s cubic-bezier(0.2,0,0,1)" }}
         onMouseLeave={() => { if (open) setOpen(false); }}
       >
@@ -85,7 +85,7 @@ export function StockFunctionButton({ symbol, name, currentPrice, chartHeight = 
               <OptionalSvgIcon name={iconName} className="h-5 w-7" color={color} />
             </button>;
           })}
-          <div className="flex h-10 w-full items-center justify-center">
+          <div className="flex h-10 w-full items-center justify-center opacity-35 transition-opacity hover:opacity-100">
             <StockPriceAlertButton symbol={symbol} name={name} currentPrice={currentPrice} />
           </div>
         </div>
@@ -109,8 +109,8 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
       const detail = (event as CustomEvent<ChartToolsRequest>).detail;
       if (!detail || detail.symbol !== symbol) return;
       setPosition({
-        left: Math.max(8, Math.min(detail.clientX, window.innerWidth - 48)),
-        top: Math.max(8, Math.min(detail.clientY, window.innerHeight - menuHeight - 8)),
+        left: Math.max(8, Math.min(detail.clientX + 12, window.innerWidth - 48)),
+        top: Math.max(8, Math.min(detail.clientY - menuHeight - 12, window.innerHeight - menuHeight - 8)),
       });
       setOpen(true);
       setExpanded(false);
@@ -155,8 +155,8 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
   if (!open) return null;
   const actions: Array<{ action: DrawingAction; label: string; icon: string; color?: string }> = [
     { action: "line", label: "Draw price line", icon: "tools-line" },
-    { action: "rectangle", label: "Draw rectangle", icon: "tools-rectangle" },
     { action: "diagonal", label: "Draw diagonal line", icon: "tools-diagonal" },
+    { action: "rectangle", label: "Draw rectangle", icon: "tools-rectangle" },
     { action: "erase", label: "Erase drawings", icon: "tools-erase", color: "#ff3003" },
   ];
   return (
