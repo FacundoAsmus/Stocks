@@ -244,6 +244,14 @@ export function SearchBar() {
 
   return (
     <>
+    {compareModeSymbol && typeof document !== "undefined" && createPortal(
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-[30]"
+        style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
+      />,
+      document.body
+    )}
     <div ref={wrapperRef} className="relative w-full lg:max-w-xl">
       <form onSubmit={handleSubmit} className="relative">
         <Search className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${compareModeSymbol ? "text-[#ff9f2e]" : "text-accent"}`} />

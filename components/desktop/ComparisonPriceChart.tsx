@@ -10,11 +10,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Minus } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { PriceHistoryLoadingAnimation, VolumeChartCanvas, WheelPrice, tooltipLabel } from "@/components/PriceChart";
 import { StockLogo } from "@/components/StockLogo";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { formatPercent } from "@/lib/format";
 import { SECTOR_ETFS } from "@/lib/etfs";
 import type { CandlePoint, ChartPeriod } from "@/types/stock";
@@ -254,7 +254,7 @@ export function ComparisonPriceChart({
                     sizeClassName="h-14 w-14"
                     shape="circle"
                   />
-                  <Minus className="absolute inset-0 m-auto h-5 w-5 text-white opacity-0 transition-opacity group-hover:opacity-100" strokeWidth={3} />
+                  <OptionalSvgIcon name="close" className="absolute inset-0 m-auto h-5 w-5 opacity-0 transition-opacity group-hover:opacity-100" colorClassName="text-black" />
                 </button>
                 <p className={`min-w-0 truncate text-4xl font-semibold tracking-normal sm:text-5xl ${identityColor === COMPARISON_COLORS.primary ? "text-purple-400" : "text-orange-400"}`}>{name}</p>
               </div>

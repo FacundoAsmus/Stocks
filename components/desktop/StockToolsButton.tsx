@@ -128,11 +128,11 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
           <button
             type="button"
             onClick={startCompareSearch}
-            className="flex h-9 w-full items-center justify-center bg-transparent transition-opacity hover:opacity-100"
+            className="flex h-9 w-full items-center justify-center bg-transparent opacity-35 transition-opacity hover:opacity-100"
             aria-label={`Compare ${symbol} with another stock`}
             title="Compare stock"
           >
-            <OptionalSvgIcon name="compare" className="h-5 w-5" color="#ff9f2e" />
+            <OptionalSvgIcon name="compare" className="h-5 w-5" />
           </button>
           {MA_OPTIONS.map(({ window, color, iconName }) => {
             const active = activeMAs.includes(window);
@@ -186,7 +186,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
             aria-label="Erase all chart drawings"
             title="Erase drawings"
           >
-            <OptionalSvgIcon name="tools-erase" className="h-5 w-5" />
+            <OptionalSvgIcon name="tools-erase" className="h-5 w-5" color="#ff3003" />
           </button>
         </div>
       </div>
