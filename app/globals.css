@@ -345,6 +345,12 @@ html.light-mode .search-input-glass:focus {
   box-shadow: 0 0 0 1px rgba(173, 250, 27, 0.7), 0 0 16px rgba(120, 190, 18, 0.52) !important;
 }
 
+.search-input-glass.search-input-compare-mode,
+.search-input-glass.search-input-compare-mode:focus {
+  border-color: #ff9f2e !important;
+  box-shadow: 0 0 0 1px rgba(255, 159, 46, 0.68), 0 0 16px rgba(255, 159, 46, 0.48) !important;
+}
+
 .stock-chart-hover-dot[fill="#00c805"] {
   filter: drop-shadow(0 0 7px rgba(0, 200, 5, 0.85));
 }

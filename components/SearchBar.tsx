@@ -7,7 +7,6 @@ import { Search } from "lucide-react";
 
 import { SECTOR_ETFS } from "@/lib/etfs";
 import { MarketIcon } from "@/components/MarketIcon";
-import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 const RECENT_KEY = "market-lens-recent-searches";
 const MAX_RECENT = 6;
@@ -71,6 +70,8 @@ export function SearchBar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [logos, setLogos] = useState<Record<string, string>>({});
+  const [compareModeSymbol, setCompareModeSymbol] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -129,10 +130,31 @@ export function SearchBar() {
   useEffect(() => {
     function handleClick(event: MouseEvent) {
       const target = event.target as Node;
-      if (!wrapperRef.current?.contains(target) && !dropdownRef.current?.contains(target)) setIsOpen(false);
+      if (!wrapperRef.current?.contains(target) && !dropdownRef.current?.contains(target)) {
+        setIsOpen(false);
+        if (compareModeSymbol) {
+          setCompareModeSymbol(null);
+          setQuery("");
+          setResults([]);
+        }
+      }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
+  }, [compareModeSymbol]);
+
+  useEffect(() => {
+    function startCompareSearch(event: Event) {
+      const symbol = (event as CustomEvent<string>).detail?.trim().toUpperCase();
+      if (!symbol) return;
+      setCompareModeSymbol(symbol);
+      setQuery("");
+      setResults([]);
+      setIsOpen(false);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+    window.addEventListener("watchlist-compare-search-start", startCompareSearch);
+    return () => window.removeEventListener("watchlist-compare-search-start", startCompareSearch);
   }, []);
 
   useEffect(() => {
@@ -180,23 +202,36 @@ export function SearchBar() {
     router.push(`/stock/${encodeURIComponent(cleanSymbol)}`);
   }
 
+  function selectResult(symbol: string) {
+    const cleanSymbol = symbol.trim().toUpperCase();
+    if (!cleanSymbol) return;
+    if (compareModeSymbol) {
+      addRecentSearch(cleanSymbol);
+      setCompareModeSymbol(null);
+      setQuery("");
+      setIsOpen(false);
+      window.dispatchEvent(new CustomEvent("watchlist-compare-symbol", { detail: cleanSymbol }));
+      return;
+    }
+    navigateToSymbol(cleanSymbol);
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
-  event.preventDefault();
-  const cleanQuery = query.trim().toUpperCase();
-  if (!cleanQuery) return;
-  if (!results.length) return; // ← add this
-  const looksLikeTicker = /^[A-Z.^-]{1,12}$/.test(cleanQuery);
-  navigateToSymbol(looksLikeTicker ? cleanQuery : results[0]?.symbol ?? cleanQuery);
+    event.preventDefault();
+    const cleanQuery = query.trim().toUpperCase();
+    if (!cleanQuery || !results.length) return;
+    const looksLikeTicker = /^[A-Z.^-]{1,12}$/.test(cleanQuery);
+    selectResult(looksLikeTicker ? cleanQuery : results[0]?.symbol ?? cleanQuery);
   }
 
   function handleFocus() {
     const recent = getRecentSearches();
     setRecentSearches(recent);
-    setIsOpen(true);
-    fetchLogosFor(recent);
+    setIsOpen(!compareModeSymbol);
+    if (!compareModeSymbol) fetchLogosFor(recent);
   }
 
-  const showRecent = isOpen && !query.trim() && recentSearches.length > 0;
+  const showRecent = isOpen && !compareModeSymbol && !query.trim() && recentSearches.length > 0;
   const showResults = isOpen && query.trim() && results.length > 0;
   const dropdownStyle = dropdownPosition ? {
     position: "fixed" as const,
@@ -211,14 +246,15 @@ export function SearchBar() {
     <>
     <div ref={wrapperRef} className="relative w-full lg:max-w-xl">
       <form onSubmit={handleSubmit} className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-accent" />
+        <Search className={`pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 ${compareModeSymbol ? "text-[#ff9f2e]" : "text-accent"}`} />
         <input
+          ref={inputRef}
           aria-label="Search stocks"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           onFocus={handleFocus}
-          placeholder="Search stocks"
-          className="search-input-glass desktop-alert-glass smoked-glass-surface h-11 w-full rounded-full border border-white/15 bg-transparent px-10 text-sm text-text-primary outline-none transition placeholder:text-text-muted"
+          placeholder={compareModeSymbol ? `Compare ${compareModeSymbol} with` : "Search stocks"}
+          className={`search-input-glass desktop-alert-glass smoked-glass-surface h-11 w-full rounded-full border border-white/15 bg-transparent px-10 text-sm text-text-primary outline-none transition ${compareModeSymbol ? "search-input-compare-mode placeholder:text-[#ff9f2e]" : "placeholder:text-text-muted"}`}
         />
         {isLoading ? (
           <span className="absolute right-3 top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-accent" />
@@ -234,30 +270,12 @@ export function SearchBar() {
             <div key={symbol} className="flex w-full items-center gap-2 border-t border-border-subtle/40 px-4 py-2">
               <button
                 type="button"
-                onClick={() => navigateToSymbol(symbol)}
+                onClick={() => selectResult(symbol)}
                 className="flex min-w-0 flex-1 items-center gap-3 py-1 text-left text-sm transition hover:bg-white/5"
               >
                 <ResultIcon symbol={symbol} logo={logos[symbol]} />
                 <span className="truncate font-semibold text-text-primary">{symbol}</span>
               </button>
-              {pathname === "/watchlist" && (
-                <button
-                  type="button"
-                  aria-label={`Compare ${symbol} with the selected stock`}
-                  title="Compare with selected stock"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    const cleanSymbol = symbol.trim().toUpperCase();
-                    addRecentSearch(cleanSymbol);
-                    setQuery("");
-                    setIsOpen(false);
-                    window.dispatchEvent(new CustomEvent("watchlist-compare-symbol", { detail: cleanSymbol }));
-                  }}
-                  className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 text-accent transition hover:-translate-y-0.5 hover:bg-accent/10 lg:inline-flex"
-                >
-                  <OptionalSvgIcon name="compare" className="h-5 w-5" />
-                </button>
-              )}
             </div>
           ))}
         </div>
@@ -270,7 +288,7 @@ export function SearchBar() {
             >
               <button
                 type="button"
-                onClick={() => navigateToSymbol(result.symbol)}
+                onClick={() => selectResult(result.symbol)}
                 className="flex min-w-0 flex-1 items-center gap-3 py-1 text-left text-sm transition hover:bg-white/5"
               >
                 <ResultIcon symbol={result.symbol} logo={logos[result.symbol]} />
@@ -281,24 +299,6 @@ export function SearchBar() {
                   <span className="block truncate text-text-muted">{result.description}</span>
                 </span>
               </button>
-              {pathname === "/watchlist" && (
-                <button
-                  type="button"
-                  aria-label={`Compare ${result.displaySymbol ?? result.symbol} with the selected stock`}
-                  title="Compare with selected stock"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    const cleanSymbol = result.symbol.trim().toUpperCase();
-                    addRecentSearch(cleanSymbol);
-                    setQuery("");
-                    setIsOpen(false);
-                    window.dispatchEvent(new CustomEvent("watchlist-compare-symbol", { detail: cleanSymbol }));
-                  }}
-                  className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 text-accent transition hover:-translate-y-0.5 hover:bg-accent/10 lg:inline-flex"
-                >
-                  <OptionalSvgIcon name="compare" className="h-5 w-5" />
-                </button>
-              )}
             </div>
           ))}
         </div>

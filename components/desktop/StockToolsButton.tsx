@@ -68,6 +68,11 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
     setOpen(false);
   }
 
+  function startCompareSearch() {
+    setOpen(false);
+    window.dispatchEvent(new CustomEvent("watchlist-compare-search-start", { detail: symbol }));
+  }
+
   function toggleLineMode() {
     const nextActive = !lineModeActive;
     setLineModeActive(nextActive);
@@ -120,6 +125,15 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
           <OptionalSvgIcon name="tools" className="stock-tools-icon h-6 w-6" />
         </button>
         <div className={cn("flex flex-col items-center gap-2 pt-2 transition-opacity duration-200", open ? "opacity-100" : "pointer-events-none opacity-0")}>
+          <button
+            type="button"
+            onClick={startCompareSearch}
+            className="flex h-9 w-full items-center justify-center bg-transparent transition-opacity hover:opacity-100"
+            aria-label={`Compare ${symbol} with another stock`}
+            title="Compare stock"
+          >
+            <OptionalSvgIcon name="compare" className="h-5 w-5" color="#ff9f2e" />
+          </button>
           {MA_OPTIONS.map(({ window, color, iconName }) => {
             const active = activeMAs.includes(window);
             const available = availableMAs.includes(window);
