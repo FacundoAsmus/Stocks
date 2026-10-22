@@ -19,6 +19,8 @@ import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { StockPriceAlertButton } from "@/components/StockPriceAlertButton";
+import { MobileCompareSearch } from "@/components/mobile/MobileCompareSearch";
+import { StockComparisonView, type ComparisonDetailPayload } from "@/components/desktop/StockComparisonView";
 import { cn } from "@/lib/utils";
 import { isUsEquityMarketOpen } from "@/lib/usMarketHours";
 import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
@@ -40,6 +42,11 @@ export function MobileStockPage(props: MobileStockPageProps) {
   const pageRef = useRef<HTMLDivElement>(null);
   const [fromSearch,       setFromSearch]       = useState(false);
   const [searchOrigin,     setSearchOrigin]     = useState<string>("/");
+  const [compareSearchOpen, setCompareSearchOpen] = useState(false);
+  const [comparisonSymbol, setComparisonSymbol] = useState<string | null>(null);
+  const [comparisonDetail, setComparisonDetail] = useState<ComparisonDetailPayload | null>(null);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
   // ETFs don't file earnings reports the way individual companies do, so an
   // earnings calendar doesn't apply to them.
   const isEtf = SECTOR_ETFS.some(e => e.symbol === stock.symbol);
@@ -72,6 +79,29 @@ export function MobileStockPage(props: MobileStockPageProps) {
   useEffect(() => {
     setLiveData({ stock: props.stock, currentPrice: props.currentPrice, sentiment: props.sentiment, metrics: props.metrics });
   }, [props.stock, props.currentPrice, props.sentiment, props.metrics]);
+
+  useEffect(() => {
+    if (!comparisonSymbol || comparisonSymbol.toUpperCase() === stock.symbol.toUpperCase()) return;
+    const controller = new AbortController();
+    setComparisonLoading(true);
+    setComparisonError(null);
+    setComparisonDetail(null);
+    fetch(`/api/stock-detail?symbol=${encodeURIComponent(comparisonSymbol)}&refresh=1`, { signal: controller.signal, cache: "no-store" })
+      .then(async (response) => {
+        const payload = await response.json() as ComparisonDetailPayload & { error?: string };
+        if (!response.ok) throw new Error(payload.error ?? `Unable to load ${comparisonSymbol}.`);
+        if (!controller.signal.aborted) setComparisonDetail(payload);
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) setComparisonError(error instanceof Error ? error.message : `Unable to load ${comparisonSymbol}.`);
+      })
+      .finally(() => { if (!controller.signal.aborted) setComparisonLoading(false); });
+    return () => controller.abort();
+  }, [comparisonSymbol, stock.symbol]);
+
+  useEffect(() => {
+    if (comparisonSymbol) window.scrollTo(0, 0);
+  }, [comparisonSymbol]);
 
   useEffect(() => {
     let inFlight = false;
@@ -117,6 +147,20 @@ export function MobileStockPage(props: MobileStockPageProps) {
         currentPrice={currentPrice}
         sentiment={sentiment}
         metrics={metrics}
+        comparisonStock={comparisonDetail ?? undefined}
+        hideTrigger={compareSearchOpen}
+      />
+      <MobileCompareSearch
+        primarySymbol={stock.symbol}
+        open={compareSearchOpen}
+        onOpenChange={setCompareSearchOpen}
+        onSelect={(symbol) => {
+          if (symbol.toUpperCase() === stock.symbol.toUpperCase()) return;
+          setComparisonLoading(true);
+          setComparisonError(null);
+          setComparisonSymbol(symbol);
+          setComparisonDetail(null);
+        }}
       />
 
       <div
@@ -139,7 +183,13 @@ export function MobileStockPage(props: MobileStockPageProps) {
         <span className="invisible flex items-center justify-center h-[2.45rem] w-[2.45rem] rounded-full" aria-hidden>
           <OptionalSvgIcon name="back" className="h-5 w-5" />
         </span>
-        <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} mobile mobileHeader />
+        <div className="ml-auto flex items-center gap-1">
+          <button type="button" aria-label={`Compare ${stock.symbol} with another stock`} title="Compare stocks" onClick={() => setCompareSearchOpen(true)}
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#f97316] transition hover:bg-white/5">
+            <OptionalSvgIcon name="compare" className="h-6 w-6" color="#f97316" />
+          </button>
+          <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} mobile mobileHeader />
+        </div>
       </div>
 
       {/* The real, clickable Back button — portaled straight onto
@@ -166,7 +216,32 @@ export function MobileStockPage(props: MobileStockPageProps) {
       )}
 
       <div ref={pageRef} className="pb-36" style={{ opacity: 1 }} data-stock-page="">
-
+        {comparisonSymbol ? (
+          comparisonLoading ? (
+            <div className="flex min-h-[60vh] items-center justify-center px-6 text-center text-sm text-text-muted">Loading {stock.symbol} and {comparisonSymbol} comparison…</div>
+          ) : comparisonError ? (
+            <div className="px-5 py-12 text-center">
+              <p className="text-sm text-text-muted">Unable to compare {comparisonSymbol}: {comparisonError}</p>
+              <button type="button" className="mt-4 text-sm text-accent underline" onClick={() => { setComparisonSymbol(null); setComparisonDetail(null); }}>
+                Return to {stock.symbol}
+              </button>
+            </div>
+          ) : comparisonDetail ? (
+            <StockComparisonView
+              primary={{ stock, currentPrice, sentiment, metrics }}
+              secondary={comparisonDetail}
+              mobile
+              onRemovePrimary={() => {
+                const next = comparisonDetail;
+                setLiveData(next);
+                setComparisonSymbol(null);
+                setComparisonDetail(null);
+                router.push(`/stock/${next.stock.symbol}`);
+              }}
+              onRemoveSecondary={() => { setComparisonSymbol(null); setComparisonDetail(null); }}
+            />
+          ) : null
+        ) : <>
         <div className="flex items-center gap-3 px-4 pt-5 pb-3">
           {!isEtf && stock.profile.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -239,6 +314,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
 
           <CompanyDescription symbol={stock.symbol} className="px-3" />
         </div>
+        </>}
       </div>
     </>
   );

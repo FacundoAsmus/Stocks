@@ -33,6 +33,8 @@ export type ComparisonRow = {
 };
 
 const PERIODS: ChartPeriod[] = ["1D", "1W", "1M", "2M", "3M", "5M", "6M", "1Y", "2Y", "5Y", "ALL"];
+const SHORT_PERIODS: ChartPeriod[] = ["1D", "1W", "1M", "2M", "3M", "5M", "6M"];
+const LONG_PERIODS: ChartPeriod[] = ["1Y", "2Y", "5Y", "ALL"];
 
 function timestamp(point: CandlePoint) {
   if (Number.isFinite(point.time) && point.time > 0) return point.time;
@@ -114,6 +116,7 @@ export function ComparisonPriceChart({
   secondaryLogo,
   onRemovePrimary,
   onRemoveSecondary,
+  mobile = false,
 }: {
   primarySymbol: string;
   secondarySymbol: string;
@@ -123,6 +126,7 @@ export function ComparisonPriceChart({
   secondaryLogo?: string;
   onRemovePrimary: () => void;
   onRemoveSecondary: () => void;
+  mobile?: boolean;
 }) {
   const [period, setPeriod] = useState<ChartPeriod>("1M");
   const [primaryCandles, setPrimaryCandles] = useState<CandlePoint[]>([]);
@@ -246,17 +250,17 @@ export function ComparisonPriceChart({
           [primaryName, primarySymbol, COMPARISON_COLORS.primary, onRemovePrimary],
           [secondaryName, secondarySymbol, COMPARISON_COLORS.secondary, onRemoveSecondary],
         ] as const).map(([name, symbol, identityColor, remove]) => (
-              <div key={symbol} className="flex items-center gap-3">
+              <div key={symbol} className="flex min-w-0 items-center gap-3">
                 <button type="button" aria-label={`Show ${name} alone`} title={`Show ${name} alone`} onClick={remove}
-                  className="group relative h-14 w-14 shrink-0 overflow-hidden rounded-full transition hover:scale-110 hover:brightness-75">
+                  className={`group relative shrink-0 overflow-hidden rounded-full transition hover:scale-110 hover:brightness-75 ${mobile ? "h-10 w-10" : "h-14 w-14"}`}>
                   <StockLogo
                     logo={SECTOR_ETFS.some((entry) => entry.symbol === symbol) ? undefined : (symbol === primarySymbol ? primaryLogo : secondaryLogo)}
-                    sizeClassName="h-14 w-14"
+                    sizeClassName={mobile ? "h-10 w-10" : "h-14 w-14"}
                     shape="circle"
                   />
-                  <OptionalSvgIcon name="close" className="absolute inset-0 m-auto h-5 w-5 opacity-0 transition-opacity group-hover:opacity-100" colorClassName="text-black" />
+                  <OptionalSvgIcon name="close" className={`absolute inset-0 m-auto opacity-0 transition-opacity group-hover:opacity-100 ${mobile ? "h-4 w-4" : "h-5 w-5"}`} colorClassName="text-black" />
                 </button>
-                <p className={`min-w-0 truncate text-4xl font-semibold tracking-normal sm:text-5xl ${identityColor === COMPARISON_COLORS.primary ? "text-purple-400" : "text-orange-400"}`}>{name}</p>
+                <p className={`min-w-0 truncate font-semibold tracking-normal ${mobile ? "text-xl" : "text-4xl sm:text-5xl"} ${identityColor === COMPARISON_COLORS.primary ? "text-purple-400" : "text-orange-400"}`}>{name}</p>
               </div>
         ))}
         {!latest && !loading && <p className="text-sm text-text-muted">{error ?? "These stocks have no overlapping price history for this period."}</p>}
@@ -286,7 +290,7 @@ export function ComparisonPriceChart({
       {!loading && latest && <p className="mb-3 text-sm text-text-muted">{tooltipLabel(latest.date, period)}</p>}
 
       <style>{`@keyframes comparison-chart-reveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }`}</style>
-      <div ref={chartRevealRef} className="relative h-[384px] w-full">
+      <div ref={chartRevealRef} className={`relative w-full ${mobile ? "h-[260px]" : "h-[384px]"}`}>
         {loading ? (
           <PriceHistoryLoadingAnimation />
         ) : rows.length ? (
@@ -334,7 +338,14 @@ export function ComparisonPriceChart({
       )}
 
       <div className="mt-3 flex justify-center">
-        <div className="chart-period-selector-glass chart-period-selector-desktop relative hidden flex-nowrap items-center justify-center gap-1 rounded-full border p-1 lg:flex">
+        {mobile && <div className="chart-period-selector-glass chart-period-selector-phone relative flex flex-col items-center gap-1.5 rounded-3xl border p-1.5">
+          <span className="chart-period-indicator" aria-hidden="true" style={{ transform: `translate(${(SHORT_PERIODS.includes(period) ? SHORT_PERIODS.indexOf(period) : LONG_PERIODS.indexOf(period)) * 40}px, ${SHORT_PERIODS.includes(period) ? 0 : 42}px)` }} />
+          {[SHORT_PERIODS, LONG_PERIODS].map((options) => <div key={options[0]} className="flex flex-nowrap items-center justify-center gap-1 whitespace-nowrap">
+            {options.map((option) => <button key={option} type="button" onClick={() => setPeriod(option)}
+              className={`chart-period-option relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold transition ${period === option ? "text-black" : "text-accent"}`}>{option}</button>)}
+          </div>)}
+        </div>}
+        {!mobile && <div className="chart-period-selector-glass chart-period-selector-desktop relative hidden flex-nowrap items-center justify-center gap-1 rounded-full border p-1 lg:flex">
           <span className="chart-period-indicator" aria-hidden="true" style={{ transform: `translate(${PERIODS.indexOf(period) * 40}px, 0)` }} />
           {PERIODS.map((option, index) => (
             <button key={option} type="button" onClick={() => setPeriod(option)}
@@ -343,7 +354,7 @@ export function ComparisonPriceChart({
               onMouseLeave={(event) => { const buttons = Array.from(event.currentTarget.parentElement?.querySelectorAll("button") ?? []); buttons.forEach((button) => { button.style.transform = "scale(1)"; }); }}
             >{option}</button>
           ))}
-        </div>
+        </div>}
       </div>
     </div>
   );

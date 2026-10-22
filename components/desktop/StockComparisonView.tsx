@@ -170,13 +170,13 @@ function fundamentalRows(detail: ComparisonDetailPayload) {
   ] as Array<[string, string]>;
 }
 
-function ComparisonIndicators({ primary, secondary }: { primary: ComparisonDetailPayload; secondary: ComparisonDetailPayload }) {
+function ComparisonIndicators({ primary, secondary, mobile }: { primary: ComparisonDetailPayload; secondary: ComparisonDetailPayload; mobile: boolean }) {
   const aItems = fundamentalRows(primary);
   const bItems = fundamentalRows(secondary);
   return (
     <section>
       <p className="mb-3 inline-flex items-center gap-2 px-1 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="indicators" className="h-6 w-6" />Indicators</p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className={`grid gap-2 ${mobile ? "grid-cols-1" : "grid-cols-2"}`}>
         {aItems.map(([label, value], index) => (
           <div key={label} className="min-w-0 rounded-md bg-black p-4">
             <div className="mb-2 flex items-center gap-1.5"><span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: COMPARISON_COLORS.primary }} /><p className="truncate text-xs uppercase tracking-[0.12em] text-text-muted">{label}</p></div>
@@ -192,7 +192,7 @@ function ComparisonIndicators({ primary, secondary }: { primary: ComparisonDetai
   );
 }
 
-function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySymbol: string; secondarySymbol: string }) {
+function FilingComparisonCharts({ primarySymbol, secondarySymbol, mobile }: { primarySymbol: string; secondarySymbol: string; mobile: boolean }) {
   const [a, setA] = useState<FilingIndicator[]>([]);
   const [b, setB] = useState<FilingIndicator[]>([]);
   const [hoveredBar, setHoveredBar] = useState<{ key: FilingKey; series: "a" | "b"; value: number } | null>(null);
@@ -228,7 +228,7 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
   const specs: Array<[string, FilingKey, string]> = [["CapEx", "capex", "capex"], ["R&D", "researchAndDevelopment", "r-and-d"], ["Free cash flow", "freeCashFlow", "free-cash-flow"]];
   if (!years.length) return null;
   return (
-    <section ref={sectionRef} className="rounded-xl bg-black p-5">
+    <section ref={sectionRef} className={`rounded-xl bg-black ${mobile ? "p-4" : "p-5"}`}>
       <div className="space-y-8">
         {specs.map(([title, key, iconName]) => {
           const aValues = years.map((year) => a.find((item) => item.year === year)?.[key] ?? null);
@@ -253,7 +253,7 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol }: { primarySym
               <div className="mb-5 text-text-primary">
                 <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact colorClass={displayedColor} />
               </div>
-              <div className="relative h-64 border-y border-border-subtle">
+              <div className={`relative border-y border-border-subtle ${mobile ? "h-48 sm:h-64" : "h-64"}`}>
                 <div className="absolute inset-x-0 border-t border-border-subtle" style={hasNegative ? { top: `${baseline}%` } : { bottom: `${baseline}%` }} />
                 <div className="flex h-full">
                   {years.map((year, index) => {
@@ -304,15 +304,17 @@ export function StockComparisonView({
   secondary,
   onRemovePrimary,
   onRemoveSecondary,
+  mobile = false,
 }: {
   primary: ComparisonDetailPayload;
   secondary: ComparisonDetailPayload;
   onRemovePrimary: () => void;
   onRemoveSecondary: () => void;
+  mobile?: boolean;
 }) {
   return (
-    <div className="relative space-y-6 px-6 pb-8 pt-3">
-      <section className="relative p-5">
+    <div className={`relative space-y-6 pb-8 pt-3 ${mobile ? "px-3" : "px-6"}`}>
+      <section className={`relative ${mobile ? "p-1" : "p-5"}`}>
         <ComparisonPriceChart
           primarySymbol={primary.stock.symbol}
           secondarySymbol={secondary.stock.symbol}
@@ -322,12 +324,13 @@ export function StockComparisonView({
           secondaryLogo={secondary.stock.profile.logo}
           onRemovePrimary={onRemovePrimary}
           onRemoveSecondary={onRemoveSecondary}
+          mobile={mobile}
         />
       </section>
       <ComparisonMarketSentiment scores={[primary.sentiment.score, secondary.sentiment.score]} />
       <ComparisonAnalysts primary={primary.stock} secondary={secondary.stock} />
-      <ComparisonIndicators primary={primary} secondary={secondary} />
-      <FilingComparisonCharts primarySymbol={primary.stock.symbol} secondarySymbol={secondary.stock.symbol} />
+      <ComparisonIndicators primary={primary} secondary={secondary} mobile={mobile} />
+      <FilingComparisonCharts primarySymbol={primary.stock.symbol} secondarySymbol={secondary.stock.symbol} mobile={mobile} />
     </div>
   );
 }
