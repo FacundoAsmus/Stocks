@@ -49,6 +49,21 @@ const MAX_VOLUME_BARS = 240;
 
 type VolumeBucket = { volume: number; isUp: boolean };
 type SquareRect = { left: number; top: number; width: number; height: number };
+type RectangleTrend = "up" | "down";
+
+function getDrawingAreaStyle(trend: RectangleTrend, stroke: string) {
+  const horizontalDashes = `repeating-linear-gradient(90deg, ${stroke} 0 14px, transparent 14px 24px)`;
+  const verticalDashes = `repeating-linear-gradient(180deg, ${stroke} 0 14px, transparent 14px 24px)`;
+  return {
+    border: "none",
+    borderRadius: "24px",
+    backgroundColor: trend === "up" ? "rgba(0,200,5,0.10)" : "rgba(255,48,3,0.10)",
+    backgroundImage: `${horizontalDashes}, ${horizontalDashes}, ${verticalDashes}, ${verticalDashes}`,
+    backgroundPosition: "top left, bottom left, top left, top right",
+    backgroundSize: "100% 3px, 100% 3px, 3px 100%, 3px 100%",
+    backgroundRepeat: "repeat-x, repeat-x, repeat-y, repeat-y",
+  };
+}
 
 function getDrawingRect(anchor: { x: number; y: number }, point: { x: number; y: number }): SquareRect {
   return {
@@ -666,6 +681,9 @@ export function PriceChart({
   const [useCandlesticks, setUseCandlesticks] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("chart-style") === "candles" : false
   );
+  const [candleViewRange, setCandleViewRange] = useState<{ start: number; end: number } | null>(null);
+  const [candlePanning, setCandlePanning] = useState(false);
+  const candlePanRef = useRef<{ pointerId: number; startX: number; startIndex: number; endIndex: number } | null>(null);
   const [showPriceAlertLines, setShowPriceAlertLines] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-alert-lines") === "1" : false
   );
@@ -683,6 +701,7 @@ export function PriceChart({
     }
     function syncChartStyle() {
       setUseCandlesticks(localStorage.getItem("chart-style") === "candles");
+      setCandleViewRange(null);
     }
     function syncVolumeBarColors() {
       setColorVolumeBars(localStorage.getItem("pro-volume-color-bars") === "1");
@@ -764,6 +783,7 @@ export function PriceChart({
     async function load() {
       setIsLoading(true);
       setError(null);
+      setCandleViewRange(null);
       setHoverPrice(null);
       setHoverDate(null);
       setPriceVisible(false);
@@ -859,12 +879,19 @@ export function PriceChart({
 
   const hasData    = data.length > 1;
   const hasVolume  = data.some((point) => typeof point.volume === "number" && point.volume > 0);
-  const volumeBuckets = useMemo(() => buildVolumeBuckets(data), [data]);
+  const visibleRange = useMemo(() => {
+    if (!useCandlesticks || !data.length || !candleViewRange) return { start: 0, end: data.length };
+    const start = Math.max(0, Math.min(data.length - 1, candleViewRange.start));
+    const end = Math.max(start + 1, Math.min(data.length, candleViewRange.end));
+    return { start, end };
+  }, [candleViewRange, data.length, useCandlesticks]);
+  const visibleData = useMemo(() => data.slice(visibleRange.start, visibleRange.end), [data, visibleRange]);
+  const volumeBuckets = useMemo(() => buildVolumeBuckets(visibleData), [visibleData]);
   const isLongTerm = LONG_TERM_SET.has(period);
   // Keep the price graph's vertical scale independent from indicators. An MA
   // can leave this range, but it must never compress or stretch stock prices.
   const priceYDomain = useMemo<[number, number]>(() => {
-    const prices = data.flatMap((point) => useCandlesticks
+    const prices = visibleData.flatMap((point) => useCandlesticks
       ? [point.low ?? point.close, point.high ?? point.close]
       : [point.close]
     ).filter(Number.isFinite);
@@ -874,7 +901,7 @@ export function PriceChart({
     if (low !== high) return [low, high];
     const padding = Math.max(Math.abs(low) * 0.01, 1);
     return [low - padding, high + padding];
-  }, [data, useCandlesticks]);
+  }, [visibleData, useCandlesticks]);
 
   // Merge in MA fields for whichever windows are both available for this
   // period and currently toggled on. Only computed when needed.
@@ -899,6 +926,10 @@ export function PriceChart({
       ma99: maValuesByTime.get(d.time)?.ma99 ?? undefined,
     }));
   }, [data, maHistory, renderedMAs]);
+  const visibleChartData = useMemo(
+    () => chartData.slice(visibleRange.start, visibleRange.end),
+    [chartData, visibleRange]
+  );
 
   /* Displayed price and % change — hover overrides live values */
   const displayPrice = hoverPrice ?? currentPrice;
@@ -932,7 +963,7 @@ export function PriceChart({
   const volumeCrosshairRef = useRef<HTMLDivElement>(null);
   const [linePlacementActive, setLinePlacementActive] = useState(false);
   const [squarePlacementActive, setSquarePlacementActive] = useState(false);
-  const [manualSquares, setManualSquares] = useState<Array<{ id: number; x: number; y: number; width: number; height: number }>>([]);
+  const [manualSquares, setManualSquares] = useState<Array<{ id: number; x: number; y: number; width: number; height: number; trend: RectangleTrend }>>([]);
   const [selectedManualSquareId, setSelectedManualSquareId] = useState<number | null>(null);
   const squareStartRef = useRef<{ x: number; y: number } | null>(null);
   const squarePreviewRef = useRef<HTMLDivElement>(null);
@@ -1130,6 +1161,7 @@ export function PriceChart({
     preview.style.top = `${rect.top}px`;
     preview.style.width = `${rect.width}px`;
     preview.style.height = `${rect.height}px`;
+    Object.assign(preview.style, getDrawingAreaStyle(point.y <= anchor.y ? "up" : "down", "#858585"));
   }, []);
 
   useEffect(() => {
@@ -1244,9 +1276,55 @@ export function PriceChart({
       {/* ── Chart area ────────────────────────────────────────────────── */}
       <div
         ref={chartRef}
-        className={cn(heightClassName, "relative", isPositive ? "stock-chart-positive" : "stock-chart-negative")}
+        className={cn(heightClassName, "relative", isPositive ? "stock-chart-positive" : "stock-chart-negative", useCandlesticks && (candlePanning ? "cursor-grabbing" : "cursor-grab"))}
         style={{ touchAction: "none" }}
+        onWheel={(event) => {
+          if (!useCandlesticks || data.length < 2 || event.deltaY === 0 || linePlacementActive || squarePlacementActive) return;
+          event.preventDefault();
+          const count = visibleRange.end - visibleRange.start;
+          const minimumCount = Math.min(8, data.length);
+          const nextCount = Math.max(minimumCount, Math.min(data.length, Math.round(count * (event.deltaY < 0 ? 0.8 : 1.25))));
+          if (nextCount === count) return;
+          if (nextCount >= data.length) {
+            setCandleViewRange(null);
+            return;
+          }
+          const bounds = event.currentTarget.getBoundingClientRect();
+          const pointerRatio = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+          const focusIndex = visibleRange.start + pointerRatio * Math.max(0, count - 1);
+          const start = Math.max(0, Math.min(data.length - nextCount, Math.round(focusIndex - pointerRatio * (nextCount - 1))));
+          setCandleViewRange({ start, end: start + nextCount });
+        }}
+        onPointerDown={(event) => {
+          if (!useCandlesticks || event.pointerType !== "mouse" || event.button !== 0 || data.length < 2 || linePlacementActive || squarePlacementActive) return;
+          event.preventDefault();
+          event.currentTarget.setPointerCapture(event.pointerId);
+          candlePanRef.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startIndex: visibleRange.start,
+            endIndex: visibleRange.end,
+          };
+          setCandlePanning(true);
+        }}
+        onPointerMove={(event) => {
+          const pan = candlePanRef.current;
+          if (!useCandlesticks || !pan || pan.pointerId !== event.pointerId) return;
+          const bounds = event.currentTarget.getBoundingClientRect();
+          const count = pan.endIndex - pan.startIndex;
+          const offset = Math.round(((pan.startX - event.clientX) / Math.max(1, bounds.width)) * count);
+          const start = Math.max(0, Math.min(data.length - count, pan.startIndex + offset));
+          setCandleViewRange({ start, end: start + count });
+        }}
+        onPointerUp={(event) => {
+          if (candlePanRef.current?.pointerId !== event.pointerId) return;
+          candlePanRef.current = null;
+          setCandlePanning(false);
+        }}
+        onPointerCancel={() => { candlePanRef.current = null; setCandlePanning(false); }}
+        onLostPointerCapture={() => { candlePanRef.current = null; setCandlePanning(false); }}
         onMouseMove={(event) => {
+          if (candlePanRef.current) return;
           if (squarePlacementActive) {
             updateSquarePreview(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
             return;
@@ -1283,6 +1361,7 @@ export function PriceChart({
                 preview.style.top = `${point.y}px`;
                 preview.style.width = "0px";
                 preview.style.height = "0px";
+                Object.assign(preview.style, getDrawingAreaStyle("up", "#858585"));
               }
               return;
             }
@@ -1294,6 +1373,7 @@ export function PriceChart({
                 y: rect.top / bounds.height,
                 width: rect.width / bounds.width,
                 height: rect.height / bounds.height,
+                trend: point.y <= anchor.y ? "up" : "down",
               }]);
             }
             squareStartRef.current = null;
@@ -1341,7 +1421,7 @@ export function PriceChart({
           >
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
-              data={chartData}
+              data={visibleChartData}
               margin={{ left: 0, right: 0, top: 8, bottom: 0 }}
               onMouseMove={(state) => {
                 if (linePlacementActive || squarePlacementActive) return;
@@ -1475,8 +1555,11 @@ export function PriceChart({
                     setSelectedManualLineId(line.id);
                     setSelectedManualSquareId(null);
                   }}
-                  className="pointer-events-auto absolute inset-x-0 top-0 h-px min-w-0 cursor-crosshair border-0 border-t border-dashed bg-transparent p-0"
-                  style={{ borderColor: line.preview ? "#858585" : isSelected ? "#c4c4c4" : "#858585" }}
+                  className="pointer-events-auto absolute inset-x-0 top-0 h-[3px] min-w-0 cursor-crosshair border-0 bg-transparent p-0"
+                  style={{
+                    backgroundColor: "transparent",
+                    backgroundImage: `repeating-linear-gradient(90deg, ${line.preview ? "#858585" : isSelected ? "#c4c4c4" : "#858585"} 0 14px, transparent 14px 24px)`,
+                  }}
                 />
               </div>
             );
@@ -1494,15 +1577,13 @@ export function PriceChart({
                 setSelectedManualLineId(null);
                 setSelectedManualSquareId(square.id);
               }}
-              className="pointer-events-auto absolute z-10 m-0 cursor-pointer border border-dashed bg-transparent p-0"
+              className="pointer-events-auto absolute z-10 m-0 cursor-pointer p-0"
               style={{
                 left: `${square.x * 100}%`,
                 top: `${square.y * 100}%`,
                 width: `${square.width * 100}%`,
                 height: `${square.height * 100}%`,
-                borderColor: isSelected ? "#c4c4c4" : "#858585",
-                borderRadius: 24,
-                backgroundColor: "rgba(173,250,27,0.10)",
+                ...getDrawingAreaStyle(square.trend, isSelected ? "#c4c4c4" : "#858585"),
                 appearance: "none",
               }}
             />;
@@ -1510,8 +1591,8 @@ export function PriceChart({
           <div
             ref={squarePreviewRef}
             aria-hidden="true"
-            className="pointer-events-none absolute z-10 hidden border border-dashed border-[#858585]"
-            style={{ borderRadius: 24, backgroundColor: "rgba(173,250,27,0.10)" }}
+            className="pointer-events-none absolute z-10 hidden"
+            style={getDrawingAreaStyle("up", "#858585")}
           />
 
           {/* ── Pro mode desktop horizontal crosshair — follows the active dot ── */}

@@ -132,7 +132,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
             aria-label={`Compare ${symbol} with another stock`}
             title="Compare stock"
           >
-            <OptionalSvgIcon name="compare" className="h-5 w-5" />
+            <OptionalSvgIcon name="compare" className="h-5 w-5" color="#f97316" />
           </button>
           {MA_OPTIONS.map(({ window, color, iconName }) => {
             const active = activeMAs.includes(window);
