@@ -28,48 +28,53 @@ export function OptionalSvgIcon({
   const fileName = `${name}${selected ? "-selected" : ""}`;
   const src = `/icons/${fileName}.svg`;
   const baseSrc = `/icons/${name}.svg`;
+  const errorSrc = "/icons/icon-error.svg";
   const [loadedSources, setLoadedSources] = useState<string[]>([]);
   const [failedSources, setFailedSources] = useState<string[]>([]);
 
   useEffect(() => {
     let alive = true;
-    const probe = (source: string) => {
+    let fallbackRequested = false;
+    const probe = (source: string, isFallback = false) => {
       const image = new window.Image();
       image.onload = () => {
         if (alive) setLoadedSources((sources) => sources.includes(source) ? sources : [...sources, source]);
       };
       image.onerror = () => {
         if (alive) setFailedSources((sources) => sources.includes(source) ? sources : [...sources, source]);
+        if (alive && !isFallback && !fallbackRequested && name !== "icon-error") {
+          fallbackRequested = true;
+          probe(errorSrc, true);
+        }
       };
       image.src = source;
     };
     probe(src);
     if (selected && fallbackToBaseWhenSelected && src !== baseSrc) probe(baseSrc);
     return () => { alive = false; };
-  }, [baseSrc, fallbackToBaseWhenSelected, selected, src]);
+  }, [baseSrc, errorSrc, fallbackToBaseWhenSelected, name, selected, src]);
 
-  const visibleSrc = loadedSources.includes(src)
+  const loadedPrimary = loadedSources.includes(src)
     ? src
     : selected && fallbackToBaseWhenSelected && loadedSources.includes(baseSrc)
       ? baseSrc
       : null;
-  if (!visibleSrc) {
-    const candidatesFailed = failedSources.includes(src)
-      && (!selected || !fallbackToBaseWhenSelected || src === baseSrc || failedSources.includes(baseSrc));
-    if (name === "icon-error" || !candidatesFailed) return null;
-    return <OptionalSvgIcon name="icon-error" className={className} colorClassName="text-negative" />;
-  }
+  const missingPrimary = failedSources.includes(src)
+    && (!selected || !fallbackToBaseWhenSelected || src === baseSrc || failedSources.includes(baseSrc));
+  const usingErrorIcon = !loadedPrimary && missingPrimary && name !== "icon-error" && loadedSources.includes(errorSrc);
+  const visibleSrc = loadedPrimary ?? (usingErrorIcon || name === "icon-error" ? (loadedSources.includes(src) ? src : null) : null);
+
   return (
     <span
       aria-hidden="true"
-      className={cn("inline-block shrink-0", colorClassName, className)}
+      className={cn("inline-block shrink-0", usingErrorIcon || name === "icon-error" ? "text-negative" : colorClassName, className)}
       style={{
-        backgroundColor: color ?? "currentColor",
-        maskImage: `url("${visibleSrc}")`,
+        backgroundColor: usingErrorIcon || name === "icon-error" ? "currentColor" : color ?? "currentColor",
+        maskImage: visibleSrc ? `url("${visibleSrc}")` : undefined,
         maskPosition: "center",
         maskRepeat: "no-repeat",
         maskSize: "contain",
-        WebkitMaskImage: `url("${visibleSrc}")`,
+        WebkitMaskImage: visibleSrc ? `url("${visibleSrc}")` : undefined,
         WebkitMaskPosition: "center",
         WebkitMaskRepeat: "no-repeat",
         WebkitMaskSize: "contain",

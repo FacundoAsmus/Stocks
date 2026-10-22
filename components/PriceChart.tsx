@@ -48,6 +48,27 @@ const MA_COLORS: Record<number, string> = {
 const MAX_VOLUME_BARS = 240;
 
 type VolumeBucket = { volume: number; isUp: boolean };
+type SquareRect = { left: number; top: number; width: number; height: number };
+
+function getSquareRect(anchor: { x: number; y: number }, point: { x: number; y: number }, bounds: { width: number; height: number }): SquareRect {
+  const dx = point.x - anchor.x;
+  const dy = point.y - anchor.y;
+  const directionX = dx < 0 ? -1 : 1;
+  const directionY = dy < 0 ? -1 : 1;
+  const maxSide = Math.max(Math.abs(dx), Math.abs(dy));
+  const maxSideX = directionX > 0 ? bounds.width - anchor.x : anchor.x;
+  const maxSideY = directionY > 0 ? bounds.height - anchor.y : anchor.y;
+  const side = Math.min(maxSide, maxSideX, maxSideY);
+  const oppositeX = anchor.x + directionX * side;
+  const oppositeY = anchor.y + directionY * side;
+  return {
+    left: Math.min(anchor.x, oppositeX),
+    top: Math.min(anchor.y, oppositeY),
+    width: side,
+    height: side,
+  };
+}
+
 export type ComparisonVolumeBucket = { aVolume: number | null; bVolume: number | null };
 const EMPTY_VOLUME_BUCKETS: VolumeBucket[] = [];
 
@@ -920,19 +941,24 @@ export function PriceChart({
   const [touchOverlay, setTouchOverlay] = useState<{ xPct: number; yPct: number } | null>(null);
   const volumeCrosshairRef = useRef<HTMLDivElement>(null);
   const [linePlacementActive, setLinePlacementActive] = useState(false);
+  const [squarePlacementActive, setSquarePlacementActive] = useState(false);
+  const [manualSquares, setManualSquares] = useState<Array<{ id: number; x: number; y: number; width: number; height: number }>>([]);
+  const squareStartRef = useRef<{ x: number; y: number } | null>(null);
+  const squarePreviewRef = useRef<HTMLDivElement>(null);
+  const nextSquareId = useRef(1);
 
   // This is deliberately a direct DOM update: pointer movement should never
   // cause React to redraw a price chart or hundreds of volume bars.
   const positionVolumeCrosshair = useCallback((percentage: number | null) => {
     const line = volumeCrosshairRef.current;
     if (!line) return;
-    if (percentage === null || linePlacementActive) {
+    if (percentage === null || linePlacementActive || squarePlacementActive) {
       line.style.display = "none";
       return;
     }
     line.style.display = "block";
     line.style.left = `${Math.max(0, Math.min(100, percentage))}%`;
-  }, [linePlacementActive]);
+  }, [linePlacementActive, squarePlacementActive]);
   // Updated from the committed active-dot ref so pointer movement does not
   // schedule a React render for the horizontal crosshair.
   const proCrosshairRef = useRef<HTMLDivElement>(null);
@@ -943,13 +969,13 @@ export function PriceChart({
   const nextManualLineId = useRef(1);
 
   useEffect(() => {
-    if (!linePlacementActive) return;
+    if (!linePlacementActive && !squarePlacementActive) return;
     setHoverPrice(null);
     setHoverDate(null);
     setTouchOverlay(null);
     positionVolumeCrosshair(null);
     if (proCrosshairRef.current) proCrosshairRef.current.style.display = "none";
-  }, [linePlacementActive, positionVolumeCrosshair]);
+  }, [linePlacementActive, squarePlacementActive, positionVolumeCrosshair]);
 
   useEffect(() => {
     if (!hideMovingAverageControls) return;
@@ -958,32 +984,61 @@ export function PriceChart({
       if (detail?.symbol !== symbol) return;
       setLinePlacementActive(detail.active);
       setLineTypedValue(null);
+      setSquarePlacementActive(false);
+      squareStartRef.current = null;
+      if (squarePreviewRef.current) squarePreviewRef.current.style.display = "none";
       if (detail.active) setSelectedManualLineId(null);
       window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: detail.active } }));
     }
     window.addEventListener("watchlist-stock-line-mode", syncLineMode);
+    function syncSquareMode(event: Event) {
+      const detail = (event as CustomEvent<{ symbol: string; active: boolean }>).detail;
+      if (detail?.symbol !== symbol) return;
+      setSquarePlacementActive(detail.active);
+      setLinePlacementActive(false);
+      setLineTypedValue(null);
+      squareStartRef.current = null;
+      if (squarePreviewRef.current) squarePreviewRef.current.style.display = "none";
+      if (detail.active) setSelectedManualLineId(null);
+      window.dispatchEvent(new CustomEvent("watchlist-stock-square-state", { detail: { symbol, active: detail.active } }));
+    }
+    window.addEventListener("watchlist-stock-square-mode", syncSquareMode);
     function clearManualLines(event: Event) {
       const detail = (event as CustomEvent<{ symbol: string }>).detail;
       if (detail?.symbol !== symbol) return;
       setManualPriceLines([]);
+      setManualSquares([]);
       setSelectedManualLineId(null);
       setLineTypedValue(null);
       setLinePlacementActive(false);
+      setSquarePlacementActive(false);
+      squareStartRef.current = null;
+      if (squarePreviewRef.current) squarePreviewRef.current.style.display = "none";
       window.dispatchEvent(new CustomEvent("watchlist-stock-line-state", { detail: { symbol, active: false } }));
+      window.dispatchEvent(new CustomEvent("watchlist-stock-square-state", { detail: { symbol, active: false } }));
     }
     window.addEventListener("watchlist-stock-lines-clear", clearManualLines);
     return () => {
       window.removeEventListener("watchlist-stock-line-mode", syncLineMode);
+      window.removeEventListener("watchlist-stock-square-mode", syncSquareMode);
       window.removeEventListener("watchlist-stock-lines-clear", clearManualLines);
     };
   }, [hideMovingAverageControls, symbol]);
 
   useEffect(() => {
-    if (!linePlacementActive && selectedManualLineId === null) return;
+    if (!linePlacementActive && !squarePlacementActive && selectedManualLineId === null) return;
     function handleLineKeys(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       if (target?.matches("input, textarea, select, [contenteditable='true']")) return;
       if (event.key === "Escape") {
+        if (squarePlacementActive) {
+          event.preventDefault();
+          setSquarePlacementActive(false);
+          squareStartRef.current = null;
+          if (squarePreviewRef.current) squarePreviewRef.current.style.display = "none";
+          window.dispatchEvent(new CustomEvent("watchlist-stock-square-state", { detail: { symbol, active: false } }));
+          return;
+        }
         if (!linePlacementActive) return;
         event.preventDefault();
         if (lineTypedValue !== null) {
@@ -1029,13 +1084,13 @@ export function PriceChart({
     }
     window.addEventListener("keydown", handleLineKeys);
     return () => window.removeEventListener("keydown", handleLineKeys);
-  }, [linePlacementActive, lineTypedValue, selectedManualLineId, symbol]);
+  }, [linePlacementActive, lineTypedValue, selectedManualLineId, squarePlacementActive, symbol]);
 
   const onHover = useCallback((price: number | null, date: string | null) => {
-    if (suppressRef.current || linePlacementActive) return;
+    if (suppressRef.current || linePlacementActive || squarePlacementActive) return;
     setHoverPrice(price);
     setHoverDate(date);
-  }, [linePlacementActive]);
+  }, [linePlacementActive, squarePlacementActive]);
 
   const clearHover = useCallback(() => {
     suppressRef.current = true;
@@ -1055,6 +1110,21 @@ export function PriceChart({
   // prevented by touch-action on the chart itself rather than a global
   // preventDefault listener, which could remain stuck if iOS misses touchend.
   const chartRef = useRef<HTMLDivElement>(null);
+  const updateSquarePreview = useCallback((clientX: number, clientY: number, bounds: DOMRect) => {
+    const anchor = squareStartRef.current;
+    const preview = squarePreviewRef.current;
+    if (!anchor || !preview) return;
+    const point = {
+      x: Math.max(0, Math.min(bounds.width, clientX - bounds.left)),
+      y: Math.max(0, Math.min(bounds.height, clientY - bounds.top)),
+    };
+    const rect = getSquareRect(anchor, point, bounds);
+    preview.style.display = "block";
+    preview.style.left = `${rect.left}px`;
+    preview.style.top = `${rect.top}px`;
+    preview.style.width = `${rect.width}px`;
+    preview.style.height = `${rect.height}px`;
+  }, []);
 
   useEffect(() => {
     const el = chartRef.current;
@@ -1157,8 +1227,8 @@ export function PriceChart({
       {/* ── Price header — indented to align with name when priceIndent is set ── */}
       <div className="mb-6 price-block-fade" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible ? 1 : 0, transition: "opacity 0.18s ease", WebkitTransition: "opacity 0.18s ease" }}>
         <div className="flex items-end gap-3">
-          <WheelPrice value={priceStr} size="lg" animate={!linePlacementActive} />
-          <WheelPrice value={pctStr} size="sm" colorClass={pctColor} animate={!linePlacementActive} />
+          <WheelPrice value={priceStr} size="lg" animate={!linePlacementActive && !squarePlacementActive} />
+          <WheelPrice value={pctStr} size="sm" colorClass={pctColor} animate={!linePlacementActive && !squarePlacementActive} />
         </div>
         <p className="mt-2 text-sm text-text-muted">
           {hoverDate ? tooltipLabel(hoverDate, period) : "Current price"}
@@ -1171,6 +1241,10 @@ export function PriceChart({
         className={cn(heightClassName, "relative", isPositive ? "stock-chart-positive" : "stock-chart-negative")}
         style={{ touchAction: "none" }}
         onMouseMove={(event) => {
+          if (squarePlacementActive) {
+            updateSquarePreview(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
+            return;
+          }
           if (linePlacementActive) {
             const bounds = event.currentTarget.getBoundingClientRect();
             const plotTop = 8;
@@ -1186,7 +1260,42 @@ export function PriceChart({
           const bounds = event.currentTarget.getBoundingClientRect();
           positionVolumeCrosshair(((event.clientX - bounds.left) / bounds.width) * 100);
         }}
-        onClick={() => {
+        onClick={(event) => {
+          if (squarePlacementActive) {
+            const bounds = event.currentTarget.getBoundingClientRect();
+            const point = {
+              x: Math.max(0, Math.min(bounds.width, event.clientX - bounds.left)),
+              y: Math.max(0, Math.min(bounds.height, event.clientY - bounds.top)),
+            };
+            const anchor = squareStartRef.current;
+            if (!anchor) {
+              squareStartRef.current = point;
+              const preview = squarePreviewRef.current;
+              if (preview) {
+                preview.style.display = "block";
+                preview.style.left = `${point.x}px`;
+                preview.style.top = `${point.y}px`;
+                preview.style.width = "0px";
+                preview.style.height = "0px";
+              }
+              return;
+            }
+            const rect = getSquareRect(anchor, point, bounds);
+            if (rect.width >= 2) {
+              setManualSquares((previous) => [...previous, {
+                id: nextSquareId.current++,
+                x: rect.left / bounds.width,
+                y: rect.top / bounds.height,
+                width: rect.width / bounds.width,
+                height: rect.height / bounds.height,
+              }]);
+            }
+            squareStartRef.current = null;
+            if (squarePreviewRef.current) squarePreviewRef.current.style.display = "none";
+            setSquarePlacementActive(false);
+            window.dispatchEvent(new CustomEvent("watchlist-stock-square-state", { detail: { symbol, active: false } }));
+            return;
+          }
           if (!linePlacementActive) return;
           const typedPrice = lineTypedValue === null ? NaN : Number(lineTypedValue);
           const price = Number.isFinite(typedPrice) ? typedPrice : lineCursorPrice;
@@ -1221,14 +1330,14 @@ export function PriceChart({
           `}</style>
           <div
             key={chartKey}
-            style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both", width: "100%", height: "100%" }}
+            style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both", width: "100%", height: "100%", pointerEvents: squarePlacementActive ? "none" : undefined }}
           >
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={chartData}
               margin={{ left: 0, right: 0, top: 8, bottom: 0 }}
               onMouseMove={(state) => {
-                if (linePlacementActive) return;
+                if (linePlacementActive || squarePlacementActive) return;
                 if (!window.matchMedia("(min-width: 1024px)").matches) return;
                 const x = (state as { activeCoordinate?: { x?: number } }).activeCoordinate?.x;
                 const width = chartRef.current?.getBoundingClientRect().width;
@@ -1242,7 +1351,7 @@ export function PriceChart({
 
               <Tooltip
                 cursor={(() => {
-                  if (linePlacementActive) return false;
+                  if (linePlacementActive || squarePlacementActive) return false;
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return false;
                   if (proMode) {
@@ -1278,7 +1387,7 @@ export function PriceChart({
                 strokeLinejoin="round"
                 dot={false}
                 activeDot={(props: Record<string, unknown>) => {
-                  if (linePlacementActive) return <g key="line-placement-no-dot" />;
+                  if (linePlacementActive || squarePlacementActive) return <g key="line-placement-no-dot" />;
                   const { cx, cy } = props as { cx?: number; cy?: number };
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return <g key="no-dot" />;
@@ -1365,8 +1474,29 @@ export function PriceChart({
             );
           })}
 
+          {manualSquares.map((square) => (
+            <div
+              key={square.id}
+              aria-hidden="true"
+              className="pointer-events-none absolute z-10 border border-dashed border-[#858585]"
+              style={{
+                left: `${square.x * 100}%`,
+                top: `${square.y * 100}%`,
+                width: `${square.width * 100}%`,
+                height: `${square.height * 100}%`,
+                backgroundColor: "rgba(173,250,27,0.10)",
+              }}
+            />
+          ))}
+          <div
+            ref={squarePreviewRef}
+            aria-hidden="true"
+            className="pointer-events-none absolute z-10 hidden border border-dashed border-[#858585]"
+            style={{ backgroundColor: "rgba(173,250,27,0.10)" }}
+          />
+
           {/* ── Pro mode desktop horizontal crosshair — follows the active dot ── */}
-              {proMode && !isTouching && !linePlacementActive && (
+              {proMode && !isTouching && !linePlacementActive && !squarePlacementActive && (
             <div
               ref={proCrosshairRef}
               className="absolute inset-x-0 pointer-events-none"
@@ -1376,7 +1506,7 @@ export function PriceChart({
           )}
 
           {/* ── Custom touch overlay: dot + crosshair line + date bubble ── */}
-          {isTouching && touchOverlay && !linePlacementActive && (() => {
+          {isTouching && touchOverlay && !linePlacementActive && !squarePlacementActive && (() => {
             const xPct = touchOverlay.xPct * 100;
             // Recharts renders the data area with margin top:8 bottom:0.
             // Convert yPct (0=top of data area) into % of the full container height.

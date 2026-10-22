@@ -12,12 +12,14 @@ const MA_OPTIONS = [
 
 type MAStateDetail = { symbol: string; active: number[]; available: number[] };
 type LineModeDetail = { symbol: string; active: boolean };
+type SquareModeDetail = { symbol: string; active: boolean };
 
 export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string; chartHeight?: number }) {
   const [open, setOpen] = useState(false);
   const [activeMAs, setActiveMAs] = useState<number[]>([]);
   const [availableMAs, setAvailableMAs] = useState<number[]>([]);
   const [lineModeActive, setLineModeActive] = useState(false);
+  const [squareModeActive, setSquareModeActive] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,6 +47,11 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
       }
     }
     window.addEventListener("watchlist-stock-line-state", syncLineMode);
+    function syncSquareMode(event: Event) {
+      const detail = (event as CustomEvent<SquareModeDetail>).detail;
+      if (detail?.symbol === symbol) setSquareModeActive(detail.active);
+    }
+    window.addEventListener("watchlist-stock-square-state", syncSquareMode);
     const refreshTimer = window.setTimeout(() => {
       window.dispatchEvent(new CustomEvent("watchlist-stock-ma-request", { detail: { symbol } }));
     }, 0);
@@ -52,6 +59,7 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
       window.clearTimeout(refreshTimer);
       window.removeEventListener("watchlist-stock-ma-state", syncMAState);
       window.removeEventListener("watchlist-stock-line-state", syncLineMode);
+      window.removeEventListener("watchlist-stock-square-state", syncSquareMode);
     };
   }, [symbol]);
 
@@ -63,13 +71,24 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
   function toggleLineMode() {
     const nextActive = !lineModeActive;
     setLineModeActive(nextActive);
+    setSquareModeActive(false);
     setOpen(false);
     window.dispatchEvent(new CustomEvent("watchlist-stock-line-mode", { detail: { symbol, active: nextActive } }));
   }
 
   function clearLines() {
     setOpen(false);
+    setLineModeActive(false);
+    setSquareModeActive(false);
     window.dispatchEvent(new CustomEvent("watchlist-stock-lines-clear", { detail: { symbol } }));
+  }
+
+  function toggleSquareMode() {
+    const nextActive = !squareModeActive;
+    setSquareModeActive(nextActive);
+    setLineModeActive(false);
+    setOpen(false);
+    window.dispatchEvent(new CustomEvent("watchlist-stock-square-mode", { detail: { symbol, active: nextActive } }));
   }
 
   const expandedHeight = chartHeight + 32;
@@ -135,10 +154,23 @@ export function StockToolsButton({ symbol, chartHeight = 384 }: { symbol: string
           </button>
           <button
             type="button"
+            onClick={toggleSquareMode}
+            aria-pressed={squareModeActive}
+            className={cn(
+              "flex h-9 w-full items-center justify-center bg-transparent transition-opacity hover:opacity-100",
+              squareModeActive ? "opacity-100" : "opacity-35"
+            )}
+            aria-label={squareModeActive ? "Cancel square placement" : "Draw a square on the stock chart"}
+            title="Draw square"
+          >
+            <OptionalSvgIcon name="tools-square" className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
             onClick={clearLines}
             className="flex h-9 w-full items-center justify-center bg-transparent opacity-35 transition-opacity hover:opacity-100"
-            aria-label="Erase all drawn price lines"
-            title="Erase all lines"
+            aria-label="Erase all drawn chart lines and squares"
+            title="Erase drawings"
           >
             <OptionalSvgIcon name="tools-erase" className="h-5 w-5" />
           </button>
