@@ -62,14 +62,17 @@ export function OptionalSvgIcon({
   const missingPrimary = failedSources.includes(src)
     && (!selected || !fallbackToBaseWhenSelected || src === baseSrc || failedSources.includes(baseSrc));
   const usingErrorIcon = !loadedPrimary && missingPrimary && name !== "icon-error" && loadedSources.includes(errorSrc);
-  const visibleSrc = loadedPrimary ?? (usingErrorIcon || name === "icon-error" ? (loadedSources.includes(src) ? src : null) : null);
+  const visibleSrc = loadedPrimary ?? (usingErrorIcon ? errorSrc : name === "icon-error" && loadedSources.includes(src) ? src : null);
 
   return (
     <span
       aria-hidden="true"
       className={cn("inline-block shrink-0", usingErrorIcon || name === "icon-error" ? "text-negative" : colorClassName, className)}
       style={{
-        backgroundColor: usingErrorIcon || name === "icon-error" ? "currentColor" : color ?? "currentColor",
+        // Keep the sized slot in the layout, but hide it until the mask is
+        // loaded so a tinted square never flashes during icon loading.
+        visibility: visibleSrc ? "visible" : "hidden",
+        backgroundColor: visibleSrc ? (usingErrorIcon || name === "icon-error" ? "currentColor" : color ?? "currentColor") : "transparent",
         maskImage: visibleSrc ? `url("${visibleSrc}")` : undefined,
         maskPosition: "center",
         maskRepeat: "no-repeat",

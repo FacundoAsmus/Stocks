@@ -1501,6 +1501,7 @@ export function PriceChart({
                 width: `${square.width * 100}%`,
                 height: `${square.height * 100}%`,
                 borderColor: isSelected ? "#c4c4c4" : "#858585",
+                borderRadius: 24,
                 backgroundColor: "rgba(173,250,27,0.10)",
                 appearance: "none",
               }}
@@ -1510,7 +1511,7 @@ export function PriceChart({
             ref={squarePreviewRef}
             aria-hidden="true"
             className="pointer-events-none absolute z-10 hidden border border-dashed border-[#858585]"
-            style={{ backgroundColor: "rgba(173,250,27,0.10)" }}
+            style={{ borderRadius: 24, backgroundColor: "rgba(173,250,27,0.10)" }}
           />
 
           {/* ── Pro mode desktop horizontal crosshair — follows the active dot ── */}
