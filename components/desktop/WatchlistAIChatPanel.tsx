@@ -197,7 +197,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
           type="button"
           onClick={() => setOpen(true)}
           aria-label={`Ask AI about ${stock.symbol}`}
-          className="ai-iridescent-ring ai-iris-hover ai-iris-glow pointer-events-auto absolute bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full border border-transparent overflow-hidden"
+          className="ai-aberration ai-iridescent-ring ai-iris-hover ai-iris-glow pointer-events-auto absolute bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full border border-transparent overflow-hidden"
           style={{ background: glassBg }}
         >
           <div
