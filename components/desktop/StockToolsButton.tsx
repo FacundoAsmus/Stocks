@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
-import { StockPriceAlertButton } from "@/components/StockPriceAlertButton";
 
 const MA_OPTIONS = [
   { window: 7, color: "#f59e0b", iconName: "tools-ma-7" },
@@ -85,9 +84,6 @@ export function StockFunctionButton({ symbol, name, currentPrice, chartHeight = 
               <OptionalSvgIcon name={iconName} className="h-5 w-7" color={color} />
             </button>;
           })}
-          <div className="flex h-10 w-full items-center justify-center">
-            <StockPriceAlertButton symbol={symbol} name={name} currentPrice={currentPrice} />
-          </div>
         </div>
       </div>
     </div>
@@ -109,8 +105,8 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
       const detail = (event as CustomEvent<ChartToolsRequest>).detail;
       if (!detail || detail.symbol !== symbol) return;
       setPosition({
-        left: Math.max(8, Math.min(detail.clientX + 12, window.innerWidth - 48)),
-        bottom: Math.max(8, Math.min(window.innerHeight - detail.clientY + 12, window.innerHeight - 8)),
+        left: Math.max(8, Math.min(detail.clientX, window.innerWidth - 48)),
+        bottom: Math.max(8, Math.min(window.innerHeight - detail.clientY, window.innerHeight - 8)),
       });
       setOpen(true);
       setExpanded(false);

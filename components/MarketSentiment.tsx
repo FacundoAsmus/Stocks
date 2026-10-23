@@ -174,7 +174,7 @@ export function MarketSentiment({
 }) {
   return (
     <section className="rounded-xl bg-black p-5">
-      <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">
+      <p className="-ml-5 mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">
         <OptionalSvgIcon name="stock-sentiment" className="h-6 w-6" />
         Stock Sentiment
       </p>
