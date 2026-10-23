@@ -1,9 +1,5 @@
 @import "tailwindcss";
 
-:root {
-  --accent-rgb: 28 151 253;
-}
-
 .market-icon-frame { background-color: #000000 !important; }
 html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
 
@@ -18,6 +14,10 @@ html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
   to { clip-path: inset(0 0% 0 0); }
 }
 
+:root {
+  --accent-rgb: 255 255 255;
+}
+
 @theme {
   --color-background: #050507;
   --color-panel: #0a0a0d;
@@ -25,7 +25,8 @@ html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
   --color-border-subtle: #1e1e24;
   --color-text-primary: #f3f7fb;
   --color-text-muted: #93a4b8;
-  --color-accent: #1C97FD;
+  --color-accent: #ffffff;
+  --color-on-accent: #000000;
   --color-positive: #00c805;
   --color-negative: #ff3003;
 }
@@ -68,6 +69,9 @@ html.light-mode {
   --color-border-subtle: #d1d1d6;
   --color-text-primary: #1a1a1e;
   --color-text-muted: #6e6e80;
+  --color-accent: #000000;
+  --color-on-accent: #ffffff;
+  --accent-rgb: 0 0 0;
 }
 /* Keep greens and reds exactly as-is — only blacks/whites/greys flip */
 html.light-mode .bg-black { background-color: #ffffff !important; }
@@ -212,7 +216,7 @@ html.light-mode .ai-button-icon {
   border: 0;
   border-radius: 50%;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   cursor: pointer;
   appearance: none;
   box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.58), 0 0 26px rgb(var(--accent-rgb) / 0.3);
@@ -231,7 +235,7 @@ html.light-mode .ai-button-icon {
   width: 120%;
   height: 120%;
   overflow: visible;
-  stroke: #fff;
+  stroke: var(--color-on-accent);
   stroke-width: 3.6;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -245,11 +249,11 @@ html.light-mode .ai-button-icon {
 }
 
 html:not(.light-mode) .glossy-icon-button__icon > .glossy-icon-button__close-icon {
-  stroke: #111;
+  stroke: var(--color-on-accent);
 }
 
 html:not(.light-mode) .glossy-icon-button__icon > svg {
-  stroke: #111;
+  stroke: var(--color-on-accent);
 }
 
 .chart-period-selector-glass {
@@ -322,7 +326,8 @@ html.light-mode .chart-period-selector-glass {
   box-shadow: 0 0 13px rgb(var(--accent-rgb) / 0.48), 0 0 4px rgb(var(--accent-rgb) / 0.68);
 }
 
-.stock-tools-icon { filter: brightness(0) saturate(100%) invert(41%) sepia(98%) saturate(1762%) hue-rotate(188deg) brightness(101%) contrast(101%); }
+.stock-tools-icon { filter: brightness(0) invert(1); }
+html.light-mode .stock-tools-icon { filter: brightness(0); }
 .comparison-stock-chart .comparison-series-a .recharts-line-curve {
   filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.78)) drop-shadow(0 0 9px rgba(168, 85, 247, 0.42));
 }

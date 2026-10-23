@@ -143,7 +143,7 @@ function MonthGrid({
               {event ? (
                 <button
                   onClick={() => onSelect(event)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-bold text-black transition active:scale-90"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-bold text-on-accent transition active:scale-90"
                 >
                   {day}
                 </button>

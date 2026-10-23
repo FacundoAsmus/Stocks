@@ -204,8 +204,8 @@ export function MobileCompareSearch({
           <input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") close(); }}
             placeholder={`Compare ${primarySymbol} with`} aria-label={`Compare ${primarySymbol} with another stock`}
             className="min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-[#ff9f2e]" style={{ caretColor: "#f97316" }} />
-          <button type="button" aria-label="Close comparison search" onClick={close} className="flex h-8 w-8 shrink-0 items-center justify-center text-[#f97316]">
-            <OptionalSvgIcon name="close" className="h-4 w-4" color="#000" />
+          <button type="button" aria-label="Close comparison search" onClick={close} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent">
+            <OptionalSvgIcon name="close" className="h-4 w-4" colorClassName="text-on-accent" />
           </button>
         </div>
       </div>

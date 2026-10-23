@@ -230,10 +230,10 @@ export function AppNav({ variant = "full" }: AppNavProps) {
               variant === "links" && isActive && "scale-[1.2]",
               variant === "links" && isActive && "desktop-nav-selected-glow",
               isActive
-                ? "border-accent bg-accent text-black"
+                ? "border-accent bg-accent text-on-accent"
                 : "border-transparent bg-transparent text-accent group-hover:border-transparent"
             )}>
-              <OptionalSvgIcon name={item.icon} selected={isActive} className="h-5 w-5" colorClassName={isActive ? "text-black" : "text-accent"} />
+              <OptionalSvgIcon name={item.icon} selected={isActive} className="h-5 w-5" colorClassName={isActive ? "text-on-accent" : "text-accent"} />
             </span>
             <span>{item.label}</span>
           </Link>
@@ -256,10 +256,10 @@ export function AppNav({ variant = "full" }: AppNavProps) {
           variant === "settings" && "h-8 w-8 rounded-full border-0",
           variant === "settings" && settingsOpen && "scale-[1.2] desktop-nav-selected-glow",
           settingsOpen
-            ? "border-accent bg-accent text-black"
+            ? "border-accent bg-accent text-on-accent"
             : "border-transparent bg-transparent text-accent group-hover:border-transparent"
         )}>
-          <OptionalSvgIcon name="settings" selected={settingsOpen} className="h-5 w-5" colorClassName={settingsOpen ? "text-black" : "text-accent"} />
+          <OptionalSvgIcon name="settings" selected={settingsOpen} className="h-5 w-5" colorClassName={settingsOpen ? "text-on-accent" : "text-accent"} />
         </span>
         {variant !== "settings" && <span>Settings</span>}
       </button>

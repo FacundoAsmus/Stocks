@@ -1167,7 +1167,7 @@ function EarningsCalendarWidget({ ctx }: { ctx: GraphCtx }) {
         const isReportDate = date === reportDate;
         return <div key={date} className="flex h-7 items-center justify-center">
           {isReportDate ? (
-            <span title={`Q${report?.quarter} ${report?.year} report date`} className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-xs font-bold text-black">{day}</span>
+            <span title={`Q${report?.quarter} ${report?.year} report date`} className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-xs font-bold text-on-accent">{day}</span>
           ) : (
             <span className={`text-xs font-bold ${isToday ? "text-accent" : isPast ? "text-text-muted" : "text-text-primary"}`}>{day}</span>
           )}
@@ -2072,14 +2072,14 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
                 flexShrink: 0, height: 38, width: 38,
                 borderRadius: "50%",
                 backgroundColor: !loading ? "var(--color-accent)" : "rgb(var(--accent-rgb) / 0.18)",
-                color: !loading ? "#000" : "rgb(var(--accent-rgb) / 0.35)",
+                color: !loading ? "var(--color-on-accent)" : "rgb(var(--accent-rgb) / 0.35)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 border: "none",
                 cursor: !loading ? "pointer" : "default",
                 transition: "background-color 0.18s, color 0.18s",
               }}
             >
-              <OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-black" />
+              <OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-on-accent" />
             </button>
           ) : (
             <GlossyIconButton aria-label="Close chat" onClick={handleDismiss} size={38}><GlossyCloseIcon /></GlossyIconButton>
@@ -2128,13 +2128,13 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
                   flexShrink: 0, height: 38, width: 38,
                   borderRadius: "50%",
                   backgroundColor: !loading ? "var(--color-accent)" : "rgb(var(--accent-rgb) / 0.18)",
-                  color: !loading ? "#000" : "rgb(var(--accent-rgb) / 0.35)",
+                  color: !loading ? "var(--color-on-accent)" : "rgb(var(--accent-rgb) / 0.35)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   border: "none",
                   cursor: !loading ? "pointer" : "default",
                 }}
               >
-                <OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-black" />
+                <OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-on-accent" />
               </button>
             ) : (
               <GlossyIconButton aria-label="Close chat" onClick={handleDismiss} size={38}><GlossyCloseIcon /></GlossyIconButton>

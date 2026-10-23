@@ -46,10 +46,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             <span className="flex-1">{toast.message}</span>
             <button
               aria-label="Dismiss notification"
-              className="rounded-md p-1 text-text-muted transition hover:bg-panel-muted hover:text-text-primary"
+              className="rounded-full bg-accent p-1 text-on-accent transition"
               onClick={() => dismiss(toast.id)}
             >
-              <OptionalSvgIcon name="close" className="h-4 w-4" colorClassName="text-black" />
+              <OptionalSvgIcon name="close" className="h-4 w-4" colorClassName="text-on-accent" />
             </button>
           </div>
         ))}

@@ -323,7 +323,7 @@ export function ComparisonPriceChart({
                     sizeClassName={mobile ? "h-10 w-10" : "h-14 w-14"}
                     shape="circle"
                   />
-                  <OptionalSvgIcon name="close" className={`absolute inset-0 m-auto opacity-0 transition-opacity group-hover:opacity-100 ${mobile ? "h-4 w-4" : "h-5 w-5"}`} colorClassName="text-black" />
+                  <OptionalSvgIcon name="close" className={`absolute inset-0 m-auto rounded-full bg-accent p-1 opacity-0 transition-opacity group-hover:opacity-100 ${mobile ? "h-4 w-4" : "h-5 w-5"}`} colorClassName="text-on-accent" />
                 </button>
                 <p className={`min-w-0 truncate font-semibold tracking-normal ${mobile ? "text-xl" : "text-4xl sm:text-5xl"} ${identityColor === COMPARISON_COLORS.primary ? "text-purple-400" : "text-orange-400"}`}>{name}</p>
               </div>
@@ -368,7 +368,7 @@ export function ComparisonPriceChart({
                 <Tooltip content={() => null} cursor={mobile ? false : { stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 }} />
                 <Line
                   className="comparison-series-a"
-                  type="monotone" dataKey="aPct" stroke={COMPARISON_COLORS.primary} strokeWidth={2.5} dot={false} isAnimationActive={false}
+                  type="monotone" dataKey="aPct" stroke={COMPARISON_COLORS.primary} strokeWidth={3.25} dot={false} isAnimationActive={false}
                   activeDot={(rawProps: unknown) => {
                     const props = rawProps as { cx?: number; cy?: number; payload?: ComparisonRow };
                     if ((mobile && !isTouching) || props.cx == null || props.cy == null || !props.payload || props.payload.aPct < props.payload.bPct) return <g />;
@@ -377,7 +377,7 @@ export function ComparisonPriceChart({
                 />
                 <Line
                   className="comparison-series-b"
-                  type="monotone" dataKey="bPct" stroke={COMPARISON_COLORS.secondary} strokeWidth={2.5} dot={false} isAnimationActive={false}
+                  type="monotone" dataKey="bPct" stroke={COMPARISON_COLORS.secondary} strokeWidth={3.25} dot={false} isAnimationActive={false}
                   activeDot={(rawProps: unknown) => {
                     const props = rawProps as { cx?: number; cy?: number; payload?: ComparisonRow };
                     if ((mobile && !isTouching) || props.cx == null || props.cy == null || !props.payload || props.payload.bPct <= props.payload.aPct) return <g />;
@@ -408,14 +408,14 @@ export function ComparisonPriceChart({
           <span className="chart-period-indicator" aria-hidden="true" style={{ transform: `translate(${(SHORT_PERIODS.includes(period) ? SHORT_PERIODS.indexOf(period) : LONG_PERIODS.indexOf(period)) * 40}px, ${SHORT_PERIODS.includes(period) ? 0 : 42}px)` }} />
           {[SHORT_PERIODS, LONG_PERIODS].map((options) => <div key={options[0]} className="flex flex-nowrap items-center justify-center gap-1 whitespace-nowrap">
             {options.map((option) => <button key={option} type="button" onClick={() => setPeriod(option)}
-              className={`chart-period-option relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold transition ${period === option ? "text-black" : "text-accent"}`}>{option}</button>)}
+              className={`chart-period-option relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold transition ${period === option ? "text-on-accent" : "text-accent"}`}>{option}</button>)}
           </div>)}
         </div>}
         {!mobile && <div className="chart-period-selector-glass chart-period-selector-desktop relative hidden flex-nowrap items-center justify-center gap-1 rounded-full border p-1 lg:flex">
           <span className="chart-period-indicator" aria-hidden="true" style={{ transform: `translate(${PERIODS.indexOf(period) * 40}px, 0)` }} />
           {PERIODS.map((option, index) => (
             <button key={option} type="button" onClick={() => setPeriod(option)}
-              className={`chart-period-option relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition ${period === option ? "text-black" : "text-accent hover:text-accent/80"}`}
+              className={`chart-period-option relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition ${period === option ? "text-on-accent" : "text-accent hover:text-accent/80"}`}
               onMouseEnter={(event) => { if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) { const buttons = Array.from(event.currentTarget.parentElement?.querySelectorAll("button") ?? []); buttons.forEach((button, i) => { button.style.transform = `scale(${Math.abs(i-index) === 0 ? 1.14 : 0.78})`; }); } }}
               onMouseLeave={(event) => { const buttons = Array.from(event.currentTarget.parentElement?.querySelectorAll("button") ?? []); buttons.forEach((button) => { button.style.transform = "scale(1)"; }); }}
             >{option}</button>

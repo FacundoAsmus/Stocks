@@ -147,6 +147,7 @@ function LoadingHeatCanvas({ group, width, height }: { group: string; width: num
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     const seed = [...group].reduce((total, char) => total + char.charCodeAt(0), 0);
     let frame = 0;
+    const accentGlow = `rgba(${getComputedStyle(document.documentElement).getPropertyValue("--accent-rgb").trim().replace(/\s+/g, ", ")}, 0.5)`;
     const paint = (now: number) => {
       const time = now / 1000;
       context.fillStyle = "#342606";
@@ -159,7 +160,7 @@ function LoadingHeatCanvas({ group, width, height }: { group: string; width: num
         const radius = Math.max(width, height) * (0.27 + (index % 3) * 0.035);
         const green = (index + seed) % 2 === 0;
         const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, green ? "rgba(28, 151, 253, 0.5)" : "rgba(255, 48, 3, 0.48)");
+        gradient.addColorStop(0, green ? accentGlow : "rgba(255, 48, 3, 0.48)");
         gradient.addColorStop(0.55, green ? "rgba(0, 200, 5, 0.18)" : "rgba(255, 48, 3, 0.17)");
         gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
         context.fillStyle = gradient;
@@ -314,8 +315,8 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
         </div>
         <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-3" role="tablist" aria-label="Market groups">
           {MARKET_HEATMAP_GROUPS.map((group) => (
-            <button key={group.id} type="button" role="tab" aria-selected={group.id === activeGroup} onClick={() => setActiveGroup(group.id)} className={cn("inline-flex shrink-0 snap-start items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors", group.id === activeGroup ? "border-accent bg-accent text-black" : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-text-primary")}>
-              <OptionalSvgIcon name={group.id} selected={group.id === activeGroup} fallbackToBaseWhenSelected className={group.id === "semiconductors" ? "h-3 w-3" : "h-4 w-4"} colorClassName="text-accent" />
+            <button key={group.id} type="button" role="tab" aria-selected={group.id === activeGroup} onClick={() => setActiveGroup(group.id)} className={cn("inline-flex shrink-0 snap-start items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors", group.id === activeGroup ? "border-accent bg-accent text-on-accent" : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-text-primary")}>
+              <OptionalSvgIcon name={group.id} selected={group.id === activeGroup} fallbackToBaseWhenSelected className={group.id === "semiconductors" ? "h-3 w-3" : "h-4 w-4"} colorClassName={group.id === activeGroup ? "text-on-accent" : "text-accent"} />
               {group.label}
             </button>
           ))}

@@ -97,7 +97,7 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
           </select>
           {ownAlerts.length > 0 && <div className="mb-4 space-y-2">{ownAlerts.map(alert => <div key={alert.id} className="smoked-glass-control flex items-center justify-between rounded-xl bg-black/20 px-3 py-2 text-sm text-text-muted"><span>${alert.price.toFixed(2)} · {alert.direction === "crossing" ? "Passing" : alert.direction === "below" ? "Below" : "Above"}</span><button type="button" onClick={() => removeAlert(alert.id)} aria-label={`Cancel alert at $${alert.price.toFixed(2)}`} title="Cancel alert" className="flex h-8 w-8 items-center justify-center rounded-full text-accent transition hover:bg-white/10"><OptionalSvgIcon name="cancel-alert" className="h-4 w-4" /></button></div>)}</div>}
           {message && <p role="status" className="mb-3 text-xs text-accent">{message}</p>}
-          <button onClick={saveAlert} className="h-11 w-full rounded-full bg-accent text-sm font-semibold text-black">Save</button>
+          <button onClick={saveAlert} className="h-11 w-full rounded-full bg-accent text-sm font-semibold text-on-accent">Save</button>
         </div>
       </div>, document.body
     )}
