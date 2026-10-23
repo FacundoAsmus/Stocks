@@ -29,7 +29,7 @@ export function SiteHeader() {
   return (
     <header
       ref={headerRef}
-      className={`sticky top-0 z-40 hidden lg:block ${usesUnifiedToolbar ? "watchlist-toolbar border-b border-transparent bg-background/50 backdrop-blur-xl" : "border-b border-border-subtle/70 bg-background/86 backdrop-blur-xl"}`}
+      className="sticky top-0 z-40 hidden border-b border-transparent bg-transparent backdrop-blur-none lg:block"
     >
       <div className={`flex flex-col gap-4 px-4 py-2 sm:px-6 lg:flex-row lg:items-center lg:justify-between ${usesUnifiedToolbar ? "lg:px-4" : "mx-auto max-w-7xl lg:px-8"}`}>
         <AppNav variant={usesUnifiedToolbar ? "links" : "full"} />

@@ -366,6 +366,7 @@ export function MobileWatchlist() {
   const [symbols, setSymbols] = useState<string[]>([]);
   const [stocks, setStocks] = useState<Map<string, StockSummary>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [watchlistInitialized, setWatchlistInitialized] = useState(false);
   const [removingSymbols, setRemovingSymbols] = useState<Set<string>>(() => new Set());
   const removalTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const symbolQuery = [...symbols].sort().join(",");
@@ -378,6 +379,7 @@ export function MobileWatchlist() {
   useEffect(() => {
     function sync() {
       setSymbols(readWatchlist());
+      setWatchlistInitialized(true);
     }
     sync();
     window.addEventListener("watchlist-updated", sync);
@@ -390,7 +392,7 @@ export function MobileWatchlist() {
 
   useEffect(() => {
     if (!symbolQuery) {
-      setLoading(false);
+      if (watchlistInitialized) setLoading(false);
       return;
     }
     const ctrl = new AbortController();
@@ -410,7 +412,7 @@ export function MobileWatchlist() {
         if (!ctrl.signal.aborted) setLoading(false);
       });
     return () => ctrl.abort();
-  }, [symbolQuery]);
+  }, [symbolQuery, watchlistInitialized]);
 
   useEffect(() => {
     if (!symbolQuery) return;
@@ -460,7 +462,7 @@ export function MobileWatchlist() {
 
   const orderedStocks = symbols.map((s) => stocks.get(s)).filter(Boolean) as StockSummary[];
 
-  if (loading && !orderedStocks.length) return <LoadingScreen label="Loading your watchlist" />;
+  if (!watchlistInitialized || (loading && !orderedStocks.length)) return <LoadingScreen label="Loading your watchlist" />;
 
   return (
     <div className="pb-24">

@@ -264,7 +264,6 @@ export function PriceHistoryLoadingAnimation() {
         <div className="flex flex-col items-center gap-[2px]"><div className="cw-2 w-[2px] h-2 rounded-full bg-positive/70" /><div className="cc-2 w-3.5 h-6 rounded-sm bg-positive/70" /></div>
         <div className="flex flex-col items-center gap-[2px]"><div className="cw-3 w-[2px] h-2.5 rounded-full bg-positive" /><div className="cc-3 w-3.5 h-8 rounded-sm bg-positive" /></div>
       </div>
-      <span className="text-sm text-text-muted">Loading price history</span>
     </div>
   );
 }
