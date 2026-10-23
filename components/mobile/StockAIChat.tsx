@@ -1882,6 +1882,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         style={{
           position: "fixed", inset: 0, zIndex: 999,
           background: open ? "rgba(0,0,0,0.16)" : "transparent",
+          backdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
+          WebkitBackdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
           pointerEvents: open ? "auto" : "none",
           opacity: open ? 1 : 0,
           transition: "opacity 0.25s ease",
@@ -1904,8 +1906,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             position: "absolute", inset: 0,
             zIndex: 0,
             background: open && !containerRef ? "rgba(0,0,0,0.16)" : "transparent",
-            backdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
-            WebkitBackdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
             transform: "translateZ(0)",
             WebkitTransform: "translateZ(0)",
             

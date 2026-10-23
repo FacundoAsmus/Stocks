@@ -79,7 +79,7 @@ function RowContent({ stock }: { stock: StockSummary }) {
   const hasStockLogo = !!stock.logo && !isEtf;
   return (
     <>
-      <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48}
+      <StockLogo logo={hasStockLogo ? stock.logo : undefined} symbol={stock.symbol} size={48}
         sizeClassName="h-9 w-9 shrink-0"
         imageClassName="h-9 w-9 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0 pointer-events-none"
         fallbackClassName="h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none" />

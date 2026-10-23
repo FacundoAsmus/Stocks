@@ -13,6 +13,7 @@ import type { SyntheticEvent } from "react";
 // onError for the graceful image-fails-to-load fallback.
 export function StockLogo({
   logo,
+  symbol,
   sizeClassName = "h-14 w-14",
   size = 64,
   shape = "rounded",
@@ -21,6 +22,7 @@ export function StockLogo({
   fallbackDisplay = "inline-flex",
 }: {
   logo?: string;
+  symbol?: string;
   sizeClassName?: string;
   size?: number;
   shape?: "rounded" | "rounded-md" | "circle";
@@ -55,7 +57,7 @@ export function StockLogo({
           <img src={logo} alt="" className={displayedImageClassName} onError={handleError} />
         )
       ) : null}
-      <MarketIcon className={displayedFallbackClassName} />
+      <MarketIcon icon={symbol ? `${symbol}.svg` : undefined} className={displayedFallbackClassName} />
     </>
   );
 }

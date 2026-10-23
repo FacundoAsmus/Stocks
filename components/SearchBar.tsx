@@ -43,7 +43,7 @@ function ResultIcon({ symbol, logo }: { symbol: string; logo?: string }) {
   const hasStockLogo = !!logo && !isEtf;
   return (
     <>
-      <StockLogo logo={hasStockLogo ? logo : undefined} size={48}
+      <StockLogo logo={hasStockLogo ? logo : undefined} symbol={symbol} size={48}
         sizeClassName="h-10 w-10 shrink-0"
         imageClassName="h-10 w-10 shrink-0 rounded-3xl border border-border-subtle bg-panel-muted object-contain"
         fallbackClassName="h-10 w-10 shrink-0 rounded-3xl object-contain" />

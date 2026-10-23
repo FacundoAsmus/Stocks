@@ -176,7 +176,7 @@ export function MobileCompareSearch({
           const hasLogo = Boolean(logos[result.symbol]) && !SECTOR_ETFS.some((etf) => etf.symbol === result.symbol);
           return <button key={result.symbol} type="button" onClick={() => choose(result.symbol)}
             className="flex w-full items-center gap-3 border-t border-border-subtle px-4 py-3 text-left first:border-t-0">
-            <StockLogo logo={hasLogo ? logos[result.symbol] : undefined} size={48}
+            <StockLogo logo={hasLogo ? logos[result.symbol] : undefined} symbol={result.symbol} size={48}
               sizeClassName="h-10 w-10 shrink-0"
               imageClassName="h-10 w-10 shrink-0 rounded-3xl border border-border-subtle bg-panel-muted object-contain"
               fallbackClassName="h-10 w-10 shrink-0 rounded-3xl object-contain" />

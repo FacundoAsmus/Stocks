@@ -49,7 +49,7 @@ export function StockCard({
           {/* Header and Financials */}
           <div className="flex flex-col gap-1 sm:gap-2">
           <div className="min-w-0 flex items-center gap-2 sm:gap-3">
-            <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48} shape="rounded-md"
+            <StockLogo logo={hasStockLogo ? stock.logo : undefined} symbol={stock.symbol} size={48} shape="rounded-md"
               sizeClassName="h-8 w-8 sm:h-12 sm:w-12 shrink-0"
               imageClassName="h-8 w-8 sm:h-12 sm:w-12 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
               fallbackClassName="h-8 w-8 sm:h-12 sm:w-12 shrink-0 rounded-md object-contain" />

@@ -73,6 +73,7 @@ export function DesktopStockDetail({
             <div className="shrink-0">
               <StockLogo
                 logo={isEtf ? undefined : stock.profile.logo}
+                symbol={stock.symbol}
                 shape={watchlistDetailHeader ? "circle" : "rounded"}
               />
             </div>
