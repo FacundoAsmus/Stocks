@@ -416,19 +416,29 @@ html.light-mode .smoked-glass-backdrop.ai-chat-backdrop,
 .ai-chat-dialog,
 html.light-mode .smoked-glass-surface.ai-chat-dialog,
 .ai-response-bubble {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+}
+.ai-chat-backdrop,
+html.light-mode .smoked-glass-backdrop.ai-chat-backdrop {
+  -webkit-backdrop-filter: blur(12px) brightness(0.97);
+  backdrop-filter: blur(12px) brightness(0.97);
+}
+.ai-chat-dialog,
+html.light-mode .smoked-glass-surface.ai-chat-dialog {
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(28px) saturate(160%);
 }
 html.light-mode .smoked-glass-surface.ai-response-bubble,
 html.light-mode .smoked-glass-surface.ai-chat-panel {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
   border-color: transparent !important;
   box-shadow: calc(var(--ai-dispersion) * -1) 0 10px rgba(70,170,255,0.18), var(--ai-dispersion) 0 10px rgba(255,90,170,0.18), 0 14px 28px rgba(45,73,96,0.10) !important;
 }
-.ai-iridescent-ring,
+.ai-iridescent-ring:not(.absolute):not(.fixed),
 .ai-response-bubble,
-.ai-chat-panel,
+.ai-chat-panel:not(.absolute):not(.fixed),
 .ai-send-button-glow:not(:disabled) {
   position: relative;
   isolation: isolate;
@@ -518,24 +528,9 @@ html.light-mode .smoked-glass-surface.ai-chat-panel {
   50% { transform: translate(-34%, -34%) scale(0.81); opacity: 0.88; }
   100% { transform: translate(-68%, -68%) scale(1); opacity: 1; }
 }
-@keyframes ai-iris-rotate { to { transform: rotate(360deg); } }
 @keyframes ai-stream-cursor-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes ai-graph-shimmer { 0% { transform: translateX(-120%); } 100% { transform: translateX(220%); } }
 @media (prefers-reduced-motion: no-preference) {
-  .ai-iridescent-ring.ai-thinking::before,
-  .ai-iris-hover:hover::before,
-  .ai-iris-hover:focus-visible::before,
-  .ai-iris-hover:active::before,
-  .ai-response-bubble.ai-thinking::before,
-  .ai-response-bubble:hover::before,
-  .ai-response-bubble:focus-within::before,
-  .ai-chat-panel.ai-thinking::before,
-  .ai-chat-panel.ai-iris-hover:hover::before,
-  .ai-send-button-glow:not(:disabled):hover::before,
-  .ai-send-button-glow:not(:disabled):focus-visible::before {
-    animation: ai-iris-rotate var(--ai-iris-speed) linear infinite;
-    will-change: transform;
-  }
   .ai-star-loader__star--large { animation: ai-star-swap-large 1.05s cubic-bezier(0.45,0,0.15,1) infinite alternate; will-change: transform, opacity; }
   .ai-star-loader__star--small { animation: ai-star-swap-small 1.05s cubic-bezier(0.45,0,0.15,1) infinite alternate; will-change: transform, opacity; }
   .ai-stream-cursor { animation: ai-stream-cursor-pulse 0.7s ease-in-out infinite; will-change: opacity; }
@@ -545,10 +540,6 @@ html.light-mode .smoked-glass-surface.ai-chat-panel {
   .ai-star-loader__star { animation: none; }
   .ai-stream-cursor,
   .ai-graph-shimmer { animation: none; }
-  .ai-iridescent-ring::before,
-  .ai-response-bubble::before,
-  .ai-chat-panel::before,
-  .ai-send-button-glow:not(:disabled)::before { animation: none; }
 }
 .ai-chat-messages::-webkit-scrollbar { display: none; }
 .ai-chat-messages { -ms-overflow-style: none; scrollbar-width: none; }
