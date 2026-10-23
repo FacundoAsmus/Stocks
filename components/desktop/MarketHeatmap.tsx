@@ -147,7 +147,7 @@ function LoadingHeatCanvas({ group, width, height }: { group: string; width: num
         const radius = Math.max(width, height) * (0.27 + (index % 3) * 0.035);
         const green = (index + seed) % 2 === 0;
         const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, green ? "rgba(173, 250, 27, 0.5)" : "rgba(255, 48, 3, 0.48)");
+        gradient.addColorStop(0, green ? "rgba(1, 136, 254, 0.5)" : "rgba(255, 48, 3, 0.48)");
         gradient.addColorStop(0.55, green ? "rgba(0, 200, 5, 0.18)" : "rgba(255, 48, 3, 0.17)");
         gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
         context.fillStyle = gradient;
@@ -297,7 +297,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
               <Link key={stock.symbol} href={`/stock/${encodeURIComponent(stock.symbol)}`} className="heatmap-tile absolute flex flex-col overflow-hidden rounded-lg border border-white/10 bg-black/15 p-3 transition-opacity duration-200 hover:z-10 hover:bg-black/30 hover:ring-1 hover:ring-white/50" style={tileStyle} aria-label={`${stock.name} (${stock.symbol}), ${formatPercent(stock.changePercent)}`}>
                 <span className={cn("font-bold tracking-tight text-white", compact ? "text-base" : "text-2xl")}>{stock.symbol}</span>
                 <span className={cn("mt-1 truncate text-white/70", compact ? "text-xs" : "text-sm")}>{stock.name}</span>
-                <span className={cn("mt-auto font-semibold", compact ? "text-sm" : "text-lg", (stock.changePercent ?? 0) >= 0 ? "text-[#adfa1b]" : "text-[#ff7560]")}>{formatPercent(stock.changePercent)}</span>
+                <span className={cn("mt-auto font-semibold", compact ? "text-sm" : "text-lg", (stock.changePercent ?? 0) >= 0 ? "text-accent" : "text-[#ff7560]")}>{formatPercent(stock.changePercent)}</span>
               </Link>
             );
           })}

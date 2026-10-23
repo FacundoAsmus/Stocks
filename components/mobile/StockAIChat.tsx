@@ -911,7 +911,7 @@ function GraphEarningsMetric({ ctx, metric, title }: { ctx: GraphCtx; metric: "r
               const color = indicatorColor(value === null ? 50 : value < 0 ? 50 - Math.abs(value) / maximum * 50 : 50 + value / maximum * 50);
               const label = metric === "revenue" ? `$${formatCompact(value)}` : formatCurrency(value);
               return <div key={event.date} style={{ position: "relative", borderLeft: "1px solid var(--color-border-subtle)", cursor: value === null ? "default" : "pointer" }} onMouseEnter={() => { if (value !== null) setHoveredValue(value); }} onMouseLeave={() => setHoveredValue(null)} title={`Q${event.quarter} ${event.year}: ${label}${estimate ? " estimate" : " actual"}`}>
-                {value !== null && <div style={{ position: "absolute", left: "37.5%", width: "25%", maxWidth: 20, borderRadius: 2, ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: `${height}%`, backgroundColor: estimate ? "rgba(173,250,27,0.15)" : color, border: estimate ? "1px solid var(--color-accent)" : undefined, boxShadow: estimate ? undefined : `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` }} />}
+                {value !== null && <div style={{ position: "absolute", left: "37.5%", width: "25%", maxWidth: 20, borderRadius: 2, ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: `${height}%`, backgroundColor: estimate ? "rgb(var(--accent-rgb) / 0.15)" : color, border: estimate ? "1px solid var(--color-accent)" : undefined, boxShadow: estimate ? undefined : `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` }} />}
                 <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", fontSize: 10, fontWeight: 600, color: "var(--color-accent)" }}>Q{event.quarter}</span>
               </div>;
             })}
@@ -1156,7 +1156,7 @@ function EarningsCalendarWidget({ ctx }: { ctx: GraphCtx }) {
   const reportDate = report?.date ?? "";
 
   return <div aria-label={`${ctx.stock.symbol} earnings calendar for ${monthLabel}`} className="w-full max-w-[300px] rounded-3xl border p-5" style={{ borderColor: "rgba(145,150,150,0.62)", background: "transparent", boxShadow: "0 0 12px rgba(145,150,150,0.2), inset 0 0 8px rgba(145,150,150,0.05)" }}>
-    <p className="mb-3 text-left text-xs font-bold uppercase tracking-widest" style={{ color: "#adfa1b" }}>{monthLabel}</p>
+    <p className="mb-3 text-left text-xs font-bold uppercase tracking-widest" style={{ color: "var(--color-accent)" }}>{monthLabel}</p>
     <div className="grid grid-cols-7 gap-y-0.5">
       {["M", "T", "W", "T", "F", "S", "S"].map((weekday, index) => <p key={index} className="text-center text-[10px] font-bold uppercase text-text-muted">{weekday}</p>)}
       {cells.map((day, index) => {
@@ -2060,7 +2060,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
               outline: "none",
               fontSize: 16,
               color: textColor,
-              caretColor: "#adfa1b",
+              caretColor: "var(--color-accent)",
             }}
           />
           {input.trim() ? (
@@ -2071,8 +2071,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
               style={{
                 flexShrink: 0, height: 38, width: 38,
                 borderRadius: "50%",
-                backgroundColor: !loading ? "#adfa1b" : "rgba(173,250,27,0.18)",
-                color: !loading ? "#000" : "rgba(173,250,27,0.35)",
+                backgroundColor: !loading ? "var(--color-accent)" : "rgb(var(--accent-rgb) / 0.18)",
+                color: !loading ? "#000" : "rgb(var(--accent-rgb) / 0.35)",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 border: "none",
                 cursor: !loading ? "pointer" : "default",
@@ -2117,7 +2117,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               placeholder={`Ask about ${stock.symbol}…`}
               className="text-white placeholder:text-white/45"
-              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, color: textColor, caretColor: "#adfa1b" }}
+              style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, color: textColor, caretColor: "var(--color-accent)" }}
             />
             {input.trim() ? (
               <button
@@ -2127,8 +2127,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
                 style={{
                   flexShrink: 0, height: 38, width: 38,
                   borderRadius: "50%",
-                  backgroundColor: !loading ? "#adfa1b" : "rgba(173,250,27,0.18)",
-                  color: !loading ? "#000" : "rgba(173,250,27,0.35)",
+                  backgroundColor: !loading ? "var(--color-accent)" : "rgb(var(--accent-rgb) / 0.18)",
+                  color: !loading ? "#000" : "rgb(var(--accent-rgb) / 0.35)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   border: "none",
                   cursor: !loading ? "pointer" : "default",

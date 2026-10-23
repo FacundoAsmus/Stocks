@@ -343,7 +343,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
             backdropFilter: "blur(24px) saturate(180%)",
             WebkitBackdropFilter: "blur(24px) saturate(180%)",
             boxShadow: open
-              ? "0 0 14px rgba(173,250,27,0.45), 0 0 5px rgba(173,250,27,0.65), 0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)"
+              ? "0 0 14px rgb(var(--accent-rgb) / 0.45), 0 0 5px rgb(var(--accent-rgb) / 0.65), 0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)"
               : "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
           }}
           onClick={onEmptyAreaClick}
