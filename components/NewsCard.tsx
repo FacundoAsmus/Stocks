@@ -1,6 +1,6 @@
-import { Newspaper } from "lucide-react";
 import { memo } from "react";
 
+import { NewsImage } from "@/components/NewsImage";
 import type { CompanyNewsArticle } from "@/types/stock";
 
 // Redesigned to match the shape/feel of the pre-merge stock card
@@ -27,24 +27,7 @@ export const NewsCard = memo(function NewsCard({ article }: { article: CompanyNe
       >
         {/* Image — top 3/4, flush to the card's edges */}
         <div className="relative w-full flex-[2] bg-panel-muted">
-          {article.image ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={article.image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover"
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                  const fallback = event.currentTarget.nextElementSibling as HTMLElement | null;
-                  if (fallback) fallback.style.display = "flex";
-                }} />
-              <div className="absolute inset-0 hidden h-full w-full items-center justify-center">
-                <Newspaper className="h-8 w-8 text-text-muted opacity-40" aria-hidden />
-              </div>
-            </>
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <Newspaper className="h-8 w-8 text-text-muted opacity-40" aria-hidden />
-            </div>
-          )}
+          <NewsImage src={article.image} />
         </div>
 
         <div className="flex flex-1 flex-col items-start justify-center gap-1 px-3 py-2">
