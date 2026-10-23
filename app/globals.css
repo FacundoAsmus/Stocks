@@ -15,7 +15,7 @@ html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
 }
 
 @theme {
-  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --color-background: #050507;
   --color-panel: #0a0a0d;
   --color-panel-muted: #111114;
