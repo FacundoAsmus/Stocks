@@ -1904,7 +1904,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             position: "absolute", inset: 0,
             zIndex: 0,
             background: open && !containerRef ? "rgba(0,0,0,0.16)" : "transparent",
-            
+            backdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
+            WebkitBackdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
             transform: "translateZ(0)",
             WebkitTransform: "translateZ(0)",
             
@@ -1990,7 +1991,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           separate bar/card behind it — this IS the input, elongated. */}
       {!hideTrigger && (
       <div
-        className={`smoked-glass-surface ai-aberration ai-chat-panel ai-iris-hover fixed rounded-full border border-transparent text-accent overflow-hidden${loading ? " ai-thinking" : ""}`}
+          className={`smoked-glass-surface ai-chat-panel ai-iris-hover fixed rounded-full border border-transparent text-accent overflow-hidden${loading ? " ai-thinking" : ""}`}
         style={{
           zIndex: 1002,
           bottom: pillBottom,
@@ -2003,6 +2004,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       >
         {/* Closed state: the trigger icon */}
         <button
+          className="ai-aberration rounded-full"
           onClick={() => setOpen(true)}
           aria-label="Ask AI"
           style={{

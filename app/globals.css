@@ -18,12 +18,12 @@ html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
   --accent-rgb: 255 255 255;
   --color-ai: #A855F6;
   --ai-rgb: 168 85 246;
-  --ai-fringe-cyan: #7ef9ff;
-  --ai-fringe-blue: #164bff;
-  --ai-fringe-red: #ff4d5a;
-  --ai-fringe-amber: #ff9f43;
-  --ai-fringe-yellow: #ffe66d;
-  --ai-fringe-opacity: .85;
+  --ai-fringe-blue: #2a2aff;
+  --ai-fringe-red: #ff3d00;
+  --ai-fringe-amber: #ffb000;
+  --ai-fringe-yellow: #ffe600;
+  --ai-fringe-cyan: #7fe8ff;
+  --ai-fringe-opacity: 0.9;
   --ai-iris-speed: 6s;
   --ai-dispersion: 0.6px;
   --ai-iris-colors: #7ef9ff, #7a8cff, #c58bff, #ff8fd8, #ffd28a, #9dffb8;
@@ -478,39 +478,33 @@ html.light-mode .smoked-glass-surface.ai-chat-panel {
 .ai-aberration::after {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: -1px;
   border-radius: inherit;
-  padding: 2px;
+  padding: 3px;
   pointer-events: none;
   opacity: var(--ai-fringe-opacity);
+  filter: blur(0.6px);
   background: conic-gradient(from 0deg,
-    transparent 0deg 25deg,
-    var(--ai-fringe-cyan) 30deg,
-    var(--ai-fringe-blue) 36deg,
-    var(--ai-fringe-red) 41deg,
-    var(--ai-fringe-amber) 45deg,
-    var(--ai-fringe-yellow) 49deg,
-    var(--ai-fringe-amber) 53deg,
-    var(--ai-fringe-red) 58deg,
-    var(--ai-fringe-blue) 64deg,
-    var(--ai-fringe-cyan) 70deg,
-    transparent 76deg 205deg,
-    var(--ai-fringe-cyan) 210deg,
-    var(--ai-fringe-blue) 216deg,
-    var(--ai-fringe-red) 221deg,
-    var(--ai-fringe-amber) 225deg,
-    var(--ai-fringe-yellow) 229deg,
-    var(--ai-fringe-amber) 233deg,
-    var(--ai-fringe-red) 238deg,
-    var(--ai-fringe-blue) 244deg,
-    var(--ai-fringe-cyan) 250deg,
-    transparent 256deg 360deg
+    transparent 0deg 8deg,
+    var(--ai-fringe-blue) 25deg,
+    var(--ai-fringe-red) 40deg,
+    var(--ai-fringe-amber) 52deg,
+    var(--ai-fringe-yellow) 64deg,
+    var(--ai-fringe-cyan) 76deg,
+    transparent 92deg 188deg,
+    var(--ai-fringe-blue) 205deg,
+    var(--ai-fringe-red) 220deg,
+    var(--ai-fringe-amber) 232deg,
+    var(--ai-fringe-yellow) 244deg,
+    var(--ai-fringe-cyan) 256deg,
+    transparent 272deg 360deg
   );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
 }
+.ai-aberration.ai-iridescent-ring::before { content: none; }
 .ai-iris-glow,
 .ai-response-bubble,
 .ai-chat-panel,
