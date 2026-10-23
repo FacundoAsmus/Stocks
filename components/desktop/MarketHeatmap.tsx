@@ -147,7 +147,7 @@ function LoadingHeatCanvas({ group, width, height }: { group: string; width: num
         const radius = Math.max(width, height) * (0.27 + (index % 3) * 0.035);
         const green = (index + seed) % 2 === 0;
         const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, green ? "rgba(1, 136, 254, 0.5)" : "rgba(255, 48, 3, 0.48)");
+        gradient.addColorStop(0, green ? "rgba(28, 151, 253, 0.5)" : "rgba(255, 48, 3, 0.48)");
         gradient.addColorStop(0.55, green ? "rgba(0, 200, 5, 0.18)" : "rgba(255, 48, 3, 0.17)");
         gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
         context.fillStyle = gradient;

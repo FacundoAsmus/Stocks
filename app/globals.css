@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --accent-rgb: 1 136 254;
+  --accent-rgb: 28 151 253;
 }
 
 .market-icon-frame { background-color: #000000 !important; }
@@ -25,7 +25,7 @@ html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
   --color-border-subtle: #1e1e24;
   --color-text-primary: #f3f7fb;
   --color-text-muted: #93a4b8;
-  --color-accent: #0188FE;
+  --color-accent: #1C97FD;
   --color-positive: #00c805;
   --color-negative: #ff3003;
 }
