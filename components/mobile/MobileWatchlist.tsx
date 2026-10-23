@@ -7,7 +7,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
 import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
-import { MarketIcon } from "@/components/MarketIcon";
+import { StockLogo } from "@/components/StockLogo";
 import { formatPercent } from "@/lib/format";
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
 import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
@@ -79,19 +79,10 @@ function RowContent({ stock }: { stock: StockSummary }) {
   const hasStockLogo = !!stock.logo && !isEtf;
   return (
     <>
-      {hasStockLogo ? (
-        <img
-          src={stock.logo}
-          alt=""
-          className="h-9 w-9 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0 pointer-events-none"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-            const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-            if (fallback) fallback.style.display = "inline-flex";
-          }}
-        />
-      ) : null}
-      <MarketIcon className={cn("h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none", hasStockLogo && "hidden")} />
+      <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48}
+        sizeClassName="h-9 w-9 shrink-0"
+        imageClassName="h-9 w-9 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0 pointer-events-none"
+        fallbackClassName="h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none" />
       <span className="flex-1 min-w-0 pointer-events-none">
         <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
       </span>

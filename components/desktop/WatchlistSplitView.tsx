@@ -6,7 +6,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
 import { DEFAULT_WATCHLIST } from "@/lib/constants";
 import { SECTOR_ETFS } from "@/lib/etfs";
-import { MarketIcon } from "@/components/MarketIcon";
+import { StockLogo } from "@/components/StockLogo";
 import { formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { StockSummary } from "@/types/stock";
@@ -115,20 +115,10 @@ function WatchlistListRow({
           : isActive ? "is-selected brightness-105 hover:brightness-110" : "hover:brightness-110"
       )}
     >
-      {hasStockLogo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={stock.logo}
-          alt=""
-          className="h-9 w-9 shrink-0 rounded-3xl border border-white/10 bg-white/5 object-contain pointer-events-none"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-            const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-            if (fallback) fallback.style.display = "inline-flex";
-          }}
-        />
-      ) : null}
-      <MarketIcon className={cn("h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none", hasStockLogo && "hidden")} />
+      <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48}
+        sizeClassName="h-9 w-9 shrink-0"
+        imageClassName="h-9 w-9 shrink-0 rounded-3xl border border-white/10 bg-white/5 object-contain pointer-events-none"
+        fallbackClassName="h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none" />
       <span className="min-w-0 flex-1 pointer-events-none">
         <span className="block truncate text-sm font-bold text-text-primary">{stock.symbol}</span>
       </span>

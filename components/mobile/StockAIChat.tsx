@@ -830,7 +830,7 @@ function NewsCard({ index, ctx }: { index: number; ctx: GraphCtx }) {
       className="my-2 block aspect-video w-full max-w-[192px] overflow-hidden rounded-3xl border border-white/15 bg-panel-muted">
       {article.image ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={article.image} alt="" className="h-full w-full object-cover" />
+        <img src={article.image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
       ) : <span className="block h-full w-full bg-panel-muted" />}
     </a>
   );

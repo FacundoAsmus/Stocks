@@ -14,7 +14,7 @@ import { CompanyDescription } from "@/components/CompanyDescription";
 import { NewsSummary } from "@/components/NewsSummary";
 import { NewsCard } from "@/components/NewsCard";
 import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
-import { MarketIcon } from "@/components/MarketIcon";
+import { StockLogo } from "@/components/StockLogo";
 import { EarningsCalendarButton } from "@/components/mobile/EarningsCalendarButton";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { StockAIChat } from "@/components/mobile/StockAIChat";
@@ -23,7 +23,6 @@ import { StockPriceAlertButton } from "@/components/StockPriceAlertButton";
 import { MobileCompareSearch } from "@/components/mobile/MobileCompareSearch";
 import { StockComparisonView, type ComparisonDetailPayload } from "@/components/desktop/StockComparisonView";
 import { MobileSettingsPanel } from "@/components/MobileNav";
-import { cn } from "@/lib/utils";
 import { isUsEquityMarketOpen } from "@/lib/usMarketHours";
 import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
 import type { StockDetail } from "@/types/stock";
@@ -257,17 +256,10 @@ export function MobileStockPage(props: MobileStockPageProps) {
           ) : null
         ) : <>
         <div className="flex items-center gap-3 px-4 pt-5 pb-3">
-          {!isEtf && stock.profile.logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={stock.profile.logo} alt=""
-              className="h-12 w-12 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-                const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-                if (fallback) fallback.style.display = "inline-flex";
-              }} />
-          ) : null}
-          <MarketIcon className={cn("h-12 w-12 shrink-0 rounded-3xl object-contain", !isEtf && stock.profile.logo && "hidden")} />
+          <StockLogo logo={!isEtf ? stock.profile.logo : undefined} size={48}
+            sizeClassName="h-12 w-12 shrink-0"
+            imageClassName="h-12 w-12 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0"
+            fallbackClassName="h-12 w-12 shrink-0 rounded-3xl object-contain" />
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-text-primary leading-tight truncate">{stock.profile.name ?? stock.symbol}</h1>
           </div>

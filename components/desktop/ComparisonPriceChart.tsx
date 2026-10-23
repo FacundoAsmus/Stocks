@@ -319,6 +319,7 @@ export function ComparisonPriceChart({
                   className={`group relative shrink-0 overflow-hidden rounded-full transition hover:scale-110 hover:brightness-75 ${mobile ? "h-10 w-10" : "h-14 w-14"}`}>
                   <StockLogo
                     logo={SECTOR_ETFS.some((entry) => entry.symbol === symbol) ? undefined : (symbol === primarySymbol ? primaryLogo : secondaryLogo)}
+                    size={mobile ? 48 : 64}
                     sizeClassName={mobile ? "h-10 w-10" : "h-14 w-14"}
                     shape="circle"
                   />

@@ -65,7 +65,7 @@ export function DesktopStockDetail({
               <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} />
               <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact hoverRemoveIcon={watchlistDetailHeader} />
             </div>
-            {watchlistDetailHeader && <StockFunctionButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} chartHeight={384} />}
+            {watchlistDetailHeader && <StockFunctionButton symbol={stock.symbol} chartHeight={384} />}
           </div>
           {watchlistDetailHeader && <StockChartToolsMenu symbol={stock.symbol} />}
           {/* ── Logo + name row ── */}

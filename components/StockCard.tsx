@@ -5,7 +5,7 @@ import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { SECTOR_ETFS } from "@/lib/etfs";
-import { MarketIcon } from "@/components/MarketIcon";
+import { StockLogo } from "@/components/StockLogo";
 import type { StockSummary } from "@/types/stock";
 import { AddToWatchlistButton } from "./AddToWatchlistButton";
 
@@ -49,20 +49,10 @@ export function StockCard({
           {/* Header and Financials */}
           <div className="flex flex-col gap-1 sm:gap-2">
           <div className="min-w-0 flex items-center gap-2 sm:gap-3">
-            {hasStockLogo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={stock.logo}
-                alt=""
-                className="h-8 w-8 sm:h-12 sm:w-12 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                  const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-                  if (fallback) fallback.style.display = "inline-flex";
-                }}
-              />
-            ) : null}
-            <MarketIcon className={`h-8 w-8 sm:h-12 sm:w-12 shrink-0 rounded-md object-contain ${hasStockLogo ? "hidden" : ""}`} />
+            <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48} shape="rounded-md"
+              sizeClassName="h-8 w-8 sm:h-12 sm:w-12 shrink-0"
+              imageClassName="h-8 w-8 sm:h-12 sm:w-12 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
+              fallbackClassName="h-8 w-8 sm:h-12 sm:w-12 shrink-0 rounded-md object-contain" />
             <div className="min-w-0">
               <h2 className="text-lg sm:text-2xl font-bold tracking-tight text-text-primary truncate">{stock.symbol}</h2>
               <p className="text-xs sm:text-sm font-medium text-text-muted truncate">{stock.name}</p>

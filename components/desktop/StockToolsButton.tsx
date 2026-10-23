@@ -13,10 +13,8 @@ const MA_OPTIONS = [
 type MAStateDetail = { symbol: string; active: number[]; available: number[] };
 type ChartToolsRequest = { symbol: string; clientX: number; clientY: number };
 
-export function StockFunctionButton({ symbol, name, currentPrice, chartHeight = 384 }: {
+export function StockFunctionButton({ symbol, chartHeight = 384 }: {
   symbol: string;
-  name: string;
-  currentPrice: number;
   chartHeight?: number;
 }) {
   const [open, setOpen] = useState(false);

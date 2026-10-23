@@ -1,14 +1,12 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element -- stock logos use dynamic external URLs and a local fallback. */
-
 import { Search } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { SECTOR_ETFS } from "@/lib/etfs";
-import { MarketIcon } from "@/components/MarketIcon";
+import { StockLogo } from "@/components/StockLogo";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
@@ -370,26 +368,10 @@ function MobileSearchPill({ origin }: { origin: string }) {
                 borderTop: "1px solid var(--color-border-subtle)",
               }}
             >
-              {logos[r.symbol] && !SECTOR_ETFS.some((etf) => etf.symbol === r.symbol) ? (
-                <img
-                  src={logos[r.symbol]}
-                  alt=""
-                  style={{
-                    height: 40, width: 40, borderRadius: 24, flexShrink: 0,
-                    border: "1px solid var(--color-border-subtle)",
-                    backgroundColor: "var(--color-panel-muted)",
-                    objectFit: "contain",
-                  }}
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    const sib = e.currentTarget.nextElementSibling as HTMLElement | null;
-                    if (sib) sib.style.display = "flex";
-                  }}
-                />
-              ) : null}
-              <MarketIcon
-                className={`h-10 w-10 shrink-0 rounded-3xl object-contain ${logos[r.symbol] && !SECTOR_ETFS.some((etf) => etf.symbol === r.symbol) ? "hidden" : ""}`}
-              />
+              <StockLogo logo={logos[r.symbol] && !SECTOR_ETFS.some((etf) => etf.symbol === r.symbol) ? logos[r.symbol] : undefined}
+                size={48} sizeClassName="h-10 w-10 shrink-0"
+                imageClassName="h-10 w-10 shrink-0 rounded-3xl border border-border-subtle bg-panel-muted object-contain"
+                fallbackClassName="h-10 w-10 shrink-0 rounded-3xl object-contain" fallbackDisplay="flex" />
               <span style={{ minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>{r.symbol}</span>
                 <span style={{ display: "block", fontSize: 12, color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>

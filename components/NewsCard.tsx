@@ -1,4 +1,5 @@
 import { Newspaper } from "lucide-react";
+import { memo } from "react";
 
 import type { CompanyNewsArticle } from "@/types/stock";
 
@@ -13,10 +14,10 @@ import type { CompanyNewsArticle } from "@/types/stock";
 // the top 3/4 of the card edge-to-edge (the card's own rounded corners +
 // overflow-hidden do the clipping — the image itself has no border-radius
 // of its own), and the headline sits in the bottom 1/4.
-export function NewsCard({ article }: { article: CompanyNewsArticle }) {
+export const NewsCard = memo(function NewsCard({ article }: { article: CompanyNewsArticle }) {
   return (
     <article
-      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-2xl border border-[#3a3a42] bg-black transition-all duration-300 ease-out hover:border-accent hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]"
+      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-2xl border border-[#3a3a42] bg-black transition-[transform,border-color] duration-300 ease-out hover:border-accent hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]"
     >
       <a
         href={article.url}
@@ -27,8 +28,18 @@ export function NewsCard({ article }: { article: CompanyNewsArticle }) {
         {/* Image — top 3/4, flush to the card's edges */}
         <div className="relative w-full flex-[2] bg-panel-muted">
           {article.image ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={article.image} alt="" className="h-full w-full object-cover" />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={article.image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.style.display = "none";
+                  const fallback = event.currentTarget.nextElementSibling as HTMLElement | null;
+                  if (fallback) fallback.style.display = "flex";
+                }} />
+              <div className="absolute inset-0 hidden h-full w-full items-center justify-center">
+                <Newspaper className="h-8 w-8 text-text-muted opacity-40" aria-hidden />
+              </div>
+            </>
           ) : (
             <div className="flex h-full w-full items-center justify-center">
               <Newspaper className="h-8 w-8 text-text-muted opacity-40" aria-hidden />
@@ -47,4 +58,4 @@ export function NewsCard({ article }: { article: CompanyNewsArticle }) {
       </a>
     </article>
   );
-}
+});

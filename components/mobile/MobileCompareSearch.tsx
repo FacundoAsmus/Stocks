@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { MarketIcon } from "@/components/MarketIcon";
+import { StockLogo } from "@/components/StockLogo";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
 
@@ -176,8 +176,10 @@ export function MobileCompareSearch({
           const hasLogo = Boolean(logos[result.symbol]) && !SECTOR_ETFS.some((etf) => etf.symbol === result.symbol);
           return <button key={result.symbol} type="button" onClick={() => choose(result.symbol)}
             className="flex w-full items-center gap-3 border-t border-border-subtle px-4 py-3 text-left first:border-t-0">
-            {hasLogo && <img src={logos[result.symbol]} alt="" className="h-10 w-10 shrink-0 rounded-3xl border border-border-subtle bg-panel-muted object-contain" onError={(event) => { event.currentTarget.style.display = "none"; const fallback = event.currentTarget.nextElementSibling as HTMLElement | null; if (fallback) fallback.style.display = "inline-flex"; }} />}
-            <MarketIcon className={`h-10 w-10 shrink-0 rounded-3xl object-contain ${hasLogo ? "hidden" : ""}`} />
+            <StockLogo logo={hasLogo ? logos[result.symbol] : undefined} size={48}
+              sizeClassName="h-10 w-10 shrink-0"
+              imageClassName="h-10 w-10 shrink-0 rounded-3xl border border-border-subtle bg-panel-muted object-contain"
+              fallbackClassName="h-10 w-10 shrink-0 rounded-3xl object-contain" />
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-text-primary">{result.symbol}</span>
               <span className="block truncate text-xs text-text-muted">{result.name}</span>

@@ -9,7 +9,7 @@ import { BarChart2, ChevronDown } from "lucide-react";
 
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { SECTOR_ETFS } from "@/lib/etfs";
-import { MarketIcon } from "@/components/MarketIcon";
+import { StockLogo } from "@/components/StockLogo";
 import {
   TrackerHolding,
   AggregatedPosition,
@@ -392,19 +392,10 @@ function PositionRow({
     <div className="border-b border-border-subtle/70 last:border-0 group">
       <div className="flex items-center gap-3 px-5 py-4">
         <Link href={`/stock/${position.ticker}`} className="flex items-center gap-3 flex-1 min-w-0">
-          {hasStockLogo ? (
-            <img
-              src={stock.logo}
-              alt=""
-              className="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-                const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-                if (fallback) fallback.style.display = "inline-flex";
-              }}
-            />
-          ) : null}
-          <MarketIcon className={cn("h-9 w-9 shrink-0 rounded-md object-contain", hasStockLogo && "hidden")} />
+          <StockLogo logo={hasStockLogo ? stock?.logo : undefined} size={48} shape="rounded-md"
+            sizeClassName="h-9 w-9 shrink-0"
+            imageClassName="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
+            fallbackClassName="h-9 w-9 shrink-0 rounded-md object-contain" />
           <span className="flex-1 min-w-0">
             <span className="block text-sm font-bold text-text-primary">{position.ticker}</span>
             <span className="block text-xs text-text-muted truncate">{position.companyName}</span>
