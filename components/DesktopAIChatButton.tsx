@@ -22,7 +22,7 @@ export function DesktopAIChatButton({ stock, currentPrice, sentiment, metrics }:
         type="button"
         onClick={() => setChatOpen(true)}
         aria-label={`Ask AI about ${stock.symbol}`}
-        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-positive/40 bg-positive/10 text-positive transition-all duration-200 hover:-translate-y-1 hover:scale-[1.12]"
+        className="ai-iridescent-ring ai-iris-hover ai-iris-glow inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-transparent bg-transparent transition-transform duration-200 hover:-translate-y-1 hover:scale-[1.12]"
       >
         <OptionalSvgIcon name="ai" className="ai-button-icon h-6 w-6" />
       </button>

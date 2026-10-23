@@ -294,10 +294,8 @@ function DataPill({ dataKey, ctx, identityColor, symbol }: { dataKey: DataKey; c
 function GraphShimmer() {
   return (
     <div style={{ position: "absolute", inset: 0, borderRadius: 8, overflow: "hidden", backgroundColor: "transparent" }}>
-      <div style={{
+      <div className="ai-graph-shimmer" style={{
         position: "absolute", inset: 0, width: "60%",
-        background: "linear-gradient(90deg, transparent, rgba(0,200,5,0.22), transparent)",
-        animation: "graphShimmer 1.1s ease-in-out infinite",
       }} />
     </div>
   );
@@ -1207,16 +1205,13 @@ function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; an
 
 function Cursor() {
   return (
-    <span style={{
+    <span className="ai-stream-cursor" style={{
       display: "inline-block",
       width: "2px",
       height: "1em",
       marginLeft: "2px",
       verticalAlign: "text-bottom",
-      backgroundColor: "#00c805",
       borderRadius: "1px",
-      boxShadow: "0 0 6px 2px rgba(0,200,5,0.7)",
-      animation: "aiCursor 0.7s ease-in-out infinite",
     }} />
   );
 }
@@ -1581,7 +1576,7 @@ function buildStockContext(
   return lines.join("\n");
 }
 
-// Streams AI text character by character with a green glow on the last char.
+// Streams AI text character by character with an iridescent cursor.
 // Widget tags ([[data:...]] / [[graph:...]]) only render once they've fully
 // streamed in, then hold steady while the rest of the message keeps typing.
 function AnimatedMessageBody({ text, ctx, onDone }: { text: string; ctx: GraphCtx; onDone: () => void }) {
@@ -1887,11 +1882,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         style={{
           position: "fixed", inset: 0, zIndex: 999,
           background: open ? "rgba(0,0,0,0.16)" : "transparent",
-          backdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
-          WebkitBackdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
           pointerEvents: open ? "auto" : "none",
           opacity: open ? 1 : 0,
-          transition: "opacity 0.25s ease, backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
+          transition: "opacity 0.25s ease",
         }}
         onClick={handleDismiss}
       />}
@@ -1911,12 +1904,10 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             position: "absolute", inset: 0,
             zIndex: 0,
             background: open && !containerRef ? "rgba(0,0,0,0.16)" : "transparent",
-            backdropFilter:       open && !containerRef ? "blur(12px) brightness(0.97)" : "none",
-            WebkitBackdropFilter: open && !containerRef ? "blur(12px) brightness(0.97)" : "none",
-            transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
+            
             transform: "translateZ(0)",
             WebkitTransform: "translateZ(0)",
-            willChange: "backdrop-filter",
+            
           }}
           onClick={handleDismiss}
         />
@@ -1962,9 +1953,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
                 borderRadius: 24,
                 background: bgBubbleAI,
                 border: `1px solid ${msg.role === "model" ? "var(--color-accent)" : bubbleBorderUser}`,
-                backdropFilter: "blur(24px) saturate(180%)",
-                WebkitBackdropFilter: "blur(24px) saturate(180%)",
-                boxShadow: msg.role === "model" ? `0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent), ${bubbleGlowAI}` : bubbleGlowAI,
                 color: textColor,
                 fontSize: 17,
                 lineHeight: 1.55,
@@ -1983,14 +1971,11 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
 
           {loading && (
             <div style={{ display: "flex", justifyContent: "flex-start" }}>
-              <div className="smoked-glass-surface ai-response-bubble" style={{
+              <div className={`smoked-glass-surface ai-response-bubble${loading ? " ai-thinking" : ""}`} style={{
                 padding: "14px 18px",
                 borderRadius: 24,
                 background: bgBubbleAI,
                 border: "1px solid var(--color-accent)",
-                boxShadow: `0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent), ${bubbleGlowAI}`,
-                backdropFilter: "blur(24px) saturate(180%)",
-                WebkitBackdropFilter: "blur(24px) saturate(180%)",
                 display: "flex", alignItems: "center",
               }}>
                 <AIStarLoader size="md" />
@@ -2005,7 +1990,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           separate bar/card behind it — this IS the input, elongated. */}
       {!hideTrigger && (
       <div
-        className="smoked-glass-surface fixed rounded-full border border-white/15 text-accent overflow-hidden"
+        className={`smoked-glass-surface ai-chat-panel ai-iris-hover fixed rounded-full border border-transparent text-accent overflow-hidden${loading ? " ai-thinking" : ""}`}
         style={{
           zIndex: 1002,
           bottom: pillBottom,
@@ -2013,9 +1998,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           width: open ? pillOpenWidth : "3.5rem",
           height: "3.5rem",
           background: chatControlGlass,
-          backdropFilter: "blur(24px) saturate(180%)",
-          WebkitBackdropFilter: "blur(24px) saturate(180%)",
-          boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
           transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
         }}
       >
@@ -2031,7 +2013,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             transition: "opacity 0.16s ease",
           }}
         >
-          <OptionalSvgIcon name="ai" className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2" />
+          <OptionalSvgIcon name="ai" className="ai-button-icon absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2" />
         </button>
 
         {/* Open state: the actual input row */}
@@ -2091,7 +2073,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       {/* Controlled mode (e.g. desktop): render just the input row inline where hideTrigger is set and open is true, anchored bottom same as mobile pill would be, so typing still works without the floating circle. */}
       {hideTrigger && open && (
         <div
-          className="smoked-glass-surface fixed rounded-full border border-white/15 text-accent overflow-hidden"
+          className={`smoked-glass-surface ai-chat-panel ai-iris-hover fixed rounded-full border border-transparent text-accent overflow-hidden${loading ? " ai-thinking" : ""}`}
           style={{
             zIndex: 1002,
             bottom: pillBottom,
@@ -2100,9 +2082,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             maxWidth: "480px",
             height: "3.5rem",
             background: chatControlGlass,
-            backdropFilter: "blur(24px) saturate(180%)",
-            WebkitBackdropFilter: "blur(24px) saturate(180%)",
-            boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
           }}
         >
           <div style={{
@@ -2144,14 +2123,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       )}
 
       <style>{`
-        @keyframes aiCursor {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0; }
-        }
-        @keyframes graphShimmer {
-          0%   { transform: translateX(-120%); }
-          100% { transform: translateX(220%); }
-        }
       `}</style>
     </>,
     document.body

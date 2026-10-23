@@ -187,7 +187,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
   }
 
   const glassBg = "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))";
-  const glassShadow = "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)";
+
 
   return (
     <>
@@ -197,8 +197,8 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
           type="button"
           onClick={() => setOpen(true)}
           aria-label={`Ask AI about ${stock.symbol}`}
-          className="pointer-events-auto absolute bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full border border-white/25 text-positive overflow-hidden"
-          style={{ background: glassBg, backdropFilter: "blur(22px) saturate(160%)", WebkitBackdropFilter: "blur(22px) saturate(160%)", boxShadow: glassShadow }}
+          className="ai-iridescent-ring ai-iris-hover ai-iris-glow pointer-events-auto absolute bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full border border-transparent overflow-hidden"
+          style={{ background: glassBg }}
         >
           <div
             aria-hidden
@@ -216,19 +216,16 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
     {mounted && open && createPortal(
       <>
         <div
-          className="smoked-glass-backdrop fixed inset-0 z-[1200] flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
+          className="ai-chat-backdrop smoked-glass-backdrop fixed inset-0 z-[1200] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.16)" }}
           onClick={() => setOpen(false)}
           role="presentation"
         >
         <div
-          className="pointer-events-auto flex w-full max-w-[420px] flex-col overflow-hidden rounded-3xl border border-white/25"
+          className={cn("ai-chat-dialog ai-iridescent-ring ai-iris-hover ai-iris-glow pointer-events-auto flex w-full max-w-[420px] flex-col overflow-hidden rounded-3xl border border-transparent", loading && "ai-thinking")}
           style={{
             height: "min(640px, calc(100dvh - 2rem))",
             background: "linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.6))",
-            backdropFilter: "blur(28px) saturate(160%)",
-            WebkitBackdropFilter: "blur(28px) saturate(160%)",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
           }}
           role="dialog"
           aria-modal="true"
@@ -237,7 +234,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
         >
           <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
             <span className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-              <Sparkles className="h-4 w-4 text-positive" />
+              <Sparkles className="ai-sparkle-icon h-4 w-4" />
               Ask about {stock.symbol}
             </span>
             <GlossyIconButton aria-label="Close chat" onClick={() => setOpen(false)}><GlossyCloseIcon /></GlossyIconButton>
@@ -254,16 +251,16 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
                 key={i}
                 className={cn(
                   "max-w-[85%] rounded-3xl px-3 py-2 text-sm leading-relaxed",
-                  m.role === "user" ? "self-end bg-positive text-black" : "self-start border border-accent/70 text-text-primary"
+                  m.role === "user" ? "self-end bg-positive text-black" : "ai-response-bubble self-start border border-transparent text-text-primary"
                 )}
-                style={m.role === "model" ? { boxShadow: "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent)" } : undefined}
+                
               >
                 {m.role === "model" ? <AIMessageContent text={m.text} stock={stock} animating={m.animating} /> : m.text}
               </div>
             ))}
             {serverError && <AIUnavailableNotice />}
             {loading && (
-              <div className="ai-response-bubble self-start rounded-3xl border border-accent/70 px-3 py-2" style={{ boxShadow: "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent)" }}>
+              <div className="ai-response-bubble ai-thinking self-start rounded-3xl border border-transparent px-3 py-2">
                 <AIStarLoader size="md" />
               </div>
             )}

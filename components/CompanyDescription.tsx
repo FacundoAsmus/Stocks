@@ -40,14 +40,12 @@ export function AISummaryText({ text }: { text: string }) {
     <p className="animate-[description-fade_240ms_ease-out_both] text-[1.05rem] text-text-primary whitespace-pre-line">
       <style>{`
         @keyframes description-fade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes description-cursor { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
       `}</style>
       {text.slice(0, visibleLength)}
       {!complete && (
         <span
           aria-hidden
-          className="ml-0.5 inline-block h-[1em] w-[2px] align-[-0.12em] rounded-sm bg-positive"
-          style={{ boxShadow: "0 0 6px 2px rgba(0,200,5,0.7)", animation: "description-cursor .7s ease-in-out infinite" }}
+          className="ai-stream-cursor ml-0.5 inline-block h-[1em] w-[2px] align-[-0.12em] rounded-sm"
         />
       )}
     </p>
