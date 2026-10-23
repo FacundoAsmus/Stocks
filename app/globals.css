@@ -15,7 +15,6 @@ html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
 }
 
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --color-background: #050507;
   --color-panel: #0a0a0d;
   --color-panel-muted: #111114;
@@ -25,6 +24,10 @@ html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
   --color-accent: #adfa1b;
   --color-positive: #00c805;
   --color-negative: #ff3003;
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 * {
@@ -108,7 +111,7 @@ body {
   /* Transparent so html's #000000 shows through everywhere, including behind Safari UI */
   background: transparent;
   color: #f3f7fb;
-  font-family: var(--font-sans);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Light mode: cool frosted crystal. These material-only overrides deliberately

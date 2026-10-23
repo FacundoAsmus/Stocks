@@ -28,8 +28,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={inter.variable}>
+    <html lang="en" className={`dark ${inter.variable}`}>
+      <body>
         <PushWorkerRegistration />
         <script dangerouslySetInnerHTML={{ __html: `
           (function(){
