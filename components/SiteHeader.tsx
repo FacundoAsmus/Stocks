@@ -35,8 +35,8 @@ export function SiteHeader() {
       <div className={`flex flex-col gap-4 px-4 py-2 sm:px-6 lg:flex-row lg:items-center lg:justify-between ${usesUnifiedToolbar ? "lg:px-4" : "mx-auto max-w-7xl lg:px-8"}`}>
         {usesUnifiedToolbar ? (
           <div className="flex items-center gap-4">
-            <Link href="/" aria-label="Home" className="flex h-[120px] w-[120px] shrink-0 items-center justify-center">
-              <img src="/icons/site-logo.jpeg" alt="" className="h-[120px] w-[120px] rounded-3xl object-contain" />
+            <Link href="/" aria-label="Home" className="relative flex h-10 w-[90px] shrink-0 items-center justify-center">
+              <img src="/icons/site-logo.jpeg" alt="" className="absolute left-0 top-1/2 h-[90px] w-[90px] -translate-y-1/2 rounded-3xl object-contain" />
             </Link>
             <AppNav variant="links" />
           </div>
