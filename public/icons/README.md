@@ -43,7 +43,7 @@ The same files are used on desktop and phone. Each layout controls its own size 
 
 ## Desktop brand image
 
-Upload the PC header image as `site-logo.jpg` in this folder (`public/icons/site-logo.jpg`).
+Upload the PC header image as `site-logo.jpeg` in this folder (`public/icons/site-logo.jpeg`).
 It appears at the top-left of the desktop Market and Watchlist pages, before the navigation buttons.
 
 ## Market heatmap groups

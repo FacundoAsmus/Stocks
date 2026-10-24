@@ -36,7 +36,7 @@ export function SiteHeader() {
         {usesUnifiedToolbar ? (
           <div className="flex items-center gap-4">
             <Link href="/" aria-label="Home" className="flex h-10 w-10 shrink-0 items-center justify-center">
-              <img src="/icons/site-logo.jpg" alt="" className="h-10 w-10 object-contain" />
+              <img src="/icons/site-logo.jpeg" alt="" className="h-10 w-10 object-contain" />
             </Link>
             <AppNav variant="links" />
           </div>
