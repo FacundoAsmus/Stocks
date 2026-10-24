@@ -256,7 +256,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
           ) : null
         ) : <>
         <div className="flex items-center gap-3 px-4 pt-5 pb-3">
-          <StockLogo logo={!isEtf ? stock.profile.logo : undefined} symbol={stock.symbol} size={48}
+          <StockLogo logo={!isEtf ? stock.profile.logo : undefined} size={48}
             sizeClassName="h-12 w-12 shrink-0"
             imageClassName="h-12 w-12 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0"
             fallbackClassName="h-12 w-12 shrink-0 rounded-3xl object-contain" />
@@ -266,14 +266,15 @@ export function MobileStockPage(props: MobileStockPageProps) {
           <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
         </div>
 
-        <div className="px-2">
+        <div className="mobile-individual-stock-chart px-2">
           <PriceChart
             symbol={stock.symbol}
             currentPrice={currentPrice}
             currentChangePercent={stock.quote.dp ?? 0}
             previousClose={stock.quote.pc ?? undefined}
-            heightClassName="h-[260px]"
+            heightClassName="h-[312px]"
             hideCursorDateTooltip
+            hideMovingAverageControls
           />
         </div>
 

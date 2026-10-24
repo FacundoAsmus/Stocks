@@ -319,12 +319,11 @@ export function ComparisonPriceChart({
                   className={`group relative shrink-0 overflow-hidden rounded-full transition hover:scale-110 hover:brightness-75 ${mobile ? "h-10 w-10" : "h-14 w-14"}`}>
                   <StockLogo
                     logo={SECTOR_ETFS.some((entry) => entry.symbol === symbol) ? undefined : (symbol === primarySymbol ? primaryLogo : secondaryLogo)}
-                    symbol={symbol}
                     size={mobile ? 48 : 64}
                     sizeClassName={mobile ? "h-10 w-10" : "h-14 w-14"}
                     shape="circle"
                   />
-                  <OptionalSvgIcon name="close" className={`absolute inset-0 m-auto rounded-full bg-accent p-1 opacity-0 transition-opacity group-hover:opacity-100 ${mobile ? "h-4 w-4" : "h-5 w-5"}`} colorClassName="text-on-accent" />
+                  <OptionalSvgIcon name="close" className={`absolute inset-0 m-auto opacity-0 transition-opacity group-hover:opacity-100 ${mobile ? "h-4 w-4" : "h-5 w-5"}`} colorClassName="text-black" />
                 </button>
                 <p className={`min-w-0 truncate font-semibold tracking-normal ${mobile ? "text-xl" : "text-4xl sm:text-5xl"} ${identityColor === COMPARISON_COLORS.primary ? "text-purple-400" : "text-orange-400"}`}>{name}</p>
               </div>
@@ -369,7 +368,7 @@ export function ComparisonPriceChart({
                 <Tooltip content={() => null} cursor={mobile ? false : { stroke: "rgba(128,128,128,0.5)", strokeWidth: 1 }} />
                 <Line
                   className="comparison-series-a"
-                  type="monotone" dataKey="aPct" stroke={COMPARISON_COLORS.primary} strokeWidth={3.25} dot={false} isAnimationActive={false}
+                  type="monotone" dataKey="aPct" stroke={COMPARISON_COLORS.primary} strokeWidth={2.5} dot={false} isAnimationActive={false}
                   activeDot={(rawProps: unknown) => {
                     const props = rawProps as { cx?: number; cy?: number; payload?: ComparisonRow };
                     if ((mobile && !isTouching) || props.cx == null || props.cy == null || !props.payload || props.payload.aPct < props.payload.bPct) return <g />;
@@ -378,7 +377,7 @@ export function ComparisonPriceChart({
                 />
                 <Line
                   className="comparison-series-b"
-                  type="monotone" dataKey="bPct" stroke={COMPARISON_COLORS.secondary} strokeWidth={3.25} dot={false} isAnimationActive={false}
+                  type="monotone" dataKey="bPct" stroke={COMPARISON_COLORS.secondary} strokeWidth={2.5} dot={false} isAnimationActive={false}
                   activeDot={(rawProps: unknown) => {
                     const props = rawProps as { cx?: number; cy?: number; payload?: ComparisonRow };
                     if ((mobile && !isTouching) || props.cx == null || props.cy == null || !props.payload || props.payload.bPct <= props.payload.aPct) return <g />;

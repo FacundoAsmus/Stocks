@@ -1346,7 +1346,7 @@ export function PriceChart({
         }}
         className={cn(
           "chart-period-option relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition",
-          active ? "text-black" : "text-accent hover:text-accent/80"
+          active ? "text-on-accent" : "text-accent hover:text-accent/80"
         )}
         style={{ transform: `scale(${hoverScale})` }}
       >
