@@ -1991,7 +1991,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           separate bar/card behind it — this IS the input, elongated. */}
       {!hideTrigger && (
       <div
-          className={`smoked-glass-surface ai-chat-panel ai-iris-hover fixed rounded-full border border-transparent text-accent overflow-hidden${loading ? " ai-thinking" : ""}`}
+          className={`smoked-glass-surface ai-chat-panel fixed rounded-full border border-transparent text-accent overflow-hidden${loading ? " ai-thinking" : ""}`}
         style={{
           zIndex: 1002,
           bottom: pillBottom,
@@ -2075,7 +2075,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       {/* Controlled mode (e.g. desktop): render just the input row inline where hideTrigger is set and open is true, anchored bottom same as mobile pill would be, so typing still works without the floating circle. */}
       {hideTrigger && open && (
         <div
-          className={`smoked-glass-surface ai-chat-panel ai-iris-hover fixed rounded-full border border-transparent text-accent overflow-hidden${loading ? " ai-thinking" : ""}`}
+          className={`smoked-glass-surface ai-chat-panel fixed rounded-full border border-transparent text-accent overflow-hidden${loading ? " ai-thinking" : ""}`}
           style={{
             zIndex: 1002,
             bottom: pillBottom,

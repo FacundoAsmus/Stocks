@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 
 import { AppNav } from "@/components/AppNav";
 import { SearchBar } from "@/components/SearchBar";
@@ -32,7 +33,14 @@ export function SiteHeader() {
       className="sticky top-0 z-40 hidden border-b border-transparent bg-transparent backdrop-blur-none lg:block"
     >
       <div className={`flex flex-col gap-4 px-4 py-2 sm:px-6 lg:flex-row lg:items-center lg:justify-between ${usesUnifiedToolbar ? "lg:px-4" : "mx-auto max-w-7xl lg:px-8"}`}>
-        <AppNav variant={usesUnifiedToolbar ? "links" : "full"} />
+        {usesUnifiedToolbar ? (
+          <div className="flex items-center gap-4">
+            <Link href="/" aria-label="Home" className="flex h-10 w-10 shrink-0 items-center justify-center">
+              <img src="/icons/site-logo.jpg" alt="" className="h-10 w-10 object-contain" />
+            </Link>
+            <AppNav variant="links" />
+          </div>
+        ) : <AppNav variant="full" />}
         {usesUnifiedToolbar ? (
           <div className="flex w-full items-center gap-3 lg:w-auto lg:min-w-[34rem]">
             <SearchBar />

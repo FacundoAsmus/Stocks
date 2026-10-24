@@ -41,6 +41,11 @@ Upload SVG files into this folder using the names below. Icons are tinted by the
 
 The same files are used on desktop and phone. Each layout controls its own size and selected tint.
 
+## Desktop brand image
+
+Upload the PC header image as `site-logo.jpg` in this folder (`public/icons/site-logo.jpg`).
+It appears at the top-left of the desktop Market and Watchlist pages, before the navigation buttons.
+
 ## Market heatmap groups
 
 Use the group id for the unselected and selected versions:

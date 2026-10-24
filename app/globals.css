@@ -505,7 +505,8 @@ html.light-mode .smoked-glass-surface.ai-chat-panel {
   mask-composite: exclude;
 }
 .ai-aberration.ai-iridescent-ring::before { content: none; }
-.ai-response-bubble::before { opacity: 0.78; }
+.ai-response-bubble::before,
+.ai-chat-panel::before { opacity: 0.78; }
 .ai-iris-glow,
 .ai-response-bubble,
 .ai-chat-panel,
