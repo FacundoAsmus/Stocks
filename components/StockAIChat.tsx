@@ -207,7 +207,7 @@ export function StockAIChat(props: StockAIChatProps) {
       {/* AI trigger button — right side of top bar */}
       <button
         onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 100); }}
-        className="ai-aberration ai-launcher-material ai-iris-hover flex items-center justify-center h-8 w-8 rounded-lg border border-transparent transition-transform active:scale-90"
+        className="ai-aberration ai-launcher-glass ai-iris-hover flex items-center justify-center h-8 w-8 rounded-lg border border-transparent transition-transform active:scale-90"
         aria-label="Ask AI about this stock"
       >
         <OptionalSvgIcon name="ai" className="ai-button-icon h-5 w-5" />

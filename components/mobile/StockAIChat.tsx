@@ -2004,7 +2004,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       >
         {/* Closed state: the trigger icon */}
         <button
-          className="ai-aberration ai-launcher-material rounded-full"
+          className="ai-aberration ai-launcher-glass rounded-full"
           onClick={() => setOpen(true)}
           aria-label="Ask AI"
           style={{

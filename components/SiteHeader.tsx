@@ -36,7 +36,7 @@ export function SiteHeader() {
         {usesUnifiedToolbar ? (
           <div className="flex items-center gap-4">
             <Link href="/" aria-label="Home" className="relative flex h-10 w-[90px] shrink-0 items-center justify-center">
-              <img src="/icons/site-logo.jpeg" alt="" className="absolute left-0 top-1/2 h-[90px] w-[90px] -translate-y-1/2 rounded-[24px] object-contain" style={{ clipPath: "inset(0 round 24px)" }} />
+              <img src="/icons/site-logo.png" alt="" className="absolute left-0 top-1/2 h-[90px] w-[90px] -translate-y-1/2 object-contain" />
             </Link>
             <AppNav variant="links" />
           </div>

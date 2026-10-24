@@ -43,8 +43,8 @@ The same files are used on desktop and phone. Each layout controls its own size 
 
 ## Desktop brand image
 
-Upload the PC header image as `site-logo.jpeg` in this folder (`public/icons/site-logo.jpeg`).
-It appears at 90 × 90 px at the top-left of the desktop Market and Watchlist pages, before the navigation buttons, with 24 px rounded corners. The header layout stays at its original size.
+Upload the PC header image as `site-logo.png` in this folder (`public/icons/site-logo.png`).
+It appears at 90 × 90 px at the top-left of the desktop Market and Watchlist pages, before the navigation buttons. The header layout stays at its original size.
 
 ## Market heatmap groups
 
