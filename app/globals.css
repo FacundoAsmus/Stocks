@@ -507,6 +507,11 @@ html.light-mode .smoked-glass-surface.ai-chat-panel {
 .ai-aberration.ai-iridescent-ring::before { content: none; }
 .ai-response-bubble::before,
 .ai-chat-panel::before { opacity: 0.78; }
+.ai-launcher-material {
+  background: var(--color-accent) !important;
+  color: var(--color-on-accent);
+  box-shadow: 0 0 12px rgb(var(--accent-rgb) / 0.58), 0 0 26px rgb(var(--accent-rgb) / 0.3);
+}
 .ai-iris-glow,
 .ai-response-bubble,
 .ai-chat-panel,
@@ -521,7 +526,8 @@ html.light-mode .smoked-glass-surface.ai-chat-panel {
   filter: none !important;
 }
 .bg-accent .ai-button-icon,
-.ai-aberration.bg-accent .ai-button-icon { color: var(--color-on-accent) !important; }
+.ai-aberration.bg-accent .ai-button-icon,
+.ai-launcher-material .ai-button-icon { color: var(--color-on-accent) !important; }
 .ai-response-bubble {
   background: linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54));
 }

@@ -1877,7 +1877,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
 
   return createPortal(
     <>
-      {containerRef && <div
+      {open && <div
         aria-hidden="true"
         style={{
           position: "fixed", inset: 0, zIndex: 999,
@@ -2004,7 +2004,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       >
         {/* Closed state: the trigger icon */}
         <button
-          className="ai-aberration rounded-full"
+          className="ai-aberration ai-launcher-material rounded-full"
           onClick={() => setOpen(true)}
           aria-label="Ask AI"
           style={{

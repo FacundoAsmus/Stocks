@@ -186,9 +186,6 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
     }
   }
 
-  const glassBg = "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))";
-
-
   return (
     <>
     <div className="pointer-events-none absolute inset-0 z-30">
@@ -197,8 +194,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
           type="button"
           onClick={() => setOpen(true)}
           aria-label={`Ask AI about ${stock.symbol}`}
-          className="ai-aberration ai-iris-hover pointer-events-auto absolute bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full border border-transparent overflow-hidden"
-          style={{ background: glassBg }}
+          className="ai-aberration ai-launcher-material ai-iris-hover pointer-events-auto absolute bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full border border-transparent overflow-hidden"
         >
           <div
             aria-hidden
