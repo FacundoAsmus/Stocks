@@ -11,7 +11,7 @@ import { BottomBlur } from "@/components/EdgeBlur";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Wave form",
+  title: "neon",
   description: "A stock news, watchlist, fundamentals, and analyst research starter app.",
   themeColor: "#000000",
 };

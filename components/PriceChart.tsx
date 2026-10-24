@@ -331,7 +331,16 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
 
 /* ─── Number-wheel digit ─────────────────────────────────────────────────── */
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
-const WHEEL_SLOT_RATIO = 0.62;
+const FONT_PX = { lg: 48, sm: 24, md: 20, badge: 14, xs: 12 } as const; // the Tailwind text sizes in fontClass
+// Slot width as a fraction of the font size. Inter's widest digit ink is 0.55-0.58em,
+// so these leave a small gap and never clip. Raise or lower these to tune.
+const WHEEL_SLOT_EM = {
+  lg:    { normal: 0.62, compact: 0.60 }, // semibold
+  md:    { normal: 0.62, compact: 0.60 }, // semibold
+  sm:    { normal: 0.60, compact: 0.58 }, // medium
+  xs:    { normal: 0.62, compact: 0.60 }, // semibold
+  badge: { normal: 0.63, compact: 0.62 }, // bold
+} as const;
 
 function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg"; compact?: boolean; animate?: boolean }) {
   const isDigit = DIGIT_CHARS.includes(ch);
@@ -387,7 +396,7 @@ function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: strin
     );
   }
 
-  const slotPx = Math.round((compact ? 0.49 : WHEEL_SLOT_RATIO) * rowPx);
+  const slotPx = FONT_PX[size] * WHEEL_SLOT_EM[size][compact ? "compact" : "normal"];
   const rollingDigits = roll
     ? (roll.direction === "up" ? [roll.from, roll.to] : [roll.to, roll.from])
     : [idx];
@@ -1337,7 +1346,7 @@ export function PriceChart({
         }}
         className={cn(
           "chart-period-option relative z-10 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition",
-          active ? "text-on-accent" : "text-accent hover:text-accent/80"
+          active ? "text-black" : "text-accent hover:text-accent/80"
         )}
         style={{ transform: `scale(${hoverScale})` }}
       >
@@ -1616,7 +1625,7 @@ export function PriceChart({
                 dataKey="close"
                 stroke={lineColor}
                 fill="none"
-                strokeWidth={isLongTerm ? 2.75 : 3.25}
+                strokeWidth={isLongTerm ? 2 : 2.5}
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 dot={false}

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Wave form",
-    short_name: "Wave form",
+    name: "neon",
+    short_name: "neon",
     description: "A stock news, watchlist, fundamentals, and analyst research app.",
     start_url: "/",
     display: "standalone",
