@@ -1991,7 +1991,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           separate bar/card behind it — this IS the input, elongated. */}
       {!hideTrigger && (
       <div
-          className={`smoked-glass-surface ai-chat-panel fixed rounded-full border border-transparent text-accent overflow-hidden${loading ? " ai-thinking" : ""}`}
+          className={`smoked-glass-surface${open ? " ai-chat-panel" : ""} fixed rounded-full border border-transparent text-accent overflow-hidden${loading ? " ai-thinking" : ""}`}
         style={{
           zIndex: 1002,
           bottom: pillBottom,
