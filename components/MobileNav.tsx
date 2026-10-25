@@ -30,7 +30,7 @@ function applyTheme(theme: Theme) {
 }
 
 // ─── Settings panel ───────────────────────────────────────────────────────
-export function MobileSettingsPanel({ closing, onClose }: { closing: boolean; onClose: () => void }) {
+export function MobileSettingsPanel({ closing, onClose, origin }: { closing: boolean; onClose: () => void; origin: { x: number; y: number } }) {
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
   const [proMode, setProMode] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
@@ -95,26 +95,35 @@ export function MobileSettingsPanel({ closing, onClose }: { closing: boolean; on
     { value: "light",  label: "Light",  iconName: "theme-light" },
     { value: "system", label: "System", iconName: "theme-system" },
   ];
+  const viewportHeight = typeof window !== "undefined" ? window.innerHeight : 0;
+  const transformOrigin = `${origin.x}px ${origin.y - viewportHeight * 0.06}px`;
 
   return (
     <div
-      className={cn("smoked-glass-surface fixed inset-0 z-50 flex flex-col bg-black", closing && "page-slide-right")}
-      style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}
+      className="smoked-glass-backdrop fixed inset-0 z-[9999] flex items-center justify-center p-4 lg:hidden"
+      style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
     >
-      {/* Fixed header with blur */}
       <div
-        className="sticky top-0 z-10 bg-background/85 backdrop-blur-xl border-b border-border-subtle px-4 pb-4"
-        style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
+        className="earnings-detail-glass smoked-glass-surface smoked-glass-calendar flex w-full max-w-lg flex-col rounded-3xl border border-white/15"
+        style={{
+          height: "min(88dvh, 880px)",
+          transformOrigin,
+          background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
+          backdropFilter: "blur(24px) saturate(180%)",
+          WebkitBackdropFilter: "blur(24px) saturate(180%)",
+          boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
+          animation: closing
+            ? "mobileSettingsSink 0.3s cubic-bezier(0.4,0,1,1) forwards"
+            : "mobileSettingsRise 0.32s cubic-bezier(0.22,1,0.36,1) both",
+        }}
       >
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-4xl font-bold text-text-primary">Settings</h2>
+        <div className="flex shrink-0 items-center justify-between px-4 pt-4 pb-3">
+          <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Settings</h2>
           <GlossyIconButton aria-label="Close settings" onClick={onClose}><GlossyCloseIcon /></GlossyIconButton>
         </div>
-      </div>
 
       <div
-        className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-6"
-        style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}
+        className="flex flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-4 pt-2 pb-8"
       >
         {/* Appearance */}
         <section>
@@ -165,6 +174,17 @@ export function MobileSettingsPanel({ closing, onClose }: { closing: boolean; on
           </div>
         </section>
       </div>
+      </div>
+      <style>{`
+        @keyframes mobileSettingsRise {
+          from { transform: scale(0.08); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes mobileSettingsSink {
+          from { transform: scale(1); opacity: 1; }
+          to { transform: scale(0.08); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -445,6 +465,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
 
 // ─── Slide helpers ────────────────────────────────────────────────────────
 const SLIDE_DURATION = 260;
+const SETTINGS_DURATION = 300;
 
 function slideAndNavigate(
   router: ReturnType<typeof useRouter>,
@@ -466,6 +487,7 @@ export function MobileNav() {
   const pathname = usePathname();
   const router   = useRouter();
   const [settingsPhase, setSettingsPhase] = useState<"closed" | "open" | "closing">("closed");
+  const [settingsOrigin, setSettingsOrigin] = useState({ x: 0, y: 0 });
   const [activePill,   setActivePill]   = useState<"market" | "watchlist">(
     pathname === "/watchlist" ? "watchlist" : "market"
   );
@@ -504,7 +526,7 @@ export function MobileNav() {
       setTimeout(() => {
         setSettingsPhase("closed");
         if (!alreadyThere) router.push(href);
-      }, SLIDE_DURATION);
+      }, SETTINGS_DURATION);
       return;
     }
 
@@ -514,8 +536,10 @@ export function MobileNav() {
     slideAndNavigate(router, href, exitClass);
   }
 
-  function openSettings() {
+  function openSettings(event: React.MouseEvent<HTMLButtonElement>) {
     if (settingsPhase !== "closed") return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    setSettingsOrigin({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
     const main = document.querySelector("main");
     main?.classList.remove("page-slide-left", "page-slide-right");
     main?.classList.add("page-slide-left"); // same "forward" direction as Market → Watchlist
@@ -528,7 +552,7 @@ export function MobileNav() {
   function closeSettings() {
     if (settingsPhase !== "open") return;
     setSettingsPhase("closing");
-    setTimeout(() => setSettingsPhase("closed"), SLIDE_DURATION);
+    setTimeout(() => setSettingsPhase("closed"), SETTINGS_DURATION);
   }
 
   const iconWrapClass = "relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 transition-colors duration-300";
@@ -538,7 +562,7 @@ export function MobileNav() {
 
   return (
     <>
-      {settingsPhase !== "closed" && <MobileSettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} />}
+      {settingsPhase !== "closed" && <MobileSettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} origin={settingsOrigin} />}
 
       {/* Bottom dock: navigation stays grouped in the capsule, while search
           keeps its separate circle so it can morph into the existing search bar. */}

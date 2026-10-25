@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
@@ -46,6 +47,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
   const [comparisonLoading, setComparisonLoading] = useState(false);
   const [comparisonError, setComparisonError] = useState<string | null>(null);
   const [settingsPhase, setSettingsPhase] = useState<"closed" | "open" | "closing">("closed");
+  const [settingsOrigin, setSettingsOrigin] = useState({ x: 0, y: 0 });
   // ETFs don't file earnings reports the way individual companies do, so an
   // earnings calendar doesn't apply to them.
   const isEtf = SECTOR_ETFS.some(e => e.symbol === stock.symbol);
@@ -132,7 +134,14 @@ export function MobileStockPage(props: MobileStockPageProps) {
   function closeSettings() {
     if (settingsPhase !== "open") return;
     setSettingsPhase("closing");
-    window.setTimeout(() => setSettingsPhase("closed"), 260);
+    window.setTimeout(() => setSettingsPhase("closed"), 300);
+  }
+
+  function openSettings(event: MouseEvent<HTMLButtonElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setSettingsOrigin({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    setCompareSearchOpen(false);
+    setSettingsPhase("open");
   }
 
   return (
@@ -146,7 +155,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
         comparisonStock={comparisonDetail ?? undefined}
         hideTrigger={settingsPhase !== "closed"}
       />
-      {settingsPhase !== "closed" && <MobileSettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} />}
+      {settingsPhase !== "closed" && <MobileSettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} origin={settingsOrigin} />}
       <MobileCompareSearch
         primarySymbol={stock.symbol}
         open={compareSearchOpen}
@@ -182,18 +191,18 @@ export function MobileStockPage(props: MobileStockPageProps) {
             <button
               onClick={handleBack}
               aria-label="Back"
-              className="smoked-glass-surface phone-stock-control-glass flex h-14 w-14 items-center justify-center rounded-full text-accent"
+              className="smoked-glass-surface phone-stock-control-glass flex h-10 w-10 items-center justify-center rounded-full text-accent"
             >
               <OptionalSvgIcon name="back" className="h-5 w-5" />
             </button>
             <div className="flex items-center gap-2">
-              <div className="smoked-glass-surface phone-stock-control-glass flex h-14 w-28 shrink-0 items-center rounded-full">
+              <div className="smoked-glass-surface phone-stock-control-glass flex h-10 w-20 shrink-0 items-center rounded-full">
                 <button type="button" aria-label={`Compare ${stock.symbol} with another stock`} title="Compare stocks" onClick={() => setCompareSearchOpen(true)}
-                  className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 text-accent shadow-none transition">
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 text-accent shadow-none transition">
                   <OptionalSvgIcon name="compare" className="h-6 w-6" color="var(--color-accent)" />
                 </button>
-                <button type="button" aria-label="Settings" title="Settings" onClick={() => { setCompareSearchOpen(false); setSettingsPhase("open"); }}
-                  className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 text-accent shadow-none transition">
+                <button type="button" aria-label="Settings" title="Settings" onClick={openSettings}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 text-accent shadow-none transition">
                   <OptionalSvgIcon name="settings" className="h-6 w-6" />
                 </button>
               </div>
