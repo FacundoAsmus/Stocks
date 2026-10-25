@@ -115,7 +115,7 @@ function WatchlistListRow({
           : isActive ? "is-selected brightness-105 hover:brightness-110" : "hover:brightness-110"
       )}
     >
-      <StockLogo logo={hasStockLogo ? stock.logo : undefined} symbol={stock.symbol} size={48}
+      <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48}
         sizeClassName="h-9 w-9 shrink-0"
         imageClassName="h-9 w-9 shrink-0 rounded-3xl border border-white/10 bg-white/5 object-contain pointer-events-none"
         fallbackClassName="h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none" />
@@ -156,16 +156,16 @@ function PanelLoader({ label }: { label: string }) {
       `}</style>
       <div className="flex h-16 items-end gap-2">
         <div className="flex flex-col items-center gap-1">
-          <div className="wl-w-1 h-3 w-0.5 rounded-full bg-positive/50" />
-          <div className="wl-c-1 h-7 w-5 rounded-md bg-positive/50" />
+          <div className="wl-w-1 h-3 w-0.5 rounded-full candle-loader-color-50" />
+          <div className="wl-c-1 h-7 w-5 rounded-md candle-loader-color-50" />
         </div>
         <div className="flex flex-col items-center gap-1">
-          <div className="wl-w-2 h-3.5 w-0.5 rounded-full bg-positive/70" />
-          <div className="wl-c-2 h-11 w-5 rounded-md bg-positive/70" />
+          <div className="wl-w-2 h-3.5 w-0.5 rounded-full candle-loader-color-70" />
+          <div className="wl-c-2 h-11 w-5 rounded-md candle-loader-color-70" />
         </div>
         <div className="flex flex-col items-center gap-1">
-          <div className="wl-w-3 h-4 w-0.5 rounded-full bg-positive" />
-          <div className="wl-c-3 h-14 w-5 rounded-md bg-positive" />
+          <div className="wl-w-3 h-4 w-0.5 rounded-full candle-loader-color-100" />
+          <div className="wl-c-3 h-14 w-5 rounded-md candle-loader-color-100" />
         </div>
       </div>
       <span className="text-sm font-medium text-text-muted">{label}</span>

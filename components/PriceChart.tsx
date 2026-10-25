@@ -263,9 +263,9 @@ export function PriceHistoryLoadingAnimation() {
         .cw-3{animation:chart-wick-breathe 1.8s ease-in-out infinite -0.84s;transform-origin:bottom}
       `}</style>
       <div className="flex items-end gap-[5px] h-10">
-        <div className="flex flex-col items-center gap-[2px]"><div className="cw-1 w-[2px] h-1.5 rounded-full bg-positive/50" /><div className="cc-1 w-3.5 h-4 rounded-sm bg-positive/50" /></div>
-        <div className="flex flex-col items-center gap-[2px]"><div className="cw-2 w-[2px] h-2 rounded-full bg-positive/70" /><div className="cc-2 w-3.5 h-6 rounded-sm bg-positive/70" /></div>
-        <div className="flex flex-col items-center gap-[2px]"><div className="cw-3 w-[2px] h-2.5 rounded-full bg-positive" /><div className="cc-3 w-3.5 h-8 rounded-sm bg-positive" /></div>
+        <div className="flex flex-col items-center gap-[2px]"><div className="cw-1 w-[2px] h-1.5 rounded-full candle-loader-color-50" /><div className="cc-1 w-3.5 h-4 rounded-sm candle-loader-color-50" /></div>
+        <div className="flex flex-col items-center gap-[2px]"><div className="cw-2 w-[2px] h-2 rounded-full candle-loader-color-70" /><div className="cc-2 w-3.5 h-6 rounded-sm candle-loader-color-70" /></div>
+        <div className="flex flex-col items-center gap-[2px]"><div className="cw-3 w-[2px] h-2.5 rounded-full candle-loader-color-100" /><div className="cc-3 w-3.5 h-8 rounded-sm candle-loader-color-100" /></div>
       </div>
     </div>
   );

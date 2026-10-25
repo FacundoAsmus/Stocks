@@ -168,11 +168,11 @@ export function FundamentalsGrid({
   return (
     <section>
       <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">
-        <OptionalSvgIcon name="indicators" className="h-6 w-6" colorClassName="text-[var(--indicator-icon-color)]" />Indicators
+        <OptionalSvgIcon name="indicators" className="h-6 w-6" colorClassName="text-accent" />Indicators
       </p>
-      <div className="mx-5 grid grid-cols-1 gap-2">
+      <div className="mx-5 grid grid-cols-1 gap-y-6">
         {indicatorGroups.map((group, groupIndex) => (
-          <div key={groupIndex} className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-3xl p-4" style={{ backgroundColor: "var(--indicator-card-bg)", color: "var(--indicator-card-text)" }}>
+          <div key={groupIndex} className="grid grid-cols-2 gap-x-4 gap-y-3">
             {group.map((item) => (
               <div key={item.label} className="min-w-0">
                 <div className="mb-2 flex items-center gap-1.5">
@@ -181,9 +181,9 @@ export function FundamentalsGrid({
                     item.tone === "negative" ? "bg-negative" :
                     "bg-text-muted/40"
                   }`} />
-                  <p className="truncate text-xs uppercase tracking-[0.12em]" style={{ color: "var(--indicator-card-muted)" }}>{item.label}</p>
+                  <p className="truncate text-xs uppercase tracking-[0.12em] text-text-muted">{item.label}</p>
                 </div>
-                <p className="text-xl font-semibold"><WheelPrice value={item.value} size="md" compact colorClass="text-current" /></p>
+                <p className="text-xl font-semibold text-text-primary"><WheelPrice value={item.value} size="md" compact /></p>
               </div>
             ))}
           </div>

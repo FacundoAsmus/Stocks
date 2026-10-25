@@ -3,10 +3,6 @@
 :root {
   --accent-rgb: 255 255 255;
   --volume-bar-neutral: rgba(255,255,255,0.16);
-  --indicator-card-bg: #EDEDF0;
-  --indicator-card-text: #000000;
-  --indicator-card-muted: #000000;
-  --indicator-icon-color: #EDEDF0;
   --ai-fringe-blue: #2a2aff;
   --ai-fringe-red: #ff3d00;
   --ai-fringe-amber: #ffb000;
@@ -84,11 +80,11 @@ html.light-mode {
   --color-on-accent: #ffffff;
   --accent-rgb: 0 0 0;
   --volume-bar-neutral: rgba(60,60,67,0.18);
-  --indicator-card-bg: #171717;
-  --indicator-card-text: #ffffff;
-  --indicator-card-muted: #ffffff;
-  --indicator-icon-color: #171717;
 }
+
+.candle-loader-color-50 { background-color: rgb(var(--accent-rgb) / 0.5); }
+.candle-loader-color-70 { background-color: rgb(var(--accent-rgb) / 0.7); }
+.candle-loader-color-100 { background-color: rgb(var(--accent-rgb) / 1); }
 /* Keep greens and reds exactly as-is — only blacks/whites/greys flip */
 html.light-mode .bg-black { background-color: #ffffff !important; }
 html.light-mode .bg-black\/40 { background-color: rgba(240,240,245,0.8) !important; }

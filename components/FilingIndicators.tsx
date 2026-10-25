@@ -73,12 +73,12 @@ function AnnualIndicatorChart({
   }, [started]);
 
   return (
-    <section className="rounded-3xl p-5" style={{ backgroundColor: "var(--indicator-card-bg)", color: "var(--indicator-card-text)" }}>
-      <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-current">
-        <OptionalSvgIcon name={field === "capex" ? "capex" : field === "researchAndDevelopment" ? "r-and-d" : "free-cash-flow"} className="h-5 w-5" colorClassName="text-current" />{title}
+    <section>
+      <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
+        <OptionalSvgIcon name={field === "capex" ? "capex" : field === "researchAndDevelopment" ? "r-and-d" : "free-cash-flow"} className="h-5 w-5" colorClassName="text-accent" />{title}
       </p>
-      <div className="mb-5 text-current">
-        <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact colorClass="text-current" />
+      <div className="mb-5 text-text-primary">
+        <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact />
       </div>
       <div className={`relative ${compact ? "h-52" : "h-64"} border-y border-border-subtle`}>
         <div
@@ -120,7 +120,7 @@ function AnnualIndicatorChart({
                   }}
                   aria-label={value === null ? `${indicator.year}: unavailable` : `${indicator.year}: $${formatCompact(value)}`}
                 />
-                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-current">{indicator.year}</span>
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-accent">{indicator.year}</span>
               </div>
             );
           })}

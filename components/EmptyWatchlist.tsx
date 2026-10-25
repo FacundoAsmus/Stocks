@@ -123,16 +123,16 @@ export function LoadingScreen({ label = "Loading" }: { label?: string }) {
         `}</style>
         <div className="flex items-end gap-3 h-24">
           <div className="flex flex-col items-center gap-1">
-            <div className="cw-lg-1 w-1 h-4 rounded-full bg-positive/50" />
-            <div className="cc-lg-1 w-8 h-10 rounded-md bg-positive/50" />
+            <div className="cw-lg-1 w-1 h-4 rounded-full candle-loader-color-50" />
+            <div className="cc-lg-1 w-8 h-10 rounded-md candle-loader-color-50" />
           </div>
           <div className="flex flex-col items-center gap-1">
-            <div className="cw-lg-2 w-1 h-5 rounded-full bg-positive/70" />
-            <div className="cc-lg-2 w-8 h-16 rounded-md bg-positive/70" />
+            <div className="cw-lg-2 w-1 h-5 rounded-full candle-loader-color-70" />
+            <div className="cc-lg-2 w-8 h-16 rounded-md candle-loader-color-70" />
           </div>
           <div className="flex flex-col items-center gap-1">
-            <div className="cw-lg-3 w-1 h-6 rounded-full bg-positive" />
-            <div className="cc-lg-3 w-8 h-20 rounded-md bg-positive" />
+            <div className="cw-lg-3 w-1 h-6 rounded-full candle-loader-color-100" />
+            <div className="cc-lg-3 w-8 h-20 rounded-md candle-loader-color-100" />
           </div>
         </div>
         <span className="text-sm font-medium text-text-muted">{label}</span>
