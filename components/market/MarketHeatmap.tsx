@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { CSSProperties } from "react";
 
 import { MARKET_HEATMAP_GROUPS } from "@/lib/marketHeatmap";
@@ -307,20 +308,36 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
           </div>
         </aside>
       ) : (
-      <div className="relative z-20 shrink-0 border-b border-white/10 bg-black px-4 pb-0 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="pb-2">
-          <p className="text-3xl font-semibold tracking-normal text-text-primary">Heatmaps</p>
-          <h2 id="market-heatmap-title" className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market</h2>
+      <>
+        <div className="sticky top-0 z-30 shrink-0 px-4 pb-4" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}>
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 -z-10"
+            style={{
+              height: "calc(100% - 0.75rem)",
+              backdropFilter: "blur(var(--phone-list-header-blur))",
+              WebkitBackdropFilter: "blur(var(--phone-list-header-blur))",
+              backgroundColor: "var(--color-background)",
+            }}
+          />
+          <div className="flex items-center gap-3">
+            <Image src="/icon-192.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-xl object-cover" />
+            <div>
+              <h1 id="market-heatmap-title" className="text-4xl font-bold text-text-primary">Heatmaps</h1>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-accent">Market</p>
+            </div>
+          </div>
         </div>
-        <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-3" role="tablist" aria-label="Market groups">
-          {MARKET_HEATMAP_GROUPS.map((group) => (
-            <button key={group.id} type="button" role="tab" aria-selected={group.id === activeGroup} onClick={() => setActiveGroup(group.id)} className={cn("inline-flex shrink-0 snap-start items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors", group.id === activeGroup ? "border-accent bg-accent text-on-accent" : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-text-primary")}>
-              <OptionalSvgIcon name={group.id} selected={group.id === activeGroup} fallbackToBaseWhenSelected className={group.id === "semiconductors" ? "h-3 w-3" : "h-4 w-4"} colorClassName="text-accent" />
-              {group.label}
-            </button>
-          ))}
+        <div className="relative z-20 shrink-0 border-b border-white/10 bg-black">
+          <div className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-3" role="tablist" aria-label="Market groups">
+            {MARKET_HEATMAP_GROUPS.map((group) => (
+              <button key={group.id} type="button" role="tab" aria-selected={group.id === activeGroup} onClick={() => setActiveGroup(group.id)} className={cn("inline-flex shrink-0 snap-start items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors", group.id === activeGroup ? "border-accent bg-accent text-on-accent" : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-text-primary")}>
+                <OptionalSvgIcon name={group.id} selected={group.id === activeGroup} fallbackToBaseWhenSelected className={group.id === "semiconductors" ? "h-3 w-3" : "h-4 w-4"} colorClassName="text-accent" />
+                {group.label}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      </>
       )}
 
       <div className={desktopLayout ? "flex min-h-0 min-w-0 flex-1 flex-col" : "contents"}>

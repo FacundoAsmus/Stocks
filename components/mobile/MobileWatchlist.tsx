@@ -499,7 +499,7 @@ export function MobileWatchlist() {
         <div
           className="absolute inset-x-0 top-0 -z-10 pointer-events-none"
           style={{
-            height: "calc(100% + 1.5rem)",
+            height: "calc(100% - 0.75rem)",
             backdropFilter: "blur(var(--phone-list-header-blur))",
             WebkitBackdropFilter: "blur(var(--phone-list-header-blur))",
             backgroundColor: titleBarScrolled
