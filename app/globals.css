@@ -147,6 +147,19 @@ html.light-mode .earnings-detail-glass.smoked-glass-surface {
   box-shadow: 0 24px 70px rgba(45,73,96,0.13), 0 5px 18px rgba(45,73,96,0.08), inset 0 0 18px rgba(78,125,158,0.075), inset 0 1px 0 rgba(255,255,255,0.16) !important;
   color: #1a1a1e !important;
 }
+/* Shared material for the phone stock page's compact top controls. */
+.phone-stock-control-glass {
+  border: 1px solid rgba(255,255,255,0.15);
+  background: linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54));
+  backdrop-filter: blur(var(--phone-floating-pill-blur));
+  -webkit-backdrop-filter: blur(var(--phone-floating-pill-blur));
+  box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+}
+html.light-mode .phone-stock-control-glass {
+  backdrop-filter: blur(var(--phone-floating-pill-blur)) !important;
+  -webkit-backdrop-filter: blur(var(--phone-floating-pill-blur)) !important;
+}
+.phone-stock-control-glass.smoked-glass-surface { color: var(--color-accent) !important; }
 @media (min-width: 1024px) {
   .desktop-alert-glass {
     background: linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54)) !important;
