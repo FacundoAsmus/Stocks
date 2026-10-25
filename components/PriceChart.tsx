@@ -564,7 +564,7 @@ export function PriceChart({
   priceIndent,
   hideCursorDateTooltip = false,
   hideMovingAverageControls = false,
-  onChartReady
+  holdPriceUntilChartReady = false
 }: {
   symbol: string;
   currentPrice: number;
@@ -575,18 +575,19 @@ export function PriceChart({
   priceIndent?: string;
   hideCursorDateTooltip?: boolean;
   hideMovingAverageControls?: boolean;
-  onChartReady?: () => void;
+  holdPriceUntilChartReady?: boolean;
 }) {
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
   const [hoveredPeriod, setHoveredPeriod] = useState<ChartPeriod | null>(null);
   const [chartKey, setChartKey]       = useState(0);
   const [data, setData]               = useState<CandlePoint[]>([]);
   const [isLoading, setIsLoading]     = useState(true);
+  const [loadedChartKey, setLoadedChartKey] = useState<string | null>(null);
   const [error, setError]             = useState<string | null>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
   const [hoverPrice, setHoverPrice]   = useState<number | null>(null);
   const [hoverDate,  setHoverDate]    = useState<string | null>(null);
-  const [priceVisible, setPriceVisible] = useState(true);
+  const [priceVisible, setPriceVisible] = useState(!holdPriceUntilChartReady);
   const [activeMAs, setActiveMAs] = useState<Set<number>>(new Set());
   const activeMAsRef = useRef(activeMAs);
   // A line is eligible to animate only when it was just enabled (or its
@@ -794,6 +795,7 @@ export function PriceChart({
   /* Load candles */
   useEffect(() => {
     const controller = new AbortController();
+    const requestKey = `${symbol}:${period}:${reloadNonce}`;
     async function load() {
       setIsLoading(true);
       setError(null);
@@ -833,13 +835,15 @@ export function PriceChart({
         } else {
           setData(candles);
         }
+        setLoadedChartKey(requestKey);
         setChartKey((key) => key + 1);
         // Small delay so digits have settled before fading back in
-        setTimeout(() => setPriceVisible(true), 40);
+        if (!holdPriceUntilChartReady) setTimeout(() => setPriceVisible(true), 40);
 
       } catch (err) {
         if (!controller.signal.aborted) {
           setData([]);
+          setLoadedChartKey(requestKey);
           setError(err instanceof Error ? err.message : "Unable to load chart data.");
         }
       } finally {
@@ -849,7 +853,7 @@ export function PriceChart({
     load();
     return () => controller.abort();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, reloadNonce, symbol]);
+  }, [holdPriceUntilChartReady, period, reloadNonce, symbol]);
 
   // Fetch only the missing lead-in data when an MA is switched on. A larger
   // selected MA replaces a smaller cached window; switching an MA off never
@@ -892,9 +896,11 @@ export function PriceChart({
   );
 
   const hasData    = data.length > 1;
+  const chartRequestKey = `${symbol}:${period}:${reloadNonce}`;
+  const chartLoading = isLoading || (holdPriceUntilChartReady && loadedChartKey !== chartRequestKey);
   useEffect(() => {
-    if (!isLoading && (error || !hasData)) onChartReady?.();
-  }, [error, hasData, isLoading, onChartReady]);
+    if (holdPriceUntilChartReady && !chartLoading && (error || !hasData)) setPriceVisible(true);
+  }, [chartLoading, error, hasData, holdPriceUntilChartReady]);
   const hasVolume  = data.some((point) => typeof point.volume === "number" && point.volume > 0);
   const visibleRange = useMemo(() => {
     if (!useCandlesticks || !data.length || !candleViewRange) return { start: 0, end: data.length };
@@ -1366,7 +1372,7 @@ export function PriceChart({
   return (
     <div>
       {/* ── Price header — indented to align with name when priceIndent is set ── */}
-      <div className="mb-6 price-block-fade" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible ? 1 : 0, transition: "opacity 0.18s ease", WebkitTransition: "opacity 0.18s ease" }}>
+      <div className="mb-6 price-block-fade" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible && (!holdPriceUntilChartReady || !chartLoading) ? 1 : 0, transition: "opacity 0.18s ease", WebkitTransition: "opacity 0.18s ease" }}>
         <div className="flex items-end gap-3">
           <WheelPrice value={priceStr} size="lg" animate={!linePlacementActive && !squarePlacementActive && !diagonalPlacementActive} />
           <WheelPrice value={pctStr} size="sm" colorClass={pctColor} animate={!linePlacementActive && !squarePlacementActive && !diagonalPlacementActive} />
@@ -1561,7 +1567,7 @@ export function PriceChart({
         }}
         onMouseLeave={() => { if (proCrosshairRef.current) proCrosshairRef.current.style.display = "none"; clearHover(); }}
       >
-        {isLoading ? (
+        {chartLoading ? (
           <PriceHistoryLoadingAnimation />
         ) : error ? (
           <div className="flex h-full flex-col items-center justify-center rounded-md border border-dashed border-negative/30 bg-negative/5 px-4 text-center">
@@ -1583,7 +1589,7 @@ export function PriceChart({
             key={chartKey}
             style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both", width: "100%", height: "100%", pointerEvents: squarePlacementActive || diagonalPlacementActive ? "none" : undefined }}
             onAnimationEnd={(event) => {
-              if (event.currentTarget === event.target && event.animationName === "chart-reveal") onChartReady?.();
+              if (event.currentTarget === event.target && event.animationName === "chart-reveal" && holdPriceUntilChartReady) setPriceVisible(true);
             }}
           >
           <ResponsiveContainer width="100%" height="100%">

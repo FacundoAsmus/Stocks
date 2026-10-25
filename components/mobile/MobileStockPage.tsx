@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
@@ -52,9 +52,9 @@ export function MobileStockPage(props: MobileStockPageProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  const handlePriceChartReady = useCallback(() => {
+  useEffect(() => {
     window.dispatchEvent(new Event("stock-page-ready"));
-  }, []);
+  }, [stock.symbol]);
 
   useEffect(() => {
     const flag = sessionStorage.getItem("nav-from-search");
@@ -252,7 +252,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             heightClassName="h-[312px]"
             hideCursorDateTooltip
             hideMovingAverageControls
-            onChartReady={handlePriceChartReady}
+            holdPriceUntilChartReady
           />
         </div>
 
