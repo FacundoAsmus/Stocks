@@ -2,6 +2,10 @@
 
 :root {
   --accent-rgb: 255 255 255;
+  --volume-bar-neutral: rgba(255,255,255,0.16);
+  --indicator-card-bg: #ffffff;
+  --indicator-card-text: #000000;
+  --indicator-card-muted: #000000;
   --ai-fringe-blue: #2a2aff;
   --ai-fringe-red: #ff3d00;
   --ai-fringe-amber: #ffb000;
@@ -78,6 +82,10 @@ html.light-mode {
   --color-accent: #000000;
   --color-on-accent: #ffffff;
   --accent-rgb: 0 0 0;
+  --volume-bar-neutral: rgba(60,60,67,0.18);
+  --indicator-card-bg: #171717;
+  --indicator-card-text: #ffffff;
+  --indicator-card-muted: #ffffff;
 }
 /* Keep greens and reds exactly as-is — only blacks/whites/greys flip */
 html.light-mode .bg-black { background-color: #ffffff !important; }

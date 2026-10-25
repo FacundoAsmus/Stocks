@@ -209,9 +209,9 @@ export function VolumeChartCanvas({
       buckets.forEach((bucket, index) => {
         const barHeight = Math.max(1, (bucket.volume / maxVolume) * height * progress);
         const x = index * step + (step - barWidth) / 2;
-        context.fillStyle = colorBars && !bucket.isUp
-          ? "rgba(255, 70, 58, 0.22)"
-          : "rgba(0, 200, 5, 0.24)";
+        context.fillStyle = colorBars
+          ? bucket.isUp ? "rgba(0, 200, 5, 0.24)" : "rgba(255, 70, 58, 0.22)"
+          : getComputedStyle(document.documentElement).getPropertyValue("--volume-bar-neutral").trim();
         context.fillRect(x, height - barHeight, barWidth, barHeight);
       });
     }
@@ -225,9 +225,12 @@ export function VolumeChartCanvas({
     }
     const observer = new ResizeObserver(() => draw());
     observer.observe(canvas);
+    const themeObserver = new MutationObserver(() => draw());
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     animationFrame = requestAnimationFrame(animate);
     return () => {
       observer.disconnect();
+      themeObserver.disconnect();
       cancelAnimationFrame(animationFrame);
     };
   }, [buckets, colorBars, comparisonBuckets]);

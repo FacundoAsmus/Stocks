@@ -161,16 +161,20 @@ export function FundamentalsGrid({
       <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="indicators" className="h-6 w-6" />Indicators</p>
       <div className="mx-5 grid grid-cols-2 gap-2">
         {visibleItems.map((item) => (
-          <div key={item.label} className="rounded-md bg-black p-4">
+          <div
+            key={item.label}
+            className="rounded-3xl p-4"
+            style={{ backgroundColor: "var(--indicator-card-bg)", color: "var(--indicator-card-text)" }}
+          >
             <div className="flex items-center gap-1.5 mb-2">
               <span className={`h-2 w-2 rounded-full shrink-0 ${
                 item.tone === "positive" ? "bg-positive" :
                 item.tone === "negative" ? "bg-negative" :
                 "bg-text-muted/40"
               }`} />
-              <p className="text-xs uppercase tracking-[0.12em] text-text-muted truncate">{item.label}</p>
+              <p className="text-xs uppercase tracking-[0.12em] truncate" style={{ color: "var(--indicator-card-muted)" }}>{item.label}</p>
             </div>
-            <p className="text-xl font-semibold text-text-primary"><WheelPrice value={item.value} size="md" compact /></p>
+            <p className="text-xl font-semibold"><WheelPrice value={item.value} size="md" compact colorClass="text-current" /></p>
           </div>
         ))}
       </div>
