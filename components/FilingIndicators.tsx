@@ -40,12 +40,14 @@ function sentimentColorForHeight(percentage: number) {
 
 function AnnualIndicatorChart({
   title,
+  icon,
   field,
   indicators,
   started,
   compact = false
 }: {
   title: string;
+  icon: string;
   field: IndicatorKey;
   indicators: FilingIndicator[];
   started: boolean;
@@ -75,7 +77,7 @@ function AnnualIndicatorChart({
   return (
     <section>
       <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
-        <OptionalSvgIcon name={field === "capex" ? "capex" : field === "researchAndDevelopment" ? "r-and-d" : "free-cash-flow"} className="h-5 w-5" colorClassName="text-accent" />{title}
+        <OptionalSvgIcon name={icon} className="h-5 w-5" colorClassName="text-accent" />{title}
       </p>
       <div className="mb-5 text-text-primary">
         <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact />
@@ -169,13 +171,13 @@ export function FilingIndicators({ symbol, compact = false }: { symbol: string; 
       ) : (
         <div className="space-y-8">
           {indicators.some((indicator) => indicator.capex !== null) && (
-            <AnnualIndicatorChart title="CapEx" field="capex" indicators={indicators} started={started} compact={compact} />
+            <AnnualIndicatorChart title="CapEx" icon="capex" field="capex" indicators={indicators} started={started} compact={compact} />
           )}
           {indicators.some((indicator) => indicator.researchAndDevelopment !== null) && (
-            <AnnualIndicatorChart title="R&D" field="researchAndDevelopment" indicators={indicators} started={started} compact={compact} />
+            <AnnualIndicatorChart title="R&D" icon="r-and-d" field="researchAndDevelopment" indicators={indicators} started={started} compact={compact} />
           )}
           {indicators.some((indicator) => indicator.freeCashFlow !== null) && (
-            <AnnualIndicatorChart title="Free cash flow" field="freeCashFlow" indicators={indicators} started={started} compact={compact} />
+            <AnnualIndicatorChart title="Free cash flow" icon="free-cash-flow" field="freeCashFlow" indicators={indicators} started={started} compact={compact} />
           )}
         </div>
       )}

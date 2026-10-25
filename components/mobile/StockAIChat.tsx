@@ -2013,8 +2013,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           width: open ? pillOpenWidth : "3.5rem",
           height: "3.5rem",
           background: chatControlGlass,
-          backdropFilter: "blur(24px) saturate(180%)",
-          WebkitBackdropFilter: "blur(24px) saturate(180%)",
+          backdropFilter: "blur(var(--phone-floating-pill-blur))",
+          WebkitBackdropFilter: "blur(var(--phone-floating-pill-blur))",
           boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
           transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
         }}

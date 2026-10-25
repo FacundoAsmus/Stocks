@@ -170,11 +170,11 @@ export function FundamentalsGrid({
       <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">
         <OptionalSvgIcon name="indicators" className="h-6 w-6" colorClassName="text-accent" />Indicators
       </p>
-      <div className="mx-5 grid grid-cols-1 gap-y-6">
+      <div className="mx-5 grid grid-cols-1 gap-y-2">
         {indicatorGroups.map((group, groupIndex) => (
-          <div key={groupIndex} className="grid grid-cols-2 gap-x-4 gap-y-3">
+          <div key={groupIndex} className="grid grid-cols-2 gap-x-4 gap-y-2">
             {group.map((item) => (
-              <div key={item.label} className="min-w-0">
+              <div key={item.label} className="min-w-0 py-4">
                 <div className="mb-2 flex items-center gap-1.5">
                   <span className={`h-2 w-2 shrink-0 rounded-full ${
                     item.tone === "positive" ? "bg-positive" :

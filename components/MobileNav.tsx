@@ -551,8 +551,8 @@ export function MobileNav() {
             height: BUBBLE_SIZE,
             marginRight: "0.75rem",
             background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
-            backdropFilter: "blur(24px) saturate(180%)",
-            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+            backdropFilter: "blur(var(--phone-floating-pill-blur))",
+            WebkitBackdropFilter: "blur(var(--phone-floating-pill-blur))",
             boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
           }}
         >

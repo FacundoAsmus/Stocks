@@ -3,6 +3,9 @@
 :root {
   --accent-rgb: 255 255 255;
   --volume-bar-neutral: rgba(255,255,255,0.16);
+  --phone-stock-top-blur: 6px;
+  --phone-list-header-blur: 6px;
+  --phone-floating-pill-blur: 10px;
   --ai-fringe-blue: #2a2aff;
   --ai-fringe-red: #ff3d00;
   --ai-fringe-amber: #ffb000;

@@ -172,61 +172,49 @@ export function MobileStockPage(props: MobileStockPageProps) {
         }}
       />
 
-      <div
-        className="sticky top-0 z-40 flex items-center justify-between gap-2 px-4 pb-3"
-        style={{
-          paddingTop: "calc(0.75rem + env(safe-area-inset-top))",
-        }}
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backdropFilter: "blur(14px)",
-            WebkitBackdropFilter: "blur(14px)",
-            maskImage: "linear-gradient(to bottom, black, transparent)",
-            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
-          }}
-        />
-        {/* Invisible — exists only to hold the same layout height as the
-            real button below, so page content doesn't jump. */}
-        <span className="invisible flex items-center justify-center h-[2.45rem] w-[2.45rem] rounded-full" aria-hidden>
-          <OptionalSvgIcon name="back" className="h-5 w-5" />
-        </span>
-        <div className="ml-auto flex items-center gap-1">
-          <button type="button" aria-label={`Compare ${stock.symbol} with another stock`} title="Compare stocks" onClick={() => setCompareSearchOpen(true)}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-accent transition hover:bg-white/5">
-            <OptionalSvgIcon name="compare" className="h-6 w-6" color="var(--color-accent)" />
-          </button>
-          <button type="button" aria-label="Settings" title="Settings" onClick={() => { setCompareSearchOpen(false); setSettingsPhase("open"); }}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-accent transition hover:bg-white/5">
-            <OptionalSvgIcon name="settings" className="h-6 w-6" />
-          </button>
-          <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} mobile mobileHeader />
-        </div>
-      </div>
-
-      {/* The real, clickable Back button — portaled straight onto
-          document.body (same pattern StockAIChat already uses reliably)
-          so it's never nested inside the blurred header's own stacking
-          context. That local nesting is what kept letting the blur end up
-          rendered over the button despite z-index/isolate/transform
-          attempts from inside the header itself. */}
-      {mounted && settingsPhase === "closed" && createPortal(
-        <button
-          onClick={handleBack}
-          aria-label="Back"
-          className="fixed flex items-center justify-center h-[2.45rem] w-[2.45rem] text-accent"
-          style={{
-            top: "calc(0.75rem + env(safe-area-inset-top))",
-            left: "1rem",
-            zIndex: 500,
-            background: "transparent",
-          }}
-        >
-          <OptionalSvgIcon name="back" className="h-5 w-5" />
-        </button>,
+      {mounted && settingsPhase === "closed" && !compareSearchOpen && createPortal(
+        <>
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-x-0 top-0"
+            style={{
+              zIndex: 400,
+              height: "calc(4rem + env(safe-area-inset-top))",
+              backdropFilter: "blur(var(--phone-stock-top-blur))",
+              WebkitBackdropFilter: "blur(var(--phone-stock-top-blur))",
+              maskImage: "linear-gradient(to bottom, black, transparent)",
+              WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+            }}
+          />
+          <div
+            className="fixed left-4 right-4 flex items-center justify-between"
+            style={{ top: "calc(0.75rem + env(safe-area-inset-top))", zIndex: 500 }}
+          >
+            <button
+              onClick={handleBack}
+              aria-label="Back"
+              className="flex h-[2.45rem] w-[2.45rem] items-center justify-center text-accent"
+              style={{ background: "transparent" }}
+            >
+              <OptionalSvgIcon name="back" className="h-5 w-5" />
+            </button>
+            <div className="flex items-center gap-1">
+              <button type="button" aria-label={`Compare ${stock.symbol} with another stock`} title="Compare stocks" onClick={() => setCompareSearchOpen(true)}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-accent transition">
+                <OptionalSvgIcon name="compare" className="h-6 w-6" color="var(--color-accent)" />
+              </button>
+              <button type="button" aria-label="Settings" title="Settings" onClick={() => { setCompareSearchOpen(false); setSettingsPhase("open"); }}
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-accent transition">
+                <OptionalSvgIcon name="settings" className="h-6 w-6" />
+              </button>
+              <StockPriceAlertButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} currentPrice={currentPrice} mobile mobileHeader />
+            </div>
+          </div>
+        </>,
         document.body
       )}
+
+      <div aria-hidden style={{ height: "calc(4rem + env(safe-area-inset-top))" }} />
 
       <div ref={pageRef} className="pb-36" style={{ opacity: 1 }} data-stock-page="">
         {comparisonSymbol ? (
