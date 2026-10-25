@@ -837,6 +837,7 @@ export function PriceChart({
         }
         setLoadedChartKey(requestKey);
         setChartKey((key) => key + 1);
+        if (holdPriceUntilChartReady) setPriceVisible(true);
         // Small delay so digits have settled before fading back in
         if (!holdPriceUntilChartReady) setTimeout(() => setPriceVisible(true), 40);
 
@@ -1588,9 +1589,6 @@ export function PriceChart({
           <div
             key={chartKey}
             style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both", width: "100%", height: "100%", pointerEvents: squarePlacementActive || diagonalPlacementActive ? "none" : undefined }}
-            onAnimationEnd={(event) => {
-              if (event.currentTarget === event.target && event.animationName === "chart-reveal" && holdPriceUntilChartReady) setPriceVisible(true);
-            }}
           >
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
