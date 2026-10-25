@@ -385,6 +385,7 @@ export function MobileWatchlist() {
   const [stocks, setStocks] = useState<Map<string, StockSummary>>(new Map());
   const [loading, setLoading] = useState(true);
   const [watchlistInitialized, setWatchlistInitialized] = useState(false);
+  const [titleBarScrolled, setTitleBarScrolled] = useState(false);
   const [removingSymbols, setRemovingSymbols] = useState<Set<string>>(() => new Set());
   const removalTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const symbolQuery = [...symbols].sort().join(",");
@@ -392,6 +393,13 @@ export function MobileWatchlist() {
   useEffect(() => () => {
     removalTimersRef.current.forEach(timer => clearTimeout(timer));
     removalTimersRef.current.clear();
+  }, []);
+
+  useEffect(() => {
+    const updateTitleBar = () => setTitleBarScrolled(window.scrollY > 0);
+    updateTitleBar();
+    window.addEventListener("scroll", updateTitleBar, { passive: true });
+    return () => window.removeEventListener("scroll", updateTitleBar);
   }, []);
 
   useEffect(() => {
@@ -494,8 +502,9 @@ export function MobileWatchlist() {
             height: "calc(100% + 1.5rem)",
             backdropFilter: "blur(var(--phone-list-header-blur))",
             WebkitBackdropFilter: "blur(var(--phone-list-header-blur))",
-            maskImage: "linear-gradient(to bottom, black, transparent)",
-            WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+            backgroundColor: titleBarScrolled
+              ? "color-mix(in srgb, var(--color-background) 68%, transparent)"
+              : "var(--color-background)",
           }}
         />
         <div>
