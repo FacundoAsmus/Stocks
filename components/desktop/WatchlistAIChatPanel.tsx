@@ -254,22 +254,22 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
                 key={i}
                 className={cn(
                   "max-w-[85%] rounded-3xl px-3 py-2 text-sm leading-relaxed",
-                  m.role === "user" ? "self-end bg-positive text-black" : "self-start border border-accent/70 text-text-primary"
+                  m.role === "user" ? "self-end bg-positive text-black" : "ai-response-bubble self-start border border-accent/70 text-text-primary"
                 )}
-                style={m.role === "model" ? { boxShadow: "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent)" } : undefined}
+                style={m.role === "model" ? { boxShadow: "0 0 12px color-mix(in srgb, var(--AI_COLOR) 48%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 70%, transparent)" } : undefined}
               >
                 {m.role === "model" ? <AIMessageContent text={m.text} stock={stock} animating={m.animating} /> : m.text}
               </div>
             ))}
             {serverError && <AIUnavailableNotice />}
             {loading && (
-              <div className="ai-response-bubble self-start rounded-3xl border border-accent/70 px-3 py-2" style={{ boxShadow: "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent)" }}>
+              <div className="ai-response-bubble self-start rounded-3xl border border-accent/70 px-3 py-2" style={{ boxShadow: "0 0 12px color-mix(in srgb, var(--AI_COLOR) 48%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 70%, transparent)" }}>
                 <AIStarLoader size="md" />
               </div>
             )}
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 border-t border-white/10 p-3">
+          <div className="ai-typing-bar flex shrink-0 items-center gap-2 border-t border-white/10 p-3">
             <input
               ref={inputRef}
               value={input}

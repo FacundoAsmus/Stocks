@@ -1961,10 +1961,10 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
                 padding: "12px 18px",
                 borderRadius: 24,
                 background: bgBubbleAI,
-                border: `1px solid ${msg.role === "model" ? "var(--color-accent)" : bubbleBorderUser}`,
+                border: `1px solid ${msg.role === "model" ? "var(--AI_COLOR)" : bubbleBorderUser}`,
                 backdropFilter: "blur(24px) saturate(180%)",
                 WebkitBackdropFilter: "blur(24px) saturate(180%)",
-                boxShadow: msg.role === "model" ? `0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent), ${bubbleGlowAI}` : bubbleGlowAI,
+                boxShadow: msg.role === "model" ? `0 0 12px color-mix(in srgb, var(--AI_COLOR) 48%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 70%, transparent), ${bubbleGlowAI}` : bubbleGlowAI,
                 color: textColor,
                 fontSize: 17,
                 lineHeight: 1.55,
@@ -1987,8 +1987,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
                 padding: "14px 18px",
                 borderRadius: 24,
                 background: bgBubbleAI,
-                border: "1px solid var(--color-accent)",
-                boxShadow: `0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent), ${bubbleGlowAI}`,
+                border: "1px solid var(--AI_COLOR)",
+                boxShadow: `0 0 12px color-mix(in srgb, var(--AI_COLOR) 48%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 70%, transparent), ${bubbleGlowAI}`,
                 backdropFilter: "blur(24px) saturate(180%)",
                 WebkitBackdropFilter: "blur(24px) saturate(180%)",
                 display: "flex", alignItems: "center",
@@ -2005,7 +2005,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           separate bar/card behind it — this IS the input, elongated. */}
       {!hideTrigger && (
       <div
-        className={`smoked-glass-surface fixed rounded-full border border-white/15 text-accent overflow-hidden${open ? "" : " ai-aberration"}`}
+        className={`smoked-glass-surface fixed rounded-full border border-white/15 text-accent overflow-hidden${open ? " ai-typing-bar" : " ai-aberration"}`}
         style={{
           zIndex: 1002,
           bottom: pillBottom,
@@ -2091,7 +2091,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       {/* Controlled mode (e.g. desktop): render just the input row inline where hideTrigger is set and open is true, anchored bottom same as mobile pill would be, so typing still works without the floating circle. */}
       {hideTrigger && open && (
         <div
-          className="smoked-glass-surface fixed rounded-full border border-white/15 text-accent overflow-hidden"
+          className="smoked-glass-surface ai-typing-bar fixed rounded-full border border-white/15 text-accent overflow-hidden"
           style={{
             zIndex: 1002,
             bottom: pillBottom,

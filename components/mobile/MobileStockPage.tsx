@@ -292,7 +292,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
                 <div className="no-scrollbar -mx-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 pb-2">
                   {stock.news.slice(0, 8).map(article => (
                     <div key={article.id} className="w-[38vw] max-w-[140px] shrink-0 snap-start">
-                      <NewsCard article={article} showSummary={false} />
+                      <NewsCard article={article} showSummary={false} compactTitle />
                     </div>
                   ))}
                 </div>

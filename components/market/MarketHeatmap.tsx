@@ -320,7 +320,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
             }}
           />
           <div className="flex items-center gap-3">
-            <Image src="/icons/site-logo.png" alt="" width={40} height={40} className="h-10 w-10 shrink-0 rounded-xl object-contain" />
+            <Image src="/icons/site-logo.png" alt="" width={80} height={40} className="h-10 w-20 shrink-0 object-contain" />
             <div>
               <h1 id="market-heatmap-title" className="text-4xl font-bold text-text-primary">Heatmaps</h1>
               <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-accent">Market</p>
