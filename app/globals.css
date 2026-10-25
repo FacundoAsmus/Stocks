@@ -6,6 +6,7 @@
   --phone-stock-top-blur: 6px;
   --phone-list-header-blur: 6px;
   --phone-floating-pill-blur: 10px;
+  --bottom-edge-blur-height: 48px;
   --ai-fringe-blue: #2a2aff;
   --ai-fringe-red: #ff3d00;
   --ai-fringe-amber: #ffb000;
@@ -17,11 +18,9 @@
 .market-icon-frame { background-color: #000000 !important; }
 html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
 
-/* Keep the desktop bottom edge blur compact and lightweight. */
-@media (min-width: 1024px) {
-  .bottom-edge-blur { height: 48px !important; }
-  .bottom-edge-blur .edge-blur-layer:not(.edge-blur-layer-6) { display: none; }
-}
+/* Keep the bottom edge blur compact and lightweight on every screen size. */
+.bottom-edge-blur { height: var(--bottom-edge-blur-height) !important; }
+.bottom-edge-blur .edge-blur-layer:not(.edge-blur-layer-6) { display: none; }
 
 @keyframes chart-reveal {
   from { clip-path: inset(0 100% 0 0); }
