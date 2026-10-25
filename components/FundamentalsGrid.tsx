@@ -155,26 +155,37 @@ export function FundamentalsGrid({
     "Market Cap", "P/E Ratio", "Forward P/E", "PEG", "EPS", "Dividend Yield", "Next Report", "Expected Earnings"
   ]);
   const visibleItems = isEtf ? items.filter(item => !ETF_EXCLUDED_LABELS.has(item.label)) : items;
+  const indicatorGroups = [
+    ["Market Cap", "Beta", "P/E Ratio", "Forward P/E"],
+    ["PEG", "EPS"],
+    ["52W Low", "52W High", "Avg. Volume", "Dividend Yield"],
+    ["Next Report", "Expected Earnings"],
+  ].map((labels) => labels
+    .map((label) => visibleItems.find((item) => item.label === label))
+    .filter((item): item is FundamentalItem => item !== undefined))
+    .filter((group) => group.length > 0);
 
   return (
     <section>
-      <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="indicators" className="h-6 w-6" />Indicators</p>
-      <div className="mx-5 grid grid-cols-2 gap-2">
-        {visibleItems.map((item) => (
-          <div
-            key={item.label}
-            className="rounded-3xl p-4"
-            style={{ backgroundColor: "var(--indicator-card-bg)", color: "var(--indicator-card-text)" }}
-          >
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className={`h-2 w-2 rounded-full shrink-0 ${
-                item.tone === "positive" ? "bg-positive" :
-                item.tone === "negative" ? "bg-negative" :
-                "bg-text-muted/40"
-              }`} />
-              <p className="text-xs uppercase tracking-[0.12em] truncate" style={{ color: "var(--indicator-card-muted)" }}>{item.label}</p>
-            </div>
-            <p className="text-xl font-semibold"><WheelPrice value={item.value} size="md" compact colorClass="text-current" /></p>
+      <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">
+        <OptionalSvgIcon name="indicators" className="h-6 w-6" colorClassName="text-[var(--indicator-icon-color)]" />Indicators
+      </p>
+      <div className="mx-5 grid grid-cols-1 gap-2">
+        {indicatorGroups.map((group, groupIndex) => (
+          <div key={groupIndex} className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-3xl p-4" style={{ backgroundColor: "var(--indicator-card-bg)", color: "var(--indicator-card-text)" }}>
+            {group.map((item) => (
+              <div key={item.label} className="min-w-0">
+                <div className="mb-2 flex items-center gap-1.5">
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${
+                    item.tone === "positive" ? "bg-positive" :
+                    item.tone === "negative" ? "bg-negative" :
+                    "bg-text-muted/40"
+                  }`} />
+                  <p className="truncate text-xs uppercase tracking-[0.12em]" style={{ color: "var(--indicator-card-muted)" }}>{item.label}</p>
+                </div>
+                <p className="text-xl font-semibold"><WheelPrice value={item.value} size="md" compact colorClass="text-current" /></p>
+              </div>
+            ))}
           </div>
         ))}
       </div>
