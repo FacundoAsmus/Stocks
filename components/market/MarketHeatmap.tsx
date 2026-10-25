@@ -147,7 +147,6 @@ function LoadingHeatCanvas({ group, width, height }: { group: string; width: num
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
     const seed = [...group].reduce((total, char) => total + char.charCodeAt(0), 0);
     let frame = 0;
-    const accentGlow = `rgba(${getComputedStyle(document.documentElement).getPropertyValue("--accent-rgb").trim().replace(/\s+/g, ", ")}, 0.5)`;
     const paint = (now: number) => {
       const time = now / 1000;
       context.fillStyle = "#342606";
@@ -160,7 +159,7 @@ function LoadingHeatCanvas({ group, width, height }: { group: string; width: num
         const radius = Math.max(width, height) * (0.27 + (index % 3) * 0.035);
         const green = (index + seed) % 2 === 0;
         const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, green ? accentGlow : "rgba(255, 48, 3, 0.48)");
+        gradient.addColorStop(0, green ? "rgba(173, 250, 27, 0.5)" : "rgba(255, 48, 3, 0.48)");
         gradient.addColorStop(0.55, green ? "rgba(0, 200, 5, 0.18)" : "rgba(255, 48, 3, 0.17)");
         gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
         context.fillStyle = gradient;
@@ -316,7 +315,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
         <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-3" role="tablist" aria-label="Market groups">
           {MARKET_HEATMAP_GROUPS.map((group) => (
             <button key={group.id} type="button" role="tab" aria-selected={group.id === activeGroup} onClick={() => setActiveGroup(group.id)} className={cn("inline-flex shrink-0 snap-start items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors", group.id === activeGroup ? "border-accent bg-accent text-on-accent" : "border-border-subtle text-text-muted hover:border-accent/50 hover:text-text-primary")}>
-              <OptionalSvgIcon name={group.id} selected={group.id === activeGroup} fallbackToBaseWhenSelected className={group.id === "semiconductors" ? "h-3 w-3" : "h-4 w-4"} colorClassName={group.id === activeGroup ? "text-on-accent" : "text-accent"} />
+              <OptionalSvgIcon name={group.id} selected={group.id === activeGroup} fallbackToBaseWhenSelected className={group.id === "semiconductors" ? "h-3 w-3" : "h-4 w-4"} colorClassName="text-accent" />
               {group.label}
             </button>
           ))}
@@ -354,7 +353,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
               <Link key={stock.symbol} href={`/stock/${encodeURIComponent(stock.symbol)}`} onClick={(event) => { if (desktopLayout) { event.preventDefault(); setSelectedSymbol(stock.symbol); } }} className={cn("heatmap-tile absolute flex flex-col overflow-hidden border border-white/10 bg-black/15 p-3 text-left transition-opacity duration-200 hover:z-10 hover:bg-black/30 hover:ring-1 hover:ring-white/50", desktopLayout ? "rounded-3xl" : "rounded-lg")} style={tileStyle} aria-label={`${stock.name} (${stock.symbol}), ${formatPercent(stock.changePercent)}`}>
                 <span className={cn("font-bold tracking-tight text-white", compact ? "text-base" : "text-2xl")}>{stock.symbol}</span>
                 <span className={cn("mt-1 truncate text-white/70", compact ? "text-xs" : "text-sm")}>{stock.name}</span>
-                <span className={cn("mt-auto font-semibold", compact ? "text-sm" : "text-lg", (stock.changePercent ?? 0) >= 0 ? "text-accent" : "text-[#ff7560]")}>{formatPercent(stock.changePercent)}</span>
+                <span className={cn("mt-auto font-semibold", compact ? "text-sm" : "text-lg", (stock.changePercent ?? 0) >= 0 ? "text-[#adfa1b]" : "text-[#ff7560]")}>{formatPercent(stock.changePercent)}</span>
               </Link>
             );
           })}

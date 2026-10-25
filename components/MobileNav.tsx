@@ -368,7 +368,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
                 borderTop: "1px solid var(--color-border-subtle)",
               }}
             >
-              <StockLogo logo={logos[r.symbol] && !SECTOR_ETFS.some((etf) => etf.symbol === r.symbol) ? logos[r.symbol] : undefined} symbol={r.symbol}
+              <StockLogo logo={logos[r.symbol] && !SECTOR_ETFS.some((etf) => etf.symbol === r.symbol) ? logos[r.symbol] : undefined}
                 size={48} sizeClassName="h-10 w-10 shrink-0"
                 imageClassName="h-10 w-10 shrink-0 rounded-3xl border border-border-subtle bg-panel-muted object-contain"
                 fallbackClassName="h-10 w-10 shrink-0 rounded-3xl object-contain" fallbackDisplay="flex" />

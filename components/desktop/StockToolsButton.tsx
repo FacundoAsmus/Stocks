@@ -64,7 +64,7 @@ export function StockFunctionButton({ symbol, chartHeight = 384 }: {
       >
         <button type="button" onClick={() => setOpen((value) => !value)} aria-label={open ? "Close functions" : "Open functions"} aria-expanded={open}
           className="flex h-10 w-10 shrink-0 items-center justify-center" title="Functions">
-          <OptionalSvgIcon name="tools" className="stock-tools-icon h-6 w-6" />
+          <OptionalSvgIcon name="tools" className="stock-tools-icon h-6 w-6 text-accent" colorClassName="text-accent" />
         </button>
         <div className={cn("flex flex-col items-center gap-2 pt-2 transition-opacity duration-200", open ? "opacity-100" : "pointer-events-none opacity-0")}>
           <button type="button" onClick={startCompareSearch} className="flex h-9 w-full items-center justify-center bg-transparent opacity-35 transition-opacity hover:opacity-100"

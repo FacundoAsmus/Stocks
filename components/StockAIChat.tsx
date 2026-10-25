@@ -207,7 +207,7 @@ export function StockAIChat(props: StockAIChatProps) {
       {/* AI trigger button — right side of top bar */}
       <button
         onClick={() => { setOpen(true); setTimeout(() => inputRef.current?.focus(), 100); }}
-        className="ai-aberration ai-launcher-glass ai-iris-hover flex items-center justify-center h-8 w-8 rounded-lg border border-transparent transition-transform active:scale-90"
+        className="ai-aberration flex items-center justify-center h-8 w-8 rounded-lg bg-accent/10 border border-accent/40 text-accent transition-all active:scale-90"
         aria-label="Ask AI about this stock"
       >
         <OptionalSvgIcon name="ai" className="ai-button-icon h-5 w-5" />
@@ -215,10 +215,10 @@ export function StockAIChat(props: StockAIChatProps) {
 
       {open && (
         <>
-          {/* ── Backdrop: dim only. Tap = dismiss, scroll = pass-through ── */}
+          {/* ── Backdrop: blur + dim. Tap = dismiss, scroll = pass-through ── */}
           <div
-            className="ai-chat-backdrop fixed inset-0 z-40"
-            style={{ background: "rgba(0,0,0,0.15)" }}
+            className="fixed inset-0 z-40"
+            style={{ backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)", background: "rgba(0,0,0,0.15)" }}
             onTouchStart={() => { backdropScrollRef.current = false; }}
             onTouchMove={() => { backdropScrollRef.current = true; }}
             onTouchEnd={() => {
@@ -247,7 +247,7 @@ export function StockAIChat(props: StockAIChatProps) {
             <div style={{ pointerEvents: "auto" }} /* only message bubbles catch events */>
               {messages.length === 0 && (
                 <div className="flex justify-center mb-4">
-                  <span className="text-xs text-white/50 bg-black/40 rounded-full px-3 py-1.5">
+                  <span className="text-xs text-white/50 bg-black/40 rounded-full px-3 py-1.5 backdrop-blur-sm">
                     Ask me anything about {props.stock.symbol}
                   </span>
                 </div>
@@ -257,8 +257,8 @@ export function StockAIChat(props: StockAIChatProps) {
                 {messages.map((m, i) => (
                   <div key={i} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
                     {m.role === "model" && (
-                      <span className="ai-sparkle-badge h-6 w-6 rounded-full flex items-center justify-center shrink-0 mr-2 mt-0.5">
-                        <Sparkles className="ai-sparkle-icon h-3 w-3" />
+                      <span className="h-6 w-6 rounded-full bg-accent flex items-center justify-center shrink-0 mr-2 mt-0.5">
+                        <Sparkles className="h-3 w-3 text-on-accent" />
                       </span>
                     )}
                     <div
@@ -272,7 +272,10 @@ export function StockAIChat(props: StockAIChatProps) {
                           ? "linear-gradient(145deg, rgba(6,22,18,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))"
                           : "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
                         color: "rgba(245,248,248,0.94)",
+                        backdropFilter: "blur(24px) saturate(180%)",
+                        WebkitBackdropFilter: "blur(24px) saturate(180%)",
                         borderColor: m.role === "model" ? "var(--color-accent)" : undefined,
+                        boxShadow: m.role === "model" ? "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent), 0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" : "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)"
                       }}
                     >
                       {m.text}
@@ -282,10 +285,11 @@ export function StockAIChat(props: StockAIChatProps) {
 
                 {loading && (
                   <div className="flex justify-start">
-                    <span className="ai-sparkle-badge h-6 w-6 rounded-full flex items-center justify-center shrink-0 mr-2 mt-0.5">
-                      <Sparkles className="ai-sparkle-icon h-3 w-3" />
+                    <span className="h-6 w-6 rounded-full bg-accent flex items-center justify-center shrink-0 mr-2 mt-0.5">
+                      <Sparkles className="h-3 w-3 text-on-accent" />
                     </span>
-                    <div className="smoked-glass-surface ai-response-bubble ai-thinking rounded-3xl border border-transparent px-4 py-3 flex items-center"><AIStarLoader size="md" />
+                    <div className="smoked-glass-surface ai-response-bubble rounded-3xl border border-accent px-4 py-3 flex items-center" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 0 12px color-mix(in srgb, var(--color-accent) 48%, transparent), 0 0 3px color-mix(in srgb, var(--color-accent) 70%, transparent), 0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}>
+                      <AIStarLoader size="md" />
                     </div>
                   </div>
                 )}
@@ -298,7 +302,7 @@ export function StockAIChat(props: StockAIChatProps) {
             className="fixed inset-x-0 z-50 px-3 transition-all duration-200"
             style={{ bottom: inputBottom }}
           >
-            <div className="smoked-glass-surface ai-chat-panel ai-iris-hover flex items-center gap-2 rounded-full border border-transparent px-4 py-2 shadow-2xl" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", }}>
+            <div className="smoked-glass-surface flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 shadow-2xl" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}>
               <input
                 ref={inputRef}
                 value={input}
@@ -313,7 +317,7 @@ export function StockAIChat(props: StockAIChatProps) {
                 className={cn(
                   "h-7 w-7 rounded-full flex items-center justify-center shrink-0 transition-all",
                   input.trim() && !loading
-                    ? "bg-positive text-black active:scale-90"
+                    ? "bg-accent text-on-accent active:scale-90"
                     : "bg-white/10 text-white/30"
                 )}
               >

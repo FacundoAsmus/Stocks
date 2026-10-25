@@ -197,7 +197,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
           type="button"
           onClick={() => setOpen(true)}
           aria-label={`Ask AI about ${stock.symbol}`}
-          className="smoked-glass-surface pointer-events-auto absolute bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full border border-white/25 text-positive overflow-hidden"
+          className="ai-aberration smoked-glass-surface pointer-events-auto absolute bottom-6 right-6 flex h-14 w-14 items-center justify-center rounded-full border border-white/25 text-accent"
           style={{ background: glassBg, backdropFilter: "blur(22px) saturate(160%)", WebkitBackdropFilter: "blur(22px) saturate(160%)", boxShadow: glassShadow }}
         >
           <div
@@ -237,7 +237,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
         >
           <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
             <span className="flex items-center gap-2 text-sm font-semibold text-text-primary">
-              <Sparkles className="h-4 w-4 text-positive" />
+              <Sparkles className="h-4 w-4 text-accent" />
               Ask about {stock.symbol}
             </span>
             <GlossyIconButton aria-label="Close chat" onClick={() => setOpen(false)}><GlossyCloseIcon /></GlossyIconButton>
@@ -283,9 +283,9 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
               onClick={sendMessage}
               disabled={loading || !input.trim()}
               aria-label="Send"
-              className="ai-send-button-glow flex h-9 w-9 items-center justify-center rounded-lg bg-positive text-black disabled:opacity-40"
+              className="ai-send-button-glow flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-on-accent disabled:opacity-40"
             >
-              <OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-black" />
+              <OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-on-accent" />
             </button>
           </div>
         </div>

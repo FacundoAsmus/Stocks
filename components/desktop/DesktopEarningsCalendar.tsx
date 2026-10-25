@@ -208,7 +208,7 @@ function MiniMonthGrid({
               {event ? (
                 <button
                   onClick={() => onSelect(event)}
-                  className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-on-accent transition active:scale-90"
+                  className="flex h-4 w-4 items-center justify-center rounded-full bg-accent text-on-accent text-[9px] font-bold transition active:scale-90"
                 >
                   {day}
                 </button>
