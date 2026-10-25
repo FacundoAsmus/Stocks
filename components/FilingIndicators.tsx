@@ -76,7 +76,7 @@ function AnnualIndicatorChart({
 
   return (
     <section>
-      <p className="mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
+      <p className="-ml-5 mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
         <OptionalSvgIcon name={icon} className="h-5 w-5" colorClassName="text-accent" />{title}
       </p>
       <div className="mb-5 text-text-primary">
