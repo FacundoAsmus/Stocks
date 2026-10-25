@@ -327,7 +327,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
           (closest match) renders nearest the bar via column-reverse. */}
       {showDropdown && (
         <div
-          className="smoked-glass-surface fixed lg:hidden rounded-2xl border border-white/25"
+          className="smoked-glass-surface fixed lg:hidden rounded-3xl border border-white/25"
           style={{
             zIndex: 1001,
             right: "1rem",

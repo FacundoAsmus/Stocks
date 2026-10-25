@@ -74,7 +74,7 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
 
   return <>
     <button type="button" aria-label="Price alerts" title="Price alerts" onClick={() => setOpen(true)}
-      className={`relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-accent transition ${mobileHeader ? "smoked-glass-surface phone-stock-control-glass z-[50]" : "border-0 bg-transparent hover:bg-white/5"} lg:transition-transform lg:duration-200 lg:hover:-translate-y-1 lg:hover:scale-[1.12] ${mobile && !mobileHeader ? "fixed" : ""}`}
+      className={`relative inline-flex ${mobileHeader ? "h-14 w-14 smoked-glass-surface phone-stock-control-glass z-[50]" : "h-10 w-10 border-0 bg-transparent hover:bg-white/5"} shrink-0 items-center justify-center rounded-full text-accent transition lg:transition-transform lg:duration-200 lg:hover:-translate-y-1 lg:hover:scale-[1.12] ${mobile && !mobileHeader ? "fixed" : ""}`}
       style={mobile && !mobileHeader ? { top: "calc(0.75rem + env(safe-area-inset-top))", right: "1rem", zIndex: 500, background: "transparent" } : undefined}>
 <OptionalSvgIcon name={ownAlerts.length > 0 ? "filled-bell" : "alerts"} className="h-5 w-5" />
     </button>

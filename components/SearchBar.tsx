@@ -263,7 +263,7 @@ export function SearchBar() {
     </div>
     {(showRecent || showResults) && dropdownPosition && typeof document !== "undefined" && createPortal(
       showRecent ? (
-        <div ref={dropdownRef} className="search-results-glass desktop-alert-glass smoked-glass-surface fixed w-full overflow-auto rounded-2xl border border-white/15" style={{ ...dropdownStyle, background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
+        <div ref={dropdownRef} className="search-results-glass desktop-alert-glass smoked-glass-surface fixed w-full overflow-auto rounded-3xl border border-white/15" style={{ ...dropdownStyle, background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
           <p className="px-4 py-2 text-xs uppercase tracking-widest text-text-muted">Recent</p>
           {recentSearches.map((symbol) => (
             <div key={symbol} className="flex w-full items-center gap-2 border-t border-border-subtle/40 px-4 py-2">
@@ -279,7 +279,7 @@ export function SearchBar() {
           ))}
         </div>
       ) : (
-        <div ref={dropdownRef} className="search-results-glass desktop-alert-glass smoked-glass-surface fixed w-full overflow-auto rounded-2xl border border-white/15" style={{ ...dropdownStyle, background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
+        <div ref={dropdownRef} className="search-results-glass desktop-alert-glass smoked-glass-surface fixed w-full overflow-auto rounded-3xl border border-white/15" style={{ ...dropdownStyle, background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
           {results.map((result) => (
             <div
               key={`${result.symbol}-${result.description}`}

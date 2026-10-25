@@ -182,18 +182,18 @@ export function MobileStockPage(props: MobileStockPageProps) {
             <button
               onClick={handleBack}
               aria-label="Back"
-              className="smoked-glass-surface phone-stock-control-glass flex h-10 w-10 items-center justify-center rounded-full text-accent"
+              className="smoked-glass-surface phone-stock-control-glass flex h-14 w-14 items-center justify-center rounded-full text-accent"
             >
               <OptionalSvgIcon name="back" className="h-5 w-5" />
             </button>
             <div className="flex items-center gap-2">
-              <div className="smoked-glass-surface phone-stock-control-glass flex h-10 w-20 shrink-0 items-center rounded-full">
+              <div className="smoked-glass-surface phone-stock-control-glass flex h-14 w-28 shrink-0 items-center rounded-full">
                 <button type="button" aria-label={`Compare ${stock.symbol} with another stock`} title="Compare stocks" onClick={() => setCompareSearchOpen(true)}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 text-accent shadow-none transition">
+                  className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 text-accent shadow-none transition">
                   <OptionalSvgIcon name="compare" className="h-6 w-6" color="var(--color-accent)" />
                 </button>
                 <button type="button" aria-label="Settings" title="Settings" onClick={() => { setCompareSearchOpen(false); setSettingsPhase("open"); }}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 text-accent shadow-none transition">
+                  className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 text-accent shadow-none transition">
                   <OptionalSvgIcon name="settings" className="h-6 w-6" />
                 </button>
               </div>
