@@ -266,6 +266,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
     sessionStorage.setItem("nav-from-search", "1");
     sessionStorage.setItem("search-origin", origin);
     handleDismiss();
+    window.dispatchEvent(new Event("stock-sheet-capture-page"));
     router.push(`/stock/${symbol}`);
   }
 

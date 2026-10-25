@@ -15,6 +15,7 @@ type SheetRun = {
   animationDone: boolean;
   id: number;
 };
+type OutgoingSnapshot = { node: HTMLElement; direction: "enter" | "exit" };
 
 function isStockPath(path: string) {
   return path.startsWith("/stock/");
@@ -24,6 +25,9 @@ export function StockSheet() {
   const pathname = usePathname();
   const [observedPath, setObservedPath] = useState(pathname);
   const runId = useRef(0);
+  const outgoingSnapshotRef = useRef<OutgoingSnapshot | null>(null);
+  const snapshotMountRef = useRef<HTMLDivElement | null>(null);
+  const underlayMountRef = useRef<HTMLDivElement | null>(null);
   const [run, setRun] = useState<SheetRun>({
     phase: "idle",
     direction: null,
@@ -55,6 +59,48 @@ export function StockSheet() {
     document.documentElement.toggleAttribute("data-stock-sheet", run.phase !== "idle");
     return () => document.documentElement.removeAttribute("data-stock-sheet");
   }, [run.phase]);
+
+  useEffect(() => {
+    const capturePage = (direction: "enter" | "exit") => {
+      if (window.matchMedia("(min-width: 1024px)").matches) return;
+      const page = direction === "exit"
+        ? document.querySelector<HTMLElement>(".stock-page-real-frame")
+        : document.querySelector<HTMLElement>("main");
+      if (!page) return;
+      const snapshot = page.cloneNode(true) as HTMLElement;
+      if (direction === "exit") {
+        snapshot.classList.remove("rounded-t-3xl", "border", "border-white/15", "shadow-2xl");
+      }
+      snapshot.style.transform = `translateY(-${window.scrollY}px)`;
+      snapshot.style.pointerEvents = "none";
+      outgoingSnapshotRef.current = { node: snapshot, direction };
+    };
+    const onCaptureRequest = () => capturePage(isStockPath(pathname) ? "exit" : "enter");
+    const onDocumentClick = (event: MouseEvent) => {
+      const link = (event.target as Element | null)?.closest<HTMLAnchorElement>("a[href]");
+      if (!link) return;
+      let targetPath = "";
+      try { targetPath = new URL(link.href, window.location.href).pathname; } catch { return; }
+      const wasStock = isStockPath(pathname);
+      const isStock = isStockPath(targetPath);
+      if (wasStock !== isStock) capturePage(isStock ? "enter" : "exit");
+    };
+    window.addEventListener("stock-sheet-capture-page", onCaptureRequest);
+    document.addEventListener("click", onDocumentClick, true);
+    return () => {
+      window.removeEventListener("stock-sheet-capture-page", onCaptureRequest);
+      document.removeEventListener("click", onDocumentClick, true);
+    };
+  }, [pathname]);
+
+  useLayoutEffect(() => {
+    const snapshot = outgoingSnapshotRef.current;
+    const mount = run.direction === "exit" ? snapshotMountRef.current : underlayMountRef.current;
+    if (!snapshot || snapshot.direction !== run.direction) return;
+    if (!mount || !snapshot) return;
+    mount.replaceChildren(snapshot.node);
+    outgoingSnapshotRef.current = null;
+  }, [run.id, run.direction]);
 
   useEffect(() => {
     const onStockPageReady = () => {
@@ -94,15 +140,24 @@ export function StockSheet() {
   if (run.phase === "idle") return null;
 
   return (
-    <div
-      key={run.id}
-      className="stock-sheet-card fixed inset-0 z-[55] overflow-y-auto rounded-t-3xl border border-white/15 bg-background shadow-2xl lg:hidden"
-      data-phase={run.phase}
-      onAnimationEnd={onAnimationEnd}
-      onTransitionEnd={onTransitionEnd}
-      aria-hidden="true"
-    >
-      <StockPageSkeleton />
-    </div>
+    <>
+      {run.direction === "enter" && run.phase !== "fading" && (
+        <div ref={underlayMountRef} className="stock-sheet-underlay fixed inset-0 z-[54] overflow-hidden lg:hidden" aria-hidden="true" />
+      )}
+      <div
+        key={run.id}
+        className="stock-sheet-card fixed inset-0 z-[55] overflow-y-auto rounded-t-3xl border border-white/15 bg-background shadow-2xl lg:hidden"
+        data-phase={run.phase}
+        onAnimationEnd={onAnimationEnd}
+        onTransitionEnd={onTransitionEnd}
+        aria-hidden="true"
+      >
+        {run.direction === "exit" ? (
+          <div ref={snapshotMountRef} className="min-h-screen bg-background" />
+        ) : (
+          <StockPageSkeleton />
+        )}
+      </div>
+    </>
   );
 }

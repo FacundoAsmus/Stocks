@@ -563,7 +563,8 @@ export function PriceChart({
   heightClassName = "h-[320px]",
   priceIndent,
   hideCursorDateTooltip = false,
-  hideMovingAverageControls = false
+  hideMovingAverageControls = false,
+  onChartReady
 }: {
   symbol: string;
   currentPrice: number;
@@ -574,6 +575,7 @@ export function PriceChart({
   priceIndent?: string;
   hideCursorDateTooltip?: boolean;
   hideMovingAverageControls?: boolean;
+  onChartReady?: () => void;
 }) {
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
   const [hoveredPeriod, setHoveredPeriod] = useState<ChartPeriod | null>(null);
@@ -890,6 +892,9 @@ export function PriceChart({
   );
 
   const hasData    = data.length > 1;
+  useEffect(() => {
+    if (!isLoading && (error || !hasData)) onChartReady?.();
+  }, [error, hasData, isLoading, onChartReady]);
   const hasVolume  = data.some((point) => typeof point.volume === "number" && point.volume > 0);
   const visibleRange = useMemo(() => {
     if (!useCandlesticks || !data.length || !candleViewRange) return { start: 0, end: data.length };
@@ -1577,6 +1582,9 @@ export function PriceChart({
           <div
             key={chartKey}
             style={{ animation: "chart-reveal 0.7s cubic-bezier(0.4,0,0.2,1) both", width: "100%", height: "100%", pointerEvents: squarePlacementActive || diagonalPlacementActive ? "none" : undefined }}
+            onAnimationEnd={(event) => {
+              if (event.currentTarget === event.target && event.animationName === "chart-reveal") onChartReady?.();
+            }}
           >
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart

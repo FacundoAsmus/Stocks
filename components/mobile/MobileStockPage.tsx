@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
@@ -52,9 +52,9 @@ export function MobileStockPage(props: MobileStockPageProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
 
-  useEffect(() => {
+  const handlePriceChartReady = useCallback(() => {
     window.dispatchEvent(new Event("stock-page-ready"));
-  }, [stock.symbol]);
+  }, []);
 
   useEffect(() => {
     const flag = sessionStorage.getItem("nav-from-search");
@@ -124,6 +124,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
   }, [props.stock.symbol]);
 
   function handleBack() {
+    window.dispatchEvent(new Event("stock-sheet-capture-page"));
     if (fromSearch) router.push(searchOrigin as "/" | "/watchlist");
     else router.back();
   }
@@ -251,6 +252,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             heightClassName="h-[312px]"
             hideCursorDateTooltip
             hideMovingAverageControls
+            onChartReady={handlePriceChartReady}
           />
         </div>
 

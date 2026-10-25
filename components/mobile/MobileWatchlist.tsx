@@ -362,6 +362,7 @@ function WatchlistRow({
                 close();
                 return;
               }
+              window.dispatchEvent(new Event("stock-sheet-capture-page"));
               router.push(`/stock/${stock.symbol}`);
             }}
           >
