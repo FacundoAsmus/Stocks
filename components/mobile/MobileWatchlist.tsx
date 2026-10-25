@@ -78,15 +78,17 @@ function RowContent({ stock }: { stock: StockSummary }) {
   const hasStockLogo = !!stock.logo && !isEtf;
   return (
     <>
-      <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48}
-        sizeClassName="h-9 w-9 shrink-0"
-        imageClassName="h-9 w-9 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0 pointer-events-none"
-        fallbackClassName="h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none" />
-      <span className="flex-1 min-w-0 pointer-events-none">
-        <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
-      </span>
+      <div className="flex min-w-0 flex-1 basis-0 items-center gap-3">
+        <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48}
+          sizeClassName="h-9 w-9 shrink-0"
+          imageClassName="h-9 w-9 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0 pointer-events-none"
+          fallbackClassName="h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none" />
+        <span className="min-w-0 pointer-events-none">
+          <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
+        </span>
+      </div>
       <MiniSparkline stock={stock} />
-      <span className="ml-3 shrink-0 pointer-events-none">
+      <span className="flex min-w-0 flex-1 basis-0 justify-end pointer-events-none">
         <span
           className={cn(
             "watchlist-change-badge inline-block text-sm font-bold text-black px-3 py-1 rounded-3xl",
@@ -122,10 +124,14 @@ function MobileWatchlistSkeleton() {
       <div>
         {Array.from({ length: 8 }, (_, index) => (
           <div key={index} className="flex h-[68px] items-center gap-3 border-b border-border-subtle/70 bg-black px-4 py-3.5">
-            <div className="h-9 w-9 shrink-0 rounded-full bg-panel-muted" />
-            <div className="h-4 min-w-0 flex-1 rounded-full bg-panel-muted" />
-            <div className="h-8 w-20 shrink-0 rounded-md bg-panel-muted/70" />
-            <div className="h-7 w-16 shrink-0 rounded-full bg-panel-muted" />
+            <div className="flex min-w-0 flex-1 basis-0 items-center gap-3">
+              <div className="h-9 w-9 shrink-0 rounded-full bg-panel-muted" />
+              <div className="h-4 min-w-0 flex-1 rounded-full bg-panel-muted" />
+            </div>
+            <div className="h-10 w-20 shrink-0 rounded-md bg-panel-muted/70" />
+            <div className="flex min-w-0 flex-1 basis-0 justify-end">
+              <div className="h-7 w-16 shrink-0 rounded-full bg-panel-muted" />
+            </div>
           </div>
         ))}
       </div>
