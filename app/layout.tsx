@@ -8,6 +8,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { ToastProvider } from "@/components/ToastProvider";
 import { PushWorkerRegistration } from "@/components/PushWorkerRegistration";
 import { BottomBlur } from "@/components/EdgeBlur";
+import { StockSheet } from "@/components/mobile/StockSheet";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 
             {/* Mobile bottom tab bar */}
             <MobileNav />
+            <StockSheet />
           </div>
         </ToastProvider>
       </body>

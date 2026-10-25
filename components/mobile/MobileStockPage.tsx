@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
@@ -34,13 +34,10 @@ interface MobileStockPageProps {
   metrics: Record<string, number | string | null> | undefined;
 }
 
-// Plays the search-close animation (fullscreen → tiny circle in bottom-right).
-
 export function MobileStockPage(props: MobileStockPageProps) {
   const [liveData, setLiveData] = useState(props);
   const { stock, currentPrice, sentiment, metrics } = liveData;
   const router = useRouter();
-  const pageRef = useRef<HTMLDivElement>(null);
   const [fromSearch,       setFromSearch]       = useState(false);
   const [searchOrigin,     setSearchOrigin]     = useState<string>("/");
   const [compareSearchOpen, setCompareSearchOpen] = useState(false);
@@ -56,16 +53,15 @@ export function MobileStockPage(props: MobileStockPageProps) {
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
+    window.dispatchEvent(new Event("stock-page-ready"));
+  }, [stock.symbol]);
+
+  useEffect(() => {
     const flag = sessionStorage.getItem("nav-from-search");
     if (flag) {
       setFromSearch(true);
       sessionStorage.removeItem("nav-from-search");
       setSearchOrigin(sessionStorage.getItem("search-origin") ?? "/");
-    }
-    const el = pageRef.current;
-    if (el) {
-      el.classList.add("page-enter-rise");
-      el.addEventListener("animationend", () => el.classList.remove("page-enter-rise"), { once: true });
     }
   }, []);
 
@@ -128,17 +124,8 @@ export function MobileStockPage(props: MobileStockPageProps) {
   }, [props.stock.symbol]);
 
   function handleBack() {
-    const el = pageRef.current;
-    if (el) {
-      el.classList.add("page-exit-sink");
-      setTimeout(() => {
-        if (fromSearch) router.push(searchOrigin as "/" | "/watchlist");
-        else router.back();
-      }, 380);
-    } else {
-      if (fromSearch) router.push(searchOrigin as "/" | "/watchlist");
-      else router.back();
-    }
+    if (fromSearch) router.push(searchOrigin as "/" | "/watchlist");
+    else router.back();
   }
 
   function closeSettings() {
@@ -176,7 +163,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
         <>
           <div
             aria-hidden
-            className="pointer-events-none fixed inset-x-0 top-0"
+            className="pointer-events-none fixed inset-x-0 top-0 lg:hidden"
             style={{
               zIndex: 400,
               height: "calc(4rem + env(safe-area-inset-top))",
@@ -187,7 +174,8 @@ export function MobileStockPage(props: MobileStockPageProps) {
             }}
           />
           <div
-            className="fixed left-4 right-4 flex items-center justify-between"
+            className="fixed left-4 right-4 flex items-center justify-between lg:hidden"
+            data-stock-top-controls
             style={{ top: "calc(0.75rem + env(safe-area-inset-top))", zIndex: 500 }}
           >
             <button
@@ -216,7 +204,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
 
       <div aria-hidden style={{ height: "calc(4rem + env(safe-area-inset-top))" }} />
 
-      <div ref={pageRef} className="pb-36" style={{ opacity: 1 }} data-stock-page="">
+      <div className="pb-36" style={{ opacity: 1 }} data-stock-page="">
         {comparisonSymbol ? (
           comparisonLoading ? (
             <div className="h-[260px] px-3"><PriceHistoryLoadingAnimation /></div>

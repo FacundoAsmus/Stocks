@@ -32,7 +32,7 @@ export default async function StockPage({ params }: StockPageProps) {
     return (
       <>
       {/* Mobile stock page */}
-      <div className="lg:hidden page-enter-rise">
+      <div className="stock-page-real-frame min-h-screen rounded-t-3xl border border-white/15 bg-background shadow-2xl lg:hidden">
         <MobileStockPage
           stock={stock}
           currentPrice={currentPrice}

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Reorder, useDragControls } from "framer-motion";
 import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts";
 
-import { LoadingScreen } from "@/components/EmptyWatchlist";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
 import { StockLogo } from "@/components/StockLogo";
 import { formatPercent } from "@/lib/format";
@@ -112,6 +111,27 @@ function withResistance(raw: number) {
 }
 
 const SETTLE_TRANSITION = "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
+
+function MobileWatchlistSkeleton() {
+  return (
+    <div className="min-h-screen pb-24" role="status" aria-label="Loading your watchlist">
+      <div className="px-4 pb-4" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}>
+        <div className="mb-2 h-10 w-52 max-w-full rounded-lg bg-panel-muted" />
+        <div className="h-3 w-24 rounded-full bg-panel-muted/70" />
+      </div>
+      <div>
+        {Array.from({ length: 8 }, (_, index) => (
+          <div key={index} className="flex h-[68px] items-center gap-3 border-b border-border-subtle/70 bg-black px-4 py-3.5">
+            <div className="h-9 w-9 shrink-0 rounded-full bg-panel-muted" />
+            <div className="h-4 min-w-0 flex-1 rounded-full bg-panel-muted" />
+            <div className="h-8 w-20 shrink-0 rounded-md bg-panel-muted/70" />
+            <div className="h-7 w-16 shrink-0 rounded-full bg-panel-muted" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function WatchlistRow({
   stock,
@@ -453,7 +473,7 @@ export function MobileWatchlist() {
 
   const orderedStocks = symbols.map((s) => stocks.get(s)).filter(Boolean) as StockSummary[];
 
-  if (!watchlistInitialized || (loading && !orderedStocks.length)) return <LoadingScreen label="Loading your watchlist" />;
+  if (!watchlistInitialized || (loading && !orderedStocks.length)) return <MobileWatchlistSkeleton />;
 
   return (
     <div className="pb-24">
