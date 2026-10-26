@@ -103,8 +103,8 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
       const detail = (event as CustomEvent<ChartToolsRequest>).detail;
       if (!detail || detail.symbol !== symbol) return;
       setPosition({
-        left: Math.max(8, Math.min(detail.clientX, window.innerWidth - 48)),
-        bottom: Math.max(8, Math.min(window.innerHeight - detail.clientY, window.innerHeight - 8)),
+        left: Math.max(8, Math.min(detail.clientX - 20, window.innerWidth - 48)),
+        bottom: Math.max(8, Math.min(window.innerHeight - detail.clientY - 20, window.innerHeight - 8)),
       });
       setOpen(true);
       setExpanded(false);
@@ -159,6 +159,7 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
   return (
     <div ref={panelRef} role="toolbar" aria-label="Chart drawing tools"
       className={cn("desktop-alert-glass desktop-stock-tools-panel smoked-glass-surface fixed z-[1200] overflow-hidden border text-text-primary", open && "is-open")}
+      onMouseLeave={() => { if (expanded) setOpen(false); }}
       style={{ left: position.left, bottom: position.bottom, width: expanded ? 40 : 0, height: expanded ? menuHeight : 0, borderRadius: expanded ? 24 : 0, opacity: expanded ? 1 : 0, pointerEvents: expanded ? "auto" : "none", transition: "width 0.32s cubic-bezier(0.2,0,0,1), height 0.32s cubic-bezier(0.2,0,0,1), border-radius 0.32s cubic-bezier(0.2,0,0,1), opacity 0.18s ease" }}>
       <div className="flex flex-col items-center gap-2 px-0.5 pt-2">
         {actions.map(({ action, label, icon, color }) => <button key={action} type="button" aria-label={label} title={label}

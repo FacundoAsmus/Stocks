@@ -1540,7 +1540,10 @@ export function PriceChart({
           positionVolumeCrosshair(((event.clientX - bounds.left) / bounds.width) * 100);
         }}
         onClick={(event) => {
-          if ((event.target as Element).closest("[data-drawing-hit], button")) return;
+          const clickTarget = event.target as Element;
+          if (clickTarget.closest("[data-drawing-hit]")) return;
+          const targetButton = clickTarget.closest("button");
+          if (targetButton && !targetButton.hasAttribute("data-drawing-preview")) return;
           if (squarePlacementActive) {
             const bounds = event.currentTarget.getBoundingClientRect();
             const point = {
@@ -1863,6 +1866,7 @@ export function PriceChart({
                 <span className="absolute bottom-[calc(100%+4px)] left-0 z-10 whitespace-nowrap text-[10px] leading-3 text-white">{shownValue}</span>
                 <button
                   type="button"
+                  data-drawing-preview={line.preview ? "true" : undefined}
                   tabIndex={-1}
                   aria-label={`${shownValue}${isSelected ? ", selected; press Delete to remove" : ", click to select for deletion"}`}
                   onClick={(event) => {
