@@ -1,0 +1,1 @@
+components/desktop/MarketHeatmap.tsx (unused duplicate; removed from workspace)
