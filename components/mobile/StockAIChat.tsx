@@ -1213,9 +1213,9 @@ function Cursor() {
       height: "1em",
       marginLeft: "2px",
       verticalAlign: "text-bottom",
-      backgroundColor: "#00c805",
+      backgroundColor: "var(--AI_COLOR)",
       borderRadius: "1px",
-      boxShadow: "0 0 6px 2px rgba(0,200,5,0.7)",
+      boxShadow: "0 0 6px 2px color-mix(in srgb, var(--AI_COLOR) 70%, transparent)",
       animation: "aiCursor 0.7s ease-in-out infinite",
     }} />
   );
