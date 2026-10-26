@@ -88,7 +88,7 @@ export function StockFunctionButton({ symbol, chartHeight = 384 }: {
   );
 }
 
-type DrawingAction = "line" | "rectangle" | "diagonal" | "erase";
+type DrawingAction = "line" | "vertical" | "rectangle" | "diagonal" | "erase";
 
 /** Context menu opened by right-clicking the stock chart. It has no trigger of its own. */
 export function StockChartToolsMenu({ symbol }: { symbol: string }) {
@@ -96,7 +96,7 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
   const [expanded, setExpanded] = useState(false);
   const [position, setPosition] = useState({ left: 0, bottom: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
-  const menuHeight = 4 * 36 + 3 * 8 + 20;
+  const menuHeight = 5 * 36 + 4 * 8 + 20;
 
   useEffect(() => {
     function onChartContextMenu(event: Event) {
@@ -140,7 +140,9 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
     }
     const modeEvent = action === "line"
       ? "watchlist-stock-line-mode"
-      : action === "rectangle"
+      : action === "vertical"
+        ? "watchlist-stock-vertical-mode"
+        : action === "rectangle"
         ? "watchlist-stock-square-mode"
         : "watchlist-stock-diagonal-mode";
     window.dispatchEvent(new CustomEvent(modeEvent, { detail: { symbol, active: true } }));
@@ -149,6 +151,7 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
   if (!open) return null;
   const actions: Array<{ action: DrawingAction; label: string; icon: string; color?: string }> = [
     { action: "line", label: "Draw price line", icon: "tools-line" },
+    { action: "vertical", label: "Draw vertical line", icon: "tools-vertical-line" },
     { action: "diagonal", label: "Draw diagonal line", icon: "tools-diagonal" },
     { action: "rectangle", label: "Draw rectangle", icon: "tools-rectangle" },
     { action: "erase", label: "Erase drawings", icon: "tools-erase", color: "#ff3003" },
