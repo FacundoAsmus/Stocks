@@ -36,6 +36,9 @@ Use the group id for the unselected and selected versions:
 - `capex.svg`
 - `r-and-d.svg`
 - `free-cash-flow.svg`
+- `revenue.svg`
+- `debt.svg`
+- `net-margin.svg`
 - `news.svg`
 - `description.svg`
 - `calendar.svg`

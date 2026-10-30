@@ -212,29 +212,27 @@ export function FundamentalsGrid({
         <div className="mx-5 mt-2">
           <p className="mb-3 text-xs uppercase tracking-[0.12em] text-text-muted">52W Range</p>
           {(() => {
-            const position = high52 === low52 ? 50 : ((high52 - currentPrice) / (high52 - low52)) * 100;
+            // Low is at the left and high is at the right, like a range scale.
+            const position = high52 === low52 ? 50 : ((currentPrice - low52) / (high52 - low52)) * 100;
             const clampedPosition = Math.max(0, Math.min(100, position));
+            // Stock sentiment colors the filled portion from its current score.
+            // Use one color across this full-width range, inverse toward red at 52W high.
             const color = invertedSentimentColor(clampedPosition);
             const glow = color.replace("rgb(", "rgba(").replace(")", ", 0.42)");
             return (
-              <div className="w-1/2">
-                <div
-                  className="relative h-2 rounded-full"
-                  style={{
-                    background: "linear-gradient(90deg, rgb(52, 211, 153) 0%, rgb(163, 230, 53) 25%, rgb(250, 204, 21) 50%, rgb(249, 115, 22) 75%, rgb(220, 38, 38) 100%)",
-                    boxShadow: `0 0 10px ${glow}`,
-                  }}
-                >
+              <div className="w-full">
+                <div className="mb-3 flex items-center justify-between gap-3 text-xl font-semibold text-white">
+                  <span>{formatCurrency(low52)}</span>
+                  <span>{formatCurrency(high52)}</span>
+                </div>
+                <div className="relative h-2 w-full rounded-full bg-panel-muted">
+                  <div className="h-full w-full rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 10px ${glow}` }} />
                   <span
                     className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70"
                     style={{ left: `${clampedPosition}%`, backgroundColor: color, boxShadow: `0 0 10px ${glow}` }}
-                    aria-label={`Current price ${formatCurrency(currentPrice)}, position ${Math.round(100 - clampedPosition)}% of the 52 week range`}
+                    aria-label={`Current price ${formatCurrency(currentPrice)}, position ${Math.round(clampedPosition)}% of the 52 week range`}
                     title={`Current price: ${formatCurrency(currentPrice)}`}
                   />
-                </div>
-                <div className="mt-2 flex justify-between gap-2 text-[10px] text-text-muted">
-                  <span>52W High {formatCurrency(high52)}</span>
-                  <span>52W Low {formatCurrency(low52)}</span>
                 </div>
               </div>
             );

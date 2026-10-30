@@ -178,13 +178,13 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
       ) : (
         <div className="space-y-8">
           {includeExtendedMetrics && indicators.some((indicator) => indicator.revenue !== null) && (
-            <AnnualIndicatorChart title="Revenue" field="revenue" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
+            <AnnualIndicatorChart title="Revenue" icon="revenue" field="revenue" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
           )}
           {includeExtendedMetrics && indicators.some((indicator) => indicator.debt !== null) && (
-            <AnnualIndicatorChart title="Debt" field="debt" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
+            <AnnualIndicatorChart title="Debt" icon="debt" field="debt" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
           )}
           {includeExtendedMetrics && indicators.some((indicator) => indicator.netMargin !== null) && (
-            <AnnualIndicatorChart title="Net margin" field="netMargin" valueFormat="percent" indicators={indicators} started={started} compact={compact} />
+            <AnnualIndicatorChart title="Net margin" icon="net-margin" field="netMargin" valueFormat="percent" indicators={indicators} started={started} compact={compact} />
           )}
           {indicators.some((indicator) => indicator.capex !== null) && (
             <AnnualIndicatorChart title="CapEx" icon="capex" field="capex" indicators={indicators} started={started} compact={compact} />
