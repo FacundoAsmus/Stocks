@@ -15,7 +15,7 @@ export function StockPageSkeleton() {
       </div>
 
       <div className="px-2">
-        <div className="h-[260px] rounded-2xl bg-panel-muted/45" />
+        <div className="h-[281px] rounded-2xl bg-panel-muted/45" />
         <div className="mx-auto mt-4 h-10 w-64 max-w-full rounded-full border border-border-subtle bg-panel-muted/45" />
       </div>
 

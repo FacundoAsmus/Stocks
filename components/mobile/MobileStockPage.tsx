@@ -259,7 +259,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             currentPrice={currentPrice}
             currentChangePercent={stock.quote.dp ?? 0}
             previousClose={stock.quote.pc ?? undefined}
-            heightClassName="h-[312px]"
+            heightClassName="h-[281px]"
             hideCursorDateTooltip
             hideMovingAverageControls
             holdPriceUntilChartReady
@@ -291,7 +291,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             </div>
           )}
 
-          {!isEtf && <FilingIndicators symbol={stock.symbol} compact />}
+          {!isEtf && <FilingIndicators symbol={stock.symbol} compact includeExtendedMetrics />}
 
           {(stock.news.length > 0 || stock.newsUnavailable) && (
             <section className="px-3">
