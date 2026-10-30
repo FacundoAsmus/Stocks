@@ -218,6 +218,7 @@ export function FundamentalsGrid({
             // Stock sentiment colors the filled portion from its current score.
             // Use one color across this full-width range, inverse toward red at 52W high.
             const color = invertedSentimentColor(clampedPosition);
+            const glow = color.replace("rgb(", "rgba(").replace(")", ", 0.42)");
             return (
               <div className="w-full">
                 <div className="mb-3 flex items-center justify-between gap-3 text-xl font-semibold text-text-primary">
