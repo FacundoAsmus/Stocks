@@ -302,7 +302,7 @@ html.light-mode .glossy-icon-button__icon > svg {
 
 .filing-category-selector--compact {
   width: min(100%, 325px);
-  min-height: 43px;
+  min-height: 56px;
 }
 
 .filing-category-indicator {
