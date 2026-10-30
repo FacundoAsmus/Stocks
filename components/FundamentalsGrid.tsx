@@ -221,7 +221,7 @@ export function FundamentalsGrid({
             const glow = color.replace("rgb(", "rgba(").replace(")", ", 0.42)");
             return (
               <div className="w-full">
-                <div className="mb-3 flex items-center justify-between gap-3 text-xl font-semibold text-white">
+                <div className="mb-3 flex items-center justify-between gap-3 text-xl font-semibold text-text-primary">
                   <span>{formatCurrency(low52)}</span>
                   <span>{formatCurrency(high52)}</span>
                 </div>

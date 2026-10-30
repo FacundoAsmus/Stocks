@@ -82,6 +82,7 @@ export type FilingIndicator = {
   year: number;
   revenue: number | null;
   debt: number | null;
+  equity: number | null;
   netMargin: number | null;
   capex: number | null;
   researchAndDevelopment: number | null;
@@ -110,6 +111,7 @@ const SHORT_TERM_DEBT_CONCEPTS = ["ShortTermBorrowings", "ShortTermDebtCurrent"]
 const CURRENT_LONG_TERM_DEBT_CONCEPTS = ["LongTermDebtCurrent", "LongTermDebtAndFinanceLeaseObligationsCurrent"];
 const NONCURRENT_LONG_TERM_DEBT_CONCEPTS = ["LongTermDebtNoncurrent", "LongTermDebtAndFinanceLeaseObligationsNoncurrent"];
 const REPORTED_LONG_TERM_DEBT_CONCEPTS = ["LongTermDebtAndFinanceLeaseObligations", "LongTermDebt"];
+const EQUITY_CONCEPTS = ["StockholdersEquity", "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"];
 const NET_INCOME_CONCEPTS = ["NetIncomeLoss", "ProfitLoss", "NetIncomeLossAttributableToParent"];
 
 export type QuarterlyFilingResult = {
@@ -343,13 +345,14 @@ export async function getFilingIndicators(symbol: string): Promise<FilingIndicat
         currentLongTermDebt: { concepts: CURRENT_LONG_TERM_DEBT_CONCEPTS, kind: "instant" },
         noncurrentLongTermDebt: { concepts: NONCURRENT_LONG_TERM_DEBT_CONCEPTS, kind: "instant" },
         reportedLongTermDebt: { concepts: REPORTED_LONG_TERM_DEBT_CONCEPTS, kind: "instant" },
+        equity: { concepts: EQUITY_CONCEPTS, kind: "instant" },
         netIncome: { concepts: NET_INCOME_CONCEPTS, kind: "duration" },
       }),
       getAnnualValuesWithFallbacks(cik, CAPEX_CONCEPTS),
       getAnnualValuesWithFallbacks(cik, OPERATING_CASH_FLOW_CONCEPTS),
       ...R_AND_D_CONCEPTS.map((concept) => getAnnualConceptValues(cik, concept))
     ]);
-    const { revenue, shortTermDebt, currentLongTermDebt, noncurrentLongTermDebt, reportedLongTermDebt, netIncome } = financialFacts;
+    const { revenue, shortTermDebt, currentLongTermDebt, noncurrentLongTermDebt, reportedLongTermDebt, equity, netIncome } = financialFacts;
     const researchAndDevelopment = researchAndDevelopmentCandidates.find((values) => values.size > 0) ?? new Map<number, number>();
     const years = [...new Set([
       ...revenue.keys(),
@@ -357,6 +360,7 @@ export async function getFilingIndicators(symbol: string): Promise<FilingIndicat
       ...currentLongTermDebt.keys(),
       ...noncurrentLongTermDebt.keys(),
       ...reportedLongTermDebt.keys(),
+      ...equity.keys(),
       ...netIncome.keys(),
       ...capex.keys(),
       ...operatingCashFlow.keys(),
@@ -382,6 +386,7 @@ export async function getFilingIndicators(symbol: string): Promise<FilingIndicat
         year,
         revenue: annualRevenue,
         debt: annualDebt,
+        equity: equity.get(year) ?? null,
         netMargin: annualRevenue !== null && annualRevenue !== 0 && annualNetIncome !== null
           ? (annualNetIncome / annualRevenue) * 100
           : null,

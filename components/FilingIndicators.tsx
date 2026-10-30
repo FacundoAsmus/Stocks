@@ -10,6 +10,7 @@ type FilingIndicator = {
   year: number;
   revenue: number | null;
   debt: number | null;
+  equity: number | null;
   netMargin: number | null;
   capex: number | null;
   researchAndDevelopment: number | null;
@@ -17,6 +18,35 @@ type FilingIndicator = {
 };
 
 type IndicatorKey = "revenue" | "debt" | "netMargin" | "capex" | "researchAndDevelopment" | "freeCashFlow";
+
+function DebtEquityRange({ indicators }: { indicators: FilingIndicator[] }) {
+  const latest = [...indicators].reverse().find((item) => item.debt !== null && item.equity !== null);
+  if (!latest || latest.debt === null || latest.equity === null) return null;
+  const debt = Math.max(0, latest.debt);
+  const equity = Math.max(0, latest.equity);
+  const total = debt + equity;
+  if (total <= 0) return null;
+  const debtShare = (debt / total) * 100;
+
+  return (
+    <div className="mb-7">
+      <p className="mb-3 text-xs uppercase tracking-[0.12em] text-text-muted">Debt vs. equity · {latest.year}</p>
+      <div className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-text-primary">
+        <span>Debt ${formatCompact(debt)}</span>
+        <span>Equity ${formatCompact(equity)}</span>
+      </div>
+      <div className="relative h-2 w-full rounded-full bg-panel-muted">
+        <div className="absolute inset-y-0 left-0 rounded-l-full" style={{ width: `${debtShare}%`, backgroundColor: "var(--color-negative)" }} />
+        <div className="absolute inset-y-0 right-0 rounded-r-full" style={{ width: `${100 - debtShare}%`, backgroundColor: "var(--color-positive)" }} />
+        <span
+          className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70"
+          style={{ left: `${debtShare}%`, backgroundColor: debtShare >= 50 ? "var(--color-negative)" : "var(--color-positive)" }}
+          aria-label={`Debt ${debtShare.toFixed(1)}%, equity ${(100 - debtShare).toFixed(1)}%`}
+        />
+      </div>
+    </div>
+  );
+}
 
 // Matches the red → orange → yellow → lime → emerald progression used by
 // Stock Sentiment. The percentage is a bar's relative height within its row.
@@ -184,7 +214,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
       ) : (
         <div className="space-y-8">
           {includeExtendedMetrics && (
-            <div className="filing-category-selector chart-period-selector-glass relative flex w-full items-center rounded-full border p-1">
+            <div className="filing-category-selector chart-period-selector-glass relative mx-auto flex max-w-full items-center rounded-full border p-1">
               <span
                 className="filing-category-indicator"
                 aria-hidden="true"
@@ -198,7 +228,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setActiveCategory(category.id)}
-                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full px-1 py-2 text-[10px] font-semibold uppercase tracking-wide transition-colors ${selected ? "text-on-accent" : "text-accent"}`}
+                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-2 py-1.5 text-[10px] font-semibold transition-colors ${selected ? "text-on-accent" : "text-accent"}`}
                   >
                     <OptionalSvgIcon name={category.icon} className="h-5 w-5" colorClassName={selected ? "text-on-accent" : "text-accent"} />
                     <span className="whitespace-nowrap">{category.label}</span>
@@ -219,7 +249,10 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
               </>
             )}
             {includeExtendedMetrics && activeCategory === "financial-health" && indicators.some((indicator) => indicator.debt !== null) && (
+              <>
+              <DebtEquityRange indicators={indicators} />
               <AnnualIndicatorChart title="Debt" icon="capex" field="debt" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
+              </>
             )}
             {(!includeExtendedMetrics || activeCategory === "cash-flows") && (
               <>

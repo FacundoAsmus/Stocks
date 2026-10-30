@@ -294,7 +294,8 @@ html.light-mode .glossy-icon-button__icon > svg {
 }
 
 .filing-category-selector {
-  min-height: 62px;
+  width: min(100%, 320px);
+  min-height: 54px;
 }
 
 .filing-category-indicator {
