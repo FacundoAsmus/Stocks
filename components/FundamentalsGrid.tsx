@@ -218,7 +218,6 @@ export function FundamentalsGrid({
             // Stock sentiment colors the filled portion from its current score.
             // Use one color across this full-width range, inverse toward red at 52W high.
             const color = invertedSentimentColor(clampedPosition);
-            const glow = color.replace("rgb(", "rgba(").replace(")", ", 0.42)");
             return (
               <div className="w-full">
                 <div className="mb-3 flex items-center justify-between gap-3 text-xl font-semibold text-text-primary">
@@ -228,8 +227,8 @@ export function FundamentalsGrid({
                 <div className="relative h-2 w-full rounded-full bg-panel-muted">
                   <div className="h-full w-full rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 10px ${glow}` }} />
                   <span
-                    className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70"
-                    style={{ left: `${clampedPosition}%`, backgroundColor: color, boxShadow: `0 0 10px ${glow}` }}
+                    className="absolute top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                    style={{ left: `${clampedPosition}%`, backgroundColor: "var(--color-range-marker)" }}
                     aria-label={`Current price ${formatCurrency(currentPrice)}, position ${Math.round(clampedPosition)}% of the 52 week range`}
                     title={`Current price: ${formatCurrency(currentPrice)}`}
                   />

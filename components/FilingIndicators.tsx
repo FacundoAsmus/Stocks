@@ -28,6 +28,8 @@ function DebtEquityRange({ indicators }: { indicators: FilingIndicator[] }) {
   if (total <= 0) return null;
   const debtShare = (debt / total) * 100;
   const equityShare = 100 - debtShare;
+  const debtColor = sentimentColorForHeight(debtShare);
+  const equityColor = sentimentColorForHeight(equityShare);
 
   return (
     <div className="mb-7">
@@ -42,25 +44,25 @@ function DebtEquityRange({ indicators }: { indicators: FilingIndicator[] }) {
           className="absolute inset-y-0 left-0 rounded-l-full"
           style={{
             width: `${debtShare}%`,
-            backgroundColor: "var(--color-negative)",
-            boxShadow: "0 0 10px color-mix(in srgb, var(--color-negative) 55%, transparent)",
+            backgroundColor: debtColor,
+            boxShadow: `0 0 10px ${debtColor.replace("rgb(", "rgba(").replace(")", ", 0.55)")}`,
           }}
         />
         <div
           className="absolute inset-y-0 right-0 rounded-r-full"
           style={{
             width: `${equityShare}%`,
-            backgroundColor: "var(--color-positive)",
-            boxShadow: "0 0 10px color-mix(in srgb, var(--color-positive) 55%, transparent)",
+            backgroundColor: equityColor,
+            boxShadow: `0 0 10px ${equityColor.replace("rgb(", "rgba(").replace(")", ", 0.55)")}`,
           }}
         />
         <span
           className="absolute top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{ left: `${debtShare}%`, backgroundColor: "var(--color-debt-equity-marker)" }}
+          style={{ left: `${debtShare}%`, backgroundColor: "var(--color-range-marker)" }}
           aria-label={`Debt ${debtShare.toFixed(1)}%, equity ${(100 - debtShare).toFixed(1)}%`}
         />
       </div>
-      <div className="mt-2 flex justify-between gap-2 text-xs uppercase tracking-[0.12em] text-text-muted">
+      <div className="mt-2 flex justify-between gap-2 text-xs font-bold uppercase tracking-[0.12em]" style={{ color: "var(--color-range-marker)" }}>
         <span>Debt</span>
         <span>Equity</span>
       </div>
