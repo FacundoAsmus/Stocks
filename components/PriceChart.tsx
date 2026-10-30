@@ -113,7 +113,7 @@ function CandlestickLayer({
         const bodyHeight = Math.max(Math.abs(openY - closeY), 1);
 
         return (
-          <g key={point.time} className={rising ? "stock-candle-up" : "stock-candle-down"}>
+          <g key={point.time}>
             <line x1={centerX} x2={centerX} y1={highY} y2={lowY} stroke={color} strokeWidth={1} />
             <rect x={centerX - bodyWidth / 2} y={bodyTop} width={bodyWidth} height={bodyHeight} fill={color} />
           </g>
@@ -1453,7 +1453,7 @@ export function PriceChart({
       {/* ── Chart area ────────────────────────────────────────────────── */}
       <div
         ref={chartRef}
-        className={cn(heightClassName, "relative", isPositive ? "stock-chart-positive" : "stock-chart-negative", useCandlesticks && "stock-chart-candles", useCandlesticks && (candlePanning ? "cursor-grabbing" : "cursor-grab"))}
+        className={cn(heightClassName, "relative", isPositive ? "stock-chart-positive" : "stock-chart-negative", useCandlesticks && (candlePanning ? "cursor-grabbing" : "cursor-grab"))}
         style={{ touchAction: "none" }}
         onContextMenu={(event) => {
           if (!hideMovingAverageControls || !window.matchMedia("(min-width: 1024px)").matches) return;

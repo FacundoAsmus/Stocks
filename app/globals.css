@@ -301,8 +301,8 @@ html.light-mode .glossy-icon-button__icon > svg {
 }
 
 .filing-category-selector--compact {
-  width: min(100%, 260px);
-  min-height: 34px;
+  width: min(100%, 325px);
+  min-height: 43px;
 }
 
 .filing-category-indicator {
@@ -483,21 +483,6 @@ html.light-mode .search-input-glass:focus {
 
 .stock-chart-negative .recharts-area-curve {
   filter: drop-shadow(0 0 5px rgba(255, 48, 3, 0.76)) drop-shadow(0 0 11px rgba(255, 48, 3, 0.48)) !important;
-}
-
-@media (min-width: 1024px) {
-  .stock-chart-candles .stock-candle-up {
-    filter: drop-shadow(0 0 5px rgba(0, 200, 5, 0.76)) drop-shadow(0 0 11px rgba(0, 200, 5, 0.48));
-  }
-  .stock-chart-candles .stock-candle-down {
-    filter: drop-shadow(0 0 5px rgba(255, 48, 3, 0.76)) drop-shadow(0 0 11px rgba(255, 48, 3, 0.48));
-  }
-  html.light-mode .stock-chart-candles .stock-candle-up {
-    filter: drop-shadow(0 0 3px rgba(0, 150, 4, 0.46)) drop-shadow(0 0 6px rgba(0, 150, 4, 0.24));
-  }
-  html.light-mode .stock-chart-candles .stock-candle-down {
-    filter: drop-shadow(0 0 3px rgba(205, 38, 8, 0.46)) drop-shadow(0 0 6px rgba(205, 38, 8, 0.24));
-  }
 }
 
 html.light-mode .stock-chart-positive .recharts-area-curve {
