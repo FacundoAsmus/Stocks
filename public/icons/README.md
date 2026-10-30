@@ -36,9 +36,10 @@ Use the group id for the unselected and selected versions:
 - `capex.svg`
 - `r-and-d.svg`
 - `free-cash-flow.svg`
-- `revenue.svg`
-- `debt.svg`
-- `net-margin.svg`
+- `capex.svg` is also used for Revenue, Debt, Net Margin, R&D, and Free cash flow headings.
+- `growth.svg` — Growth financial-chart category
+- `financial-health.svg` — Financial health chart category
+- `cash-flows.svg` — Cash flows chart category
 - `news.svg`
 - `description.svg`
 - `calendar.svg`

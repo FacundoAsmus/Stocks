@@ -142,6 +142,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
   const sectionRef = useRef<HTMLElement>(null);
   const [started, setStarted] = useState(false);
   const [indicators, setIndicators] = useState<FilingIndicator[] | null>(null);
+  const [activeCategory, setActiveCategory] = useState<"growth" | "financial-health" | "cash-flows">("growth");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -169,6 +170,11 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
     (includeExtendedMetrics && (indicator.revenue !== null || indicator.debt !== null || indicator.netMargin !== null)) ||
     indicator.capex !== null || indicator.researchAndDevelopment !== null || indicator.freeCashFlow !== null
   );
+  const chartCategories = [
+    { id: "growth" as const, label: "Growth", icon: "growth" },
+    { id: "financial-health" as const, label: "Financial health", icon: "financial-health" },
+    { id: "cash-flows" as const, label: "Cash flows", icon: "cash-flows" },
+  ];
   if (indicators !== null && !hasAnyChart) return null;
 
   return (
@@ -177,24 +183,58 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
         <p className="py-10 text-center text-sm text-text-muted">Loading SEC filing data…</p>
       ) : (
         <div className="space-y-8">
-          {includeExtendedMetrics && indicators.some((indicator) => indicator.revenue !== null) && (
-            <AnnualIndicatorChart title="Revenue" icon="revenue" field="revenue" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
+          {includeExtendedMetrics && (
+            <div className="filing-category-selector chart-period-selector-glass relative flex w-full items-center rounded-full border p-1">
+              <span
+                className="filing-category-indicator"
+                aria-hidden="true"
+                style={{ transform: `translateX(${chartCategories.findIndex((category) => category.id === activeCategory) * 100}%)` }}
+              />
+              {chartCategories.map((category) => {
+                const selected = activeCategory === category.id;
+                return (
+                  <button
+                    key={category.id}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setActiveCategory(category.id)}
+                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full px-1 py-2 text-[10px] font-semibold uppercase tracking-wide transition-colors ${selected ? "text-on-accent" : "text-accent"}`}
+                  >
+                    <OptionalSvgIcon name={category.icon} className="h-5 w-5" colorClassName={selected ? "text-on-accent" : "text-accent"} />
+                    <span className="whitespace-nowrap">{category.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           )}
-          {includeExtendedMetrics && indicators.some((indicator) => indicator.debt !== null) && (
-            <AnnualIndicatorChart title="Debt" icon="debt" field="debt" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
-          )}
-          {includeExtendedMetrics && indicators.some((indicator) => indicator.netMargin !== null) && (
-            <AnnualIndicatorChart title="Net margin" icon="net-margin" field="netMargin" valueFormat="percent" indicators={indicators} started={started} compact={compact} />
-          )}
-          {indicators.some((indicator) => indicator.capex !== null) && (
-            <AnnualIndicatorChart title="CapEx" icon="capex" field="capex" indicators={indicators} started={started} compact={compact} />
-          )}
-          {indicators.some((indicator) => indicator.researchAndDevelopment !== null) && (
-            <AnnualIndicatorChart title="R&D" icon="r-and-d" field="researchAndDevelopment" indicators={indicators} started={started} compact={compact} />
-          )}
-          {indicators.some((indicator) => indicator.freeCashFlow !== null) && (
-            <AnnualIndicatorChart title="Free cash flow" icon="free-cash-flow" field="freeCashFlow" indicators={indicators} started={started} compact={compact} />
-          )}
+          <div className="space-y-8">
+            {(!includeExtendedMetrics || activeCategory === "growth") && (
+              <>
+                {includeExtendedMetrics && indicators.some((indicator) => indicator.revenue !== null) && (
+                  <AnnualIndicatorChart title="Revenue" icon="capex" field="revenue" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
+                )}
+                {includeExtendedMetrics && indicators.some((indicator) => indicator.netMargin !== null) && (
+                  <AnnualIndicatorChart title="Net margin" icon="capex" field="netMargin" valueFormat="percent" indicators={indicators} started={started} compact={compact} />
+                )}
+              </>
+            )}
+            {includeExtendedMetrics && activeCategory === "financial-health" && indicators.some((indicator) => indicator.debt !== null) && (
+              <AnnualIndicatorChart title="Debt" icon="capex" field="debt" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
+            )}
+            {(!includeExtendedMetrics || activeCategory === "cash-flows") && (
+              <>
+                {indicators.some((indicator) => indicator.capex !== null) && (
+                  <AnnualIndicatorChart title="CapEx" icon="capex" field="capex" indicators={indicators} started={started} compact={compact} />
+                )}
+                {indicators.some((indicator) => indicator.researchAndDevelopment !== null) && (
+                  <AnnualIndicatorChart title="R&D" icon="capex" field="researchAndDevelopment" indicators={indicators} started={started} compact={compact} />
+                )}
+                {indicators.some((indicator) => indicator.freeCashFlow !== null) && (
+                  <AnnualIndicatorChart title="Free cash flow" icon="capex" field="freeCashFlow" indicators={indicators} started={started} compact={compact} />
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
     </section>
