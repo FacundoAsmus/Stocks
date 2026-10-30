@@ -27,22 +27,42 @@ function DebtEquityRange({ indicators }: { indicators: FilingIndicator[] }) {
   const total = debt + equity;
   if (total <= 0) return null;
   const debtShare = (debt / total) * 100;
+  const equityShare = 100 - debtShare;
 
   return (
     <div className="mb-7">
-      <p className="mb-3 text-xs uppercase tracking-[0.12em] text-text-muted">Debt vs. equity · {latest.year}</p>
-      <div className="mb-2 flex items-center justify-between gap-3 text-sm font-semibold text-text-primary">
-        <span>Debt ${formatCompact(debt)}</span>
-        <span>Equity ${formatCompact(equity)}</span>
+      <p className="-ml-5 mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
+        <OptionalSvgIcon name="capex" className="h-5 w-5" colorClassName="text-accent" />Debt vs. equity
+      </p>
+      <div className="mb-5 text-text-primary">
+        <WheelPrice value={`${debtShare.toFixed(1)}% / ${equityShare.toFixed(1)}%`} size="xs" compact />
       </div>
       <div className="relative h-2 w-full rounded-full bg-panel-muted">
-        <div className="absolute inset-y-0 left-0 rounded-l-full" style={{ width: `${debtShare}%`, backgroundColor: "var(--color-negative)" }} />
-        <div className="absolute inset-y-0 right-0 rounded-r-full" style={{ width: `${100 - debtShare}%`, backgroundColor: "var(--color-positive)" }} />
+        <div
+          className="absolute inset-y-0 left-0 rounded-l-full"
+          style={{
+            width: `${debtShare}%`,
+            backgroundColor: "var(--color-negative)",
+            boxShadow: "0 0 10px color-mix(in srgb, var(--color-negative) 55%, transparent)",
+          }}
+        />
+        <div
+          className="absolute inset-y-0 right-0 rounded-r-full"
+          style={{
+            width: `${equityShare}%`,
+            backgroundColor: "var(--color-positive)",
+            boxShadow: "0 0 10px color-mix(in srgb, var(--color-positive) 55%, transparent)",
+          }}
+        />
         <span
-          className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70"
-          style={{ left: `${debtShare}%`, backgroundColor: debtShare >= 50 ? "var(--color-negative)" : "var(--color-positive)" }}
+          className="absolute top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{ left: `${debtShare}%`, backgroundColor: "var(--color-debt-equity-marker)" }}
           aria-label={`Debt ${debtShare.toFixed(1)}%, equity ${(100 - debtShare).toFixed(1)}%`}
         />
+      </div>
+      <div className="mt-2 flex justify-between gap-2 text-xs uppercase tracking-[0.12em] text-text-muted">
+        <span>Debt</span>
+        <span>Equity</span>
       </div>
     </div>
   );
@@ -228,7 +248,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setActiveCategory(category.id)}
-                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-2 py-1.5 text-[10px] font-semibold transition-colors ${selected ? "text-on-accent" : "text-accent"}`}
+                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-2 py-3 text-[10px] font-semibold transition-colors ${selected ? "text-on-accent" : "text-accent"}`}
                   >
                     <OptionalSvgIcon name={category.icon} className="h-5 w-5" colorClassName={selected ? "text-on-accent" : "text-accent"} />
                     <span className="whitespace-nowrap">{category.label}</span>

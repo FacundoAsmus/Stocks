@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --color-debt-equity-marker: #ffffff;
   --AI_COLOR: #A855F6;
   --accent-rgb: 255 255 255;
   --volume-bar-neutral: rgba(255,255,255,0.16);
@@ -73,6 +74,7 @@ html.light-mode body {
 }
 html.light-mode :root,
 html.light-mode {
+  --color-debt-equity-marker: #000000;
   --color-background: #ffffff;
   --color-panel: #f5f5f7;
   --color-panel-muted: #e8e8ed;
@@ -294,8 +296,8 @@ html.light-mode .glossy-icon-button__icon > svg {
 }
 
 .filing-category-selector {
-  width: min(100%, 320px);
-  min-height: 54px;
+  width: min(100%, 400px);
+  min-height: 68px;
 }
 
 .filing-category-indicator {
