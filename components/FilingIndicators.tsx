@@ -28,7 +28,7 @@ function DebtEquityRange({ indicators }: { indicators: FilingIndicator[] }) {
   if (total <= 0) return null;
   const debtShare = (debt / total) * 100;
   const equityShare = 100 - debtShare;
-  const debtColor = sentimentColorForHeight(100 - debtShare);
+  const debtColor = sentimentColorForHeight(debtShare);
   const equityColor = sentimentColorForHeight(equityShare);
 
   return (
@@ -158,6 +158,8 @@ function AnnualIndicatorChart({
             // red→orange, zero is yellow, and positive values run lime→green.
             const sentimentPosition = value === null
               ? 50
+              : field === "debt" && value >= 0
+                ? 50 - (value / maxPositive) * 50
               : value < 0
                 ? 50 - (Math.abs(value) / maxNegative) * 50
                 : 50 + (value / maxPositive) * 50;
