@@ -46,16 +46,28 @@ function dividendTone(value: number | null) {
 function highLowTone(currentPrice: number, target: number | null, type: "high" | "low") {
   if (!target || !currentPrice) return { tone: "neutral" as const, note: "Data unavailable" };
   const distance = Math.abs(currentPrice - target) / target;
-
-  if (type === "high" && distance < 0.08) {
-    return { tone: "negative" as const, note: "Near 52W High" };
-  }
-
-  if (type === "low" && distance < 0.12) {
-    return { tone: "positive" as const, note: "Near 52W Low" };
-  }
-
+  if (type === "high" && distance < 0.08) return { tone: "negative" as const, note: "Near 52W High" };
+  if (type === "low" && distance < 0.12) return { tone: "positive" as const, note: "Near 52W Low" };
   return { tone: "neutral" as const, note: "Normal Range" };
+}
+
+function invertedSentimentColor(position: number) {
+  const stops: [number, [number, number, number]][] = [
+    [0, [52, 211, 153]], [25, [163, 230, 53]], [50, [250, 204, 21]],
+    [75, [249, 115, 22]], [100, [220, 38, 38]],
+  ];
+  const clamped = Math.max(0, Math.min(100, position));
+  let low = stops[0];
+  let high = stops[stops.length - 1];
+  for (let index = 0; index < stops.length - 1; index += 1) {
+    if (clamped >= stops[index][0] && clamped <= stops[index + 1][0]) {
+      low = stops[index];
+      high = stops[index + 1];
+      break;
+    }
+  }
+  const progress = (clamped - low[0]) / (high[0] - low[0] || 1);
+  return `rgb(${low[1].map((channel, index) => Math.round(channel + (high[1][index] - channel) * progress)).join(", ")})`;
 }
 
 function formatReportDate(dateStr: string) {
@@ -69,13 +81,15 @@ export function FundamentalsGrid({
   marketCap,
   currentPrice,
   earnings = [],
-  isEtf = false
+  isEtf = false,
+  show52WeekRange = false
 }: {
   metrics?: Record<string, MetricValue>;
   marketCap?: number;
   currentPrice: number;
   earnings?: EarningsEvent[];
   isEtf?: boolean;
+  show52WeekRange?: boolean;
 }) {
   const pe = toNumber(metrics?.peTTM ?? metrics?.peNormalizedAnnual);
   const forwardPe = toNumber(metrics?.forwardPE ?? null);        // ✅ correct Finnhub field
@@ -133,8 +147,6 @@ export function FundamentalsGrid({
       tone: eps && eps > 0 ? "positive" : "negative",
       note: eps && eps > 0 ? "Profitable" : "Watch Earnings"
     },
-    { label: "52W Low", value: formatCurrency(low52), ...highLowTone(currentPrice, low52, "low") },
-    { label: "52W High", value: formatCurrency(high52), ...highLowTone(currentPrice, high52, "high") },
     { label: "Avg. Volume", value: formatCompact(volume ? volume * 1_000_000 : null), tone: "neutral", note: "10 Day Avg." },
     { label: "Dividend Yield", value: formatPercent(dividendYield), ...dividendTone(dividendYield) },
     {
@@ -150,6 +162,13 @@ export function FundamentalsGrid({
       note: expectedGrowth !== null ? "Est. QoQ Growth" : "Data unavailable"
     }
   ];
+
+  if (!show52WeekRange) {
+    items.splice(6, 0,
+      { label: "52W Low", value: formatCurrency(low52), ...highLowTone(currentPrice, low52, "low") },
+      { label: "52W High", value: formatCurrency(high52), ...highLowTone(currentPrice, high52, "high") }
+    );
+  }
 
   const ETF_EXCLUDED_LABELS = new Set([
     "Market Cap", "P/E Ratio", "Forward P/E", "PEG", "EPS", "Dividend Yield", "Next Report", "Expected Earnings"
@@ -189,6 +208,39 @@ export function FundamentalsGrid({
           </div>
         ))}
       </div>
+      {show52WeekRange && high52 !== null && low52 !== null && high52 >= low52 && (
+        <div className="mx-5 mt-2">
+          <p className="mb-3 text-xs uppercase tracking-[0.12em] text-text-muted">52W Range</p>
+          {(() => {
+            const position = high52 === low52 ? 50 : ((high52 - currentPrice) / (high52 - low52)) * 100;
+            const clampedPosition = Math.max(0, Math.min(100, position));
+            const color = invertedSentimentColor(clampedPosition);
+            const glow = color.replace("rgb(", "rgba(").replace(")", ", 0.42)");
+            return (
+              <div className="w-1/2">
+                <div
+                  className="relative h-2 rounded-full"
+                  style={{
+                    background: "linear-gradient(90deg, rgb(52, 211, 153) 0%, rgb(163, 230, 53) 25%, rgb(250, 204, 21) 50%, rgb(249, 115, 22) 75%, rgb(220, 38, 38) 100%)",
+                    boxShadow: `0 0 10px ${glow}`,
+                  }}
+                >
+                  <span
+                    className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/70"
+                    style={{ left: `${clampedPosition}%`, backgroundColor: color, boxShadow: `0 0 10px ${glow}` }}
+                    aria-label={`Current price ${formatCurrency(currentPrice)}, position ${Math.round(100 - clampedPosition)}% of the 52 week range`}
+                    title={`Current price: ${formatCurrency(currentPrice)}`}
+                  />
+                </div>
+                <div className="mt-2 flex justify-between gap-2 text-[10px] text-text-muted">
+                  <span>52W High {formatCurrency(high52)}</span>
+                  <span>52W Low {formatCurrency(low52)}</span>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
     </section>
   );
 }

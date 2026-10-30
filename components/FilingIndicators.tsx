@@ -8,12 +8,15 @@ import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 type FilingIndicator = {
   year: number;
+  revenue: number | null;
+  debt: number | null;
+  netMargin: number | null;
   capex: number | null;
   researchAndDevelopment: number | null;
   freeCashFlow: number | null;
 };
 
-type IndicatorKey = "capex" | "researchAndDevelopment" | "freeCashFlow";
+type IndicatorKey = "revenue" | "debt" | "netMargin" | "capex" | "researchAndDevelopment" | "freeCashFlow";
 
 // Matches the red → orange → yellow → lime → emerald progression used by
 // Stock Sentiment. The percentage is a bar's relative height within its row.
@@ -44,21 +47,24 @@ function AnnualIndicatorChart({
   field,
   indicators,
   started,
-  compact = false
+  compact = false,
+  valueFormat = "currency"
 }: {
   title: string;
-  icon: string;
+  icon?: string;
   field: IndicatorKey;
   indicators: FilingIndicator[];
   started: boolean;
   /** Phone stock pages use a shorter chart while retaining all interactions. */
   compact?: boolean;
+  valueFormat?: "currency" | "percent";
 }) {
   const [animated, setAnimated] = useState(false);
   const [hoveredValue, setHoveredValue] = useState<number | null>(null);
   const values = indicators.map((indicator) => indicator[field]);
   const latestValue = [...values].reverse().find((value): value is number => value !== null) ?? null;
   const displayedValue = hoveredValue ?? latestValue;
+  const formatValue = (value: number) => valueFormat === "percent" ? formatPercent(value) : `$${formatCompact(value)}`;
   const maxMagnitude = Math.max(...values.filter((value): value is number => value !== null).map((value) => Math.abs(value)), 1);
   const maxPositive = Math.max(...values.filter((value): value is number => value !== null && value >= 0), 1);
   const maxNegative = Math.max(...values.filter((value): value is number => value !== null && value < 0).map((value) => Math.abs(value)), 1);
@@ -77,10 +83,10 @@ function AnnualIndicatorChart({
   return (
     <section>
       <p className="-ml-5 mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
-        <OptionalSvgIcon name={icon} className="h-5 w-5" colorClassName="text-accent" />{title}
+        {icon && <OptionalSvgIcon name={icon} className="h-5 w-5" colorClassName="text-accent" />}{title}
       </p>
       <div className="mb-5 text-text-primary">
-        <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact />
+        <WheelPrice value={displayedValue === null ? "N/A" : formatValue(displayedValue)} size="xs" compact />
       </div>
       <div className={`relative ${compact ? "h-52" : "h-64"} border-y border-border-subtle`}>
         <div
@@ -120,7 +126,7 @@ function AnnualIndicatorChart({
                     boxShadow: `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}`,
                     transition: "height 1.657s cubic-bezier(0.22, 1, 0.36, 1)"
                   }}
-                  aria-label={value === null ? `${indicator.year}: unavailable` : `${indicator.year}: $${formatCompact(value)}`}
+                  aria-label={value === null ? `${indicator.year}: unavailable` : `${indicator.year}: ${formatValue(value)}`}
                 />
                 <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-accent">{indicator.year}</span>
               </div>
@@ -132,7 +138,7 @@ function AnnualIndicatorChart({
   );
 }
 
-export function FilingIndicators({ symbol, compact = false }: { symbol: string; compact?: boolean }) {
+export function FilingIndicators({ symbol, compact = false, includeExtendedMetrics = false }: { symbol: string; compact?: boolean; includeExtendedMetrics?: boolean }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [started, setStarted] = useState(false);
   const [indicators, setIndicators] = useState<FilingIndicator[] | null>(null);
@@ -160,6 +166,7 @@ export function FilingIndicators({ symbol, compact = false }: { symbol: string; 
   }, []);
 
   const hasAnyChart = indicators?.some((indicator) =>
+    (includeExtendedMetrics && (indicator.revenue !== null || indicator.debt !== null || indicator.netMargin !== null)) ||
     indicator.capex !== null || indicator.researchAndDevelopment !== null || indicator.freeCashFlow !== null
   );
   if (indicators !== null && !hasAnyChart) return null;
@@ -170,6 +177,15 @@ export function FilingIndicators({ symbol, compact = false }: { symbol: string; 
         <p className="py-10 text-center text-sm text-text-muted">Loading SEC filing data…</p>
       ) : (
         <div className="space-y-8">
+          {includeExtendedMetrics && indicators.some((indicator) => indicator.revenue !== null) && (
+            <AnnualIndicatorChart title="Revenue" field="revenue" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
+          )}
+          {includeExtendedMetrics && indicators.some((indicator) => indicator.debt !== null) && (
+            <AnnualIndicatorChart title="Debt" field="debt" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
+          )}
+          {includeExtendedMetrics && indicators.some((indicator) => indicator.netMargin !== null) && (
+            <AnnualIndicatorChart title="Net margin" field="netMargin" valueFormat="percent" indicators={indicators} started={started} compact={compact} />
+          )}
           {indicators.some((indicator) => indicator.capex !== null) && (
             <AnnualIndicatorChart title="CapEx" icon="capex" field="capex" indicators={indicators} started={started} compact={compact} />
           )}

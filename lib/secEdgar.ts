@@ -80,6 +80,9 @@ type CompanyFactsResponse = {
 
 export type FilingIndicator = {
   year: number;
+  revenue: number | null;
+  debt: number | null;
+  netMargin: number | null;
   capex: number | null;
   researchAndDevelopment: number | null;
   freeCashFlow: number | null;
@@ -103,6 +106,11 @@ const R_AND_D_CONCEPTS = [
   "ResearchAndDevelopmentExpense",
   "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost"
 ];
+const SHORT_TERM_DEBT_CONCEPTS = ["ShortTermBorrowings", "ShortTermDebtCurrent"];
+const CURRENT_LONG_TERM_DEBT_CONCEPTS = ["LongTermDebtCurrent", "LongTermDebtAndFinanceLeaseObligationsCurrent"];
+const NONCURRENT_LONG_TERM_DEBT_CONCEPTS = ["LongTermDebtNoncurrent", "LongTermDebtAndFinanceLeaseObligationsNoncurrent"];
+const REPORTED_LONG_TERM_DEBT_CONCEPTS = ["LongTermDebtAndFinanceLeaseObligations", "LongTermDebt"];
+const NET_INCOME_CONCEPTS = ["NetIncomeLoss", "ProfitLoss", "NetIncomeLossAttributableToParent"];
 
 export type QuarterlyFilingResult = {
   periodEnd: string;
@@ -278,6 +286,42 @@ async function getAnnualValuesWithFallbacks(cik: string, concepts: string[]): Pr
   return values;
 }
 
+async function getAnnualCompanyFactsMaps(
+  cik: string,
+  groups: Record<string, { concepts: string[]; kind: "duration" | "instant" }>,
+) {
+  const empty = Object.fromEntries(Object.keys(groups).map((key) => [key, new Map<number, number>()])) as Record<string, Map<number, number>>;
+  const response = await secFetch(`https://data.sec.gov/api/xbrl/companyfacts/CIK${cik}.json`);
+  if (!response.ok) return empty;
+  const facts = await response.json() as CompanyFactsResponse;
+
+  for (const [key, group] of Object.entries(groups)) {
+    const values = empty[key];
+    for (const concept of group.concepts) {
+      const entries = Object.values(facts.facts?.["us-gaap"]?.[concept]?.units ?? {}).flat();
+      const annual = new Map<number, { value: number; filed: string }>();
+      for (const entry of entries) {
+        if (!(["10-K", "10-K405", "20-F", "40-F"].includes(entry.form ?? "") && entry.fp === "FY" && typeof entry.val === "number" && entry.end)) continue;
+        const hasDuration = Boolean(entry.start);
+        if ((group.kind === "duration") !== hasDuration) continue;
+        if (group.kind === "duration") {
+          const days = (Date.parse(`${entry.end}T00:00:00Z`) - Date.parse(`${entry.start}T00:00:00Z`)) / 86_400_000 + 1;
+          if (days < 330 || days > 400) continue;
+        }
+        const year = Number(entry.end.slice(0, 4));
+        if (!Number.isInteger(year)) continue;
+        const filed = entry.filed ?? entry.end;
+        const prior = annual.get(year);
+        if (!prior || filed > prior.filed) annual.set(year, { value: entry.val, filed });
+      }
+      for (const [year, entry] of annual) {
+        if (!values.has(year)) values.set(year, entry.value);
+      }
+    }
+  }
+  return empty;
+}
+
 /**
  * Returns up to four annual SEC XBRL comparisons. CapEx is an outflow reported
  * as a positive number by the cash-flow taxonomy, so free cash flow is CFO −
@@ -292,23 +336,55 @@ export async function getFilingIndicators(symbol: string): Promise<FilingIndicat
     const cik = await getCik(symbol);
     if (!cik) return [];
 
-    const [capex, operatingCashFlow, ...researchAndDevelopmentCandidates] = await Promise.all([
+    const [financialFacts, capex, operatingCashFlow, ...researchAndDevelopmentCandidates] = await Promise.all([
+      getAnnualCompanyFactsMaps(cik, {
+        revenue: { concepts: QUARTERLY_REVENUE_CONCEPTS, kind: "duration" },
+        shortTermDebt: { concepts: SHORT_TERM_DEBT_CONCEPTS, kind: "instant" },
+        currentLongTermDebt: { concepts: CURRENT_LONG_TERM_DEBT_CONCEPTS, kind: "instant" },
+        noncurrentLongTermDebt: { concepts: NONCURRENT_LONG_TERM_DEBT_CONCEPTS, kind: "instant" },
+        reportedLongTermDebt: { concepts: REPORTED_LONG_TERM_DEBT_CONCEPTS, kind: "instant" },
+        netIncome: { concepts: NET_INCOME_CONCEPTS, kind: "duration" },
+      }),
       getAnnualValuesWithFallbacks(cik, CAPEX_CONCEPTS),
       getAnnualValuesWithFallbacks(cik, OPERATING_CASH_FLOW_CONCEPTS),
       ...R_AND_D_CONCEPTS.map((concept) => getAnnualConceptValues(cik, concept))
     ]);
+    const { revenue, shortTermDebt, currentLongTermDebt, noncurrentLongTermDebt, reportedLongTermDebt, netIncome } = financialFacts;
     const researchAndDevelopment = researchAndDevelopmentCandidates.find((values) => values.size > 0) ?? new Map<number, number>();
     const years = [...new Set([
+      ...revenue.keys(),
+      ...shortTermDebt.keys(),
+      ...currentLongTermDebt.keys(),
+      ...noncurrentLongTermDebt.keys(),
+      ...reportedLongTermDebt.keys(),
+      ...netIncome.keys(),
       ...capex.keys(),
       ...operatingCashFlow.keys(),
       ...researchAndDevelopment.keys()
     ])].sort((a, b) => b - a).slice(0, 4).sort((a, b) => a - b);
 
     const indicators = years.map((year) => {
+      const annualRevenue = revenue.get(year) ?? null;
+      const annualNetIncome = netIncome.get(year) ?? null;
+      const currentDebt = currentLongTermDebt.get(year);
+      const noncurrentDebt = noncurrentLongTermDebt.get(year);
+      const shortDebt = shortTermDebt.get(year) ?? 0;
+      const annualDebt = currentDebt !== undefined && noncurrentDebt !== undefined
+        ? currentDebt + noncurrentDebt + shortDebt
+        : reportedLongTermDebt.has(year)
+          ? (reportedLongTermDebt.get(year) ?? 0) + (currentDebt ?? 0) + shortDebt
+          : currentDebt !== undefined || noncurrentDebt !== undefined
+            ? (currentDebt ?? 0) + (noncurrentDebt ?? 0) + shortDebt
+            : null;
       const annualCapex = capex.get(year) ?? null;
       const annualOperatingCashFlow = operatingCashFlow.get(year) ?? null;
       return {
         year,
+        revenue: annualRevenue,
+        debt: annualDebt,
+        netMargin: annualRevenue !== null && annualRevenue !== 0 && annualNetIncome !== null
+          ? (annualNetIncome / annualRevenue) * 100
+          : null,
         capex: annualCapex,
         researchAndDevelopment: researchAndDevelopment.get(year) ?? null,
         freeCashFlow: annualCapex !== null && annualOperatingCashFlow !== null

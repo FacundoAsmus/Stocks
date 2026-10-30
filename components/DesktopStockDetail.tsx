@@ -73,7 +73,6 @@ export function DesktopStockDetail({
             <div className="shrink-0">
               <StockLogo
                 logo={isEtf ? undefined : stock.profile.logo}
-                symbol={stock.symbol}
                 shape={watchlistDetailHeader ? "circle" : "rounded"}
               />
             </div>
@@ -114,6 +113,7 @@ export function DesktopStockDetail({
           currentPrice={currentPrice}
           earnings={stock.earnings}
           isEtf={isEtf}
+          show52WeekRange={watchlistDetailHeader}
         />
 
         {!isEtf && (
@@ -122,7 +122,7 @@ export function DesktopStockDetail({
           </div>
         )}
 
-        {!isEtf && <FilingIndicators symbol={stock.symbol} />}
+        {!isEtf && <FilingIndicators symbol={stock.symbol} includeExtendedMetrics={watchlistDetailHeader} />}
 
         <section className="px-5">
           <div className="mb-4 flex items-end justify-between">
