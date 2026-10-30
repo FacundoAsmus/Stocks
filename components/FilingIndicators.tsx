@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { formatCompact } from "@/lib/format";
+import { formatCompact, formatPercent } from "@/lib/format";
 import { WheelPrice } from "@/components/PriceChart";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
