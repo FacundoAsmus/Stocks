@@ -257,9 +257,9 @@ export function EarningsCalendarButton({
         type="button"
         onClick={openCalendar}
         aria-label="Earnings calendar"
-        className="flex h-7 w-7 items-center justify-center text-accent active:opacity-60"
+        className="phone-stock-control-glass smoked-glass-surface flex h-10 w-10 items-center justify-center rounded-full text-accent active:opacity-60"
       >
-        <OptionalSvgIcon name="calendar" className="h-[18px] w-[18px]" />
+        <OptionalSvgIcon name="calendar" className="h-5 w-5" />
       </button>
 
       {open && portalTarget && createPortal(

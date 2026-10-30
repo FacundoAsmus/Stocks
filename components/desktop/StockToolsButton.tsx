@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
@@ -96,7 +96,17 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
   const [expanded, setExpanded] = useState(false);
   const [position, setPosition] = useState({ left: 0, bottom: 0 });
   const panelRef = useRef<HTMLDivElement>(null);
+  const closeTimerRef = useRef<number | null>(null);
   const menuHeight = 5 * 36 + 4 * 8 + 20;
+
+  const closeMenu = useCallback(() => {
+    setExpanded(false);
+    if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = window.setTimeout(() => {
+      setOpen(false);
+      closeTimerRef.current = null;
+    }, 320);
+  }, []);
 
   useEffect(() => {
     function onChartContextMenu(event: Event) {
@@ -106,6 +116,8 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
         left: Math.max(8, Math.min(detail.clientX - 20, window.innerWidth - 48)),
         bottom: Math.max(8, Math.min(window.innerHeight - detail.clientY - 20, window.innerHeight - 8)),
       });
+      if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
       setOpen(true);
       setExpanded(false);
       window.requestAnimationFrame(() => setExpanded(true));
@@ -118,22 +130,23 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
     if (!open) return;
     const frame = window.requestAnimationFrame(() => setExpanded(true));
     function closeOutside(event: PointerEvent) {
-      if (!panelRef.current?.contains(event.target as Node)) setOpen(false);
+      if (!panelRef.current?.contains(event.target as Node)) closeMenu();
     }
     function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") closeMenu();
     }
     document.addEventListener("pointerdown", closeOutside);
     window.addEventListener("keydown", closeOnEscape);
     return () => {
       window.cancelAnimationFrame(frame);
+      if (closeTimerRef.current !== null) window.clearTimeout(closeTimerRef.current);
       document.removeEventListener("pointerdown", closeOutside);
       window.removeEventListener("keydown", closeOnEscape);
     };
-  }, [open]);
+  }, [closeMenu, open]);
 
   function choose(action: DrawingAction) {
-    setOpen(false);
+    closeMenu();
     if (action === "erase") {
       window.dispatchEvent(new CustomEvent("watchlist-stock-lines-clear", { detail: { symbol } }));
       return;
@@ -159,9 +172,9 @@ export function StockChartToolsMenu({ symbol }: { symbol: string }) {
   return (
     <div ref={panelRef} role="toolbar" aria-label="Chart drawing tools"
       className={cn("desktop-alert-glass desktop-stock-tools-panel smoked-glass-surface fixed z-[1200] overflow-hidden border text-text-primary", open && "is-open")}
-      onMouseLeave={() => { if (expanded) setOpen(false); }}
+      onMouseLeave={() => { if (expanded) closeMenu(); }}
       style={{ left: position.left, bottom: position.bottom, width: expanded ? 40 : 0, height: expanded ? menuHeight : 0, borderRadius: expanded ? 24 : 0, opacity: expanded ? 1 : 0, pointerEvents: expanded ? "auto" : "none", transition: "width 0.32s cubic-bezier(0.2,0,0,1), height 0.32s cubic-bezier(0.2,0,0,1), border-radius 0.32s cubic-bezier(0.2,0,0,1), opacity 0.18s ease" }}>
-      <div className="flex flex-col items-center gap-2 px-0.5 pt-2">
+      <div className={`flex flex-col items-center gap-2 px-0.5 pt-2 transition-opacity duration-200 ${expanded ? "opacity-100" : "pointer-events-none opacity-0"}`}>
         {actions.map(({ action, label, icon, color }) => <button key={action} type="button" aria-label={label} title={label}
           onClick={() => choose(action)} className="flex h-9 w-full items-center justify-center bg-transparent opacity-45 transition-opacity hover:opacity-100">
           <OptionalSvgIcon name={icon} className="h-5 w-5" color={color} />

@@ -300,6 +300,11 @@ html.light-mode .glossy-icon-button__icon > svg {
   min-height: 68px;
 }
 
+.filing-category-selector--compact {
+  width: min(100%, 200px);
+  min-height: 34px;
+}
+
 .filing-category-indicator {
   position: absolute;
   z-index: 0;

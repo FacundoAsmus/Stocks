@@ -28,7 +28,7 @@ function DebtEquityRange({ indicators }: { indicators: FilingIndicator[] }) {
   if (total <= 0) return null;
   const debtShare = (debt / total) * 100;
   const equityShare = 100 - debtShare;
-  const debtColor = sentimentColorForHeight(debtShare);
+  const debtColor = sentimentColorForHeight(100 - debtShare);
   const equityColor = sentimentColorForHeight(equityShare);
 
   return (
@@ -236,7 +236,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
       ) : (
         <div className="space-y-8">
           {includeExtendedMetrics && (
-            <div className="filing-category-selector chart-period-selector-glass relative mx-auto flex max-w-full items-center rounded-full border p-1">
+      <div className={`filing-category-selector chart-period-selector-glass relative mx-auto flex max-w-full items-center rounded-full border p-1 ${compact ? "filing-category-selector--compact" : ""}`}>
               <span
                 className="filing-category-indicator"
                 aria-hidden="true"
@@ -250,9 +250,9 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setActiveCategory(category.id)}
-                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full px-2 py-3 text-[10px] font-semibold transition-colors ${selected ? "text-on-accent" : "text-accent"}`}
+                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-0 rounded-full font-semibold transition-colors ${compact ? "px-1 py-0.5 text-[7.5px]" : "px-2 py-3 text-[10px]"} ${selected ? "text-on-accent" : "text-accent"}`}
                   >
-                    <OptionalSvgIcon name={category.icon} className="h-5 w-5" colorClassName={selected ? "text-on-accent" : "text-accent"} />
+                    <OptionalSvgIcon name={category.icon} className={compact ? "h-2.5 w-2.5" : "h-5 w-5"} colorClassName={selected ? "text-on-accent" : "text-accent"} />
                     <span className="whitespace-nowrap">{category.label}</span>
                   </button>
                 );
