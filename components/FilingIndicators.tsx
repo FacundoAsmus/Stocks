@@ -29,8 +29,8 @@ function DebtEquityRange({ indicators, debtEquityRatio }: { indicators: FilingIn
   const debtShare = finnhubDebtShare ?? (total > 0 && debt !== null ? (debt / total) * 100 : null);
   if (debtShare === null) return null;
   const equityShare = 100 - debtShare;
-  const debtColor = sentimentColorForHeight(debtShare);
-  const equityColor = sentimentColorForHeight(equityShare);
+  const debtColor = "var(--color-negative)";
+  const equityColor = "var(--color-positive)";
 
   return (
     <div className="mb-7">
@@ -46,7 +46,7 @@ function DebtEquityRange({ indicators, debtEquityRatio }: { indicators: FilingIn
           style={{
             width: `${debtShare}%`,
             backgroundColor: debtColor,
-            boxShadow: `0 0 10px ${debtColor.replace("rgb(", "rgba(").replace(")", ", 0.55)")}`,
+            boxShadow: "0 0 10px color-mix(in srgb, var(--color-negative) 55%, transparent)",
           }}
         />
         <div
@@ -54,7 +54,7 @@ function DebtEquityRange({ indicators, debtEquityRatio }: { indicators: FilingIn
           style={{
             width: `${equityShare}%`,
             backgroundColor: equityColor,
-            boxShadow: `0 0 10px ${equityColor.replace("rgb(", "rgba(").replace(")", ", 0.55)")}`,
+            boxShadow: "0 0 10px color-mix(in srgb, var(--color-positive) 55%, transparent)",
           }}
         />
         <span
@@ -254,7 +254,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setActiveCategory(category.id)}
-                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[8px]" : "px-2 py-2 text-[8px]"} ${selected ? "text-on-accent" : "text-accent"}`}
+                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[7px]" : "px-2 py-2 text-[7px]"} ${selected ? "text-on-accent" : "text-accent"}`}
                   >
                     <OptionalSvgIcon name={category.icon} className="h-6 w-6" colorClassName={selected ? "text-on-accent" : "text-accent"} />
                     <span className="whitespace-nowrap">{category.label}</span>

@@ -167,11 +167,6 @@ export function AnalystSection({
 
       {latest ? (
         <div className="mt-5 relative">
-          <div className="mb-3 flex items-baseline gap-2">
-            <RollingCount value={analystCount} started={started} />
-            <span className="text-sm text-text-muted">analysts covering this stock</span>
-          </div>
-
           <div className="space-y-4">
             {breakdown.map(([label, count, colorClass], i) => {
               const targetWidth = analystCount

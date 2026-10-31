@@ -1,7 +1,5 @@
 import { formatCompact, formatCurrency, formatPercent } from "@/lib/format";
 import { WheelPrice } from "@/components/PriceChart";
-import { expectedRevenueGrowthPct, getNextReport } from "@/lib/earnings";
-import type { EarningsEvent } from "@/types/stock";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 type MetricValue = number | string | null;
@@ -75,24 +73,16 @@ function invertedSentimentColor(position: number) {
   return `rgb(${low[1].map((channel, index) => Math.round(channel + (high[1][index] - channel) * progress)).join(", ")})`;
 }
 
-function formatReportDate(dateStr: string) {
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(
-    new Date(`${dateStr}T00:00:00`)
-  );
-}
-
 export function FundamentalsGrid({
   metrics,
   marketCap,
   currentPrice,
-  earnings = [],
   isEtf = false,
   show52WeekRange = false
 }: {
   metrics?: Record<string, MetricValue>;
   marketCap?: number;
   currentPrice: number;
-  earnings?: EarningsEvent[];
   isEtf?: boolean;
   show52WeekRange?: boolean;
 }) {
@@ -115,9 +105,6 @@ export function FundamentalsGrid({
   const high52 = toNumber(metrics?.["52WeekHigh"]);
   const low52 = toNumber(metrics?.["52WeekLow"]);
   const volume = toNumber(metrics?.["10DayAverageTradingVolume"]);
-
-  const nextReport = getNextReport(earnings);
-  const expectedGrowth = nextReport ? expectedRevenueGrowthPct(earnings, nextReport) : null;
 
   const items: FundamentalItem[] = [
     {
@@ -153,19 +140,7 @@ export function FundamentalsGrid({
       note: eps && eps > 0 ? "Profitable" : "Watch Earnings"
     },
     { label: "Avg. Volume", value: formatCompact(volume ? volume * 1_000_000 : null), tone: "neutral", note: "10 Day Avg." },
-    { label: "Dividend Yield", value: formatPercent(dividendYield), ...dividendTone(dividendYield) },
-    {
-      label: "Next Report",
-      value: nextReport ? formatReportDate(nextReport.date) : "N/A",
-      tone: "neutral",
-      note: nextReport ? `Q${nextReport.quarter} ${nextReport.year}` : "Not scheduled yet"
-    },
-    {
-      label: "Expected Earnings",
-      value: expectedGrowth !== null ? formatPercent(expectedGrowth) : "N/A",
-      tone: expectedGrowth === null ? "neutral" : expectedGrowth >= 0 ? "positive" : "negative",
-      note: expectedGrowth !== null ? "Est. QoQ Growth" : "Data unavailable"
-    }
+    { label: "Dividend Yield", value: formatPercent(dividendYield), ...dividendTone(dividendYield) }
   ];
 
   if (!show52WeekRange) {
@@ -176,14 +151,13 @@ export function FundamentalsGrid({
   }
 
   const ETF_EXCLUDED_LABELS = new Set([
-    "Market Cap", "P/E Ratio", "Forward P/E", "PEG", "EPS", "Dividend Yield", "Next Report", "Expected Earnings"
+    "Market Cap", "P/E Ratio", "Forward P/E", "PEG", "EPS", "Dividend Yield"
   ]);
   const visibleItems = isEtf ? items.filter(item => !ETF_EXCLUDED_LABELS.has(item.label)) : items;
   const indicatorGroups = [
     ["Market Cap", "Beta", "P/E Ratio", "Forward P/E"],
     ["PEG", "EPS"],
     ["52W Low", "52W High", "Avg. Volume", "Dividend Yield"],
-    ["Next Report", "Expected Earnings"],
   ].map((labels) => labels
     .map((label) => visibleItems.find((item) => item.label === label))
     .filter((item): item is FundamentalItem => item !== undefined))
@@ -238,6 +212,17 @@ export function FundamentalsGrid({
                     aria-label={`Current price ${formatCurrency(currentPrice)}, position ${Math.round(clampedPosition)}% of the 52 week range`}
                     title={`Current price: ${formatCurrency(currentPrice)}`}
                   />
+                </div>
+                <div className="relative mt-2 h-7">
+                  <span
+                    className="absolute top-0 whitespace-nowrap text-xl font-semibold text-text-primary"
+                    style={{
+                      left: `${clampedPosition}%`,
+                      transform: clampedPosition <= 5 ? "translateX(0)" : clampedPosition >= 95 ? "translateX(-100%)" : "translateX(-50%)",
+                    }}
+                  >
+                    {formatCurrency(currentPrice)}
+                  </span>
                 </div>
               </div>
             );

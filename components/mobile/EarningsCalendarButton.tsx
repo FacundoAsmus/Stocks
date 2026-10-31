@@ -164,9 +164,11 @@ function MonthGrid({
 
 // ─── Trigger button + calendar overlay + detail popup ──────────────────────
 export function EarningsCalendarButton({
-  earnings
+  earnings,
+  inPill = false
 }: {
   earnings: EarningsEvent[];
+  inPill?: boolean;
   /** Retained for existing callers; calendar and quarter overlays use the
    *  full viewport so the entire page is blurred and blocked. */
   containerRef?: RefObject<HTMLElement | null>;
@@ -257,7 +259,7 @@ export function EarningsCalendarButton({
         type="button"
         onClick={openCalendar}
         aria-label="Earnings calendar"
-        className="phone-stock-control-glass smoked-glass-surface flex h-10 w-10 items-center justify-center rounded-full text-accent active:opacity-60"
+        className={`flex h-10 w-10 items-center justify-center rounded-full text-accent active:opacity-60 ${inPill ? "border-0 bg-transparent shadow-none" : "phone-stock-control-glass smoked-glass-surface"}`}
       >
         <OptionalSvgIcon name="calendar" className="h-5 w-5" />
       </button>

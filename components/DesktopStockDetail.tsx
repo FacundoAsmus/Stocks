@@ -111,7 +111,6 @@ export function DesktopStockDetail({
           metrics={metrics}
           marketCap={stock.profile.marketCapitalization}
           currentPrice={currentPrice}
-          earnings={stock.earnings}
           isEtf={isEtf}
           show52WeekRange={watchlistDetailHeader}
         />
