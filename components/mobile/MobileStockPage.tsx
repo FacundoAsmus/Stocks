@@ -283,6 +283,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             currentPrice={currentPrice}
             earnings={stock.earnings}
             isEtf={isEtf}
+            show52WeekRange
           />
 
           {!isEtf && (
@@ -291,7 +292,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             </div>
           )}
 
-          {!isEtf && <FilingIndicators symbol={stock.symbol} compact includeExtendedMetrics />}
+          {!isEtf && <FilingIndicators symbol={stock.symbol} compact includeExtendedMetrics debtEquityRatio={metrics?.debtEquityRatio ?? metrics?.debtToEquityRatio ?? metrics?.totalDebtToEquity} />}
 
           {(stock.news.length > 0 || stock.newsUnavailable) && (
             <section className="px-3">

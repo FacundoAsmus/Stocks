@@ -19,14 +19,15 @@ type FilingIndicator = {
 
 type IndicatorKey = "revenue" | "debt" | "netMargin" | "capex" | "researchAndDevelopment" | "freeCashFlow";
 
-function DebtEquityRange({ indicators }: { indicators: FilingIndicator[] }) {
+function DebtEquityRange({ indicators, debtEquityRatio }: { indicators: FilingIndicator[]; debtEquityRatio?: number | string | null }) {
   const latest = [...indicators].reverse().find((item) => item.debt !== null && item.equity !== null);
-  if (!latest || latest.debt === null || latest.equity === null) return null;
-  const debt = Math.max(0, latest.debt);
-  const equity = Math.max(0, latest.equity);
-  const total = debt + equity;
-  if (total <= 0) return null;
-  const debtShare = (debt / total) * 100;
+  const ratio = debtEquityRatio == null ? Number.NaN : typeof debtEquityRatio === "number" ? debtEquityRatio : Number(debtEquityRatio);
+  const finnhubDebtShare = Number.isFinite(ratio) && ratio >= 0 ? (ratio / (1 + ratio)) * 100 : null;
+  const debt = latest?.debt === null || latest?.debt === undefined ? null : Math.max(0, latest.debt);
+  const equity = latest?.equity === null || latest?.equity === undefined ? null : Math.max(0, latest.equity);
+  const total = debt !== null && equity !== null ? debt + equity : 0;
+  const debtShare = finnhubDebtShare ?? (total > 0 && debt !== null ? (debt / total) * 100 : null);
+  if (debtShare === null) return null;
   const equityShare = 100 - debtShare;
   const debtColor = sentimentColorForHeight(debtShare);
   const equityColor = sentimentColorForHeight(equityShare);
@@ -34,10 +35,10 @@ function DebtEquityRange({ indicators }: { indicators: FilingIndicator[] }) {
   return (
     <div className="mb-7">
       <p className="-ml-5 mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
-        <OptionalSvgIcon name="capex" className="h-5 w-5" colorClassName="text-accent" />Debt vs. equity
+        <OptionalSvgIcon name="capex" className="h-5 w-5" colorClassName="text-accent" />Debt to equity
       </p>
       <div className="mb-5 text-text-primary">
-        <WheelPrice value={`${debtShare.toFixed(1)}% / ${equityShare.toFixed(1)}%`} size="xs" compact />
+        <WheelPrice value={`${debtShare.toFixed(1)}%`} size="xs" compact />
       </div>
       <div className="relative h-2 w-full rounded-full bg-panel-muted">
         <div
@@ -192,7 +193,7 @@ function AnnualIndicatorChart({
   );
 }
 
-export function FilingIndicators({ symbol, compact = false, includeExtendedMetrics = false }: { symbol: string; compact?: boolean; includeExtendedMetrics?: boolean }) {
+export function FilingIndicators({ symbol, compact = false, includeExtendedMetrics = false, debtEquityRatio }: { symbol: string; compact?: boolean; includeExtendedMetrics?: boolean; debtEquityRatio?: number | string | null }) {
   const sectionRef = useRef<HTMLElement>(null);
   const [started, setStarted] = useState(false);
   const [indicators, setIndicators] = useState<FilingIndicator[] | null>(null);
@@ -229,6 +230,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
     { id: "financial-health" as const, label: "Financial health", icon: "financial-health" },
     { id: "cash-flows" as const, label: "Cash flows", icon: "cash-flows" },
   ];
+  const hasFinnhubDebtEquityRatio = debtEquityRatio != null && Number.isFinite(Number(debtEquityRatio)) && Number(debtEquityRatio) >= 0;
   if (indicators !== null && !hasAnyChart) return null;
 
   return (
@@ -272,10 +274,12 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                 )}
               </>
             )}
-            {includeExtendedMetrics && activeCategory === "financial-health" && indicators.some((indicator) => indicator.debt !== null) && (
+            {includeExtendedMetrics && activeCategory === "financial-health" && (hasFinnhubDebtEquityRatio || indicators.some((indicator) => indicator.debt !== null)) && (
               <>
-              <DebtEquityRange indicators={indicators} />
-              <AnnualIndicatorChart title="Debt" icon="capex" field="debt" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
+              <DebtEquityRange indicators={indicators} debtEquityRatio={debtEquityRatio} />
+              {indicators.some((indicator) => indicator.debt !== null) && (
+                <AnnualIndicatorChart title="Debt" icon="capex" field="debt" valueFormat="currency" indicators={indicators} started={started} compact={compact} />
+              )}
               </>
             )}
             {(!includeExtendedMetrics || activeCategory === "cash-flows") && (

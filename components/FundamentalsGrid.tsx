@@ -1,4 +1,4 @@
-import { formatCompact, formatCurrency, formatNumber, formatPercent } from "@/lib/format";
+import { formatCompact, formatCurrency, formatPercent } from "@/lib/format";
 import { WheelPrice } from "@/components/PriceChart";
 import { expectedRevenueGrowthPct, getNextReport } from "@/lib/earnings";
 import type { EarningsEvent } from "@/types/stock";
@@ -20,6 +20,11 @@ function toNumber(value: MetricValue | undefined) {
     return Number.isNaN(parsed) ? null : parsed;
   }
   return null;
+}
+
+function formatRatio(value: number | null) {
+  if (value === null) return "N/A";
+  return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 }
 
 function ratioTone(value: number | null, low: number, high: number, lowerIsBetter = true) {
@@ -121,10 +126,10 @@ export function FundamentalsGrid({
       tone: "neutral",
       note: "Company Size"
     },
-    { label: "Beta", value: formatNumber(beta), ...ratioTone(beta, 0.8, 1.4) },
+    { label: "Beta", value: formatRatio(beta), ...ratioTone(beta, 0.8, 1.4) },
     {
       label: "P/E Ratio",
-      value: pe !== null ? formatNumber(pe) : eps !== null && eps < 0 ? "Loss-making" : "N/A",
+      value: pe !== null ? formatRatio(pe) : eps !== null && eps < 0 ? "Loss-making" : "N/A",
       ...(pe !== null
         ? ratioTone(pe, 15, 30)
         : eps !== null && eps < 0
@@ -133,14 +138,14 @@ export function FundamentalsGrid({
     },
     {
       label: "Forward P/E",
-      value: forwardPe !== null ? formatNumber(forwardPe) : eps !== null && eps < 0 ? "Loss-making" : "N/A",
+      value: forwardPe !== null ? formatRatio(forwardPe) : eps !== null && eps < 0 ? "Loss-making" : "N/A",
       ...(forwardPe !== null
         ? ratioTone(forwardPe, 15, 28)
         : eps !== null && eps < 0
         ? { tone: "negative" as const, note: "Negative EPS" }
         : { tone: "neutral" as const, note: "Data unavailable" })
     },
-    { label: "PEG", value: formatNumber(peg), ...ratioTone(peg, 1, 2) },
+    { label: "PEG", value: formatRatio(peg), ...ratioTone(peg, 1, 2) },
     {
       label: "EPS",
       value: formatCurrency(eps),

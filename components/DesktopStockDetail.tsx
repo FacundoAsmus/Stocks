@@ -122,7 +122,7 @@ export function DesktopStockDetail({
           </div>
         )}
 
-        {!isEtf && <FilingIndicators symbol={stock.symbol} includeExtendedMetrics={watchlistDetailHeader} />}
+        {!isEtf && <FilingIndicators symbol={stock.symbol} includeExtendedMetrics={watchlistDetailHeader} debtEquityRatio={metrics?.debtEquityRatio ?? metrics?.debtToEquityRatio ?? metrics?.totalDebtToEquity} />}
 
         <section className="px-5">
           <div className="mb-4 flex items-end justify-between">
