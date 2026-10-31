@@ -2033,7 +2033,7 @@ export function PriceChart({
       {/* ── Period selector — centred below charts ───────────────────── */}
       <div className="mt-4 flex justify-center">
         {/* Phone only: years (1Y/2Y/5Y/ALL) on their own row below the rest */}
-        <div className="chart-period-selector-glass chart-period-selector-phone relative flex flex-col items-center gap-1.5 rounded-3xl border p-1.5 lg:hidden">
+        <div className="main-chart-period-selector chart-period-selector-glass chart-period-selector-phone relative flex flex-col items-center gap-1.5 rounded-3xl border p-1.5 lg:hidden">
           <span
             className="chart-period-indicator"
             aria-hidden="true"
@@ -2048,7 +2048,7 @@ export function PriceChart({
         </div>
         {/* Desktop: unchanged, single row */}
         <div
-          className="chart-period-selector-glass chart-period-selector-desktop relative hidden flex-nowrap items-center justify-center gap-1 rounded-full border p-1 lg:flex"
+          className="main-chart-period-selector chart-period-selector-glass chart-period-selector-desktop relative hidden flex-nowrap items-center justify-center gap-1 rounded-full border p-1 lg:flex"
           onMouseLeave={() => setHoveredPeriod(null)}
         >
           <span

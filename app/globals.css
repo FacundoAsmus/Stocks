@@ -377,6 +377,11 @@ html.light-mode .chart-period-selector-glass {
   box-shadow: 0 24px 70px rgba(45, 73, 96, 0.13), 0 5px 18px rgba(45, 73, 96, 0.08), inset 0 0 18px rgba(78, 125, 158, 0.075), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
+.main-chart-period-selector,
+.main-chart-period-selector .chart-period-indicator {
+  box-shadow: none !important;
+}
+
 .watchlist-change-badge.is-positive {
   box-shadow: 0 0 12px color-mix(in srgb, var(--color-positive) 48%, transparent);
 }
