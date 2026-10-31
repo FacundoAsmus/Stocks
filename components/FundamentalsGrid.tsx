@@ -207,7 +207,7 @@ export function FundamentalsGrid({
                 key={item.label}
                 type="button"
                 onClick={() => setSelectedIndicator(item)}
-                className="indicator-data-pill min-w-0 w-full rounded-full border-2 px-4 py-3 text-left transition-transform active:scale-[0.98]"
+                className="indicator-data-pill min-w-0 w-full rounded-3xl border-2 px-4 py-3 text-left transition-transform active:scale-[0.98]"
                 aria-label={`${item.label}: ${item.value}. Open explanation`}
               >
                 <span className="indicator-data-pill__label block truncate text-xs uppercase tracking-[0.12em]">{item.label}</span>
@@ -276,7 +276,7 @@ export function FundamentalsGrid({
               <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">{selectedIndicator.label}</h2>
               <GlossyIconButton aria-label="Close indicator details" onClick={() => setSelectedIndicator(null)}><GlossyCloseIcon /></GlossyIconButton>
             </div>
-            <p className="mb-6 text-sm leading-6 text-text-muted">{INDICATOR_DESCRIPTIONS[selectedIndicator.label] ?? `${selectedIndicator.label} is a financial measure used to understand the company's performance or valuation.`}</p>
+            <p className="mb-6 text-sm leading-6 text-text-primary">{INDICATOR_DESCRIPTIONS[selectedIndicator.label] ?? `${selectedIndicator.label} is a financial measure used to understand the company's performance or valuation.`}</p>
             <button
               type="button"
               onClick={() => askWarrentAboutIndicator(selectedIndicator)}
