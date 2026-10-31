@@ -256,7 +256,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             currentPrice={currentPrice}
             currentChangePercent={stock.quote.dp ?? 0}
             previousClose={stock.quote.pc ?? undefined}
-            heightClassName="h-[281px]"
+            heightClassName="h-[312px]"
             hideCursorDateTooltip
             hideMovingAverageControls
             holdPriceUntilChartReady

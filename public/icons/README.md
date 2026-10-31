@@ -31,6 +31,7 @@ Use the group id for the unselected and selected versions:
 
 ## Stock page sections
 
+- `info.svg` — Indicator description title icon
 - `stock-sentiment.svg`
 - `indicators.svg`
 - `capex.svg`

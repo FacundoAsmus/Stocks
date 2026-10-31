@@ -279,7 +279,10 @@ export function FundamentalsGrid({
             onClick={(event) => event.stopPropagation()}
           >
             <div className="mb-5 flex items-center justify-between gap-3">
-              <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">{selectedIndicator.label}</h2>
+              <div className="flex min-w-0 items-center gap-3">
+                <OptionalSvgIcon name="info" className="h-6 w-6" colorClassName="text-text-primary" />
+                <h2 className="text-3xl font-semibold tracking-normal text-text-primary">{selectedIndicator.label}</h2>
+              </div>
               <GlossyIconButton aria-label="Close indicator details" onClick={() => setSelectedIndicator(null)}><GlossyCloseIcon /></GlossyIconButton>
             </div>
             <p className="mb-6 text-sm leading-6 text-text-primary">{INDICATOR_DESCRIPTIONS[selectedIndicator.label] ?? `${selectedIndicator.label} is a financial measure used to understand the company's performance or valuation.`}</p>
