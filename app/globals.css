@@ -2,9 +2,9 @@
 
 :root {
   --color-range-marker: #ffffff;
-  --indicator-pill-body-start: #081414;
-  --indicator-pill-body-mid: #050f0f;
-  --indicator-pill-body-end: #030a0a;
+  --indicator-pill-body-start: #040a0a;
+  --indicator-pill-body-mid: #030909;
+  --indicator-pill-body-end: #020505;
   --indicator-pill-fg: #ffffff;
   --AI_COLOR: #A855F6;
   --accent-rgb: 255 255 255;
@@ -316,19 +316,19 @@ html.light-mode .glossy-icon-button__icon > svg {
 .indicator-data-pill {
   border: 1px solid transparent !important;
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.06) 18%, transparent 40%) padding-box,
+    linear-gradient(180deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.025) 18%, transparent 40%) padding-box,
     linear-gradient(145deg, var(--indicator-pill-body-start), var(--indicator-pill-body-mid) 56%, var(--indicator-pill-body-end)) padding-box,
-    linear-gradient(135deg, rgba(255,255,255,0.42), rgba(255,255,255,0.11) 28%, rgba(255,255,255,0.045) 70%, rgba(255,255,255,0.34)) border-box;
+    linear-gradient(135deg, rgba(255,255,255,0.24), rgba(255,255,255,0.07) 28%, rgba(255,255,255,0.03) 70%, rgba(255,255,255,0.2)) border-box;
   color: var(--indicator-pill-fg);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(0,0,0,0.12), inset 0 0 12px rgba(255,255,255,0.035);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.08), inset 0 0 12px rgba(255,255,255,0.018);
 }
 
 html.light-mode .indicator-data-pill {
   background:
-    linear-gradient(180deg, rgba(255,255,255,0.58) 0%, rgba(255,255,255,0.2) 18%, transparent 40%) padding-box,
-    linear-gradient(145deg, var(--indicator-pill-body-start), var(--indicator-pill-body-mid) 56%, var(--indicator-pill-body-end)) padding-box,
-    linear-gradient(135deg, rgba(255,255,255,0.94), rgba(105,138,162,0.24) 30%, rgba(105,138,162,0.12) 70%, rgba(255,255,255,0.86)) border-box;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.85), inset 0 -1px 0 rgba(105,138,162,0.12), inset 0 0 12px rgba(255,255,255,0.25), 0 5px 18px rgba(45,73,96,0.12);
+    linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.06) 18%, transparent 40%) padding-box,
+    linear-gradient(145deg, #feffff 0%, #fcfdff 56%, #f5fafe 100%) padding-box,
+    linear-gradient(135deg, rgba(105,138,162,0.22), rgba(105,138,162,0.08) 30%, rgba(105,138,162,0.045) 70%, rgba(105,138,162,0.19)) border-box;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.72), inset 0 -1px 0 rgba(105,138,162,0.06), inset 0 0 12px rgba(255,255,255,0.12), 0 5px 18px rgba(45,73,96,0.08);
 }
 
 .indicator-data-pill__label,
