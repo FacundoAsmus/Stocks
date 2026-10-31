@@ -1791,7 +1791,7 @@ export function PriceChart({
           </ResponsiveContainer>
           </div>
 
-          {(manualVerticalLines.length > 0 || verticalPlacementActive) && <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full overflow-hidden" aria-hidden="false">
+          {(manualVerticalLines.length > 0 || verticalPlacementActive) && <svg className="manual-drawing-svg pointer-events-none absolute inset-0 z-20 h-full w-full overflow-hidden" aria-hidden="false">
             {manualVerticalLines.map((line) => {
               const bounds = chartRef.current?.getBoundingClientRect();
               if (!bounds || visibleRange.end <= visibleRange.start || line.index < visibleRange.start || line.index > visibleRange.end) return null;
@@ -1813,7 +1813,7 @@ export function PriceChart({
             <line ref={verticalPreviewRef} x1="0" y1="8" x2="0" y2="8" stroke="#ffffff" strokeWidth={1} strokeDasharray="8 6" style={{ display: "none" }} />
           </svg>}
 
-          {(manualDiagonals.length > 0 || diagonalPlacementActive) && <svg className="pointer-events-none absolute inset-0 z-20 h-full w-full overflow-hidden" aria-hidden="false">
+          {(manualDiagonals.length > 0 || diagonalPlacementActive) && <svg className="manual-drawing-svg pointer-events-none absolute inset-0 z-20 h-full w-full overflow-hidden" aria-hidden="false">
             {manualDiagonals.map((diagonal) => {
               const bounds = chartRef.current?.getBoundingClientRect();
               if (!bounds || visibleRange.end <= visibleRange.start) return null;
@@ -1863,7 +1863,7 @@ export function PriceChart({
             const shownValue = line.preview && lineTypedValue !== null ? lineTypedValue : formatPrice(line.price);
             return (
               <div key={line.preview ? "preview" : line.id} className="pointer-events-none absolute inset-x-0 z-20 h-px" style={{ top: `${(top / chartHeight) * 100}%` }}>
-                <span className="absolute bottom-[calc(100%+4px)] left-0 z-10 whitespace-nowrap text-[10px] leading-3 text-white">{shownValue}</span>
+                <span className="manual-price-line-label absolute bottom-[calc(100%+4px)] left-0 z-10 whitespace-nowrap text-[10px] leading-3 text-white">{shownValue}</span>
                 <button
                   type="button"
                   data-drawing-preview={line.preview ? "true" : undefined}
@@ -1877,7 +1877,7 @@ export function PriceChart({
                     setSelectedManualSquareId(null);
                     setSelectedManualDiagonalId(null);
                   }}
-                  className="pointer-events-auto absolute inset-x-0 top-1/2 h-3 min-w-0 -translate-y-1/2 cursor-crosshair border-0 bg-transparent p-0"
+                  className="manual-price-line-dash pointer-events-auto absolute inset-x-0 top-1/2 h-3 min-w-0 -translate-y-1/2 cursor-crosshair border-0 bg-transparent p-0"
                   style={{
                     backgroundColor: "transparent",
                     backgroundImage: "repeating-linear-gradient(90deg, #ffffff 0 8px, transparent 8px 14px)",
@@ -1920,7 +1920,7 @@ export function PriceChart({
                 setSelectedManualSquareId(square.id);
                 setSelectedManualDiagonalId(null);
               }}
-              className="pointer-events-auto absolute z-10 m-0 cursor-pointer p-0"
+              className="manual-drawing-area pointer-events-auto absolute z-10 m-0 cursor-pointer p-0"
               style={{
                 left: `${((indexStart - visibleRange.start) / visibleCount) * 100}%`,
                 top: `${(top / bounds.height) * 100}%`,
@@ -1934,7 +1934,7 @@ export function PriceChart({
           <div
             ref={squarePreviewRef}
             aria-hidden="true"
-            className="pointer-events-none absolute z-10 hidden"
+            className="manual-drawing-area pointer-events-none absolute z-10 hidden"
             style={getDrawingAreaStyle("up", "#ffffff")}
           />
 
@@ -2037,7 +2037,7 @@ export function PriceChart({
           <span
             className="chart-period-indicator"
             aria-hidden="true"
-            style={{ transform: `translate(${SHORT_PERIODS.includes(period) ? SHORT_PERIODS.indexOf(period) * 40 : LONG_PERIODS.indexOf(period) * 40}px, ${SHORT_PERIODS.includes(period) ? 0 : 42}px)` }}
+            style={{ transform: `translate(${SHORT_PERIODS.includes(period) ? SHORT_PERIODS.indexOf(period) * 40 : LONG_PERIODS.indexOf(period) * 40 + (SHORT_PERIODS.length - LONG_PERIODS.length) * 20}px, ${SHORT_PERIODS.includes(period) ? 0 : 42}px)` }}
           />
           <div className="flex flex-nowrap items-center justify-center gap-1 whitespace-nowrap overflow-x-auto">
             {SHORT_PERIODS.map((o, index) => renderPeriodButton({ key: o, option: o, index }))}

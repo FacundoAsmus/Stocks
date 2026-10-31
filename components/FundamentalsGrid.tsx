@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { formatCompact, formatCurrency, formatPercent } from "@/lib/format";
@@ -129,6 +129,12 @@ export function FundamentalsGrid({
   const low52 = toNumber(metrics?.["52WeekLow"]);
   const volume = toNumber(metrics?.["10DayAverageTradingVolume"]);
   const [selectedIndicator, setSelectedIndicator] = useState<FundamentalItem | null>(null);
+  useEffect(() => {
+    if (!selectedIndicator) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
+  }, [selectedIndicator]);
 
   function askWarrentAboutIndicator(item: FundamentalItem) {
     const company = stockName || stockSymbol || "this stock";
@@ -282,8 +288,8 @@ export function FundamentalsGrid({
               onClick={() => askWarrentAboutIndicator(selectedIndicator)}
               className="h-11 w-full rounded-full bg-accent text-sm font-semibold text-on-accent"
             >
-              <span className="inline-flex items-center justify-center gap-2">
-                <OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-on-accent" />
+              <span className="inline-flex items-center justify-center gap-2" style={{ color: "var(--AI_COLOR)" }}>
+                <OptionalSvgIcon name="ai" className="h-5 w-5" color="var(--AI_COLOR)" />
                 Ask Warrent about {selectedIndicator.label}
               </span>
             </button>
