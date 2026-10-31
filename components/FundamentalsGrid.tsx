@@ -207,7 +207,7 @@ export function FundamentalsGrid({
                 key={item.label}
                 type="button"
                 onClick={() => setSelectedIndicator(item)}
-                className="indicator-data-pill min-w-0 w-full rounded-3xl border-2 px-4 py-3 text-left transition-transform active:scale-[0.98]"
+                className="indicator-data-pill min-w-0 w-full rounded-3xl border px-4 py-3 text-left"
                 aria-label={`${item.label}: ${item.value}. Open explanation`}
               >
                 <span className="indicator-data-pill__label block truncate text-xs uppercase tracking-[0.12em]">{item.label}</span>
@@ -282,7 +282,10 @@ export function FundamentalsGrid({
               onClick={() => askWarrentAboutIndicator(selectedIndicator)}
               className="h-11 w-full rounded-full bg-accent text-sm font-semibold text-on-accent"
             >
-              Ask Warrent about {selectedIndicator.label}
+              <span className="inline-flex items-center justify-center gap-2">
+                Ask Warrent about {selectedIndicator.label}
+                <OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-on-accent" />
+              </span>
             </button>
           </div>
         </div>,
