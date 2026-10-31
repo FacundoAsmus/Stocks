@@ -2088,7 +2088,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           />
           {input.trim() ? (
             <button
-              onClick={sendMessage}
+              onClick={() => { void sendMessage(); }}
               disabled={loading}
               className="ai-send-button-glow"
               style={{
@@ -2144,7 +2144,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             />
             {input.trim() ? (
               <button
-                onClick={sendMessage}
+                onClick={() => { void sendMessage(); }}
                 disabled={loading}
                 className="ai-send-button-glow"
                 style={{
