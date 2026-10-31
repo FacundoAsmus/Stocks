@@ -1653,6 +1653,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   }
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput]       = useState("");
+  const [promptToSend, setPromptToSend] = useState<string | null>(null);
   const [loading, setLoading]   = useState(false);
   const [serverError, setServerError] = useState(false);
   const [vp, setVp] = useState({ top: 0, left: 0, width: 0, height: 0 });
@@ -1800,8 +1801,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     setOpen(false);
   }
 
-  async function sendMessage() {
-    const text = input.trim();
+  async function sendMessage(prefilledPrompt?: string) {
+    const text = (prefilledPrompt ?? input).trim();
     if (!text || loading) return;
     setInput("");
     const newMessages: Message[] = [...messages, { role: "user", text }];
@@ -1817,6 +1818,28 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    function onAskAboutIndicator(event: Event) {
+      const detail = (event as CustomEvent<{ symbol?: string; prompt?: string }>).detail;
+      if (!detail?.prompt || detail.symbol?.toUpperCase() !== stock.symbol.toUpperCase()) return;
+      welcomedStockRef.current = stock.symbol;
+      setPromptToSend(detail.prompt);
+      setOpen(true);
+    }
+    window.addEventListener("warrent-ask-indicator", onAskAboutIndicator);
+    return () => window.removeEventListener("warrent-ask-indicator", onAskAboutIndicator);
+  }, [stock.symbol]);
+
+  useEffect(() => {
+    if (!open || !promptToSend) return;
+    const prompt = promptToSend;
+    const timer = window.setTimeout(() => {
+      setPromptToSend(null);
+      void sendMessage(prompt);
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [open, promptToSend, stockContext]);
 
   function markDone(i: number) {
     setMessages(prev => prev.map((m, idx) => idx === i ? { ...m, animating: false } : m));

@@ -278,6 +278,8 @@ export function MobileStockPage(props: MobileStockPageProps) {
             metrics={metrics}
             marketCap={stock.profile.marketCapitalization}
             currentPrice={currentPrice}
+            stockSymbol={stock.symbol}
+            stockName={stock.profile.name ?? stock.symbol}
             isEtf={isEtf}
             show52WeekRange
           />

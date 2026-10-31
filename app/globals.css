@@ -2,6 +2,8 @@
 
 :root {
   --color-range-marker: #ffffff;
+  --indicator-pill-bg: #ffffff;
+  --indicator-pill-fg: #000000;
   --AI_COLOR: #A855F6;
   --accent-rgb: 255 255 255;
   --volume-bar-neutral: rgba(255,255,255,0.16);
@@ -75,6 +77,8 @@ html.light-mode body {
 html.light-mode :root,
 html.light-mode {
   --color-range-marker: #000000;
+  --indicator-pill-bg: #000000;
+  --indicator-pill-fg: #ffffff;
   --color-background: #ffffff;
   --color-panel: #f5f5f7;
   --color-panel-muted: #e8e8ed;
@@ -303,6 +307,32 @@ html.light-mode .glossy-icon-button__icon > svg {
 .filing-category-selector--compact {
   width: min(100%, 325px);
   min-height: 56px;
+}
+
+.indicator-data-pill {
+  background: var(--indicator-pill-bg);
+  border-color: var(--indicator-pill-bg);
+  color: var(--indicator-pill-fg);
+  box-shadow: none !important;
+}
+
+.indicator-data-pill__label,
+.indicator-data-pill__value,
+.indicator-data-pill__value * {
+  color: var(--indicator-pill-fg) !important;
+}
+
+.indicator-detail-panel {
+  animation: indicator-detail-rise 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes indicator-detail-rise {
+  from { opacity: 0; transform: scale(0.94); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicator-detail-panel { animation: none; }
 }
 
 .filing-category-indicator {

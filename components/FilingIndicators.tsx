@@ -244,7 +244,11 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
               <span
                 className="filing-category-indicator"
                 aria-hidden="true"
-                style={{ transform: `translateX(${chartCategories.findIndex((category) => category.id === activeCategory) * 100}%)` }}
+                style={activeCategory === "growth"
+                  ? { left: "5px", width: "calc(29.4118% - 2.94px)", transform: "none" }
+                  : activeCategory === "financial-health"
+                    ? { left: "calc(29.4118% + 2.06px)", width: "calc(41.1765% - 4.12px)", transform: "none" }
+                    : { left: "calc(70.5882% - 2.06px)", width: "calc(29.4118% - 2.94px)", transform: "none" }}
               />
               {chartCategories.map((category) => {
                 const selected = activeCategory === category.id;
@@ -254,6 +258,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setActiveCategory(category.id)}
+                    style={{ flex: category.id === "financial-health" ? 1.4 : 1 }}
                     className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[7px]" : "px-2 py-2 text-[7px]"} ${selected ? "text-on-accent" : "text-accent"}`}
                   >
                     <OptionalSvgIcon name={category.icon} className="h-6 w-6" colorClassName={selected ? "text-on-accent" : "text-accent"} />

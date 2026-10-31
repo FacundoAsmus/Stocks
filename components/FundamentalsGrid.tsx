@@ -1,6 +1,12 @@
+"use client";
+
+import { useState } from "react";
+import { createPortal } from "react-dom";
+
 import { formatCompact, formatCurrency, formatPercent } from "@/lib/format";
 import { WheelPrice } from "@/components/PriceChart";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
+import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 
 type MetricValue = number | string | null;
 
@@ -9,6 +15,19 @@ type FundamentalItem = {
   value: string;
   tone: "positive" | "neutral" | "negative";
   note: string;
+};
+
+const INDICATOR_DESCRIPTIONS: Record<string, string> = {
+  "Market Cap": "The market value of the company's outstanding shares. It gives a rough sense of the company's overall size.",
+  Beta: "A measure of how much the stock has moved relative to the broader market. Values above 1 have historically moved more than the market; below 1, less.",
+  "P/E Ratio": "The share price compared with the company's earnings per share. Investors often use it to compare valuation with earnings and peers.",
+  "Forward P/E": "The share price compared with forecast earnings per share. It reflects expectations and can change as estimates are updated.",
+  PEG: "The P/E ratio adjusted for expected earnings growth. It combines valuation and growth estimates, so it depends on forecast quality.",
+  EPS: "Earnings per share: the company's profit allocated to each outstanding share over the reported period.",
+  "Avg. Volume": "The average number of shares traded per day. Higher volume generally means more trading activity.",
+  "Dividend Yield": "Annual dividends as a percentage of the share price. The yield can change when the price or dividend changes.",
+  "52W Low": "The lowest share price recorded over the past 52 weeks.",
+  "52W High": "The highest share price recorded over the past 52 weeks.",
 };
 
 function toNumber(value: MetricValue | undefined) {
@@ -77,12 +96,16 @@ export function FundamentalsGrid({
   metrics,
   marketCap,
   currentPrice,
+  stockSymbol = "",
+  stockName = "",
   isEtf = false,
   show52WeekRange = false
 }: {
   metrics?: Record<string, MetricValue>;
   marketCap?: number;
   currentPrice: number;
+  stockSymbol?: string;
+  stockName?: string;
   isEtf?: boolean;
   show52WeekRange?: boolean;
 }) {
@@ -105,6 +128,14 @@ export function FundamentalsGrid({
   const high52 = toNumber(metrics?.["52WeekHigh"]);
   const low52 = toNumber(metrics?.["52WeekLow"]);
   const volume = toNumber(metrics?.["10DayAverageTradingVolume"]);
+  const [selectedIndicator, setSelectedIndicator] = useState<FundamentalItem | null>(null);
+
+  function askWarrentAboutIndicator(item: FundamentalItem) {
+    const company = stockName || stockSymbol || "this stock";
+    const prompt = `What has been happening lately with ${item.label} for ${company}${stockSymbol ? ` (${stockSymbol})` : ""}? The current reading is ${item.value}. Explain what this indicator is showing, recent relevant changes and likely drivers, and how it relates to the stock's recent performance. Keep it concise.`;
+    setSelectedIndicator(null);
+    window.dispatchEvent(new CustomEvent("warrent-ask-indicator", { detail: { symbol: stockSymbol, prompt } }));
+  }
 
   const items: FundamentalItem[] = [
     {
@@ -172,17 +203,18 @@ export function FundamentalsGrid({
         {indicatorGroups.map((group, groupIndex) => (
           <div key={groupIndex} className="grid grid-cols-2 gap-x-4 gap-y-2">
             {group.map((item) => (
-              <div key={item.label} className="min-w-0 py-4">
-                <div className="mb-2 flex items-center gap-1.5">
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${
-                    item.tone === "positive" ? "bg-positive" :
-                    item.tone === "negative" ? "bg-negative" :
-                    "bg-text-muted/40"
-                  }`} />
-                  <p className="truncate text-xs uppercase tracking-[0.12em] text-text-muted">{item.label}</p>
-                </div>
-                <p className="text-xl font-semibold text-text-primary"><WheelPrice value={item.value} size="md" compact /></p>
-              </div>
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => setSelectedIndicator(item)}
+                className="indicator-data-pill min-w-0 w-full rounded-full border-2 px-4 py-3 text-left transition-transform active:scale-[0.98]"
+                aria-label={`${item.label}: ${item.value}. Open explanation`}
+              >
+                <span className="indicator-data-pill__label block truncate text-xs uppercase tracking-[0.12em]">{item.label}</span>
+                <span className="indicator-data-pill__value mt-1 block text-xl font-semibold">
+                  <WheelPrice value={item.value} size="md" compact colorClass="indicator-data-pill__value" />
+                </span>
+              </button>
             ))}
           </div>
         ))}
@@ -228,6 +260,33 @@ export function FundamentalsGrid({
             );
           })()}
         </div>
+      )}
+      {selectedIndicator && typeof document !== "undefined" && createPortal(
+        <div
+          className="smoked-glass-backdrop fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
+          onClick={(event) => { if (event.target === event.currentTarget) setSelectedIndicator(null); }}
+        >
+          <div
+            className="indicator-detail-panel smoked-glass-surface w-full max-w-sm rounded-3xl border border-white/15 p-5 shadow-2xl"
+            style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">{selectedIndicator.label}</h2>
+              <GlossyIconButton aria-label="Close indicator details" onClick={() => setSelectedIndicator(null)}><GlossyCloseIcon /></GlossyIconButton>
+            </div>
+            <p className="mb-6 text-sm leading-6 text-text-muted">{INDICATOR_DESCRIPTIONS[selectedIndicator.label] ?? `${selectedIndicator.label} is a financial measure used to understand the company's performance or valuation.`}</p>
+            <button
+              type="button"
+              onClick={() => askWarrentAboutIndicator(selectedIndicator)}
+              className="h-11 w-full rounded-full bg-accent text-sm font-semibold text-on-accent"
+            >
+              Ask Warrent about {selectedIndicator.label}
+            </button>
+          </div>
+        </div>,
+        document.body
       )}
     </section>
   );
