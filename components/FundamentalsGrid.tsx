@@ -283,8 +283,8 @@ export function FundamentalsGrid({
               className="h-11 w-full rounded-full bg-accent text-sm font-semibold text-on-accent"
             >
               <span className="inline-flex items-center justify-center gap-2">
-                Ask Warrent about {selectedIndicator.label}
                 <OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-on-accent" />
+                Ask Warrent about {selectedIndicator.label}
               </span>
             </button>
           </div>
