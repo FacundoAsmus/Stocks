@@ -6,6 +6,15 @@
   --indicator-pill-body-mid: #0c0f11;
   --indicator-pill-body-end: #080a0c;
   --indicator-pill-fg: #ffffff;
+  --gf-sheen: rgba(255,255,255,0.045);
+  --gf-fill-top: #111416;
+  --gf-fill-bottom: #080a0c;
+  --gf-rim-1: rgba(255,255,255,0.16);
+  --gf-rim-2: rgba(255,255,255,0.02);
+  --gf-rim-3: rgba(255,255,255,0.13);
+  --gf-inner-hi: rgba(255,255,255,0.08);
+  --gf-inner-glow: rgba(0,0,0,0.18);
+  --gf-shadow: none;
   --AI_COLOR: #A855F6;
   --accent-rgb: 255 255 255;
   --volume-bar-neutral: rgba(255,255,255,0.16);
@@ -83,6 +92,15 @@ html.light-mode {
   --indicator-pill-body-mid: #f1f8ff;
   --indicator-pill-body-end: #daedfb;
   --indicator-pill-fg: #000000;
+  --gf-sheen: rgba(255,255,255,0.28);
+  --gf-fill-top: #feffff;
+  --gf-fill-bottom: #f5fafe;
+  --gf-rim-1: rgba(105,138,162,0.24);
+  --gf-rim-2: rgba(105,138,162,0.05);
+  --gf-rim-3: rgba(105,138,162,0.21);
+  --gf-inner-hi: rgba(255,255,255,0.16);
+  --gf-inner-glow: rgba(78,125,158,0.075);
+  --gf-shadow: none;
   --color-background: #ffffff;
   --color-panel: #f5f5f7;
   --color-panel-muted: #e8e8ed;
@@ -377,9 +395,20 @@ html.light-mode .chart-period-selector-glass {
   box-shadow: 0 24px 70px rgba(45, 73, 96, 0.13), 0 5px 18px rgba(45, 73, 96, 0.08), inset 0 0 18px rgba(78, 125, 158, 0.075), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 }
 
-.main-chart-period-selector,
 .main-chart-period-selector .chart-period-indicator {
   box-shadow: none !important;
+}
+
+.main-chart-period-selector,
+html.light-mode .main-chart-period-selector {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+  border-color: transparent !important;
+  background:
+    linear-gradient(180deg, var(--gf-sheen), rgba(255,255,255,0) 42%) padding-box,
+    linear-gradient(145deg, var(--gf-fill-top), var(--gf-fill-bottom)) padding-box,
+    linear-gradient(145deg, var(--gf-rim-1), var(--gf-rim-2) 38%, var(--gf-rim-2) 62%, var(--gf-rim-3)) border-box;
+  box-shadow: inset 0 1px 0 var(--gf-inner-hi), inset 0 0 18px var(--gf-inner-glow), var(--gf-shadow) !important;
 }
 
 .watchlist-change-badge.is-positive {
