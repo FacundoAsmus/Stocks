@@ -293,7 +293,7 @@ export function FundamentalsGrid({
             >
               <span className="inline-flex items-center justify-center gap-2" style={{ color: "var(--AI_COLOR)" }}>
                 <OptionalSvgIcon name="ai" className="h-5 w-5" color="var(--AI_COLOR)" />
-                Ask Warrent about {selectedIndicator.label}
+                Ask Warrent
               </span>
             </button>
           </div>

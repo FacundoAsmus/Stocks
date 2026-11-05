@@ -1541,9 +1541,11 @@ export function PriceChart({
         }}
         onClick={(event) => {
           const clickTarget = event.target as Element;
-          if (clickTarget.closest("[data-drawing-hit]")) return;
-          const targetButton = clickTarget.closest("button");
-          if (targetButton && !targetButton.hasAttribute("data-drawing-preview")) return;
+          if (!anyDrawingPlacementActive) {
+            if (clickTarget.closest("[data-drawing-hit]")) return;
+            const targetButton = clickTarget.closest("button");
+            if (targetButton && !targetButton.hasAttribute("data-drawing-preview")) return;
+          }
           if (squarePlacementActive) {
             const bounds = event.currentTarget.getBoundingClientRect();
             const point = {
@@ -1799,8 +1801,8 @@ export function PriceChart({
               const selected = selectedManualVerticalId === line.id;
               return <g key={line.id}>
                 <line x1={x} y1="8" x2={x} y2={bounds.height} stroke="#ffffff" strokeWidth={selected ? 1.5 : 1} strokeDasharray="8 6" pointerEvents="none" />
-                <line data-drawing-hit="true" role="button" tabIndex={0} aria-label={selected ? "Selected vertical line; press Delete to remove" : "Select vertical line; press Delete to remove"}
-                  x1={x} y1="8" x2={x} y2={bounds.height} stroke="transparent" strokeWidth={14} pointerEvents="stroke"
+                <line data-drawing-hit="true" role="button" tabIndex={anyDrawingPlacementActive ? -1 : 0} aria-label={selected ? "Selected vertical line; press Delete to remove" : "Select vertical line; press Delete to remove"}
+                  x1={x} y1="8" x2={x} y2={bounds.height} stroke="transparent" strokeWidth={14} pointerEvents={anyDrawingPlacementActive ? "none" : "stroke"}
                   onClick={(event) => {
                     event.stopPropagation();
                     setSelectedManualVerticalId(line.id);
@@ -1834,8 +1836,8 @@ export function PriceChart({
               const selected = selectedManualDiagonalId === diagonal.id;
               return <g key={diagonal.id}>
                 <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#ffffff" strokeWidth={selected ? 1.5 : 1} strokeDasharray="8 6" pointerEvents="none" />
-                <line data-drawing-hit="true" role="button" tabIndex={0} aria-label={selected ? "Selected diagonal line; press Delete to remove" : "Select diagonal line; press Delete to remove"}
-                  x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="transparent" strokeWidth={14} pointerEvents="stroke"
+                <line data-drawing-hit="true" role="button" tabIndex={anyDrawingPlacementActive ? -1 : 0} aria-label={selected ? "Selected diagonal line; press Delete to remove" : "Select diagonal line; press Delete to remove"}
+                  x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="transparent" strokeWidth={14} pointerEvents={anyDrawingPlacementActive ? "none" : "stroke"}
                   onClick={(event) => {
                     event.stopPropagation();
                     setSelectedManualDiagonalId(diagonal.id);
@@ -1884,6 +1886,7 @@ export function PriceChart({
                     backgroundSize: "auto 1px",
                     backgroundPosition: "center",
                     backgroundRepeat: "repeat-x",
+                    pointerEvents: anyDrawingPlacementActive ? "none" : "auto",
                   }}
                 />
               </div>
@@ -1928,6 +1931,7 @@ export function PriceChart({
                 height: `${((bottom - top) / bounds.height) * 100}%`,
                 ...getDrawingAreaStyle(square.trend, "#ffffff"),
                 appearance: "none",
+                pointerEvents: anyDrawingPlacementActive ? "none" : "auto",
               }}
             />;
           })}
