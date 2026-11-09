@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Send, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AIStarLoader } from "@/components/AIStarLoader";
+import { AIFormattedText } from "@/components/AIFormattedText";
 import type { StockDetail } from "@/types/stock";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
@@ -53,6 +54,9 @@ function buildStockContext(
   return `Your name is Warrent. You are an AI financial analyst assistant embedded in a stock research app. If asked your name, say Warrent. You are viewing the individual stock page for ${stock.profile.name ?? stock.symbol} (${stock.symbol}).
 
 Be concise, professional, and non-personal. Do not give personal investment advice. Use the data below to answer questions accurately. Be intuitive and clear: answer directly first, explain unfamiliar financial terms in plain language, and connect figures to what they mean. Use short, complete sentences and avoid unexplained jargon or unnecessary detail.
+
+ANSWER FORMAT: For substantive answers, start with a short Markdown title using `#`, then use brief `##` section headings and concise `-` bullet points to organize the key takeaways. Lead with the direct answer. Keep the structure compact and use only sections that add clarity. For greetings or simple clarifications, answer naturally without forcing sections.
+COLOR TAGS: Wrap the current stock's company name in [[company]]...[[/company]] (bold). Wrap other companies in [[peer]]...[[/peer]] (comparison orange). Wrap people's names in [[person]]...[[/person]] (yellow). Wrap product or technology names, including AI when mentioned as a product or technology, in [[product]]...[[/product]] (light blue). Color only an explicit upward stock-price move with [[+]]...[[/+]] and only an explicit downward stock-price move with [[-]]...[[/-]]; don't color unrelated financial values. In comparison questions, the primary stock is [[company]] and the other stock is [[peer]]. Keep tags balanced and don't nest them.
 
 STOCK DATA:
 - Company: ${stock.profile.name ?? stock.symbol} (${stock.symbol})
@@ -278,7 +282,7 @@ export function StockAIChat(props: StockAIChatProps) {
                         boxShadow: m.role === "model" ? "0 0 12px color-mix(in srgb, var(--AI_COLOR) 48%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 70%, transparent), 0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" : "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)"
                       }}
                     >
-                      {m.text}
+                      {m.role === "model" ? <AIFormattedText text={m.text} /> : m.text}
                     </div>
                   </div>
                 ))}

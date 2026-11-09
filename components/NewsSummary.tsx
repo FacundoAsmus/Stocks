@@ -7,20 +7,22 @@ import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 
 type SummaryState = { status: "loading" } | { status: "ready"; text: string } | { status: "error" };
 
-type SummaryPart = { text: string; format: "plain" | "company" | "peer" | "positive" | "negative" };
+type SummaryPart = { text: string; format: "plain" | "company" | "peer" | "person" | "product" | "positive" | "negative" };
 
 function NewsSummaryText({ text }: { text: string }) {
   const parts = useMemo(() => {
     const result: SummaryPart[] = [];
-    const pattern = /\[\[company\]\]([\s\S]*?)\[\[\/company\]\]|\[\[peer\]\]([\s\S]*?)\[\[\/peer\]\]|\[\[\+\]\]([\s\S]*?)\[\[\/\+\]\]|\[\[\-\]\]([\s\S]*?)\[\[\/\-\]\]/g;
+    const pattern = /\[\[company\]\]([\s\S]*?)\[\[\/company\]\]|\[\[peer\]\]([\s\S]*?)\[\[\/peer\]\]|\[\[person\]\]([\s\S]*?)\[\[\/person\]\]|\[\[product\]\]([\s\S]*?)\[\[\/product\]\]|\[\[\+\]\]([\s\S]*?)\[\[\/\+\]\]|\[\[\-\]\]([\s\S]*?)\[\[\/\-\]\]/g;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(text)) !== null) {
       if (match.index > lastIndex) result.push({ text: text.slice(lastIndex, match.index), format: "plain" });
       if (match[1] !== undefined) result.push({ text: match[1], format: "company" });
       else if (match[2] !== undefined) result.push({ text: match[2], format: "peer" });
-      else if (match[3] !== undefined) result.push({ text: match[3], format: "positive" });
-      else result.push({ text: match[4] ?? "", format: "negative" });
+      else if (match[3] !== undefined) result.push({ text: match[3], format: "person" });
+      else if (match[4] !== undefined) result.push({ text: match[4], format: "product" });
+      else if (match[5] !== undefined) result.push({ text: match[5], format: "positive" });
+      else result.push({ text: match[6] ?? "", format: "negative" });
       lastIndex = match.index + match[0].length;
     }
     if (lastIndex < text.length) result.push({ text: text.slice(lastIndex), format: "plain" });
@@ -55,11 +57,15 @@ function NewsSummaryText({ text }: { text: string }) {
           ? { fontWeight: 700 }
           : part.format === "peer"
             ? { color: "#f97316", fontWeight: 600 }
-            : part.format === "positive"
-              ? { color: "var(--color-positive)", fontWeight: 600 }
-              : part.format === "negative"
-                ? { color: "var(--color-negative)", fontWeight: 600 }
-                : undefined;
+            : part.format === "person"
+              ? { color: "#facc15", fontWeight: 600 }
+              : part.format === "product"
+                ? { color: "#7dd3fc", fontWeight: 600 }
+                : part.format === "positive"
+                  ? { color: "var(--color-positive)", fontWeight: 600 }
+                  : part.format === "negative"
+                    ? { color: "var(--color-negative)", fontWeight: 600 }
+                    : undefined;
         return <span key={index} style={style}>{visibleText}</span>;
       })}
       {!complete && <span aria-hidden className="ml-0.5 inline-block h-[1em] w-[2px] align-[-0.12em] rounded-sm bg-positive" style={{ boxShadow: "0 0 6px 2px rgba(0,200,5,0.7)", animation: "description-cursor .7s ease-in-out infinite" }} />}
@@ -75,7 +81,7 @@ export function NewsSummary({ symbol, companyName, articles }: { symbol: string;
   useEffect(() => {
     if (!articles.length) return;
     const controller = new AbortController();
-    const cacheKey = `market-lens-news-summary-v2:${symbol}:${articles.map(article => article.id).join(",")}`;
+    const cacheKey = `market-lens-news-summary-v3:${symbol}:${articles.map(article => article.id).join(",")}`;
     const cached = window.sessionStorage.getItem(cacheKey);
     if (cached) {
       setState({ status: "ready", text: cached });

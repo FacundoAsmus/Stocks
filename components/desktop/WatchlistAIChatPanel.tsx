@@ -12,6 +12,7 @@ import { requestAIChat } from "@/lib/aiChatRequest";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { cn } from "@/lib/utils";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
+import { AIFormattedText } from "@/components/AIFormattedText";
 import type { StockDetail } from "@/types/stock";
 
 interface Message { role: "user" | "model"; text: string; animating?: boolean }
@@ -66,7 +67,7 @@ function AIMessageContent({ text, stock, animating }: { text: string; stock: Sto
 
   return <>
     {arranged.map((part, index) => part.type === "text" ? (
-      <span key={`text-${index}`}>{part.value}</span>
+      <span key={`text-${index}`} className="block"><AIFormattedText text={part.value} /></span>
     ) : part.type === "news-row" ? (
       <span key={`news-row-${index}`} className="my-2 grid w-full min-w-[240px] max-w-[400px] grid-cols-2 gap-2">
         {part.indexes.map(newsIndex => stock.news[newsIndex] ? (

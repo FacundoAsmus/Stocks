@@ -12,6 +12,7 @@ import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 import { requestAIChat } from "@/lib/aiChatRequest";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
+import { AIFormattedText } from "@/components/AIFormattedText";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { WheelPrice, tooltipLabel } from "@/components/PriceChart";
 import { COMPARISON_COLORS, mergeComparisonCandles, type ComparisonRow } from "@/components/desktop/ComparisonPriceChart";
@@ -32,33 +33,6 @@ interface GraphCtx {
     metrics: Record<string, number | string | null> | undefined;
   };
   isLightMode: boolean;
-}
-
-// Split AI text on [[+]]positive[[/+]] and [[-]]negative[[/-]] tags and render coloured spans
-function ColorizedText({ text }: { text: string }) {
-  const parts: { str: string; type: "neutral" | "pos" | "neg" }[] = [];
-  const regex = /(\[\[\+\]\])([\s\S]*?)(\[\[\/\+\]\])|(\[\[-\]\])(.*?)(\[\[\/-\]\])/g;
-  let last = 0, m: RegExpExecArray | null;
-  while ((m = regex.exec(text)) !== null) {
-    if (m.index > last) parts.push({ str: text.slice(last, m.index), type: "neutral" });
-    if (m[1]) parts.push({ str: m[2], type: "pos" });
-    else       parts.push({ str: m[5], type: "neg" });
-    last = m.index + m[0].length;
-  }
-  if (last < text.length) parts.push({ str: text.slice(last), type: "neutral" });
-  return (
-    <>
-      {parts.map((p, i) =>
-        p.type === "pos" ? (
-          <span key={i} style={{ color: "#00c805", fontWeight: 600 }}>{p.str}</span>
-        ) : p.type === "neg" ? (
-          <span key={i} style={{ color: "#ff3003", fontWeight: 600 }}>{p.str}</span>
-        ) : (
-          <span key={i}>{p.str}</span>
-        )
-      )}
-    </>
-  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1249,10 +1223,10 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
         const isLast = i === arranged.length - 1;
         if (seg.kind === "text") {
           return (
-            <span key={i}>
-              <ColorizedText text={seg.value} />
+            <div key={i} className="min-w-0">
+              <AIFormattedText text={seg.value} />
               {isLast && trailingCursor && <Cursor />}
-            </span>
+            </div>
           );
         }
         if (seg.kind === "pill") {
