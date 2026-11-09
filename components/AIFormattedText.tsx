@@ -25,15 +25,14 @@ function formatInline(text: string): InlinePart[] {
 
 function InlineText({ text }: { text: string }) {
   return <>{formatInline(text).map((part, index) => {
+    const isNumericPrice = /^(?=.*\d)[+\-−$€£¥\s\d,.%]+$/u.test(part.text);
     const style = part.format === "peer"
       ? { color: "#f97316", fontWeight: 600 }
       : part.format === "person"
         ? { color: "#facc15", fontWeight: 600 }
-        : part.format === "product"
-          ? { color: "#7dd3fc", fontWeight: 600 }
-          : part.format === "positive"
+        : part.format === "positive" && isNumericPrice
             ? { color: "var(--color-positive)", fontWeight: 600 }
-            : part.format === "negative"
+            : part.format === "negative" && isNumericPrice
               ? { color: "var(--color-negative)", fontWeight: 600 }
               : undefined;
     if (part.format === "company" || part.format === "bold") return <strong key={index}>{part.text}</strong>;

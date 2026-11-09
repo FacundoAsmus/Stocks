@@ -53,19 +53,18 @@ function NewsSummaryText({ text }: { text: string }) {
         const visibleText = part.text.slice(0, Math.max(0, Math.min(part.text.length, remaining)));
         remaining -= part.text.length;
         if (!visibleText) return null;
+        const isNumericPrice = /^(?=.*\d)[+\-−$€£¥\s\d,.%]+$/u.test(part.text);
         const style = part.format === "company"
           ? { fontWeight: 700 }
           : part.format === "peer"
             ? { color: "#f97316", fontWeight: 600 }
             : part.format === "person"
               ? { color: "#facc15", fontWeight: 600 }
-              : part.format === "product"
-                ? { color: "#7dd3fc", fontWeight: 600 }
-                : part.format === "positive"
-                  ? { color: "var(--color-positive)", fontWeight: 600 }
-                  : part.format === "negative"
-                    ? { color: "var(--color-negative)", fontWeight: 600 }
-                    : undefined;
+              : part.format === "positive" && isNumericPrice
+                ? { color: "var(--color-positive)", fontWeight: 600 }
+                : part.format === "negative" && isNumericPrice
+                  ? { color: "var(--color-negative)", fontWeight: 600 }
+                  : undefined;
         return <span key={index} style={style}>{visibleText}</span>;
       })}
       {!complete && <span aria-hidden className="ml-0.5 inline-block h-[1em] w-[2px] align-[-0.12em] rounded-sm bg-positive" style={{ boxShadow: "0 0 6px 2px rgba(0,200,5,0.7)", animation: "description-cursor .7s ease-in-out infinite" }} />}
@@ -81,7 +80,7 @@ export function NewsSummary({ symbol, companyName, articles }: { symbol: string;
   useEffect(() => {
     if (!articles.length) return;
     const controller = new AbortController();
-    const cacheKey = `market-lens-news-summary-v3:${symbol}:${articles.map(article => article.id).join(",")}`;
+    const cacheKey = `market-lens-news-summary-v4:${symbol}:${articles.map(article => article.id).join(",")}`;
     const cached = window.sessionStorage.getItem(cacheKey);
     if (cached) {
       setState({ status: "ready", text: cached });
