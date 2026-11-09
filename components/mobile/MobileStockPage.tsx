@@ -288,9 +288,9 @@ export function MobileStockPage(props: MobileStockPageProps) {
 
           {(stock.news.length > 0 || stock.newsUnavailable) && (
             <section className="px-3">
-              <p className="-ml-3 mb-1 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-accent"><OptionalSvgIcon name="news" className="h-5 w-5" />News</p>
+              <p className="-ml-3 mb-1 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="news" className="h-5 w-5" />News</p>
               {stock.newsUnavailable ? <AIUnavailableNotice /> : <>
-                <NewsSummary symbol={stock.symbol} articles={stock.news} />
+                <NewsSummary symbol={stock.symbol} companyName={stock.profile.name ?? stock.symbol} articles={stock.news} />
                 <div className="no-scrollbar -mx-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-2 pb-2">
                   {stock.news.slice(0, 8).map(article => (
                     <div key={article.id} className="w-[38vw] max-w-[140px] shrink-0 snap-start">

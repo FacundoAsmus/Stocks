@@ -131,7 +131,7 @@ export function DesktopStockDetail({
               <p className="-ml-5 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="news" className="h-5 w-5" />News</p>
             </div>
           </div>
-          {stock.newsUnavailable ? <AIUnavailableNotice /> : stock.news.length > 0 && <NewsSummary symbol={stock.symbol} articles={stock.news} />}
+          {stock.newsUnavailable ? <AIUnavailableNotice /> : stock.news.length > 0 && <NewsSummary symbol={stock.symbol} companyName={stock.profile.name ?? stock.symbol} articles={stock.news} />}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {stock.news.length ? (
               stock.news.map((article) => <NewsCard key={article.id} article={article} />)

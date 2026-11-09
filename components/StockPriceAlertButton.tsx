@@ -84,7 +84,7 @@ export function StockPriceAlertButton({ symbol, name, currentPrice, mobile = fal
           <div className="mb-5 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <OptionalSvgIcon name="alerts" className="h-6 w-6" colorClassName="text-accent" />
-              <h2 className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Alerts</h2>
+              <h2 className="text-3xl font-semibold tracking-normal text-text-primary">Alerts</h2>
             </div>
             <GlossyIconButton aria-label="Close alerts" onClick={closeAlert}><GlossyCloseIcon /></GlossyIconButton>
           </div>
