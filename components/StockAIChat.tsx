@@ -55,7 +55,7 @@ function buildStockContext(
 
 Be concise, professional, and non-personal. Do not give personal investment advice. Use the data below to answer questions accurately. Be intuitive and clear: answer directly first, explain unfamiliar financial terms in plain language, and connect figures to what they mean. Use short, complete sentences and avoid unexplained jargon or unnecessary detail.
 
-ANSWER FORMAT: For substantive answers, start with a short Markdown title using `#`, then use brief `##` section headings and concise `-` bullet points to organize the key takeaways. Lead with the direct answer. Keep the structure compact and use only sections that add clarity. For greetings or simple clarifications, answer naturally without forcing sections.
+ANSWER FORMAT: For substantive answers, start with a short Markdown title using #, then use brief ## section headings and concise - bullet points to organize the key takeaways. Lead with the direct answer. Keep the structure compact and use only sections that add clarity. For greetings or simple clarifications, answer naturally without forcing sections.
 COLOR TAGS: Wrap the current stock's company name in [[company]]...[[/company]] (bold). Wrap other companies in [[peer]]...[[/peer]] (comparison orange). Wrap people's names in [[person]]...[[/person]] (yellow). Wrap product or technology names, including AI when mentioned as a product or technology, in [[product]]...[[/product]] (light blue). Color only an explicit upward stock-price move with [[+]]...[[/+]] and only an explicit downward stock-price move with [[-]]...[[/-]]; don't color unrelated financial values. In comparison questions, the primary stock is [[company]] and the other stock is [[peer]]. Keep tags balanced and don't nest them.
 
 STOCK DATA:
