@@ -292,7 +292,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => { setSelectedSymbol(null); setDetail(null); setDetailError(null); setActiveGroup(group.id); }}
-                  className={cn("desktop-alert-glass desktop-alert-glass-list-item market-heatmap-list-item mx-0.5 my-0.5 flex w-[calc(100%-0.25rem)] items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left transition-[filter,border-color,transform,box-shadow] select-none hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0", isActive && "is-selected")}
+                  className={cn("desktop-alert-glass desktop-alert-glass-list-item market-heatmap-list-item mx-0.5 my-0.5 flex w-[calc(100%-0.25rem)] items-center gap-3 rounded-3xl border-2 px-4 py-3.5 text-left transition-[filter,border-color,transform,box-shadow] select-none hover:-translate-y-0.5 hover:brightness-110 active:translate-y-0", isActive && "is-selected")}
                 >
                   <OptionalSvgIcon name={group.id} selected={isActive} fallbackToBaseWhenSelected className={group.id === "semiconductors" ? "h-6 w-6" : "h-8 w-8"} colorClassName="text-accent" />
                   <span className="min-w-0 flex-1">

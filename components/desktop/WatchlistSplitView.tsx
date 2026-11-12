@@ -109,7 +109,7 @@ function WatchlistListRow({
     <div
       onClick={onSelect}
       className={cn(
-        "desktop-alert-glass desktop-alert-glass-list-item flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3.5 transition-[filter,border-color,box-shadow] select-none",
+        "desktop-alert-glass desktop-alert-glass-list-item flex cursor-pointer items-center gap-3 rounded-3xl border-2 px-4 py-3.5 transition-[filter,border-color,box-shadow] select-none",
         isDragging
           ? `is-lifted brightness-125 ${isActive ? "is-selected" : ""}`
           : isActive ? "is-selected brightness-105 hover:brightness-110" : "hover:brightness-110"
@@ -183,7 +183,7 @@ function DesktopWatchlistSkeleton() {
         </div>
         <div className="flex-1 space-y-3 overflow-hidden px-3 pb-4">
           {Array.from({ length: 7 }, (_, index) => (
-            <div key={index} className="flex items-center gap-3 rounded-xl border-2 border-transparent px-4 py-3.5">
+            <div key={index} className="flex items-center gap-3 rounded-3xl border-2 border-transparent px-4 py-3.5">
               <div className="h-9 w-9 shrink-0 animate-pulse rounded-3xl bg-panel-muted" />
               <div className="min-w-0 flex-1 space-y-2">
                 <div className="h-3 w-16 animate-pulse rounded-full bg-panel-muted" />

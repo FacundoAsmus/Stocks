@@ -123,7 +123,7 @@ function MobileWatchlistSkeleton() {
       </div>
       <div>
         {Array.from({ length: 8 }, (_, index) => (
-          <div key={index} className="flex h-[68px] items-center gap-3 border-b border-border-subtle/70 bg-black px-4 py-3.5">
+          <div key={index} className="flex h-[68px] items-center gap-3 rounded-3xl border-b border-border-subtle/70 bg-black px-4 py-3.5">
             <div className="flex min-w-0 flex-1 basis-0 items-center gap-3">
               <div className="h-9 w-9 shrink-0 rounded-full bg-panel-muted" />
               <div className="h-4 min-w-0 flex-1 rounded-full bg-panel-muted" />
@@ -320,7 +320,7 @@ function WatchlistRow({
       layout="position"
       initial={false}
       animate={isRemoving ? { height: 0, opacity: 0, scale: 0.96, marginTop: 0, marginBottom: 0 } : { height: "auto", opacity: 1, scale: 1 }}
-      className="relative overflow-hidden rounded-2xl border-b border-border-subtle/70 last:border-0 bg-black select-none"
+      className="relative overflow-hidden rounded-3xl border-b border-border-subtle/70 last:border-0 bg-black select-none"
       whileDrag={{
         scale: 1.03,
         boxShadow: "0 16px 40px rgba(0,0,0,0.55)",
@@ -524,7 +524,7 @@ export function MobileWatchlist() {
           axis="y"
           values={orderedStocks.map((s) => s.symbol)}
           onReorder={handleReorder}
-          className="mx-2 mt-[0.95rem] rounded-xl bg-black"
+          className="mx-2 mt-[0.95rem] rounded-3xl bg-black"
         >
           {orderedStocks.map((stock) => (
             <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} isRemoving={removingSymbols.has(stock.symbol)} />
