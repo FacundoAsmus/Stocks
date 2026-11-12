@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { TextRevealCaret } from "@/components/TextReveal";
 
 type InlineFormat = "plain" | "company" | "peer" | "person" | "product" | "positive" | "negative" | "bold";
 type InlinePart = { text: string; format: InlineFormat };
@@ -43,7 +44,7 @@ function InlineText({ text }: { text: string }) {
 type Block = { kind: "title" | "heading" | "paragraph" | "bullets"; lines: string[] };
 
 /** Renders the small Markdown subset requested by the AI prompt plus inline color tags. */
-export function AIFormattedText({ text }: { text: string }) {
+export function AIFormattedText({ text, trailingCursor = false }: { text: string; trailingCursor?: boolean }) {
   const blocks: Block[] = [];
   let paragraph: string[] = [];
   let bullets: string[] = [];
@@ -82,13 +83,16 @@ export function AIFormattedText({ text }: { text: string }) {
   }
   flushParagraph(); flushBullets();
 
+  if (!blocks.length) return trailingCursor ? <span><TextRevealCaret /></span> : null;
+
   return <div className="space-y-2">
     {blocks.map((block, index) => {
+      const isLastBlock = index === blocks.length - 1;
       const content = block.lines.map((line, lineIndex) => <Fragment key={lineIndex}><InlineText text={line} />{lineIndex < block.lines.length - 1 ? " " : null}</Fragment>);
-      if (block.kind === "title") return <h3 key={index} className="text-base font-bold leading-snug">{content}</h3>;
-      if (block.kind === "heading") return <h4 key={index} className="pt-1 text-sm font-semibold leading-snug">{content}</h4>;
-      if (block.kind === "bullets") return <ul key={index} className="list-disc space-y-1 pl-5">{block.lines.map((line, lineIndex) => <li key={lineIndex}><InlineText text={line} /></li>)}</ul>;
-      return <p key={index} className="leading-relaxed">{content}</p>;
+      if (block.kind === "title") return <h3 key={index} className="text-base font-bold leading-snug">{content}{isLastBlock && trailingCursor && <TextRevealCaret />}</h3>;
+      if (block.kind === "heading") return <h4 key={index} className="pt-1 text-sm font-semibold leading-snug">{content}{isLastBlock && trailingCursor && <TextRevealCaret />}</h4>;
+      if (block.kind === "bullets") return <ul key={index} className="list-disc space-y-1 pl-5">{block.lines.map((line, lineIndex) => <li key={lineIndex}><InlineText text={line} />{isLastBlock && lineIndex === block.lines.length - 1 && trailingCursor && <TextRevealCaret />}</li>)}</ul>;
+      return <p key={index} className="leading-relaxed">{content}{isLastBlock && trailingCursor && <TextRevealCaret />}</p>;
     })}
   </div>;
 }

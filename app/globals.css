@@ -30,6 +30,23 @@
   --ai-fringe-opacity: 0.9;
 }
 
+.text-reveal-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--AI_COLOR);
+  border-radius: 1px;
+  box-shadow: 0 0 6px 2px color-mix(in srgb, var(--AI_COLOR) 70%, transparent);
+  animation: shared-text-caret 0.7s ease-in-out infinite;
+}
+
+@keyframes shared-text-caret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 .market-icon-frame { background-color: #000000 !important; }
 html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
 

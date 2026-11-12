@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { TextRevealCaret, useTypingReveal } from "@/components/TextReveal";
 import type { CompanyNewsArticle } from "@/types/stock";
 import { AISummaryLoader } from "@/components/CompanyDescription";
 import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
@@ -29,22 +30,7 @@ function NewsSummaryText({ text }: { text: string }) {
     return result;
   }, [text]);
   const totalLength = parts.reduce((sum, part) => sum + part.text.length, 0);
-  const [visibleLength, setVisibleLength] = useState(0);
-  const complete = visibleLength >= totalLength;
-
-  useEffect(() => {
-    setVisibleLength(0);
-    const timer = window.setInterval(() => {
-      setVisibleLength(length => {
-        if (length >= totalLength) {
-          window.clearInterval(timer);
-          return length;
-        }
-        return Math.min(totalLength, length + 1);
-      });
-    }, 7);
-    return () => window.clearInterval(timer);
-  }, [text, totalLength]);
+  const { visibleLength, complete } = useTypingReveal(totalLength, text, 6);
 
   let remaining = visibleLength;
   return (
@@ -67,8 +53,7 @@ function NewsSummaryText({ text }: { text: string }) {
                   : undefined;
         return <span key={index} style={style}>{visibleText}</span>;
       })}
-      {!complete && <span aria-hidden className="ml-0.5 inline-block h-[1em] w-[2px] align-[-0.12em] rounded-sm bg-positive" style={{ boxShadow: "0 0 6px 2px rgba(0,200,5,0.7)", animation: "description-cursor .7s ease-in-out infinite" }} />}
-      <style>{`@keyframes description-fade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } } @keyframes description-cursor { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }`}</style>
+      {!complete && <TextRevealCaret />}
     </p>
   );
 }

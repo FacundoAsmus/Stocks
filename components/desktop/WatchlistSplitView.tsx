@@ -125,15 +125,8 @@ function WatchlistListRow({
       <div className="pointer-events-none">
         <RowSparkline stock={stock} />
       </div>
-      <span className="ml-1 shrink-0 pointer-events-none">
-        <span
-          className={cn(
-            "watchlist-change-badge inline-block rounded-3xl px-3 py-1 text-sm font-bold text-black",
-            isPos ? "is-positive bg-positive" : "is-negative bg-negative"
-          )}
-        >
-          <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass="text-black" compact />
-        </span>
+      <span className={cn("ml-1 shrink-0 pointer-events-none text-sm font-bold", isPos ? "text-positive" : "text-negative")}>
+        <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass={isPos ? "text-positive" : "text-negative"} compact />
       </span>
     </div>
   );

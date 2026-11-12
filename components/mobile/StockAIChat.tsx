@@ -13,6 +13,7 @@ import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 import { requestAIChat } from "@/lib/aiChatRequest";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import { AIFormattedText } from "@/components/AIFormattedText";
+import { TextRevealCaret, useTypingReveal } from "@/components/TextReveal";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { WheelPrice, tooltipLabel } from "@/components/PriceChart";
 import { COMPARISON_COLORS, mergeComparisonCandles, type ComparisonRow } from "@/components/desktop/ComparisonPriceChart";
@@ -1179,27 +1180,11 @@ function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; an
   }
 }
 
-function Cursor() {
-  return (
-    <span style={{
-      display: "inline-block",
-      width: "2px",
-      height: "1em",
-      marginLeft: "2px",
-      verticalAlign: "text-bottom",
-      backgroundColor: "var(--AI_COLOR)",
-      borderRadius: "1px",
-      boxShadow: "0 0 6px 2px color-mix(in srgb, var(--AI_COLOR) 70%, transparent)",
-      animation: "aiCursor 0.7s ease-in-out infinite",
-    }} />
-  );
-}
-
 // Renders a parsed message: text runs flow normally, pills/graphs each get
 // their own block so any text written after them appears underneath.
 function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[]; ctx: GraphCtx; trailingCursor: boolean }) {
   const cleaned = segments.filter(s => s.kind !== "text" || s.value.length > 0);
-  if (cleaned.length === 0) return trailingCursor ? <Cursor /> : null;
+  if (cleaned.length === 0) return trailingCursor ? <TextRevealCaret /> : null;
   const arranged: Array<Segment | { kind: "news-row"; indexes: number[] }> = [];
   for (let index = 0; index < cleaned.length; index += 1) {
     const segment = cleaned[index];
@@ -1224,8 +1209,7 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
         if (seg.kind === "text") {
           return (
             <div key={i} className="min-w-0">
-              <AIFormattedText text={seg.value} />
-              {isLast && trailingCursor && <Cursor />}
+              <AIFormattedText text={seg.value} trailingCursor={isLast && trailingCursor} />
             </div>
           );
         }
@@ -1233,7 +1217,7 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
           return (
             <div key={i}>
               <DataPill dataKey={seg.key} ctx={ctx} />
-              {isLast && trailingCursor && <Cursor />}
+              {isLast && trailingCursor && <TextRevealCaret />}
             </div>
           );
         }
@@ -1241,7 +1225,7 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
           return (
             <div key={i} className="my-2 grid w-full min-w-[240px] max-w-[400px] grid-cols-2 gap-2">
               {seg.indexes.map(index => <NewsCard key={index} index={index} ctx={ctx} />)}
-              {isLast && trailingCursor && <Cursor />}
+              {isLast && trailingCursor && <TextRevealCaret />}
             </div>
           );
         }
@@ -1249,14 +1233,14 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
           return (
             <div key={i}>
               <NewsCard index={seg.index} ctx={ctx} />
-              {isLast && trailingCursor && <Cursor />}
+              {isLast && trailingCursor && <TextRevealCaret />}
             </div>
           );
         }
         return (
           <div key={i}>
             <GraphWidget graphType={seg.graphType} annotations={seg.annotations} ctx={ctx} />
-            {isLast && trailingCursor && <Cursor />}
+            {isLast && trailingCursor && <TextRevealCaret />}
           </div>
         );
       })}
@@ -1559,20 +1543,12 @@ function buildStockContext(
 // Widget tags ([[data:...]] / [[graph:...]]) only render once they've fully
 // streamed in, then hold steady while the rest of the message keeps typing.
 function AnimatedMessageBody({ text, ctx, onDone }: { text: string; ctx: GraphCtx; onDone: () => void }) {
-  const [count, setCount] = useState(0);
-  const isDone = count >= text.length;
-
+  const { visibleLength: count, complete: isDone } = useTypingReveal(text.length, text, 6);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
   useEffect(() => {
-    setCount(0);
-    const iv = setInterval(() => {
-      setCount(c => {
-        if (c >= text.length) { clearInterval(iv); onDone(); return c; }
-        return c + 1;
-      });
-    }, 6);
-    return () => clearInterval(iv);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text]);
+    if (isDone) onDoneRef.current();
+  }, [isDone]);
 
   const slice = text.slice(0, count);
   const segments = parseSegments(slice);
@@ -2141,10 +2117,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       )}
 
       <style>{`
-        @keyframes aiCursor {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0; }
-        }
         @keyframes graphShimmer {
           0%   { transform: translateX(-120%); }
           100% { transform: translateX(220%); }

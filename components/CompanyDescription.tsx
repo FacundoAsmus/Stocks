@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { TextRevealCaret, useTypingReveal } from "@/components/TextReveal";
 import { AIStarLoader } from "@/components/AIStarLoader";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
@@ -19,35 +20,12 @@ export function AISummaryLoader() {
 }
 
 export function AISummaryText({ text }: { text: string }) {
-  const [visibleLength, setVisibleLength] = useState(0);
-  const complete = visibleLength >= text.length;
-
-  useEffect(() => {
-    setVisibleLength(0);
-    const timer = window.setInterval(() => {
-      setVisibleLength((length) => {
-        if (length >= text.length) {
-          window.clearInterval(timer);
-          return length;
-        }
-        return length + 1;
-      });
-    }, 7);
-    return () => window.clearInterval(timer);
-  }, [text]);
+  const { visibleLength, complete } = useTypingReveal(text.length, text, 6);
 
   return (
     <p className="animate-[description-fade_240ms_ease-out_both] text-[1.05rem] text-text-primary whitespace-pre-line">
-      <style>{`
-        @keyframes description-fade { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
-      `}</style>
       {text.slice(0, visibleLength)}
-      {!complete && (
-        <span
-          aria-hidden
-          className="ai-stream-cursor ml-0.5 inline-block h-[1em] w-[2px] align-[-0.12em] rounded-sm"
-        />
-      )}
+      {!complete && <TextRevealCaret />}
     </p>
   );
 }

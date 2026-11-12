@@ -89,13 +89,8 @@ function RowContent({ stock }: { stock: StockSummary }) {
       </div>
       <MiniSparkline stock={stock} />
       <span className="flex min-w-0 flex-1 basis-0 justify-end pointer-events-none">
-        <span
-          className={cn(
-            "watchlist-change-badge inline-block text-sm font-bold text-black px-3 py-1 rounded-3xl",
-            isPos ? "is-positive bg-positive" : "is-negative bg-negative"
-          )}
-        >
-          <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass="text-black" compact />
+        <span className={cn("text-sm font-bold", isPos ? "text-positive" : "text-negative")}>
+          <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass={isPos ? "text-positive" : "text-negative"} compact />
         </span>
       </span>
     </>
