@@ -236,11 +236,12 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
           aria-label={`Ask about ${stock.symbol}`}
           onClick={event => event.stopPropagation()}
         >
-          <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+          <div className="relative flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
             <span className="flex items-center gap-2 text-sm font-semibold text-text-primary">
               <Sparkles className="h-4 w-4 text-accent" />
               Ask about {stock.symbol}
             </span>
+            <span className="absolute left-1/2 -translate-x-1/2 text-sm font-bold text-[var(--AI_COLOR)]">Warrent</span>
             <GlossyIconButton aria-label="Close chat" onClick={() => setOpen(false)}><GlossyCloseIcon /></GlossyIconButton>
           </div>
 

@@ -1609,6 +1609,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   const [vp, setVp] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const scrollRef   = useRef<HTMLDivElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
+  const viewportOffsetWhileTyping = useRef<{ top: number; left: number } | null>(null);
   const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
   const welcomedStockRef = useRef<string | null>(null);
   const buildCurrentContext = async () => {
@@ -1697,7 +1698,12 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       }
       const vv = window.visualViewport;
       setVp(vv
-        ? { top: vv.offsetTop, left: vv.offsetLeft, width: vv.width, height: vv.height }
+        ? {
+            top: viewportOffsetWhileTyping.current?.top ?? vv.offsetTop,
+            left: viewportOffsetWhileTyping.current?.left ?? vv.offsetLeft,
+            width: vv.width,
+            height: vv.height,
+          }
         : { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight }
       );
     }
@@ -1714,12 +1720,10 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     // Only attach expensive visualViewport listeners on mobile
     if (window.innerWidth < 1024) {
       window.visualViewport?.addEventListener("resize", update);
-      window.visualViewport?.addEventListener("scroll", update);
     }
     window.addEventListener("resize", update);
     return () => {
       window.visualViewport?.removeEventListener("resize", update);
-      window.visualViewport?.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
     };
   }, [containerRef]);
@@ -1734,9 +1738,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     b.style.top      = `-${scrollY}px`;
     b.style.left     = "0";
     b.style.right    = "0";
-    const t = setTimeout(() => inputRef.current?.focus(), 340);
     return () => {
-      clearTimeout(t);
       b.style.overflow = b.style.position = b.style.top = b.style.left = b.style.right = "";
       window.scrollTo(0, scrollY);
     };
@@ -1857,6 +1859,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     <>
       {containerRef && <div
         aria-hidden="true"
+        className={open ? "smoked-glass-backdrop" : undefined}
         style={{
           position: "fixed", inset: 0, zIndex: 999,
           background: open ? "rgba(0,0,0,0.16)" : "transparent",
@@ -1864,7 +1867,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           WebkitBackdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
           pointerEvents: open ? "auto" : "none",
           opacity: open ? 1 : 0,
-          transition: "opacity 0.25s ease, backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
+          transition: "opacity 0.25s ease",
         }}
         onClick={handleDismiss}
       />}
@@ -1880,19 +1883,36 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         }}
       >
         <div
+          className={!isDesktop && open ? "smoked-glass-backdrop ai-chat-backdrop" : isDesktop && open ? "smoked-glass-backdrop" : undefined}
           style={{
             position: "absolute", inset: 0,
             zIndex: 0,
-            background: open && !containerRef ? "rgba(0,0,0,0.16)" : "transparent",
-            backdropFilter:       open && !containerRef ? "blur(12px) brightness(0.97)" : "none",
-            WebkitBackdropFilter: open && !containerRef ? "blur(12px) brightness(0.97)" : "none",
-            transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
+            background: open && isDesktop ? "rgba(0,0,0,0.16)" : "transparent",
+            backdropFilter: open ? isDesktop ? "blur(12px) brightness(0.97)" : "blur(12px)" : "none",
+            WebkitBackdropFilter: open ? isDesktop ? "blur(12px) brightness(0.97)" : "blur(12px)" : "none",
+            transition: "none",
             transform: "translateZ(0)",
             WebkitTransform: "translateZ(0)",
-            willChange: "backdrop-filter",
           }}
           onClick={handleDismiss}
         />
+
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            zIndex: 2,
+            top: "calc(env(safe-area-inset-top) + 0.5rem)",
+            left: 0,
+            right: 0,
+            textAlign: "center",
+            color: "var(--AI_COLOR)",
+            fontSize: 16,
+            fontWeight: 700,
+            lineHeight: 1.25,
+            pointerEvents: "none",
+          }}
+        >Warrent</div>
 
         {/* Messages occupy the full overlay. Padding reserves comfortable
             resting room for the app edge and input pill, but does not create
@@ -1918,7 +1938,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             justifyContent: "flex-start",
             minHeight: 0,
             gap: 12,
-            padding: "64px 14px 112px",
+            padding: "calc(env(safe-area-inset-top) + 3.5rem) 14px 112px",
           }}
           onClick={onEmptyAreaClick}
           onWheel={(event) => event.stopPropagation()}
@@ -2021,6 +2041,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         >
           <input
             ref={inputRef}
+            onFocus={() => { viewportOffsetWhileTyping.current = { top: vp.top, left: vp.left }; }}
+            onBlur={() => { viewportOffsetWhileTyping.current = null; }}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
@@ -2085,6 +2107,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           }}>
             <input
               ref={inputRef}
+              onFocus={() => { viewportOffsetWhileTyping.current = { top: vp.top, left: vp.left }; }}
+              onBlur={() => { viewportOffsetWhileTyping.current = null; }}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
