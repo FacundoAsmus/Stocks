@@ -217,8 +217,8 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
     {mounted && open && createPortal(
       <>
         <div
-          className="smoked-glass-backdrop fixed inset-0 z-[1200] flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.16)", backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }}
+          className="smoked-glass-backdrop ai-chat-backdrop fixed inset-0 z-[1200] flex items-center justify-center p-4"
+          style={{ background: "transparent", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }}
           onClick={() => setOpen(false)}
           role="presentation"
         >
@@ -241,7 +241,10 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
               <Sparkles className="h-4 w-4 text-accent" />
               Ask about {stock.symbol}
             </span>
-            <span className="absolute left-1/2 -translate-x-1/2 text-sm font-bold text-[var(--AI_COLOR)]">Warrent</span>
+            <span className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1.5 text-base font-bold text-[var(--AI_COLOR)]">
+              <OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-[var(--AI_COLOR)]" />
+              Warrent AI
+            </span>
             <GlossyIconButton aria-label="Close chat" onClick={() => setOpen(false)}><GlossyCloseIcon /></GlossyIconButton>
           </div>
 

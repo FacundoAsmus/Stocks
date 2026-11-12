@@ -1859,12 +1859,12 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     <>
       {containerRef && <div
         aria-hidden="true"
-        className={open ? "smoked-glass-backdrop" : undefined}
+        className={open ? "smoked-glass-backdrop ai-chat-backdrop" : undefined}
         style={{
           position: "fixed", inset: 0, zIndex: 999,
-          background: open ? "rgba(0,0,0,0.16)" : "transparent",
-          backdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
-          WebkitBackdropFilter: open ? "blur(12px) brightness(0.97)" : "none",
+          background: "transparent",
+          backdropFilter: open ? "blur(12px)" : "none",
+          WebkitBackdropFilter: open ? "blur(12px)" : "none",
           pointerEvents: open ? "auto" : "none",
           opacity: open ? 1 : 0,
           transition: "opacity 0.25s ease",
@@ -1883,13 +1883,13 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         }}
       >
         <div
-          className={!isDesktop && open ? "smoked-glass-backdrop ai-chat-backdrop" : isDesktop && open ? "smoked-glass-backdrop" : undefined}
+          className={open ? "smoked-glass-backdrop ai-chat-backdrop" : undefined}
           style={{
             position: "absolute", inset: 0,
             zIndex: 0,
-            background: open && isDesktop ? "rgba(0,0,0,0.16)" : "transparent",
-            backdropFilter: open ? isDesktop ? "blur(12px) brightness(0.97)" : "blur(12px)" : "none",
-            WebkitBackdropFilter: open ? isDesktop ? "blur(12px) brightness(0.97)" : "blur(12px)" : "none",
+            background: "transparent",
+            backdropFilter: open ? "blur(12px)" : "none",
+            WebkitBackdropFilter: open ? "blur(12px)" : "none",
             transition: "none",
             transform: "translateZ(0)",
             WebkitTransform: "translateZ(0)",
@@ -1907,12 +1907,16 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             right: 0,
             textAlign: "center",
             color: "var(--AI_COLOR)",
-            fontSize: 16,
+            fontSize: 20,
             fontWeight: 700,
             lineHeight: 1.25,
             pointerEvents: "none",
           }}
-        >Warrent</div>
+          className="flex items-center justify-center gap-1.5"
+        >
+          <OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-[var(--AI_COLOR)]" />
+          <span>Warrent AI</span>
+        </div>
 
         {/* Messages occupy the full overlay. Padding reserves comfortable
             resting room for the app edge and input pill, but does not create
@@ -1939,6 +1943,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             minHeight: 0,
             gap: 12,
             padding: "calc(env(safe-area-inset-top) + 3.5rem) 14px 112px",
+            opacity: open ? 1 : 0,
+            transition: "opacity 0.2s ease",
+            transitionDelay: open && !isDesktop ? "0.32s" : "0s",
           }}
           onClick={onEmptyAreaClick}
           onWheel={(event) => event.stopPropagation()}
