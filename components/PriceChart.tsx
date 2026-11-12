@@ -588,6 +588,7 @@ export function PriceChart({
   const [hoverPrice, setHoverPrice]   = useState<number | null>(null);
   const [hoverDate,  setHoverDate]    = useState<string | null>(null);
   const [priceVisible, setPriceVisible] = useState(!holdPriceUntilChartReady);
+  const visibleChartSymbolRef = useRef<string | null>(null);
   const [activeMAs, setActiveMAs] = useState<Set<number>>(new Set());
   const activeMAsRef = useRef(activeMAs);
   // A line is eligible to animate only when it was just enabled (or its
@@ -802,7 +803,11 @@ export function PriceChart({
       setCandleViewRange(null);
       setHoverPrice(null);
       setHoverDate(null);
-      setPriceVisible(false);
+      // Keep the current price mounted during refreshes so WheelPrice can roll
+      // directly from its previous digits to the new value. Hide it only until
+      // this symbol's first chart load completes.
+      const firstLoadForSymbol = visibleChartSymbolRef.current !== symbol;
+      if (firstLoadForSymbol) setPriceVisible(false);
       setMaHistory([]);
       setMaHistoryWindow(0);
       try {
@@ -837,6 +842,7 @@ export function PriceChart({
         }
         setLoadedChartKey(requestKey);
         setChartKey((key) => key + 1);
+        visibleChartSymbolRef.current = symbol;
         if (holdPriceUntilChartReady) setPriceVisible(true);
         // Small delay so digits have settled before fading back in
         if (!holdPriceUntilChartReady) setTimeout(() => setPriceVisible(true), 40);
@@ -845,6 +851,8 @@ export function PriceChart({
         if (!controller.signal.aborted) {
           setData([]);
           setLoadedChartKey(requestKey);
+          visibleChartSymbolRef.current = symbol;
+          setPriceVisible(true);
           setError(err instanceof Error ? err.message : "Unable to load chart data.");
         }
       } finally {
@@ -1440,7 +1448,7 @@ export function PriceChart({
   return (
     <div>
       {/* ── Price header — indented to align with name when priceIndent is set ── */}
-      <div className="mb-6 price-block-fade" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible && (!holdPriceUntilChartReady || !chartLoading) ? 1 : 0, transition: "opacity 0.18s ease", WebkitTransition: "opacity 0.18s ease" }}>
+      <div className="mb-6 price-block-fade" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible && (!holdPriceUntilChartReady || !chartLoading || visibleChartSymbolRef.current === symbol) ? 1 : 0, transition: "opacity 0.18s ease", WebkitTransition: "opacity 0.18s ease" }}>
         <div className="flex items-end gap-3">
           <WheelPrice value={priceStr} size="lg" animate={!anyDrawingPlacementActive} />
           <WheelPrice value={pctStr} size="sm" colorClass={pctColor} animate={!anyDrawingPlacementActive} />
