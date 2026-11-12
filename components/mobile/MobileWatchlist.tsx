@@ -117,7 +117,7 @@ const SETTLE_TRANSITION = "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)";
 function MobileWatchlistSkeleton() {
   return (
     <div className="min-h-screen pb-24" role="status" aria-label="Loading your watchlist">
-      <div className="px-4 pb-4" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}>
+      <div className="px-4 pb-4" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}>
         <div className="mb-2 h-10 w-52 max-w-full rounded-lg bg-panel-muted" />
         <div className="h-3 w-24 rounded-full bg-panel-muted/70" />
       </div>
@@ -494,7 +494,7 @@ export function MobileWatchlist() {
     <div className="pb-24">
       <div
         className="sticky top-0 z-30 px-4 pb-4 flex items-end justify-between gap-3"
-        style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
+        style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
       >
         <div
           className="absolute inset-x-0 top-0 -z-10 pointer-events-none"

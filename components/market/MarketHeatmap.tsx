@@ -306,7 +306,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
         </aside>
       ) : (
       <>
-        <div className="sticky top-0 z-30 shrink-0 px-4 pb-4" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}>
+        <div className="sticky top-0 z-30 shrink-0 px-4 pb-4" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}>
           <div
             className="pointer-events-none absolute inset-x-0 top-0 -z-10"
             style={{
