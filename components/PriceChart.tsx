@@ -47,6 +47,17 @@ const MA_COLORS: Record<number, string> = {
 };
 
 const MAX_VOLUME_BARS = 240;
+const PRICE_CHART_DATA_CACHE = new Map<string, CandlePoint[]>();
+
+function cachePriceChartData(key: string, data: CandlePoint[]) {
+  PRICE_CHART_DATA_CACHE.delete(key);
+  PRICE_CHART_DATA_CACHE.set(key, data);
+  while (PRICE_CHART_DATA_CACHE.size > 16) {
+    const oldestKey = PRICE_CHART_DATA_CACHE.keys().next().value;
+    if (oldestKey === undefined) break;
+    PRICE_CHART_DATA_CACHE.delete(oldestKey);
+  }
+}
 
 type VolumeBucket = { volume: number; isUp: boolean };
 type SquareRect = { left: number; top: number; width: number; height: number };
@@ -577,18 +588,22 @@ export function PriceChart({
   hideMovingAverageControls?: boolean;
   holdPriceUntilChartReady?: boolean;
 }) {
+  const initialSeriesKey = `${symbol}:${initialPeriod}`;
+  const initialCachedData = PRICE_CHART_DATA_CACHE.get(initialSeriesKey) ?? [];
   const [period, setPeriod]           = useState<ChartPeriod>(initialPeriod);
   const [hoveredPeriod, setHoveredPeriod] = useState<ChartPeriod | null>(null);
   const [chartKey, setChartKey]       = useState(0);
-  const [data, setData]               = useState<CandlePoint[]>([]);
+  const [data, setData]               = useState<CandlePoint[]>(initialCachedData);
+  const [chartDataSeriesKey, setChartDataSeriesKey] = useState(initialCachedData.length > 1 ? initialSeriesKey : "");
+  const chartDataSeriesKeyRef = useRef(initialCachedData.length > 1 ? initialSeriesKey : "");
   const [isLoading, setIsLoading]     = useState(true);
   const [loadedChartKey, setLoadedChartKey] = useState<string | null>(null);
   const [error, setError]             = useState<string | null>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
   const [hoverPrice, setHoverPrice]   = useState<number | null>(null);
   const [hoverDate,  setHoverDate]    = useState<string | null>(null);
-  const [priceVisible, setPriceVisible] = useState(!holdPriceUntilChartReady);
-  const visibleChartSymbolRef = useRef<string | null>(null);
+  const [priceVisible, setPriceVisible] = useState(!holdPriceUntilChartReady || initialCachedData.length > 1);
+  const visibleChartSymbolRef = useRef<string | null>(initialCachedData.length > 1 ? symbol : null);
   const [activeMAs, setActiveMAs] = useState<Set<number>>(new Set());
   const activeMAsRef = useRef(activeMAs);
   // A line is eligible to animate only when it was just enabled (or its
@@ -840,6 +855,12 @@ export function PriceChart({
         } else {
           setData(candles);
         }
+        const seriesKey = `${symbol}:${period}`;
+        cachePriceChartData(seriesKey, period === "1D" && previousClose && previousClose > 0 && candles.length > 0
+          ? [{ date: "prev", time: candles[0].time - 1, close: previousClose }, ...candles]
+          : candles);
+        chartDataSeriesKeyRef.current = seriesKey;
+        setChartDataSeriesKey(seriesKey);
         setLoadedChartKey(requestKey);
         setChartKey((key) => key + 1);
         visibleChartSymbolRef.current = symbol;
@@ -849,10 +870,9 @@ export function PriceChart({
 
       } catch (err) {
         if (!controller.signal.aborted) {
-          setData([]);
           setLoadedChartKey(requestKey);
           visibleChartSymbolRef.current = symbol;
-          setPriceVisible(true);
+          if (chartDataSeriesKeyRef.current !== `${symbol}:${period}`) setPriceVisible(true);
           setError(err instanceof Error ? err.message : "Unable to load chart data.");
         }
       } finally {
@@ -905,6 +925,7 @@ export function PriceChart({
   );
 
   const hasData    = data.length > 1;
+  const hasRenderableChart = hasData && chartDataSeriesKey === `${symbol}:${period}`;
   const chartRequestKey = `${symbol}:${period}:${reloadNonce}`;
   const chartLoading = isLoading || (holdPriceUntilChartReady && loadedChartKey !== chartRequestKey);
   useEffect(() => {
@@ -1668,9 +1689,9 @@ export function PriceChart({
         }}
         onMouseLeave={() => { if (proCrosshairRef.current) proCrosshairRef.current.style.display = "none"; clearHover(); }}
       >
-        {chartLoading ? (
+        {chartLoading && !hasRenderableChart ? (
           <PriceHistoryLoadingAnimation />
-        ) : error ? (
+        ) : error && !hasRenderableChart ? (
           <div className="flex h-full flex-col items-center justify-center rounded-md border border-dashed border-negative/30 bg-negative/5 px-4 text-center">
             <AIUnavailableNotice />
             <button type="button" onClick={() => setReloadNonce((n) => n + 1)}
@@ -1678,7 +1699,7 @@ export function PriceChart({
               <RotateCcw className="h-4 w-4" aria-hidden /> Retry
             </button>
           </div>
-        ) : hasData ? (
+        ) : hasRenderableChart ? (
           <>
           <style>{`
             @keyframes chart-reveal {
