@@ -494,6 +494,7 @@ export function MobileWatchlist() {
     <div className="pb-24">
       <div
         className="sticky top-0 z-30 px-4 pb-4 flex items-end justify-between gap-3"
+        data-stock-sheet-pinned-header
         style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
       >
         <div

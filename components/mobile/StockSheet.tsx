@@ -68,6 +68,24 @@ export function StockSheet() {
         : document.querySelector<HTMLElement>("main");
       if (!page) return;
       const snapshot = page.cloneNode(true) as HTMLElement;
+      const sourcePinnedHeader = page.querySelector<HTMLElement>("[data-stock-sheet-pinned-header]");
+      const snapshotPinnedHeader = snapshot.querySelector<HTMLElement>("[data-stock-sheet-pinned-header]");
+      if (sourcePinnedHeader && snapshotPinnedHeader) {
+        const headerRect = sourcePinnedHeader.getBoundingClientRect();
+        const placeholder = document.createElement("div");
+        placeholder.style.height = `${headerRect.height}px`;
+        placeholder.style.width = `${headerRect.width}px`;
+        placeholder.style.visibility = "hidden";
+        snapshotPinnedHeader.replaceWith(placeholder);
+        snapshotPinnedHeader.style.position = "absolute";
+        snapshotPinnedHeader.style.top = `${headerRect.top + window.scrollY}px`;
+        snapshotPinnedHeader.style.left = `${headerRect.left}px`;
+        snapshotPinnedHeader.style.right = "auto";
+        snapshotPinnedHeader.style.width = `${headerRect.width}px`;
+        snapshotPinnedHeader.style.zIndex = "30";
+        snapshot.appendChild(snapshotPinnedHeader);
+        snapshot.style.position = "relative";
+      }
       if (direction === "exit") {
         snapshot.classList.remove("rounded-t-3xl", "border", "border-white/15", "shadow-2xl");
       }
