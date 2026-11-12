@@ -186,7 +186,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
           <div
             className="fixed left-4 right-4 flex items-center justify-between lg:hidden"
             data-stock-top-controls
-            style={{ top: "calc(0.75rem + env(safe-area-inset-top))", zIndex: 500 }}
+            style={{ top: "env(safe-area-inset-top)", zIndex: 500 }}
           >
             <button
               onClick={handleBack}
