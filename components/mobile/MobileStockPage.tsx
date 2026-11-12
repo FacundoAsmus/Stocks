@@ -210,7 +210,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
         document.body
       )}
 
-      <div aria-hidden style={{ height: "calc(4rem + env(safe-area-inset-top))" }} />
+      <div aria-hidden style={{ height: "calc(3.25rem + env(safe-area-inset-top))" }} />
 
       <div className="pb-36" style={{ opacity: 1 }} data-stock-page="">
         {comparisonSymbol ? (
@@ -256,7 +256,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             currentPrice={currentPrice}
             currentChangePercent={stock.quote.dp ?? 0}
             previousClose={stock.quote.pc ?? undefined}
-            heightClassName="h-[312px]"
+            heightClassName="h-[324px]"
             hideCursorDateTooltip
             hideMovingAverageControls
             holdPriceUntilChartReady

@@ -1,7 +1,7 @@
 export function StockPageSkeleton() {
   return (
     <div className="min-h-screen pb-36" aria-hidden="true">
-      <div style={{ height: "calc(4rem + env(safe-area-inset-top))" }} />
+      <div style={{ height: "calc(3.25rem + env(safe-area-inset-top))" }} />
 
       <div className="flex items-center gap-3 px-4 pb-3 pt-5">
         <div className="h-12 w-12 shrink-0 rounded-full bg-panel-muted" />
@@ -15,7 +15,7 @@ export function StockPageSkeleton() {
       </div>
 
       <div className="px-2">
-        <div className="h-[281px] rounded-2xl bg-panel-muted/45" />
+        <div className="h-[293px] rounded-2xl bg-panel-muted/45" />
         <div className="mx-auto mt-4 h-10 w-64 max-w-full rounded-full border border-border-subtle bg-panel-muted/45" />
       </div>
 
