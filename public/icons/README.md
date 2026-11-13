@@ -53,6 +53,10 @@ Use the group id for the unselected and selected versions:
 - `cancel-alert.svg`
 - `close.svg`
 
+## Empty lists
+
+- `empty-list.svg` — shown with the red empty-state message when the desktop watchlist or AI chat list has no items.
+
 ## Settings
 
 - `horizontal-crosshair.svg`

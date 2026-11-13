@@ -1,18 +1,17 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
 export function EmptyWatchlist({ isLoading = false }: { isLoading?: boolean }) {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <section className="rounded-md border border-dashed border-border-subtle bg-panel/70 p-8 text-center">
-      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md bg-panel-muted text-positive">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
+    <section className="text-center">
+      <div className="mx-auto flex h-10 w-10 items-center justify-center">
+        <OptionalSvgIcon name="empty-list" className="h-8 w-8" colorClassName="text-negative" />
       </div>
-      <h2 className="mt-4 text-lg font-semibold text-text-primary">Your watchlist is empty</h2>
+      <h2 className="mt-2 text-sm font-semibold text-negative">The list is empty.</h2>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-text-muted">
         Search for a company or ticker above, open its detail page, and add it to your watchlist.
       </p>

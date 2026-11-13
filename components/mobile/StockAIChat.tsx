@@ -61,8 +61,8 @@ const MemoizedChatMessages = memo(function MemoizedChatMessages({
 });
 
 function EmptyChatPrompt() {
-  return <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, padding: "24px", textAlign: "center", pointerEvents: "none" }}>
-    <OptionalSvgIcon name="ai" className="h-16 w-16" colorClassName="text-white" color="#ffffff" />
+  return <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, padding: "24px", textAlign: "center", pointerEvents: "none", transform: "translateY(-48px)" }}>
+    <OptionalSvgIcon name="ai" className="h-16 w-16" colorClassName="text-[var(--AI_COLOR)]" color="var(--AI_COLOR)" />
     <p style={{ margin: 0, maxWidth: 360, color: "var(--color-accent)", fontSize: 28, fontWeight: 600, lineHeight: 1.2 }}>What do you want to know buddy?</p>
   </div>;
 }
@@ -2015,7 +2015,12 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         </div>
       </div>
 
-      {!containerRef && isDesktop && open && <aside aria-label="AI chat list" className="desktop-alert-glass desktop-list-holder fixed z-[1001] overflow-hidden rounded-3xl border border-white/15" style={{ left: 12, top: 12, bottom: 12, width: "23%", pointerEvents: "none" }} />}
+      {!containerRef && isDesktop && open && <aside aria-label="AI chat list" className="desktop-alert-glass desktop-list-holder fixed z-[1001] overflow-hidden rounded-3xl border border-white/15" style={{ left: 12, top: 12, bottom: 12, width: "23%" }}>
+        <div role="status" className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center text-sm font-medium text-negative">
+          <OptionalSvgIcon name="empty-list" className="h-8 w-8" colorClassName="text-negative" />
+          <span>The list is empty.</span>
+        </div>
+      </aside>}
 
       {/* The pill — always mounted, same element morphs from a small circle
           (matching the search button exactly) into the full input bar. No
