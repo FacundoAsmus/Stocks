@@ -1930,7 +1930,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       transform: "translate3d(0, var(--vvt, 0px), 0)", display: "flex", flexDirection: "column", zIndex: 1000,
       transition: "height var(--kb-transition, 250ms cubic-bezier(0.2, 0.8, 0.2, 1))",
       paddingBottom: "env(safe-area-inset-bottom)", boxSizing: "border-box",
-      pointerEvents: open ? "auto" : "none", transition: "height var(--kb-transition, 250ms cubic-bezier(0.2, 0.8, 0.2, 1))",
+      pointerEvents: open ? "auto" : "none",
     }}>
       <style>{`.warrent-ai-mobile-panel[data-keyboard="true"]{padding-bottom:12px!important}`}</style>
       <div aria-label="Warrent AI" style={{ position: "relative", flex: "0 0 calc(env(safe-area-inset-top) + 2.875rem)", paddingTop: "calc(env(safe-area-inset-top) + 0.25rem)", display: "flex", justifyContent: "center", pointerEvents: "none" }}>
