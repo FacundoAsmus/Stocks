@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
@@ -35,6 +35,39 @@ interface GraphCtx {
   };
   isLightMode: boolean;
 }
+
+const MemoizedChatMessages = memo(function MemoizedChatMessages({
+  messages, graphCtx, bgBubbleAI, bubbleBorderUser, bubbleGlowAI, textColor, loading, serverError, markDone,
+}: {
+  messages: Message[]; graphCtx: GraphCtx; bgBubbleAI: string; bubbleBorderUser: string;
+  bubbleGlowAI: string; textColor: string; loading: boolean; serverError: boolean; markDone: (i: number) => void;
+}) {
+  return <>
+    {messages.map((msg, i) => (
+      <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
+        <div className={`smoked-glass-surface${msg.role === "model" ? " ai-response-bubble" : ""}`} style={{
+          maxWidth: "86%", wordBreak: "break-word", whiteSpace: "pre-wrap", padding: "12px 18px", borderRadius: 24,
+          background: bgBubbleAI, border: `1px solid ${msg.role === "model" ? "var(--AI_COLOR)" : bubbleBorderUser}`,
+          backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)",
+          boxShadow: msg.role === "model" ? `0 0 12px color-mix(in srgb, var(--AI_COLOR) 48%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 70%, transparent), ${bubbleGlowAI}` : bubbleGlowAI,
+          color: textColor, fontSize: 17, lineHeight: 1.55, fontWeight: msg.role === "user" ? 500 : 400,
+        }}>
+          {msg.role === "model" && msg.animating
+            ? <AnimatedMessageBody text={msg.text} ctx={graphCtx} onDone={() => markDone(i)} />
+            : msg.role === "model" ? <StaticMessageBody text={msg.text} ctx={graphCtx} /> : msg.text}
+        </div>
+      </div>
+    ))}
+    {serverError && <AIUnavailableNotice />}
+    {loading && <div style={{ display: "flex", justifyContent: "flex-start" }}>
+      <div className="smoked-glass-surface ai-response-bubble" style={{
+        padding: "14px 18px", borderRadius: 24, background: bgBubbleAI, border: "1px solid var(--AI_COLOR)",
+        boxShadow: `0 0 12px color-mix(in srgb, var(--AI_COLOR) 48%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 70%, transparent), ${bubbleGlowAI}`,
+        backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", display: "flex", alignItems: "center",
+      }}><AIStarLoader size="md" /></div>
+    </div>}
+  </>;
+});
 
 // ─────────────────────────────────────────────────────────────────────────
 // Inline data pills & graphs — the AI calls these out with [[data:KEY]] and
@@ -1597,7 +1630,18 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = externalOpen !== undefined;
   const open = isControlled ? externalOpen : internalOpen;
+  const [backdropClosing, setBackdropClosing] = useState(false);
+  const [mobilePillExpanded, setMobilePillExpanded] = useState(false);
+  const mobilePanelRef = useRef<HTMLDivElement>(null);
+  const savedScrollYRef = useRef<number | null>(null);
+  const closeBackdropTimer = useRef<number | null>(null);
   function setOpen(v: boolean) {
+    if (closeBackdropTimer.current !== null) window.clearTimeout(closeBackdropTimer.current);
+    if (v) setBackdropClosing(false);
+    else if (open) {
+      setBackdropClosing(true);
+      closeBackdropTimer.current = window.setTimeout(() => setBackdropClosing(false), 250);
+    }
     if (isControlled) onOpenChange?.(v);
     else setInternalOpen(v);
   }
@@ -1606,7 +1650,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   const [promptToSend, setPromptToSend] = useState<string | null>(null);
   const [loading, setLoading]   = useState(false);
   const [serverError, setServerError] = useState(false);
-  const [vp, setVp] = useState({ top: 0, left: 0, width: 0, height: 0 });
+  const [desktopBounds, setDesktopBounds] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const scrollRef   = useRef<HTMLDivElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
   const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -1667,7 +1711,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     };
   }, [open, stock.symbol]);
   const isLightMode = typeof document !== "undefined" && document.documentElement.classList.contains("light-mode");
-  const graphCtx: GraphCtx = { stock, currentPrice, sentiment, metrics, comparisonStock, isLightMode };
+  const graphCtx: GraphCtx = useMemo(() => ({ stock, currentPrice, sentiment, metrics, comparisonStock, isLightMode }), [stock, currentPrice, sentiment, metrics, comparisonStock, isLightMode]);
 
   // Render via a portal straight into <body> — bypasses ancestor elements
   // (like <main>) that can pick up a transient CSS `transform` from page
@@ -1684,7 +1728,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     if (!element) return;
     const update = () => {
       const rect = element.getBoundingClientRect();
-      setVp({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+      setDesktopBounds({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
     };
     update();
     const ro = new ResizeObserver(update);
@@ -1695,6 +1739,84 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       window.removeEventListener("resize", update);
     };
   }, [containerRef]);
+
+  // Keep the page fixed while the full-screen phone chat is open.
+  useEffect(() => {
+    if (!open || typeof window === "undefined" || window.innerWidth >= 1024 || containerRef) return;
+    const body = document.body;
+    const scrollY = window.scrollY;
+    savedScrollYRef.current = scrollY;
+    const previous = { position: body.style.position, top: body.style.top, left: body.style.left, right: body.style.right, overflow: body.style.overflow };
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.overflow = "hidden";
+    const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 340);
+    return () => {
+      window.clearTimeout(focusTimer);
+      body.style.position = previous.position;
+      body.style.top = previous.top;
+      body.style.left = previous.left;
+      body.style.right = previous.right;
+      body.style.overflow = previous.overflow;
+      window.scrollTo(0, scrollY);
+      requestAnimationFrame(() => window.scrollTo(0, scrollY));
+      savedScrollYRef.current = null;
+    };
+  }, [open, containerRef]);
+
+  // Sync the phone panel directly from VisualViewport, without React renders.
+  useEffect(() => {
+    if (!open || typeof window === "undefined" || window.innerWidth >= 1024 || containerRef) return;
+    const panel = mobilePanelRef.current;
+    if (!panel) return;
+    const vv = window.visualViewport;
+    let raf = 0;
+    let last = { top: Number.NaN, left: Number.NaN, width: Number.NaN, height: Number.NaN };
+    let first = true;
+    const sync = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const current = { top: vv?.offsetTop ?? 0, left: vv?.offsetLeft ?? 0, width: vv?.width ?? window.innerWidth, height: vv?.height ?? window.innerHeight };
+        if (Object.keys(current).every(key => Math.abs(current[key as keyof typeof current] - last[key as keyof typeof last]) < 0.5)) return;
+        const wasKeyboard = panel.dataset.keyboard === "true";
+        last = current;
+        panel.style.setProperty("--vvh", `${current.height}px`);
+        panel.style.setProperty("--vvt", `${current.top}px`);
+        panel.dataset.keyboard = String(!!vv && window.innerHeight - current.height - current.top > 80);
+        if (first) {
+          panel.style.setProperty("--kb-transition", "0ms");
+          first = false;
+          requestAnimationFrame(() => panel.style.removeProperty("--kb-transition"));
+        }
+        if (wasKeyboard && panel.dataset.keyboard === "false" && savedScrollYRef.current !== null) {
+          const savedY = savedScrollYRef.current;
+          requestAnimationFrame(() => window.scrollTo(0, savedY));
+        }
+      });
+    };
+    sync();
+    vv?.addEventListener("resize", sync);
+    vv?.addEventListener("scroll", sync);
+    document.addEventListener("focusin", sync);
+    document.addEventListener("focusout", sync);
+    return () => {
+      vv?.removeEventListener("resize", sync);
+      vv?.removeEventListener("scroll", sync);
+      document.removeEventListener("focusin", sync);
+      document.removeEventListener("focusout", sync);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [open, containerRef]);
+
+  useEffect(() => {
+    if (!open || typeof window === "undefined" || window.innerWidth >= 1024 || containerRef) { setMobilePillExpanded(false); return; }
+    setMobilePillExpanded(false);
+    const raf = requestAnimationFrame(() => setMobilePillExpanded(true));
+    return () => cancelAnimationFrame(raf);
+  }, [open, containerRef]);
 
   useEffect(() => {
     if (scrollRef.current)
@@ -1745,9 +1867,9 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     return () => window.clearTimeout(timer);
   }, [open, promptToSend, stockContext]);
 
-  function markDone(i: number) {
+  const markDone = useCallback((i: number) => {
     setMessages(prev => prev.map((m, idx) => idx === i ? { ...m, animating: false } : m));
-  }
+  }, []);
 
   // Tap-to-dismiss on empty space: a quick tap (not a scroll/drag) that lands
   // directly on the blank scroll area — not on a message bubble — closes the
@@ -1775,17 +1897,13 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   const bubbleGlowAI     = "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)";
   const textColor     = "rgba(245,248,248,0.94)";
 
-  const vpW = vp.width || (typeof window !== "undefined" ? window.innerWidth : 0);
+  const vpW = desktopBounds.width || (typeof window !== "undefined" ? window.innerWidth : 0);
   const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
-  const pillBottom = isDesktop
-    ? "1.5rem"
-    : open
-      ? "12px"
-      : "calc(env(safe-area-inset-bottom) - 0.5rem)";
+  const pillBottom = "1.5rem";
   // Expanded pill width: the full container width (minus side margins) when
   // confined to the desktop split view's detail column, otherwise the full
   // viewport width as before on mobile.
-  const pillOpenWidth = containerRef?.current ? `${Math.max(0, vp.width - 32)}px` : "calc(100vw - 2rem)";
+  const pillOpenWidth = containerRef?.current ? `${Math.max(0, desktopBounds.width - 32)}px` : "calc(100vw - 2rem)";
 
   if (!mounted) return null;
 
@@ -1800,6 +1918,49 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   // out here, in JS, based on the real viewport width, is what actually
   // prevents it from mounting anything at all on a narrow screen.
   if (containerRef && !isDesktop) return null;
+
+  if (!isDesktop && !containerRef) return createPortal(<>
+    {(open || backdropClosing) && <div aria-hidden="true" onClick={handleDismiss} style={{
+      position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.16)",
+      backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)",
+      opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none", transition: "opacity 0.25s ease",
+    }} />}
+    {(open || backdropClosing) && <div ref={mobilePanelRef} className="warrent-ai-mobile-panel" style={{
+      position: "fixed", left: 0, top: 0, width: "100%", height: "var(--vvh, 100vh)",
+      transform: "translate3d(0, var(--vvt, 0px), 0)", display: "flex", flexDirection: "column", zIndex: 1000,
+      transition: "height var(--kb-transition, 250ms cubic-bezier(0.2, 0.8, 0.2, 1))",
+      paddingBottom: "env(safe-area-inset-bottom)", boxSizing: "border-box", opacity: open ? 1 : 0,
+      pointerEvents: open ? "auto" : "none", transitionProperty: "height, opacity", transitionDuration: "var(--kb-transition, 250ms cubic-bezier(0.2, 0.8, 0.2, 1)), 250ms",
+    }}>
+      <style>{`.warrent-ai-mobile-panel[data-keyboard="true"]{padding-bottom:12px!important}`}</style>
+      <div aria-label="Warrent AI" style={{ position: "relative", flex: "0 0 calc(env(safe-area-inset-top) + 2.875rem)", paddingTop: "calc(env(safe-area-inset-top) + 0.25rem)", display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+        <div aria-hidden="true" style={{ position: "absolute", insetInline: 0, top: 0, height: "calc(100% - 0.375rem)", backdropFilter: "blur(var(--phone-list-header-blur))", WebkitBackdropFilter: "blur(var(--phone-list-header-blur))", backgroundColor: "color-mix(in srgb, var(--color-background) 68%, transparent)" }} />
+        <div className="relative z-10 flex h-fit items-center gap-1.5 font-bold text-[var(--AI_COLOR)]" style={{ fontSize: 20, lineHeight: 1.25 }}><OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-[var(--AI_COLOR)]" /><span>Warrent AI</span></div>
+      </div>
+      <div ref={scrollRef} className="ai-chat-messages" style={{
+        position: "relative", flex: "1 1 auto", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", touchAction: "pan-y",
+        display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 12, padding: "8px 14px", boxSizing: "border-box",
+        opacity: open ? 1 : 0, transition: "opacity 0.2s ease", transitionDelay: "0.32s",
+      }} onClick={onEmptyAreaClick} onWheel={event => event.stopPropagation()} onTouchStart={onEmptyAreaTouchStart} onTouchEnd={onEmptyAreaTouchEnd}>
+        <MemoizedChatMessages messages={messages} graphCtx={graphCtx} bgBubbleAI={bgBubbleAI} bubbleBorderUser={bubbleBorderUser} bubbleGlowAI={bubbleGlowAI} textColor={textColor} loading={loading} serverError={serverError} markDone={markDone} />
+      </div>
+      <div className="ai-mobile-pill-flow" style={{ padding: "0 1rem", flex: "0 0 auto", display: "flex", justifyContent: "flex-end" }}>
+        <div className="smoked-glass-surface ai-typing-bar rounded-full border border-white/15 text-accent overflow-hidden" style={{
+          position: "relative", flex: "0 0 auto", width: mobilePillExpanded ? "100%" : "3.5rem", height: "3.5rem", boxSizing: "border-box",
+          background: chatControlGlass, backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
+          transition: "width 0.32s cubic-bezier(0.2,0,0,1)",
+        }}>
+          <button onClick={() => setOpen(true)} aria-label="Ask AI" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, pointerEvents: "none" }}><OptionalSvgIcon name="ai" className="h-8 w-8" /></button>
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 8, padding: "0 8px 0 20px" }}>
+            <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} placeholder={`Ask about ${stock.symbol}…`} className="text-white placeholder:text-white/45" style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", fontSize: 16, color: textColor, caretColor: "var(--color-accent)" }} />
+            {input.trim() ? <button onClick={() => { void sendMessage(); }} disabled={loading} className="ai-send-button-glow" style={{ flexShrink: 0, height: 38, width: 38, borderRadius: "50%", backgroundColor: !loading ? "var(--color-accent)" : "rgb(var(--accent-rgb) / 0.18)", color: !loading ? "var(--color-on-accent)" : "rgb(var(--accent-rgb) / 0.35)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-on-accent" /></button> : <GlossyIconButton aria-label="Close chat" onClick={handleDismiss} size={38}><GlossyCloseIcon /></GlossyIconButton>}
+          </div>
+        </div>
+      </div>
+    </div>}
+    {!hideTrigger && !open && <button onClick={() => setOpen(true)} aria-label="Ask AI" className="smoked-glass-surface fixed z-[1002] flex h-14 w-14 items-center justify-center rounded-full border border-white/15 text-accent ai-aberration" style={{ right: "1.25rem", bottom: "calc(1.25rem + env(safe-area-inset-bottom))", background: chatControlGlass, backdropFilter: "blur(var(--phone-floating-pill-blur))", WebkitBackdropFilter: "blur(var(--phone-floating-pill-blur))", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}><OptionalSvgIcon name="ai" className="h-8 w-8" /></button>}
+  </>, document.body);
 
   return createPortal(
     <>
@@ -1820,8 +1981,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       {/* Stable full-screen backdrop and message surface. */}
       <div
         style={containerRef ? {
-          position: "fixed", top: vp.top, left: vp.left, width: vpW,
-          height: vp.height || (typeof window !== "undefined" ? window.innerHeight : 0),
+          position: "fixed", top: desktopBounds.top, left: desktopBounds.left, width: vpW,
+          height: desktopBounds.height || (typeof window !== "undefined" ? window.innerHeight : 0),
           zIndex: 1000, opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none", transition: "opacity 0.25s ease",
         } : {
           position: "fixed", inset: 0, zIndex: 1000, opacity: open ? 1 : 0,
@@ -1910,51 +2071,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           onTouchStart={onEmptyAreaTouchStart}
           onTouchEnd={onEmptyAreaTouchEnd}
         >
-          {messages.map((msg, i) => (
-            <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
-              <div className={`smoked-glass-surface${msg.role === "model" ? " ai-response-bubble" : ""}`} style={{
-                maxWidth: "86%",
-                wordBreak: "break-word",
-                whiteSpace: "pre-wrap",
-                padding: "12px 18px",
-                borderRadius: 24,
-                background: bgBubbleAI,
-                border: `1px solid ${msg.role === "model" ? "var(--AI_COLOR)" : bubbleBorderUser}`,
-                backdropFilter: "blur(24px) saturate(180%)",
-                WebkitBackdropFilter: "blur(24px) saturate(180%)",
-                boxShadow: msg.role === "model" ? `0 0 12px color-mix(in srgb, var(--AI_COLOR) 48%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 70%, transparent), ${bubbleGlowAI}` : bubbleGlowAI,
-                color: textColor,
-                fontSize: 17,
-                lineHeight: 1.55,
-                fontWeight: msg.role === "user" ? 500 : 400,
-              }}>
-                {msg.role === "model" && msg.animating
-                  ? <AnimatedMessageBody text={msg.text} ctx={graphCtx} onDone={() => markDone(i)} />
-                  : msg.role === "model"
-                    ? <StaticMessageBody text={msg.text} ctx={graphCtx} />
-                    : msg.text}
-              </div>
-            </div>
-          ))}
-
-          {serverError && <AIUnavailableNotice />}
-
-          {loading && (
-            <div style={{ display: "flex", justifyContent: "flex-start" }}>
-              <div className="smoked-glass-surface ai-response-bubble" style={{
-                padding: "14px 18px",
-                borderRadius: 24,
-                background: bgBubbleAI,
-                border: "1px solid var(--AI_COLOR)",
-                boxShadow: `0 0 12px color-mix(in srgb, var(--AI_COLOR) 48%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 70%, transparent), ${bubbleGlowAI}`,
-                backdropFilter: "blur(24px) saturate(180%)",
-                WebkitBackdropFilter: "blur(24px) saturate(180%)",
-                display: "flex", alignItems: "center",
-              }}>
-                <AIStarLoader size="md" />
-              </div>
-            </div>
-          )}
+          <MemoizedChatMessages messages={messages} graphCtx={graphCtx} bgBubbleAI={bgBubbleAI} bubbleBorderUser={bubbleBorderUser} bubbleGlowAI={bubbleGlowAI} textColor={textColor} loading={loading} serverError={serverError} markDone={markDone} />
         </div>
       </div>
 
