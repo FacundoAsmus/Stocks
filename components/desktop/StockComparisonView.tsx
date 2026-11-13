@@ -10,6 +10,7 @@ import { expectedRevenueGrowthPct, getNextReport } from "@/lib/earnings";
 import type { AnalystRecommendation, EarningsEvent } from "@/types/stock";
 import type { getStockDetail } from "@/lib/finnhub";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
+import { shortCompanyName } from "@/lib/shortCompanyName";
 
 type StockDetail = Awaited<ReturnType<typeof getStockDetail>>;
 export type ComparisonDetailPayload = {
@@ -34,8 +35,8 @@ const SERIES = [
 
 function PairedBarSection({ primary, secondary }: { primary: ComparisonDetailPayload; secondary: ComparisonDetailPayload }) {
   const items = [
-    ["Primary", primary.stock.profile.name ?? primary.stock.symbol, COMPARISON_COLORS.primary, primary.sentiment.score],
-    ["Comparison", secondary.stock.profile.name ?? secondary.stock.symbol, COMPARISON_COLORS.secondary, secondary.sentiment.score],
+    ["Primary", shortCompanyName(primary.stock.symbol, primary.stock.profile.name, primary.stock.profile.displayName), COMPARISON_COLORS.primary, primary.sentiment.score],
+    ["Comparison", shortCompanyName(secondary.stock.symbol, secondary.stock.profile.name, secondary.stock.profile.displayName), COMPARISON_COLORS.secondary, secondary.sentiment.score],
   ] as const;
   return (
     <section className="rounded-md bg-black p-5">
@@ -318,8 +319,8 @@ export function StockComparisonView({
         <ComparisonPriceChart
           primarySymbol={primary.stock.symbol}
           secondarySymbol={secondary.stock.symbol}
-          primaryName={primary.stock.profile.name ?? primary.stock.symbol}
-          secondaryName={secondary.stock.profile.name ?? secondary.stock.symbol}
+          primaryName={shortCompanyName(primary.stock.symbol, primary.stock.profile.name, primary.stock.profile.displayName)}
+          secondaryName={shortCompanyName(secondary.stock.symbol, secondary.stock.profile.name, secondary.stock.profile.displayName)}
           primaryLogo={primary.stock.profile.logo}
           secondaryLogo={secondary.stock.profile.logo}
           onRemovePrimary={onRemovePrimary}

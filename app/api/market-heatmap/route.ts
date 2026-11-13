@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       return {
         symbol,
         name: profile.name || symbol,
+        displayName: profile.displayName,
         price: quote.c || null,
         changePercent: quote.dp ?? null,
         // Treasury fund tiles use curated relative AUM. Profile 2 does not

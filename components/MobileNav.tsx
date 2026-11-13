@@ -9,6 +9,7 @@ import { SECTOR_ETFS } from "@/lib/etfs";
 import { StockLogo } from "@/components/StockLogo";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
+import { shortCompanyName } from "@/lib/shortCompanyName";
 
 // ─── Theme management ─────────────────────────────────────────────────────
 type Theme = "dark" | "light" | "system";
@@ -395,7 +396,7 @@ function MobileSearchPill({ origin }: { origin: string }) {
                 fallbackClassName="h-10 w-10 shrink-0 rounded-3xl object-contain" fallbackDisplay="flex" />
               <span style={{ minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>{r.symbol}</span>
-                <span style={{ display: "block", fontSize: 12, color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
+                <span style={{ display: "block", fontSize: 12, color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortCompanyName(r.symbol, r.name)}</span>
               </span>
             </button>
           ))}

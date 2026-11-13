@@ -236,7 +236,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
           aria-label={`Ask about ${stock.symbol}`}
           onClick={event => event.stopPropagation()}
         >
-          <div className="relative flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3">
+          <div className="relative flex shrink-0 items-center justify-between border-b border-white/10 bg-background px-4 py-3" style={{ backdropFilter: "blur(var(--phone-list-header-blur))", WebkitBackdropFilter: "blur(var(--phone-list-header-blur))" }}>
             <span className="flex items-center gap-2 text-sm font-semibold text-text-primary">
               <Sparkles className="h-4 w-4 text-accent" />
               Ask about {stock.symbol}

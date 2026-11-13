@@ -7,6 +7,7 @@ import { Search } from "lucide-react";
 
 import { SECTOR_ETFS } from "@/lib/etfs";
 import { StockLogo } from "@/components/StockLogo";
+import { shortCompanyName } from "@/lib/shortCompanyName";
 
 const RECENT_KEY = "market-lens-recent-searches";
 const MAX_RECENT = 6;
@@ -27,6 +28,7 @@ function addRecentSearch(symbol: string) {
 
 type SearchResult = {
   description: string;
+  displayName?: string;
   displaySymbol?: string;
   symbol: string;
   type?: string;
@@ -295,7 +297,7 @@ export function SearchBar() {
                   <span className="block font-semibold text-text-primary">
                     {result.displaySymbol ?? result.symbol}
                   </span>
-                  <span className="block truncate text-text-muted">{result.description}</span>
+                  <span className="block truncate text-text-muted">{shortCompanyName(result.symbol, result.description, result.displayName)}</span>
                 </span>
               </button>
             </div>

@@ -12,6 +12,7 @@ import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 import { requestAIChat } from "@/lib/aiChatRequest";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
+import { shortCompanyName } from "@/lib/shortCompanyName";
 import { AIFormattedText } from "@/components/AIFormattedText";
 import { TextRevealCaret, useTypingReveal } from "@/components/TextReveal";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
@@ -988,8 +989,8 @@ function ComparisonPriceGraph({ ctx, period, annotations }: { ctx: GraphCtx; per
   const seriesBase = (series: "primary" | "secondary") => series === "secondary" ? rows[0]?.bPrice : rows[0]?.aPrice;
   return <div style={{ width: "100%", maxWidth: "100%" }}>
     <div style={{ marginBottom: 8, display: "flex", flexDirection: "column", gap: 4 }}>
-      <p className="min-w-0 truncate text-4xl font-semibold tracking-normal text-purple-400">{ctx.stock.profile.name ?? ctx.stock.symbol}</p>
-      <p className="min-w-0 truncate text-4xl font-semibold tracking-normal text-orange-400">{secondary.stock.profile.name ?? secondary.stock.symbol}</p>
+      <p className="min-w-0 truncate text-4xl font-semibold tracking-normal text-purple-400">{shortCompanyName(ctx.stock.symbol, ctx.stock.profile.name, ctx.stock.profile.displayName)}</p>
+      <p className="min-w-0 truncate text-4xl font-semibold tracking-normal text-orange-400">{shortCompanyName(secondary.stock.symbol, secondary.stock.profile.name, secondary.stock.profile.displayName)}</p>
     </div>
     {ready && active && <>
       <div className="mb-1 flex items-end gap-3">
@@ -1444,7 +1445,7 @@ export async function buildStockContextAsync(
   const lines: string[] = [
     `Date/Time: ${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" })} ET`,
     `Market: ${market.status} (${market.timeToEvent})`,
-    `Stock: ${stock.profile.name ?? stock.symbol} (${stock.symbol})`,
+    `Stock: ${shortCompanyName(stock.symbol, stock.profile.name, stock.profile.displayName)} (${stock.symbol})`,
     `Exchange: ${stock.profile.exchange ?? "N/A"}`,
     `Industry: ${stock.profile.finnhubIndustry ?? "N/A"}`,
     `Current Price: $${currentPrice.toFixed(2)}`,
@@ -1512,7 +1513,7 @@ function buildStockContext(
   const lines: string[] = [
     `Date/Time: ${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" })} ET`,
     `Market: ${market.status} (${market.timeToEvent})`,
-    `Stock: ${stock.profile.name ?? stock.symbol} (${stock.symbol})`,
+    `Stock: ${shortCompanyName(stock.symbol, stock.profile.name, stock.profile.displayName)} (${stock.symbol})`,
     `Exchange: ${stock.profile.exchange ?? "N/A"}`,
     `Industry: ${stock.profile.finnhubIndustry ?? "N/A"}`,
     `Current Price: $${currentPrice.toFixed(2)}`,
@@ -1620,10 +1621,10 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       buildStockContextAsync(stock, currentPrice, sentiment, metrics, false),
       buildStockContextAsync(comparisonStock.stock, comparisonStock.currentPrice, comparisonStock.sentiment, comparisonStock.metrics, false),
     ]);
-    return `Comparison mode. Compare both stocks using the data below. News is intentionally omitted.\n\nStock 1 — ${stock.profile.name ?? stock.symbol} (${stock.symbol}):\n${primary}\n\nStock 2 — ${comparisonStock.stock.profile.name ?? comparisonStock.stock.symbol} (${comparisonStock.stock.symbol}):\n${secondary}`;
+    return `Comparison mode. Compare both stocks using the data below. News is intentionally omitted.\n\nStock 1 — ${shortCompanyName(stock.symbol, stock.profile.name, stock.profile.displayName)} (${stock.symbol}):\n${primary}\n\nStock 2 — ${shortCompanyName(comparisonStock.stock.symbol, comparisonStock.stock.profile.name, comparisonStock.stock.profile.displayName)} (${comparisonStock.stock.symbol}):\n${secondary}`;
   };
   const buildCurrentContextFallback = () => comparisonStock
-    ? `Comparison mode. Compare both stocks using the data below. News is intentionally omitted.\n\nStock 1 — ${stock.profile.name ?? stock.symbol} (${stock.symbol}):\n${buildStockContext(stock, currentPrice, sentiment, metrics, false)}\n\nStock 2 — ${comparisonStock.stock.profile.name ?? comparisonStock.stock.symbol} (${comparisonStock.stock.symbol}):\n${buildStockContext(comparisonStock.stock, comparisonStock.currentPrice, comparisonStock.sentiment, comparisonStock.metrics, false)}`
+    ? `Comparison mode. Compare both stocks using the data below. News is intentionally omitted.\n\nStock 1 — ${shortCompanyName(stock.symbol, stock.profile.name, stock.profile.displayName)} (${stock.symbol}):\n${buildStockContext(stock, currentPrice, sentiment, metrics, false)}\n\nStock 2 — ${shortCompanyName(comparisonStock.stock.symbol, comparisonStock.stock.profile.name, comparisonStock.stock.profile.displayName)} (${comparisonStock.stock.symbol}):\n${buildStockContext(comparisonStock.stock, comparisonStock.currentPrice, comparisonStock.sentiment, comparisonStock.metrics, false)}`
     : buildStockContext(stock, currentPrice, sentiment, metrics);
   const [stockContext, setStockContext] = useState(() => buildCurrentContextFallback());
 
@@ -1834,7 +1835,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   const pillBottom = isDesktop
     ? "1.5rem"
     : open && keyboardInset > 8
-      ? `${keyboardInset + 12}px`
+      ? "12px"
       : "calc(env(safe-area-inset-bottom) - 0.5rem)";
   // Expanded pill width: the full container width (minus side margins) when
   // confined to the desktop split view's detail column, otherwise the full
@@ -1898,24 +1899,36 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         />
 
         <div
-          aria-hidden="true"
+          aria-label="Warrent AI"
           style={{
             position: "absolute",
             zIndex: 2,
-            top: "calc(env(safe-area-inset-top) + 0.5rem)",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            color: "var(--AI_COLOR)",
-            fontSize: 20,
-            fontWeight: 700,
-            lineHeight: 1.25,
+            insetInline: 0,
+            top: 0,
+            height: "calc(env(safe-area-inset-top) + 5.75rem)",
+            paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)",
+            display: "flex",
+            justifyContent: "center",
             pointerEvents: "none",
           }}
-          className="flex items-center justify-center gap-1.5"
         >
-          <OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-[var(--AI_COLOR)]" />
-          <span>Warrent AI</span>
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              zIndex: 0,
+              insetInline: 0,
+              top: 0,
+              height: "calc(100% - 0.75rem)",
+              backdropFilter: "blur(var(--phone-list-header-blur))",
+              WebkitBackdropFilter: "blur(var(--phone-list-header-blur))",
+              backgroundColor: "var(--color-background)",
+            }}
+          />
+          <div className="relative z-10 flex h-fit items-center gap-1.5 font-bold text-[var(--AI_COLOR)]" style={{ fontSize: 20, lineHeight: 1.25 }}>
+            <OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-[var(--AI_COLOR)]" />
+            <span>Warrent AI</span>
+          </div>
         </div>
 
         {/* Messages occupy the full overlay. Padding reserves comfortable
@@ -1942,7 +1955,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             justifyContent: "flex-start",
             minHeight: 0,
             gap: 12,
-            padding: "calc(env(safe-area-inset-top) + 3.5rem) 14px 112px",
+            padding: "calc(env(safe-area-inset-top) + 5.75rem) 14px 112px",
             opacity: open ? 1 : 0,
             transition: "opacity 0.2s ease",
             transitionDelay: open && !isDesktop ? "0.32s" : "0s",
@@ -2016,7 +2029,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           backdropFilter: "blur(var(--phone-floating-pill-blur))",
           WebkitBackdropFilter: "blur(var(--phone-floating-pill-blur))",
           boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
-          transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
+          transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1)",
         }}
       >
         {/* Closed state: the trigger icon */}

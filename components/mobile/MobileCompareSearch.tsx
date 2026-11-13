@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { StockLogo } from "@/components/StockLogo";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
+import { shortCompanyName } from "@/lib/shortCompanyName";
 
 type SearchResult = { symbol: string; name: string };
 
@@ -176,13 +177,13 @@ export function MobileCompareSearch({
           const hasLogo = Boolean(logos[result.symbol]) && !SECTOR_ETFS.some((etf) => etf.symbol === result.symbol);
           return <button key={result.symbol} type="button" onClick={() => choose(result.symbol)}
             className="flex w-full items-center gap-3 border-t border-border-subtle px-4 py-3 text-left first:border-t-0">
-            <StockLogo logo={hasLogo ? logos[result.symbol] : undefined} symbol={result.symbol} size={48}
+            <StockLogo logo={hasLogo ? logos[result.symbol] : undefined} size={48}
               sizeClassName="h-10 w-10 shrink-0"
               imageClassName="h-10 w-10 shrink-0 rounded-3xl border border-border-subtle bg-panel-muted object-contain"
               fallbackClassName="h-10 w-10 shrink-0 rounded-3xl object-contain" />
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-text-primary">{result.symbol}</span>
-              <span className="block truncate text-xs text-text-muted">{result.name}</span>
+              <span className="block truncate text-xs text-text-muted">{shortCompanyName(result.symbol, result.name)}</span>
             </span>
           </button>;
         })}
@@ -204,8 +205,8 @@ export function MobileCompareSearch({
           <input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => { if (event.key === "Escape") close(); }}
             placeholder={`Compare ${primarySymbol} with`} aria-label={`Compare ${primarySymbol} with another stock`}
             className="min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-[#ff9f2e]" style={{ caretColor: "#f97316" }} />
-          <button type="button" aria-label="Close comparison search" onClick={close} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-on-accent">
-            <OptionalSvgIcon name="close" className="h-4 w-4" colorClassName="text-on-accent" />
+          <button type="button" aria-label="Close comparison search" onClick={close} className="flex h-8 w-8 shrink-0 items-center justify-center text-[#f97316]">
+            <OptionalSvgIcon name="close" className="h-4 w-4" color="#000" />
           </button>
         </div>
       </div>

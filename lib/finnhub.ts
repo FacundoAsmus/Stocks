@@ -329,6 +329,7 @@ async function fetchYahooMovers(kind: "gainers" | "losers") {
       return {
         symbol: quote.symbol ?? "",
         name: quote.longName || quote.shortName || quote.displayName || quote.symbol || "",
+        displayName: quote.displayName,
         price,
         change,
         changePercent: quote.regularMarketChangePercent?.raw ?? null,
