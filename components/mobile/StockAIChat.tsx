@@ -1929,7 +1929,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       position: "fixed", left: 0, top: 0, width: "100%", height: "var(--vvh, 100vh)",
       transform: "translate3d(0, var(--vvt, 0px), 0)", display: "flex", flexDirection: "column", zIndex: 1000,
       transition: "height var(--kb-transition, 250ms cubic-bezier(0.2, 0.8, 0.2, 1))",
-      paddingBottom: "env(safe-area-inset-bottom)", boxSizing: "border-box",
+      paddingBottom: "calc(env(safe-area-inset-bottom) - 0.5rem)", boxSizing: "border-box",
       pointerEvents: open ? "auto" : "none",
     }}>
       <style>{`.warrent-ai-mobile-panel[data-keyboard="true"]{padding-bottom:12px!important}`}</style>
