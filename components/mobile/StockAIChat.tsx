@@ -1640,7 +1640,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     if (v) setBackdropClosing(false);
     else if (open) {
       setBackdropClosing(true);
-      closeBackdropTimer.current = window.setTimeout(() => setBackdropClosing(false), 250);
+      closeBackdropTimer.current = window.setTimeout(() => setBackdropClosing(false), 320);
     }
     if (isControlled) onOpenChange?.(v);
     else setInternalOpen(v);
@@ -1768,7 +1768,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
 
   // Sync the phone panel directly from VisualViewport, without React renders.
   useEffect(() => {
-    if (!open || typeof window === "undefined" || window.innerWidth >= 1024 || containerRef) return;
+    if ((!open && !backdropClosing) || typeof window === "undefined" || window.innerWidth >= 1024 || containerRef) return;
     const panel = mobilePanelRef.current;
     if (!panel) return;
     const vv = window.visualViewport;
@@ -1809,7 +1809,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       document.removeEventListener("focusout", sync);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [open, containerRef]);
+  }, [open, backdropClosing, containerRef]);
 
   useEffect(() => {
     if (!open || typeof window === "undefined" || window.innerWidth >= 1024 || containerRef) { setMobilePillExpanded(false); return; }
@@ -1929,8 +1929,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       position: "fixed", left: 0, top: 0, width: "100%", height: "var(--vvh, 100vh)",
       transform: "translate3d(0, var(--vvt, 0px), 0)", display: "flex", flexDirection: "column", zIndex: 1000,
       transition: "height var(--kb-transition, 250ms cubic-bezier(0.2, 0.8, 0.2, 1))",
-      paddingBottom: "env(safe-area-inset-bottom)", boxSizing: "border-box", opacity: open ? 1 : 0,
-      pointerEvents: open ? "auto" : "none", transitionProperty: "height, opacity", transitionDuration: "var(--kb-transition, 250ms cubic-bezier(0.2, 0.8, 0.2, 1)), 250ms",
+      paddingBottom: "env(safe-area-inset-bottom)", boxSizing: "border-box",
+      pointerEvents: open ? "auto" : "none", transition: "height var(--kb-transition, 250ms cubic-bezier(0.2, 0.8, 0.2, 1))",
     }}>
       <style>{`.warrent-ai-mobile-panel[data-keyboard="true"]{padding-bottom:12px!important}`}</style>
       <div aria-label="Warrent AI" style={{ position: "relative", flex: "0 0 calc(env(safe-area-inset-top) + 2.875rem)", paddingTop: "calc(env(safe-area-inset-top) + 0.25rem)", display: "flex", justifyContent: "center", pointerEvents: "none" }}>
@@ -1938,28 +1938,28 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         <div className="relative z-10 flex h-fit items-center gap-1.5 font-bold text-[var(--AI_COLOR)]" style={{ fontSize: 20, lineHeight: 1.25 }}><OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-[var(--AI_COLOR)]" /><span>Warrent AI</span></div>
       </div>
       <div ref={scrollRef} className="ai-chat-messages" style={{
-        position: "relative", flex: "1 1 auto", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", touchAction: "pan-y",
-        display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 12, padding: "8px 14px", boxSizing: "border-box",
-        opacity: open ? 1 : 0, transition: "opacity 0.2s ease", transitionDelay: "0.32s",
+        position: "relative", flex: "1 1 auto", minHeight: 0, marginBottom: "-56px", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", touchAction: "pan-y",
+        display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 12, padding: "8px 14px 70px", boxSizing: "border-box",
+        opacity: open ? 1 : 0, transition: "opacity 0.2s ease", transitionDelay: open ? "0.32s" : "0s",
       }} onClick={onEmptyAreaClick} onWheel={event => event.stopPropagation()} onTouchStart={onEmptyAreaTouchStart} onTouchEnd={onEmptyAreaTouchEnd}>
         <MemoizedChatMessages messages={messages} graphCtx={graphCtx} bgBubbleAI={bgBubbleAI} bubbleBorderUser={bubbleBorderUser} bubbleGlowAI={bubbleGlowAI} textColor={textColor} loading={loading} serverError={serverError} markDone={markDone} />
       </div>
-      <div className="ai-mobile-pill-flow" style={{ padding: "0 1rem", flex: "0 0 auto", display: "flex", justifyContent: "flex-end" }}>
+      <div className="ai-mobile-pill-flow" style={{ padding: backdropClosing ? "0 1.25rem 0 1rem" : "0 1rem", flex: "0 0 auto", display: "flex", justifyContent: "flex-end" }}>
         <div className="smoked-glass-surface ai-typing-bar rounded-full border border-white/15 text-accent overflow-hidden" style={{
           position: "relative", flex: "0 0 auto", width: mobilePillExpanded ? "100%" : "3.5rem", height: "3.5rem", boxSizing: "border-box",
           background: chatControlGlass, backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)",
           boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
           transition: "width 0.32s cubic-bezier(0.2,0,0,1)",
         }}>
-          <button onClick={() => setOpen(true)} aria-label="Ask AI" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0, pointerEvents: "none" }}><OptionalSvgIcon name="ai" className="h-8 w-8" /></button>
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 8, padding: "0 8px 0 20px" }}>
+          <button onClick={() => setOpen(true)} aria-label="Ask AI" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: backdropClosing ? 1 : 0, pointerEvents: "none", transition: "opacity 0.16s ease" }}><OptionalSvgIcon name="ai" className="h-8 w-8" /></button>
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 8, padding: "0 8px 0 20px", opacity: open ? 1 : 0, transition: "opacity 0.16s ease" }}>
             <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} placeholder={`Ask about ${stock.symbol}…`} className="text-white placeholder:text-white/45" style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", fontSize: 16, color: textColor, caretColor: "var(--color-accent)" }} />
             {input.trim() ? <button onClick={() => { void sendMessage(); }} disabled={loading} className="ai-send-button-glow" style={{ flexShrink: 0, height: 38, width: 38, borderRadius: "50%", backgroundColor: !loading ? "var(--color-accent)" : "rgb(var(--accent-rgb) / 0.18)", color: !loading ? "var(--color-on-accent)" : "rgb(var(--accent-rgb) / 0.35)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-on-accent" /></button> : <GlossyIconButton aria-label="Close chat" onClick={handleDismiss} size={38}><GlossyCloseIcon /></GlossyIconButton>}
           </div>
         </div>
       </div>
     </div>}
-    {!hideTrigger && !open && <button onClick={() => setOpen(true)} aria-label="Ask AI" className="smoked-glass-surface fixed z-[1002] flex h-14 w-14 items-center justify-center rounded-full border border-white/15 text-accent ai-aberration" style={{ right: "1.25rem", bottom: "calc(1.25rem + env(safe-area-inset-bottom))", background: chatControlGlass, backdropFilter: "blur(var(--phone-floating-pill-blur))", WebkitBackdropFilter: "blur(var(--phone-floating-pill-blur))", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)" }}><OptionalSvgIcon name="ai" className="h-8 w-8" /></button>}
+    {!hideTrigger && !open && !backdropClosing && <button onClick={() => setOpen(true)} aria-label="Ask AI" className="smoked-glass-surface fixed z-[1002] flex h-14 w-14 items-center justify-center rounded-full border border-white/15 text-accent ai-aberration" style={{ right: "1.25rem", bottom: "calc(env(safe-area-inset-bottom) - 0.5rem)", background: chatControlGlass, backdropFilter: "blur(var(--phone-floating-pill-blur))", WebkitBackdropFilter: "blur(var(--phone-floating-pill-blur))", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)", transition: "opacity 0.16s ease" }}><OptionalSvgIcon name="ai" className="h-8 w-8" /></button>}
   </>, document.body);
 
   return createPortal(
