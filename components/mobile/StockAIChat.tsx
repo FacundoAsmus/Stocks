@@ -11,7 +11,6 @@ import { AIStarLoader } from "@/components/AIStarLoader";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 import { requestAIChat } from "@/lib/aiChatRequest";
-import { getRandomAIWelcome } from "@/lib/aiWelcome";
 import { AIFormattedText } from "@/components/AIFormattedText";
 import { TextRevealCaret, useTypingReveal } from "@/components/TextReveal";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
@@ -37,19 +36,17 @@ interface GraphCtx {
 }
 
 const MemoizedChatMessages = memo(function MemoizedChatMessages({
-  messages, graphCtx, bgBubbleAI, bubbleBorderUser, bubbleGlowAI, textColor, loading, serverError, markDone,
+  messages, graphCtx, textColor, loading, serverError, markDone,
 }: {
-  messages: Message[]; graphCtx: GraphCtx; bgBubbleAI: string; bubbleBorderUser: string;
-  bubbleGlowAI: string; textColor: string; loading: boolean; serverError: boolean; markDone: (i: number) => void;
+  messages: Message[]; graphCtx: GraphCtx; textColor: string; loading: boolean;
+  serverError: boolean; markDone: (i: number) => void;
 }) {
   return <>
     {messages.map((msg, i) => (
       <div key={i} style={{ display: "flex", justifyContent: msg.role === "user" ? "flex-end" : "flex-start" }}>
-        <div className={`smoked-glass-surface${msg.role === "model" ? " ai-response-bubble" : ""}`} style={{
-          maxWidth: "86%", wordBreak: "break-word", whiteSpace: "pre-wrap", padding: "12px 18px", borderRadius: 24,
-          background: bgBubbleAI, border: `1px solid ${msg.role === "model" ? "var(--AI_COLOR)" : bubbleBorderUser}`,
-          backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)",
-          boxShadow: msg.role === "model" ? `0 0 12px color-mix(in srgb, var(--AI_COLOR) 48%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 70%, transparent), ${bubbleGlowAI}` : bubbleGlowAI,
+        <div style={{
+          maxWidth: "86%", wordBreak: "break-word", whiteSpace: "pre-wrap", padding: 0,
+          background: "transparent", border: "1px solid transparent", boxShadow: "none",
           color: textColor, fontSize: 17, lineHeight: 1.55, fontWeight: msg.role === "user" ? 500 : 400,
         }}>
           {msg.role === "model" && msg.animating
@@ -59,15 +56,16 @@ const MemoizedChatMessages = memo(function MemoizedChatMessages({
       </div>
     ))}
     {serverError && <AIUnavailableNotice />}
-    {loading && <div style={{ display: "flex", justifyContent: "flex-start" }}>
-      <div className="smoked-glass-surface ai-response-bubble" style={{
-        padding: "14px 18px", borderRadius: 24, background: bgBubbleAI, border: "1px solid var(--AI_COLOR)",
-        boxShadow: `0 0 12px color-mix(in srgb, var(--AI_COLOR) 48%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 70%, transparent), ${bubbleGlowAI}`,
-        backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", display: "flex", alignItems: "center",
-      }}><AIStarLoader size="md" /></div>
-    </div>}
+    {loading && <div style={{ display: "flex", justifyContent: "flex-start" }}><AIStarLoader size="md" /></div>}
   </>;
 });
+
+function EmptyChatPrompt() {
+  return <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, padding: "24px", textAlign: "center", pointerEvents: "none" }}>
+    <OptionalSvgIcon name="ai" className="h-16 w-16" colorClassName="text-[var(--AI_COLOR)]" />
+    <p style={{ margin: 0, maxWidth: 360, color: "var(--color-text-primary)", fontSize: 28, fontWeight: 600, lineHeight: 1.2 }}>What do you want to know buddy?</p>
+  </div>;
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 // Inline data pills & graphs — the AI calls these out with [[data:KEY]] and
@@ -1654,7 +1652,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   const scrollRef   = useRef<HTMLDivElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
   const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
-  const welcomedStockRef = useRef<string | null>(null);
   const buildCurrentContext = async () => {
     if (!comparisonStock) {
       return buildStockContextAsync(stock, currentPrice, sentiment, metrics);
@@ -1697,19 +1694,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, stock.symbol, comparisonStock?.stock.symbol]);
 
-  useEffect(() => {
-    if (!open || welcomedStockRef.current === stock.symbol) return;
-    setLoading(true);
-    const timer = window.setTimeout(() => {
-      setMessages([{ role: "model", text: getRandomAIWelcome(), animating: true }]);
-      setLoading(false);
-      welcomedStockRef.current = stock.symbol;
-    }, 500);
-    return () => {
-      window.clearTimeout(timer);
-      setLoading(false);
-    };
-  }, [open, stock.symbol]);
   const isLightMode = typeof document !== "undefined" && document.documentElement.classList.contains("light-mode");
   const graphCtx: GraphCtx = useMemo(() => ({ stock, currentPrice, sentiment, metrics, comparisonStock, isLightMode }), [stock, currentPrice, sentiment, metrics, comparisonStock, isLightMode]);
 
@@ -1848,7 +1832,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     function onAskAboutIndicator(event: Event) {
       const detail = (event as CustomEvent<{ symbol?: string; prompt?: string }>).detail;
       if (!detail?.prompt || detail.symbol?.toUpperCase() !== stock.symbol.toUpperCase()) return;
-      welcomedStockRef.current = stock.symbol;
       setPromptToSend(detail.prompt);
       setOpen(true);
     }
@@ -1889,11 +1872,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     if (e.target === e.currentTarget) handleDismiss();
   }
 
-  const bgBubbleAI = "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))";
   const chatControlGlass = "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))";
-  const bubbleBorderUser = "rgba(255,255,255,0.16)";
-  const bubbleBorderAI   = "rgba(255,255,255,0.16)";
-  const bubbleGlowAI     = "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)";
   const textColor     = "rgba(245,248,248,0.94)";
 
   const vpW = desktopBounds.width || (typeof window !== "undefined" ? window.innerWidth : 0);
@@ -1931,16 +1910,13 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       boxSizing: "border-box",
       pointerEvents: open ? "auto" : "none",
     }}>
-      <div aria-label="Warrent AI" style={{ position: "relative", flex: "0 0 calc(env(safe-area-inset-top) + 2.875rem)", paddingTop: "calc(env(safe-area-inset-top) + 0.25rem)", display: "flex", justifyContent: "center", pointerEvents: "none", opacity: open ? 1 : 0, transition: "opacity 0.2s ease", transitionDelay: open ? "0.32s" : "0s" }}>
-        <div aria-hidden="true" style={{ position: "absolute", insetInline: 0, top: 0, height: "calc(100% - 0.375rem)", backdropFilter: "blur(var(--phone-list-header-blur))", WebkitBackdropFilter: "blur(var(--phone-list-header-blur))", backgroundColor: "color-mix(in srgb, var(--color-background) 68%, transparent)" }} />
-        <div className="relative z-10 flex h-fit items-center gap-1.5 font-bold text-[var(--AI_COLOR)]" style={{ fontSize: 20, lineHeight: 1.25 }}><OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-[var(--AI_COLOR)]" /><span>Warrent AI</span></div>
-      </div>
       <div ref={scrollRef} className="ai-chat-messages" style={{
         position: "relative", flex: "1 1 auto", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", touchAction: "pan-y",
-        display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 12, padding: "8px 14px 112px", boxSizing: "border-box",
+        display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 12, padding: "calc(env(safe-area-inset-top) + 0.75rem) 14px 112px", boxSizing: "border-box",
         opacity: open ? 1 : 0, transition: "opacity 0.2s ease", transitionDelay: open ? "0.32s" : "0s",
       }} onClick={onEmptyAreaClick} onWheel={event => event.stopPropagation()} onTouchStart={onEmptyAreaTouchStart} onTouchEnd={onEmptyAreaTouchEnd}>
-        <MemoizedChatMessages messages={messages} graphCtx={graphCtx} bgBubbleAI={bgBubbleAI} bubbleBorderUser={bubbleBorderUser} bubbleGlowAI={bubbleGlowAI} textColor={textColor} loading={loading} serverError={serverError} markDone={markDone} />
+        {messages.length === 0 && !loading && !serverError && <EmptyChatPrompt />}
+        <MemoizedChatMessages messages={messages} graphCtx={graphCtx} textColor={textColor} loading={loading} serverError={serverError} markDone={markDone} />
       </div>
     </div>}
     {(!hideTrigger || open || backdropClosing) && <div ref={mobilePillRef} className={`smoked-glass-surface fixed z-[1002] overflow-hidden rounded-full border border-white/15 text-accent${open ? " ai-typing-bar" : " ai-aberration"}`} style={{
@@ -2000,39 +1976,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           onClick={handleDismiss}
         />
 
-        <div
-          aria-label="Warrent AI"
-          style={{
-            position: "absolute",
-            zIndex: 2,
-            insetInline: 0,
-            top: 0,
-            height: "calc(env(safe-area-inset-top) + 2.875rem)",
-            paddingTop: "calc(env(safe-area-inset-top) + 0.25rem)",
-            display: "flex",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-        >
-          <div
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              zIndex: 0,
-              insetInline: 0,
-              top: 0,
-              height: "calc(100% - 0.375rem)",
-              backdropFilter: "blur(var(--phone-list-header-blur))",
-              WebkitBackdropFilter: "blur(var(--phone-list-header-blur))",
-              backgroundColor: "color-mix(in srgb, var(--color-background) 68%, transparent)",
-            }}
-          />
-          <div className="relative z-10 flex h-fit items-center gap-1.5 font-bold text-[var(--AI_COLOR)]" style={{ fontSize: 20, lineHeight: 1.25 }}>
-            <OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-[var(--AI_COLOR)]" />
-            <span>Warrent AI</span>
-          </div>
-        </div>
-
         {/* Messages occupy the full overlay. Padding reserves comfortable
             resting room for the app edge and input pill, but does not create
             invisible clipping strips above or below the conversation. */}
@@ -2057,7 +2000,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             justifyContent: "flex-start",
             minHeight: 0,
             gap: 12,
-            padding: "calc(env(safe-area-inset-top) + 2.875rem) 14px 112px",
+            padding: "calc(env(safe-area-inset-top) + 0.75rem) 14px 112px",
             opacity: open ? 1 : 0,
             transition: "opacity 0.2s ease",
             transitionDelay: open && !isDesktop ? "0.32s" : "0s",
@@ -2067,7 +2010,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           onTouchStart={onEmptyAreaTouchStart}
           onTouchEnd={onEmptyAreaTouchEnd}
         >
-          <MemoizedChatMessages messages={messages} graphCtx={graphCtx} bgBubbleAI={bgBubbleAI} bubbleBorderUser={bubbleBorderUser} bubbleGlowAI={bubbleGlowAI} textColor={textColor} loading={loading} serverError={serverError} markDone={markDone} />
+          {messages.length === 0 && !loading && !serverError && <EmptyChatPrompt />}
+          <MemoizedChatMessages messages={messages} graphCtx={graphCtx} textColor={textColor} loading={loading} serverError={serverError} markDone={markDone} />
         </div>
       </div>
 
