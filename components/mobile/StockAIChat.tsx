@@ -62,8 +62,8 @@ const MemoizedChatMessages = memo(function MemoizedChatMessages({
 
 function EmptyChatPrompt() {
   return <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, padding: "24px", textAlign: "center", pointerEvents: "none" }}>
-    <OptionalSvgIcon name="ai" className="h-16 w-16" colorClassName="text-[var(--AI_COLOR)]" />
-    <p style={{ margin: 0, maxWidth: 360, color: "var(--color-text-primary)", fontSize: 28, fontWeight: 600, lineHeight: 1.2 }}>What do you want to know buddy?</p>
+    <OptionalSvgIcon name="ai" className="h-16 w-16" colorClassName="text-white" color="#ffffff" />
+    <p style={{ margin: 0, maxWidth: 360, color: "var(--color-accent)", fontSize: 28, fontWeight: 600, lineHeight: 1.2 }}>What do you want to know buddy?</p>
   </div>;
 }
 
@@ -1873,7 +1873,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   }
 
   const chatControlGlass = "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))";
-  const textColor     = "rgba(245,248,248,0.94)";
+  const textColor     = "var(--color-accent)";
 
   const vpW = desktopBounds.width || (typeof window !== "undefined" ? window.innerWidth : 0);
   const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
@@ -1912,7 +1912,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     }}>
       <div ref={scrollRef} className="ai-chat-messages" style={{
         position: "relative", flex: "1 1 auto", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", touchAction: "pan-y",
-        display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 12, padding: "calc(env(safe-area-inset-top) + 0.75rem) 14px 112px", boxSizing: "border-box",
+        display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 24, padding: "calc(env(safe-area-inset-top) + 0.75rem) 14px 112px", boxSizing: "border-box",
         opacity: open ? 1 : 0, transition: "opacity 0.2s ease", transitionDelay: open ? "0.32s" : "0s",
       }} onClick={onEmptyAreaClick} onWheel={event => event.stopPropagation()} onTouchStart={onEmptyAreaTouchStart} onTouchEnd={onEmptyAreaTouchEnd}>
         {messages.length === 0 && !loading && !serverError && <EmptyChatPrompt />}
@@ -1928,7 +1928,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     }}>
       <button onClick={() => setOpen(true)} aria-label="Ask AI" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: open ? 0 : 1, pointerEvents: open || backdropClosing ? "none" : "auto", transition: "opacity 0.16s ease" }}><OptionalSvgIcon name="ai" className="h-8 w-8" /></button>
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 8, padding: "0 8px 0 20px", opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none", transition: "opacity 0.22s ease", transitionDelay: open ? "0.14s" : "0s" }}>
-        <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} placeholder={`Ask about ${stock.symbol}…`} className="text-white placeholder:text-white/45" style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", fontSize: 16, color: textColor, caretColor: "var(--color-accent)" }} />
+        <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} placeholder={`Ask about ${stock.symbol}…`} className="text-accent placeholder:text-text-muted" style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", fontSize: 16, color: textColor, caretColor: "var(--color-accent)" }} />
         {input.trim() ? <button onClick={() => { void sendMessage(); }} disabled={loading} className="ai-send-button-glow" style={{ flexShrink: 0, height: 38, width: 38, borderRadius: "50%", backgroundColor: !loading ? "var(--color-accent)" : "rgb(var(--accent-rgb) / 0.18)", color: !loading ? "var(--color-on-accent)" : "rgb(var(--accent-rgb) / 0.35)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-on-accent" /></button> : <GlossyIconButton aria-label="Close chat" onClick={handleDismiss} size={38}><GlossyCloseIcon /></GlossyIconButton>}
       </div>
     </div>}
@@ -1985,7 +1985,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           style={{
             position: "absolute",
             zIndex: 1,
-            left: 0, right: 0,
+            left: !containerRef && isDesktop ? "25%" : 0, right: 0,
             top: 0,
             bottom: 0,
             overflowY: "auto",
@@ -1999,7 +1999,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             // the complete conversation stays reachable by scrolling.
             justifyContent: "flex-start",
             minHeight: 0,
-            gap: 12,
+            gap: 24,
             padding: "calc(env(safe-area-inset-top) + 0.75rem) 14px 112px",
             opacity: open ? 1 : 0,
             transition: "opacity 0.2s ease",
@@ -2014,6 +2014,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           <MemoizedChatMessages messages={messages} graphCtx={graphCtx} textColor={textColor} loading={loading} serverError={serverError} markDone={markDone} />
         </div>
       </div>
+
+      {!containerRef && isDesktop && open && <aside aria-label="AI chat list" className="desktop-alert-glass desktop-list-holder fixed z-[1001] overflow-hidden rounded-3xl border border-white/15" style={{ left: 12, top: 12, bottom: 12, width: "23%", pointerEvents: "none" }} />}
 
       {/* The pill — always mounted, same element morphs from a small circle
           (matching the search button exactly) into the full input bar. No
@@ -2067,7 +2069,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
             placeholder={`Ask about ${stock.symbol}…`}
-            className="text-white placeholder:text-white/45"
+            className="text-accent placeholder:text-text-muted"
             style={{
               flex: 1,
               background: "transparent",
@@ -2131,7 +2133,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
               placeholder={`Ask about ${stock.symbol}…`}
-              className="text-white placeholder:text-white/45"
+              className="text-accent placeholder:text-text-muted"
               style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, color: textColor, caretColor: "var(--color-accent)" }}
             />
             {input.trim() ? (
