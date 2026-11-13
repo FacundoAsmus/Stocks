@@ -2015,8 +2015,12 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         </div>
       </div>
 
-      {!containerRef && isDesktop && open && <aside aria-label="AI chat list" className="desktop-alert-glass desktop-list-holder fixed z-[1001] overflow-hidden rounded-3xl border border-white/15" style={{ left: 12, top: 12, bottom: 12, width: "23%" }}>
-        <div role="status" className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center text-sm font-medium text-negative">
+      {isDesktop && open && <aside aria-label="AI chat list" className="desktop-alert-glass desktop-list-holder fixed z-[1010] m-3 flex w-[23%] flex-col overflow-hidden rounded-3xl border border-white/15">
+        <div className="shrink-0 px-6 pb-4 pt-6">
+          <p className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Your Chats</p>
+          <h2 className="text-sm font-medium uppercase tracking-[0.18em] text-accent">AI</h2>
+        </div>
+        <div role="status" className="flex flex-1 flex-col items-center justify-center gap-2 px-3 text-center text-sm font-medium text-negative">
           <OptionalSvgIcon name="empty-list" className="h-8 w-8" colorClassName="text-negative" />
           <span>The list is empty.</span>
         </div>
