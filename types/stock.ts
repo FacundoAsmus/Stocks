@@ -12,7 +12,6 @@ export interface FinnhubQuote {
 export interface CompanyProfile {
   country?: string;
   currency?: string;
-  displayName?: string;
   exchange?: string;
   finnhubIndustry?: string;
   ipo?: string;
@@ -100,7 +99,6 @@ export interface EarningsEvent {
 export interface StockSummary {
   symbol: string;
   name: string;
-  displayName?: string;
   price: number | null;
   change: number | null;
   changePercent: number | null;

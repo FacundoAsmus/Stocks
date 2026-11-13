@@ -236,16 +236,16 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
           aria-label={`Ask about ${stock.symbol}`}
           onClick={event => event.stopPropagation()}
         >
-          <div className="relative flex shrink-0 items-center justify-between border-b border-white/10 bg-background px-4 py-3" style={{ backdropFilter: "blur(var(--phone-list-header-blur))", WebkitBackdropFilter: "blur(var(--phone-list-header-blur))" }}>
-            <span className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+          <div className="relative flex h-7 shrink-0 items-center justify-between border-b border-white/10 px-4 py-0.5" style={{ background: "color-mix(in srgb, var(--color-background) 68%, transparent)", backdropFilter: "blur(var(--phone-list-header-blur))", WebkitBackdropFilter: "blur(var(--phone-list-header-blur))" }}>
+            <span className="flex items-center gap-2 text-xs font-semibold text-text-primary">
               <Sparkles className="h-4 w-4 text-accent" />
               Ask about {stock.symbol}
             </span>
-            <span className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1.5 text-base font-bold text-[var(--AI_COLOR)]">
-              <OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-[var(--AI_COLOR)]" />
+            <span className="absolute left-1/2 flex -translate-x-1/2 items-center gap-1.5 text-sm font-bold text-[var(--AI_COLOR)]">
+              <OptionalSvgIcon name="ai" className="h-4 w-4" colorClassName="text-[var(--AI_COLOR)]" />
               Warrent AI
             </span>
-            <GlossyIconButton aria-label="Close chat" onClick={() => setOpen(false)}><GlossyCloseIcon /></GlossyIconButton>
+            <GlossyIconButton aria-label="Close chat" onClick={() => setOpen(false)} size={20}><GlossyCloseIcon /></GlossyIconButton>
           </div>
 
           <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-3">

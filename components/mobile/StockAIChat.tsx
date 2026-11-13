@@ -12,7 +12,6 @@ import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 import { requestAIChat } from "@/lib/aiChatRequest";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
-import { shortCompanyName } from "@/lib/shortCompanyName";
 import { AIFormattedText } from "@/components/AIFormattedText";
 import { TextRevealCaret, useTypingReveal } from "@/components/TextReveal";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
@@ -989,8 +988,8 @@ function ComparisonPriceGraph({ ctx, period, annotations }: { ctx: GraphCtx; per
   const seriesBase = (series: "primary" | "secondary") => series === "secondary" ? rows[0]?.bPrice : rows[0]?.aPrice;
   return <div style={{ width: "100%", maxWidth: "100%" }}>
     <div style={{ marginBottom: 8, display: "flex", flexDirection: "column", gap: 4 }}>
-      <p className="min-w-0 truncate text-4xl font-semibold tracking-normal text-purple-400">{shortCompanyName(ctx.stock.symbol, ctx.stock.profile.name, ctx.stock.profile.displayName)}</p>
-      <p className="min-w-0 truncate text-4xl font-semibold tracking-normal text-orange-400">{shortCompanyName(secondary.stock.symbol, secondary.stock.profile.name, secondary.stock.profile.displayName)}</p>
+      <p className="min-w-0 truncate text-4xl font-semibold tracking-normal text-purple-400">{ctx.stock.profile.name ?? ctx.stock.symbol}</p>
+      <p className="min-w-0 truncate text-4xl font-semibold tracking-normal text-orange-400">{secondary.stock.profile.name ?? secondary.stock.symbol}</p>
     </div>
     {ready && active && <>
       <div className="mb-1 flex items-end gap-3">
@@ -1445,7 +1444,7 @@ export async function buildStockContextAsync(
   const lines: string[] = [
     `Date/Time: ${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" })} ET`,
     `Market: ${market.status} (${market.timeToEvent})`,
-    `Stock: ${shortCompanyName(stock.symbol, stock.profile.name, stock.profile.displayName)} (${stock.symbol})`,
+    `Stock: ${stock.profile.name ?? stock.symbol} (${stock.symbol})`,
     `Exchange: ${stock.profile.exchange ?? "N/A"}`,
     `Industry: ${stock.profile.finnhubIndustry ?? "N/A"}`,
     `Current Price: $${currentPrice.toFixed(2)}`,
@@ -1513,7 +1512,7 @@ function buildStockContext(
   const lines: string[] = [
     `Date/Time: ${now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} ${now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "America/New_York" })} ET`,
     `Market: ${market.status} (${market.timeToEvent})`,
-    `Stock: ${shortCompanyName(stock.symbol, stock.profile.name, stock.profile.displayName)} (${stock.symbol})`,
+    `Stock: ${stock.profile.name ?? stock.symbol} (${stock.symbol})`,
     `Exchange: ${stock.profile.exchange ?? "N/A"}`,
     `Industry: ${stock.profile.finnhubIndustry ?? "N/A"}`,
     `Current Price: $${currentPrice.toFixed(2)}`,
@@ -1610,7 +1609,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   const [vp, setVp] = useState({ top: 0, left: 0, width: 0, height: 0 });
   const scrollRef   = useRef<HTMLDivElement>(null);
   const inputRef    = useRef<HTMLInputElement>(null);
-  const viewportOffsetWhileTyping = useRef<{ top: number; left: number } | null>(null);
   const touchStart  = useRef<{ x: number; y: number; time: number } | null>(null);
   const welcomedStockRef = useRef<string | null>(null);
   const buildCurrentContext = async () => {
@@ -1621,10 +1619,10 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       buildStockContextAsync(stock, currentPrice, sentiment, metrics, false),
       buildStockContextAsync(comparisonStock.stock, comparisonStock.currentPrice, comparisonStock.sentiment, comparisonStock.metrics, false),
     ]);
-    return `Comparison mode. Compare both stocks using the data below. News is intentionally omitted.\n\nStock 1 — ${shortCompanyName(stock.symbol, stock.profile.name, stock.profile.displayName)} (${stock.symbol}):\n${primary}\n\nStock 2 — ${shortCompanyName(comparisonStock.stock.symbol, comparisonStock.stock.profile.name, comparisonStock.stock.profile.displayName)} (${comparisonStock.stock.symbol}):\n${secondary}`;
+    return `Comparison mode. Compare both stocks using the data below. News is intentionally omitted.\n\nStock 1 — ${stock.profile.name ?? stock.symbol} (${stock.symbol}):\n${primary}\n\nStock 2 — ${comparisonStock.stock.profile.name ?? comparisonStock.stock.symbol} (${comparisonStock.stock.symbol}):\n${secondary}`;
   };
   const buildCurrentContextFallback = () => comparisonStock
-    ? `Comparison mode. Compare both stocks using the data below. News is intentionally omitted.\n\nStock 1 — ${shortCompanyName(stock.symbol, stock.profile.name, stock.profile.displayName)} (${stock.symbol}):\n${buildStockContext(stock, currentPrice, sentiment, metrics, false)}\n\nStock 2 — ${shortCompanyName(comparisonStock.stock.symbol, comparisonStock.stock.profile.name, comparisonStock.stock.profile.displayName)} (${comparisonStock.stock.symbol}):\n${buildStockContext(comparisonStock.stock, comparisonStock.currentPrice, comparisonStock.sentiment, comparisonStock.metrics, false)}`
+    ? `Comparison mode. Compare both stocks using the data below. News is intentionally omitted.\n\nStock 1 — ${stock.profile.name ?? stock.symbol} (${stock.symbol}):\n${buildStockContext(stock, currentPrice, sentiment, metrics, false)}\n\nStock 2 — ${comparisonStock.stock.profile.name ?? comparisonStock.stock.symbol} (${comparisonStock.stock.symbol}):\n${buildStockContext(comparisonStock.stock, comparisonStock.currentPrice, comparisonStock.sentiment, comparisonStock.metrics, false)}`
     : buildStockContext(stock, currentPrice, sentiment, metrics);
   const [stockContext, setStockContext] = useState(() => buildCurrentContextFallback());
 
@@ -1679,71 +1677,24 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   // same way the always-reliable search button lives outside <main> too.
   useEffect(() => setMounted(true), []);
 
-  // Track visual viewport — only needed on mobile (iOS keyboard shrinking).
-  // On desktop (width >= 1024) skip entirely to avoid unnecessary rerenders.
-  // When `containerRef` is given (desktop split view), track THAT element's
-  // box instead of the window — this is what confines the whole chat
-  // experience (backdrop, messages, and the pill's expanded width below) to
-  // the 3/4 detail column instead of the full browser width.
+  // Only track the desktop split-view column. Mobile uses a stable fixed
+  // viewport and never subscribes to visualViewport keyboard events.
   useEffect(() => {
-    function update() {
-      if (containerRef?.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setVp({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
-        return;
-      }
-      if (window.innerWidth >= 1024) {
-        // Desktop: use simple full-window dimensions, no polling needed
-        setVp({ top: 0, left: 0, width: window.innerWidth, height: window.innerHeight });
-        return;
-      }
-      const vv = window.visualViewport;
-      setVp(vv
-        ? {
-            top: viewportOffsetWhileTyping.current?.top ?? vv.offsetTop,
-            left: viewportOffsetWhileTyping.current?.left ?? vv.offsetLeft,
-            width: vv.width,
-            height: vv.height,
-          }
-        : { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight }
-      );
-    }
+    const element = containerRef?.current;
+    if (!element) return;
+    const update = () => {
+      const rect = element.getBoundingClientRect();
+      setVp({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+    };
     update();
-    if (containerRef?.current) {
-      const ro = new ResizeObserver(update);
-      ro.observe(containerRef.current);
-      window.addEventListener("resize", update);
-      return () => {
-        ro.disconnect();
-        window.removeEventListener("resize", update);
-      };
-    }
-    // Only attach expensive visualViewport listeners on mobile
-    if (window.innerWidth < 1024) {
-      window.visualViewport?.addEventListener("resize", update);
-    }
+    const ro = new ResizeObserver(update);
+    ro.observe(element);
     window.addEventListener("resize", update);
     return () => {
-      window.visualViewport?.removeEventListener("resize", update);
+      ro.disconnect();
       window.removeEventListener("resize", update);
     };
   }, [containerRef]);
-
-  // Lock body scroll (without jumping to top) only while chat is open
-  useEffect(() => {
-    if (!open) return;
-    const scrollY = window.scrollY;
-    const b = document.body;
-    b.style.overflow = "hidden";
-    b.style.position = "fixed";
-    b.style.top      = `-${scrollY}px`;
-    b.style.left     = "0";
-    b.style.right    = "0";
-    return () => {
-      b.style.overflow = b.style.position = b.style.top = b.style.left = b.style.right = "";
-      window.scrollTo(0, scrollY);
-    };
-  }, [open]);
 
   useEffect(() => {
     if (scrollRef.current)
@@ -1824,17 +1775,11 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   const bubbleGlowAI     = "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)";
   const textColor     = "rgba(245,248,248,0.94)";
 
-  const vpW = vp.width  || (typeof window !== "undefined" ? window.innerWidth  : 0);
-  const vpH = vp.height || (typeof window !== "undefined" ? window.innerHeight : 0);
-
-  // How much the keyboard (or Safari's chrome) is eating into the screen —
-  // used to keep the pill glued just above it instead of drifting/getting covered.
-  const winH = typeof window !== "undefined" ? window.innerHeight : 0;
-  const keyboardInset = Math.max(0, winH - vpH - vp.top);
+  const vpW = vp.width || (typeof window !== "undefined" ? window.innerWidth : 0);
   const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
   const pillBottom = isDesktop
     ? "1.5rem"
-    : open && keyboardInset > 8
+    : open
       ? "12px"
       : "calc(env(safe-area-inset-bottom) - 0.5rem)";
   // Expanded pill width: the full container width (minus side margins) when
@@ -1872,25 +1817,25 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         }}
         onClick={handleDismiss}
       />}
-      {/* Backdrop + messages — pinned to the exact visual viewport rectangle */}
+      {/* Stable full-screen backdrop and message surface. */}
       <div
-        style={{
-          position: "fixed",
-          top: vp.top, left: vp.left, width: vpW, height: vpH,
-          zIndex: 1000,
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? "auto" : "none",
-          transition: "opacity 0.25s ease",
+        style={containerRef ? {
+          position: "fixed", top: vp.top, left: vp.left, width: vpW,
+          height: vp.height || (typeof window !== "undefined" ? window.innerHeight : 0),
+          zIndex: 1000, opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none", transition: "opacity 0.25s ease",
+        } : {
+          position: "fixed", inset: 0, zIndex: 1000, opacity: open ? 1 : 0,
+          pointerEvents: open ? "auto" : "none", transition: "opacity 0.25s ease",
         }}
       >
         <div
-          className={open ? "smoked-glass-backdrop ai-chat-backdrop" : undefined}
+          className={open && !containerRef ? "smoked-glass-backdrop ai-chat-backdrop" : undefined}
           style={{
             position: "absolute", inset: 0,
             zIndex: 0,
             background: "transparent",
-            backdropFilter: open ? "blur(12px)" : "none",
-            WebkitBackdropFilter: open ? "blur(12px)" : "none",
+            backdropFilter: open && !containerRef ? "blur(12px)" : "none",
+            WebkitBackdropFilter: open && !containerRef ? "blur(12px)" : "none",
             transition: "none",
             transform: "translateZ(0)",
             WebkitTransform: "translateZ(0)",
@@ -1905,8 +1850,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             zIndex: 2,
             insetInline: 0,
             top: 0,
-            height: "calc(env(safe-area-inset-top) + 5.75rem)",
-            paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)",
+            height: "calc(env(safe-area-inset-top) + 2.875rem)",
+            paddingTop: "calc(env(safe-area-inset-top) + 0.25rem)",
             display: "flex",
             justifyContent: "center",
             pointerEvents: "none",
@@ -1919,10 +1864,10 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
               zIndex: 0,
               insetInline: 0,
               top: 0,
-              height: "calc(100% - 0.75rem)",
+              height: "calc(100% - 0.375rem)",
               backdropFilter: "blur(var(--phone-list-header-blur))",
               WebkitBackdropFilter: "blur(var(--phone-list-header-blur))",
-              backgroundColor: "var(--color-background)",
+              backgroundColor: "color-mix(in srgb, var(--color-background) 68%, transparent)",
             }}
           />
           <div className="relative z-10 flex h-fit items-center gap-1.5 font-bold text-[var(--AI_COLOR)]" style={{ fontSize: 20, lineHeight: 1.25 }}>
@@ -1955,7 +1900,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
             justifyContent: "flex-start",
             minHeight: 0,
             gap: 12,
-            padding: "calc(env(safe-area-inset-top) + 5.75rem) 14px 112px",
+            padding: "calc(env(safe-area-inset-top) + 2.875rem) 14px 112px",
             opacity: open ? 1 : 0,
             transition: "opacity 0.2s ease",
             transitionDelay: open && !isDesktop ? "0.32s" : "0s",
@@ -2018,7 +1963,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           separate bar/card behind it — this IS the input, elongated. */}
       {!hideTrigger && (
       <div
-        className={`smoked-glass-surface fixed rounded-full border border-white/15 text-accent overflow-hidden${open ? " ai-typing-bar" : " ai-aberration"}`}
+          className={`smoked-glass-surface fixed rounded-full border border-white/15 text-accent overflow-hidden${open ? ` ai-typing-bar${!isDesktop ? " ai-chat-input-open" : ""}` : " ai-aberration"}`}
         style={{
           zIndex: 1002,
           bottom: pillBottom,
@@ -2026,8 +1971,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           width: open ? pillOpenWidth : "3.5rem",
           height: "3.5rem",
           background: chatControlGlass,
-          backdropFilter: "blur(var(--phone-floating-pill-blur))",
-          WebkitBackdropFilter: "blur(var(--phone-floating-pill-blur))",
+          backdropFilter: isDesktop || !open ? "blur(var(--phone-floating-pill-blur))" : "none",
+          WebkitBackdropFilter: isDesktop || !open ? "blur(var(--phone-floating-pill-blur))" : "none",
           boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
           transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1)",
         }}
@@ -2061,8 +2006,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         >
           <input
             ref={inputRef}
-            onFocus={() => { viewportOffsetWhileTyping.current = { top: vp.top, left: vp.left }; }}
-            onBlur={() => { viewportOffsetWhileTyping.current = null; }}
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
@@ -2127,8 +2070,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
           }}>
             <input
               ref={inputRef}
-              onFocus={() => { viewportOffsetWhileTyping.current = { top: vp.top, left: vp.left }; }}
-              onBlur={() => { viewportOffsetWhileTyping.current = null; }}
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}

@@ -6,7 +6,6 @@ import { createPortal } from "react-dom";
 import { StockLogo } from "@/components/StockLogo";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { SECTOR_ETFS } from "@/components/market/EtfList";
-import { shortCompanyName } from "@/lib/shortCompanyName";
 
 type SearchResult = { symbol: string; name: string };
 
@@ -183,7 +182,7 @@ export function MobileCompareSearch({
               fallbackClassName="h-10 w-10 shrink-0 rounded-3xl object-contain" />
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-text-primary">{result.symbol}</span>
-              <span className="block truncate text-xs text-text-muted">{shortCompanyName(result.symbol, result.name)}</span>
+              <span className="block truncate text-xs text-text-muted">{result.name}</span>
             </span>
           </button>;
         })}

@@ -8,7 +8,6 @@ import type { CSSProperties } from "react";
 import { MARKET_HEATMAP_GROUPS } from "@/lib/marketHeatmap";
 import { cn } from "@/lib/utils";
 import { formatPercent } from "@/lib/format";
-import { shortCompanyName } from "@/lib/shortCompanyName";
 import { DesktopStockDetail } from "@/components/DesktopStockDetail";
 import { ErrorState } from "@/components/ErrorState";
 import { MarketIcon } from "@/components/MarketIcon";
@@ -26,7 +25,6 @@ type DetailPayload = {
 type HeatmapStock = {
   symbol: string;
   name: string;
-  displayName?: string;
   price: number | null;
   changePercent: number | null;
   weight: number;
@@ -366,9 +364,9 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
               opacity: tilesVisible ? 1 : 0,
             };
             return (
-              <Link key={stock.symbol} href={`/stock/${encodeURIComponent(stock.symbol)}`} onClick={(event) => { if (desktopLayout) { event.preventDefault(); setSelectedSymbol(stock.symbol); } }} className={cn("heatmap-tile absolute flex flex-col overflow-hidden border border-white/10 bg-black/15 p-3 text-left transition-opacity duration-200 hover:z-10 hover:bg-black/30 hover:ring-1 hover:ring-white/50", desktopLayout ? "rounded-3xl" : "rounded-lg")} style={tileStyle} aria-label={`${shortCompanyName(stock.symbol, stock.name, stock.displayName)} (${stock.symbol}), ${formatPercent(stock.changePercent)}`}>
+              <Link key={stock.symbol} href={`/stock/${encodeURIComponent(stock.symbol)}`} onClick={(event) => { if (desktopLayout) { event.preventDefault(); setSelectedSymbol(stock.symbol); } }} className={cn("heatmap-tile absolute flex flex-col overflow-hidden border border-white/10 bg-black/15 p-3 text-left transition-opacity duration-200 hover:z-10 hover:bg-black/30 hover:ring-1 hover:ring-white/50", desktopLayout ? "rounded-3xl" : "rounded-lg")} style={tileStyle} aria-label={`${stock.name} (${stock.symbol}), ${formatPercent(stock.changePercent)}`}>
                 <span className={cn("font-bold tracking-tight text-white", compact ? "text-base" : "text-2xl")}>{stock.symbol}</span>
-                <span className={cn("mt-1 truncate text-white/70", compact ? "text-xs" : "text-sm")}>{shortCompanyName(stock.symbol, stock.name, stock.displayName)}</span>
+                <span className={cn("mt-1 truncate text-white/70", compact ? "text-xs" : "text-sm")}>{stock.name}</span>
                 <span className={cn("mt-auto font-semibold", compact ? "text-sm" : "text-lg", (stock.changePercent ?? 0) >= 0 ? "text-[#adfa1b]" : "text-[#ff7560]")}>{formatPercent(stock.changePercent)}</span>
               </Link>
             );
