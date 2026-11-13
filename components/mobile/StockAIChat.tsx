@@ -1631,8 +1631,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   const isControlled = externalOpen !== undefined;
   const open = isControlled ? externalOpen : internalOpen;
   const [backdropClosing, setBackdropClosing] = useState(false);
-  const [mobilePillExpanded, setMobilePillExpanded] = useState(false);
   const mobilePanelRef = useRef<HTMLDivElement>(null);
+  const mobilePillRef = useRef<HTMLDivElement>(null);
   const savedScrollYRef = useRef<number | null>(null);
   const closeBackdropTimer = useRef<number | null>(null);
   function setOpen(v: boolean) {
@@ -1766,7 +1766,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     };
   }, [open, containerRef]);
 
-  // Sync the phone panel directly from VisualViewport, without React renders.
+  // Sync the phone panel and the morphing pill directly from VisualViewport,
+  // without React renders.
   useEffect(() => {
     if ((!open && !backdropClosing) || typeof window === "undefined" || window.innerWidth >= 1024 || containerRef) return;
     const panel = mobilePanelRef.current;
@@ -1786,6 +1787,11 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         panel.style.setProperty("--vvh", `${current.height}px`);
         panel.style.setProperty("--vvt", `${current.top}px`);
         panel.dataset.keyboard = String(!!vv && window.innerHeight - current.height - current.top > 80);
+        const keyboardInset = Math.max(0, window.innerHeight - current.height - current.top);
+        const pill = mobilePillRef.current;
+        if (pill) pill.style.bottom = open && keyboardInset > 8
+          ? `${keyboardInset + 12}px`
+          : "calc(env(safe-area-inset-bottom) - 0.5rem)";
         if (first) {
           panel.style.setProperty("--kb-transition", "0ms");
           first = false;
@@ -1810,13 +1816,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       if (raf) cancelAnimationFrame(raf);
     };
   }, [open, backdropClosing, containerRef]);
-
-  useEffect(() => {
-    if (!open || typeof window === "undefined" || window.innerWidth >= 1024 || containerRef) { setMobilePillExpanded(false); return; }
-    setMobilePillExpanded(false);
-    const raf = requestAnimationFrame(() => setMobilePillExpanded(true));
-    return () => cancelAnimationFrame(raf);
-  }, [open, containerRef]);
 
   useEffect(() => {
     if (scrollRef.current)
@@ -1929,37 +1928,34 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       position: "fixed", left: 0, top: 0, width: "100%", height: "var(--vvh, 100vh)",
       transform: "translate3d(0, var(--vvt, 0px), 0)", display: "flex", flexDirection: "column", zIndex: 1000,
       transition: "height var(--kb-transition, 250ms cubic-bezier(0.2, 0.8, 0.2, 1))",
-      paddingBottom: "calc(env(safe-area-inset-bottom) - 0.5rem)", boxSizing: "border-box",
+      boxSizing: "border-box",
       pointerEvents: open ? "auto" : "none",
     }}>
-      <style>{`.warrent-ai-mobile-panel[data-keyboard="true"]{padding-bottom:12px!important}`}</style>
-      <div aria-label="Warrent AI" style={{ position: "relative", flex: "0 0 calc(env(safe-area-inset-top) + 2.875rem)", paddingTop: "calc(env(safe-area-inset-top) + 0.25rem)", display: "flex", justifyContent: "center", pointerEvents: "none" }}>
+      <div aria-label="Warrent AI" style={{ position: "relative", flex: "0 0 calc(env(safe-area-inset-top) + 2.875rem)", paddingTop: "calc(env(safe-area-inset-top) + 0.25rem)", display: "flex", justifyContent: "center", pointerEvents: "none", opacity: open ? 1 : 0, transition: "opacity 0.2s ease", transitionDelay: open ? "0.32s" : "0s" }}>
         <div aria-hidden="true" style={{ position: "absolute", insetInline: 0, top: 0, height: "calc(100% - 0.375rem)", backdropFilter: "blur(var(--phone-list-header-blur))", WebkitBackdropFilter: "blur(var(--phone-list-header-blur))", backgroundColor: "color-mix(in srgb, var(--color-background) 68%, transparent)" }} />
         <div className="relative z-10 flex h-fit items-center gap-1.5 font-bold text-[var(--AI_COLOR)]" style={{ fontSize: 20, lineHeight: 1.25 }}><OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-[var(--AI_COLOR)]" /><span>Warrent AI</span></div>
       </div>
       <div ref={scrollRef} className="ai-chat-messages" style={{
-        position: "relative", flex: "1 1 auto", minHeight: 0, marginBottom: "-56px", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", touchAction: "pan-y",
-        display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 12, padding: "8px 14px 70px", boxSizing: "border-box",
+        position: "relative", flex: "1 1 auto", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", touchAction: "pan-y",
+        display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 12, padding: "8px 14px 112px", boxSizing: "border-box",
         opacity: open ? 1 : 0, transition: "opacity 0.2s ease", transitionDelay: open ? "0.32s" : "0s",
       }} onClick={onEmptyAreaClick} onWheel={event => event.stopPropagation()} onTouchStart={onEmptyAreaTouchStart} onTouchEnd={onEmptyAreaTouchEnd}>
         <MemoizedChatMessages messages={messages} graphCtx={graphCtx} bgBubbleAI={bgBubbleAI} bubbleBorderUser={bubbleBorderUser} bubbleGlowAI={bubbleGlowAI} textColor={textColor} loading={loading} serverError={serverError} markDone={markDone} />
       </div>
-      <div className="ai-mobile-pill-flow" style={{ padding: backdropClosing ? "0 1.25rem 0 1rem" : "0 1rem", flex: "0 0 auto", display: "flex", justifyContent: "flex-end" }}>
-        <div className="smoked-glass-surface ai-typing-bar rounded-full border border-white/15 text-accent overflow-hidden" style={{
-          position: "relative", flex: "0 0 auto", width: mobilePillExpanded ? "100%" : "3.5rem", height: "3.5rem", boxSizing: "border-box",
-          background: chatControlGlass, backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)",
-          boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
-          transition: "width 0.32s cubic-bezier(0.2,0,0,1)",
-        }}>
-          <button onClick={() => setOpen(true)} aria-label="Ask AI" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: backdropClosing ? 1 : 0, pointerEvents: "none", transition: "opacity 0.16s ease" }}><OptionalSvgIcon name="ai" className="h-8 w-8" /></button>
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 8, padding: "0 8px 0 20px", opacity: open ? 1 : 0, transition: "opacity 0.16s ease" }}>
-            <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} placeholder={`Ask about ${stock.symbol}…`} className="text-white placeholder:text-white/45" style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", fontSize: 16, color: textColor, caretColor: "var(--color-accent)" }} />
-            {input.trim() ? <button onClick={() => { void sendMessage(); }} disabled={loading} className="ai-send-button-glow" style={{ flexShrink: 0, height: 38, width: 38, borderRadius: "50%", backgroundColor: !loading ? "var(--color-accent)" : "rgb(var(--accent-rgb) / 0.18)", color: !loading ? "var(--color-on-accent)" : "rgb(var(--accent-rgb) / 0.35)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-on-accent" /></button> : <GlossyIconButton aria-label="Close chat" onClick={handleDismiss} size={38}><GlossyCloseIcon /></GlossyIconButton>}
-          </div>
-        </div>
+    </div>}
+    {(!hideTrigger || open || backdropClosing) && <div ref={mobilePillRef} className={`smoked-glass-surface fixed z-[1002] overflow-hidden rounded-full border border-white/15 text-accent${open ? " ai-typing-bar" : " ai-aberration"}`} style={{
+      right: open ? "1rem" : "1.25rem", bottom: "calc(env(safe-area-inset-bottom) - 0.5rem)",
+      width: open ? "calc(100vw - 2rem)" : "3.5rem", height: "3.5rem", background: chatControlGlass,
+      backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)",
+      boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
+      transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
+    }}>
+      <button onClick={() => setOpen(true)} aria-label="Ask AI" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: open ? 0 : 1, pointerEvents: open || backdropClosing ? "none" : "auto", transition: "opacity 0.16s ease" }}><OptionalSvgIcon name="ai" className="h-8 w-8" /></button>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 8, padding: "0 8px 0 20px", opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none", transition: "opacity 0.22s ease", transitionDelay: open ? "0.14s" : "0s" }}>
+        <input ref={inputRef} value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} placeholder={`Ask about ${stock.symbol}…`} className="text-white placeholder:text-white/45" style={{ flex: 1, minWidth: 0, background: "transparent", border: "none", outline: "none", fontSize: 16, color: textColor, caretColor: "var(--color-accent)" }} />
+        {input.trim() ? <button onClick={() => { void sendMessage(); }} disabled={loading} className="ai-send-button-glow" style={{ flexShrink: 0, height: 38, width: 38, borderRadius: "50%", backgroundColor: !loading ? "var(--color-accent)" : "rgb(var(--accent-rgb) / 0.18)", color: !loading ? "var(--color-on-accent)" : "rgb(var(--accent-rgb) / 0.35)", display: "flex", alignItems: "center", justifyContent: "center", border: "none" }}><OptionalSvgIcon name="send" className="h-4 w-4" colorClassName="text-on-accent" /></button> : <GlossyIconButton aria-label="Close chat" onClick={handleDismiss} size={38}><GlossyCloseIcon /></GlossyIconButton>}
       </div>
     </div>}
-    {!hideTrigger && !open && !backdropClosing && <button onClick={() => setOpen(true)} aria-label="Ask AI" className="smoked-glass-surface fixed z-[1002] flex h-14 w-14 items-center justify-center rounded-full border border-white/15 text-accent ai-aberration" style={{ right: "1.25rem", bottom: "calc(env(safe-area-inset-bottom) - 0.5rem)", background: chatControlGlass, backdropFilter: "blur(var(--phone-floating-pill-blur))", WebkitBackdropFilter: "blur(var(--phone-floating-pill-blur))", boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)", transition: "opacity 0.16s ease" }}><OptionalSvgIcon name="ai" className="h-8 w-8" /></button>}
   </>, document.body);
 
   return createPortal(
