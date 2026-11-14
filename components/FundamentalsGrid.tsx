@@ -221,13 +221,13 @@ export function FundamentalsGrid({
       <div className="mx-5 space-y-4">
         {volumeItems.length > 0 && (
           <div>
-            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Volume</h3>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-white">Volume</h3>
             {volumeItems.map(renderMetricRow)}
           </div>
         )}
         {ratioItems.length > 0 && (
-          <div>
-            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Ratio</h3>
+          <div className="border-t border-border-subtle pt-4">
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-white">Ratio</h3>
             {ratioItems.map(renderMetricRow)}
           </div>
         )}
