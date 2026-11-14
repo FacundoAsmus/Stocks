@@ -93,7 +93,7 @@ export function NewsSummary({ symbol, companyName, articles }: { symbol: string;
   }, [symbol, companyName, fingerprint]);
 
   return (
-    <section className="mt-6 mb-6">
+    <section className="mt-2 mb-6">
       {state.status === "loading" && <AISummaryLoader />}
       {state.status === "ready" && <NewsSummaryText text={state.text} />}
       {state.status === "error" && <AIUnavailableNotice />}

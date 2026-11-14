@@ -218,16 +218,16 @@ export function FundamentalsGrid({
       <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">
         <OptionalSvgIcon name="indicators" className="h-6 w-6" colorClassName="text-accent" />Indicators
       </p>
-      <div className="mx-5 space-y-4">
+      <div className="mx-5 mt-2 space-y-4">
         {volumeItems.length > 0 && (
           <div>
-            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-white">Volume</h3>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-accent">Volume</h3>
             {volumeItems.map(renderMetricRow)}
           </div>
         )}
         {ratioItems.length > 0 && (
           <div className="border-t border-border-subtle pt-4">
-            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-white">Ratio</h3>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-accent">Ratio</h3>
             {ratioItems.map(renderMetricRow)}
           </div>
         )}

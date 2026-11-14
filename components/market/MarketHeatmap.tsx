@@ -304,13 +304,11 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
       {desktopLayout ? (
         <aside className="desktop-alert-glass desktop-list-holder m-3 flex w-1/6 shrink-0 flex-col overflow-hidden rounded-3xl border border-white/15">
           <div className="shrink-0 px-6 pb-4 pt-6">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Heatmaps</p>
-                <h2 id="market-heatmap-title" className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market</h2>
-              </div>
+            <div className="mb-3 flex justify-end">
               <ThemeSiteLogo />
             </div>
+            <p className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Heatmaps</p>
+            <h2 id="market-heatmap-title" className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market</h2>
           </div>
           <div className="no-scrollbar flex-1 overflow-y-auto px-2 pb-2" role="tablist" aria-label="Market groups" aria-orientation="vertical">
             {MARKET_HEATMAP_GROUPS.map((group) => {
