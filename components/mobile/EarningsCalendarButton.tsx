@@ -97,7 +97,7 @@ export function EarningsDetailCard({
       </div>
 
       <div className="space-y-7">
-        <MobileQuarterMetricChart title="Earnings (Revenue)" metric="revenue" events={chartEvents} selectedDate={event.date} />
+        <MobileQuarterMetricChart title="Revenue" metric="revenue" events={chartEvents} selectedDate={event.date} />
         <MobileQuarterMetricChart title="EPS" metric="eps" events={chartEvents} selectedDate={event.date} />
       </div>
     </div>

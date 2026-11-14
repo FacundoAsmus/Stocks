@@ -40,7 +40,7 @@ function DebtEquityRange({ indicators, debtEquityRatio }: { indicators: FilingIn
       <div className="mb-5 text-text-primary">
         <WheelPrice value={`${debtShare.toFixed(1)}%`} size="xs" compact />
       </div>
-      <div className="relative h-2 w-full rounded-full bg-panel-muted">
+      <div className="relative mx-auto h-2 w-full rounded-full bg-panel-muted lg:w-4/5">
         <div
           className="absolute inset-y-0 left-0 rounded-l-full"
           style={{
@@ -141,7 +141,7 @@ function AnnualIndicatorChart({
       <div className="mb-5 text-text-primary">
         <WheelPrice value={displayedValue === null ? "N/A" : formatValue(displayedValue)} size="xs" compact />
       </div>
-      <div className={`relative ${compact ? "h-52" : "h-64"} border-y border-border-subtle`}>
+      <div className={`relative mx-auto ${compact ? "h-52" : "h-[19.2rem]"} w-full border-y border-border-subtle lg:w-4/5`}>
         <div
           className="absolute inset-x-0 border-t border-border-subtle"
           style={hasNegativeValues ? { top: baseline } : { bottom: baseline }}
@@ -259,7 +259,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                     aria-pressed={selected}
                     onClick={() => setActiveCategory(category.id)}
                     style={{ flex: category.id === "financial-health" ? 1.4 : 1 }}
-                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[3.5px]" : "px-2 py-2 text-[3.5px]"} ${selected ? "text-on-accent" : "text-accent"}`}
+                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[2.45px]" : "px-2 py-2 text-[3.5px]"} ${selected ? "text-on-accent" : "text-accent"}`}
                   >
                     <OptionalSvgIcon name={category.icon} className="h-6 w-6" colorClassName={selected ? "text-on-accent" : "text-accent"} />
                     <span className="whitespace-nowrap">{category.label}</span>

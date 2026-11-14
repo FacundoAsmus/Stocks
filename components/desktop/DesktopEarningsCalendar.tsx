@@ -76,7 +76,7 @@ function QuarterMetricChart({
       <div className="mb-5 text-text-primary">
         <WheelPrice value={displayedValue === null ? "N/A" : metric === "revenue" ? `$${formatCompact(displayedValue)}` : formatCurrency(displayedValue)} size="xs" />
       </div>
-      <div className="relative h-56 border-y border-border-subtle">
+      <div className="relative h-[16.8rem] border-y border-border-subtle">
         <div
           className="absolute inset-x-0 border-t border-border-subtle"
           style={hasNegative ? { top: baseline } : { bottom: baseline }}
@@ -156,7 +156,7 @@ function DesktopQuarterDetail({
         <GlossyIconButton aria-label="Close quarter details" onClick={onBack}><GlossyCloseIcon /></GlossyIconButton>
       </div>
       <div className="space-y-8 border-t border-white/10 pt-5">
-        <QuarterMetricChart title="Earnings (Revenue)" metric="revenue" events={chartEvents} selectedDate={event.date} />
+        <QuarterMetricChart title="Revenue" metric="revenue" events={chartEvents} selectedDate={event.date} />
         <QuarterMetricChart title="EPS" metric="eps" events={chartEvents} selectedDate={event.date} />
       </div>
     </div>

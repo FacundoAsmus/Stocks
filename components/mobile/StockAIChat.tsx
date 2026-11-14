@@ -1201,7 +1201,7 @@ function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; an
     case "capex": return <GraphFilingMetric ctx={ctx} title="CapEx" field="capex" />;
     case "rnd": return <GraphFilingMetric ctx={ctx} title="R&D" field="researchAndDevelopment" />;
     case "freeCashFlow": return <GraphFilingMetric ctx={ctx} title="Free Cash Flow" field="freeCashFlow" />;
-    case "earnings": return <GraphEarningsMetric ctx={ctx} metric="revenue" title="Earnings (Revenue)" />;
+    case "earnings": return <GraphEarningsMetric ctx={ctx} metric="revenue" title="Revenue" />;
     case "eps": return <GraphEarningsMetric ctx={ctx} metric="eps" title="EPS" />;
     case "analyst":   return <GraphAnalyst ctx={ctx} />;
     case "sentiment": return <GraphSentiment ctx={ctx} />;
