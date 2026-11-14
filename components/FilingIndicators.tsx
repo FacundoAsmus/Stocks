@@ -173,7 +173,7 @@ function AnnualIndicatorChart({
                 onMouseLeave={() => setHoveredValue(null)}
               >
                 <div
-                  className="absolute left-1/2 w-[37.5%] max-w-[30px] -translate-x-1/2 rounded-sm"
+                  className="absolute left-1/2 w-[37.5%] max-w-[30px] -translate-x-1/2 rounded-sm lg:w-[56.25%] lg:max-w-[45px]"
                   style={{
                     ...(negative ? { top: baseline } : { bottom: hasNegativeValues ? "55%" : baseline }),
                     height: animated ? `${height}%` : "0%",

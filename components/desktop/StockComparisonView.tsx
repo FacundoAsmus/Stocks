@@ -268,7 +268,7 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol, mobile }: { pr
                           return (
                             <div
                               key={seriesIndex}
-                              className="absolute w-[37.5%] max-w-[30px] -translate-x-1/2 rounded-sm"
+                              className="absolute w-[37.5%] max-w-[30px] -translate-x-1/2 rounded-sm lg:w-[56.25%] lg:max-w-[45px]"
                               style={{
                                 left: seriesIndex === 0 ? "35%" : "65%",
                                 ...(negative ? { top: `${baseline}%` } : { bottom: hasNegative ? "55%" : `${baseline}%` }),

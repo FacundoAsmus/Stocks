@@ -76,7 +76,7 @@ function QuarterMetricChart({
       <div className="mb-5 text-text-primary">
         <WheelPrice value={displayedValue === null ? "N/A" : metric === "revenue" ? `$${formatCompact(displayedValue)}` : formatCurrency(displayedValue)} size="xs" />
       </div>
-      <div className="relative h-[16.8rem] border-y border-border-subtle">
+      <div className="relative h-56 border-y border-border-subtle">
         <div
           className="absolute inset-x-0 border-t border-border-subtle"
           style={hasNegative ? { top: baseline } : { bottom: baseline }}

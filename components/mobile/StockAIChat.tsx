@@ -2015,7 +2015,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         </div>
       </div>
 
-      {isDesktop && open && <aside aria-label="AI chat list" className="desktop-alert-glass desktop-list-holder fixed z-[1010] m-3 flex w-[23%] flex-col overflow-hidden rounded-3xl border border-white/15">
+      {isDesktop && open && <aside aria-label="AI chat list" className="desktop-alert-glass desktop-list-holder fixed inset-y-3 left-3 z-[1002] flex w-[23%] flex-col overflow-hidden rounded-3xl border border-white/15">
         <div className="shrink-0 px-6 pb-4 pt-6">
           <p className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Your Chats</p>
           <h2 className="text-sm font-medium uppercase tracking-[0.18em] text-accent">AI</h2>

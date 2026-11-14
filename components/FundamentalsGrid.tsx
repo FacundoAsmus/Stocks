@@ -291,8 +291,8 @@ export function FundamentalsGrid({
               onClick={() => askWarrentAboutIndicator(selectedIndicator)}
               className="h-11 w-full rounded-full bg-accent text-sm font-semibold text-on-accent"
             >
-              <span className="inline-flex items-center justify-center gap-2" style={{ color: "var(--AI_COLOR)" }}>
-                <OptionalSvgIcon name="ai" className="h-5 w-5" color="var(--AI_COLOR)" />
+              <span className="inline-flex items-center justify-center gap-2 text-on-accent">
+                <OptionalSvgIcon name="ai" className="h-5 w-5" colorClassName="text-on-accent" />
                 Ask Warrent
               </span>
             </button>
