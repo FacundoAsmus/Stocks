@@ -172,10 +172,11 @@ function extractAnnotations(text: string): { cleaned: string; annotations: Annot
 type Segment =
   | { kind: "text"; value: string }
   | { kind: "pill"; key: DataKey }
-  | { kind: "graph"; graphType: GraphType; annotations?: Annotation[] }
-  | { kind: "news"; index: number };
+  | { kind: "graph"; graphType: GraphType; annotations?: Annotation[] };
 
-const TAG_RE = /\[\[data:([a-zA-Z0-9_]+)\]\]|\[\[graph:([a-zA-Z0-9_:]+)\]\]|\[\[news:(\d+)\]\]/g;
+// Consume legacy news-card tags without rendering a widget. News remains
+// available to the AI for written answers.
+const TAG_RE = /\[\[data:([a-zA-Z0-9_]+)\]\]|\[\[graph:([a-zA-Z0-9_:]+)\]\]|\[\[news:\d+\]\]/g;
 
 // Parses AI text into an ordered list of text runs + widget calls. Enforces
 // "one of a kind per message" — a repeated tag for the same key/type is
@@ -199,9 +200,6 @@ function parseSegments(text: string): Segment[] {
       if ((m[2].startsWith("price") || m[2].startsWith("comparePrice")) && annotations.length) seg.annotations = annotations;
       segments.push(seg);
       seenGraphs.add(m[2]);
-    } else if (m[3] !== undefined) {
-      const idx = parseInt(m[3]);
-      segments.push({ kind: "news", index: idx });
     }
     last = TAG_RE.lastIndex;
   }
@@ -826,22 +824,6 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
   );
 }
 
-function NewsCard({ index, ctx }: { index: number; ctx: GraphCtx }) {
-  if (ctx.comparisonStock) return null;
-  const article = ctx.stock.news?.[index];
-  if (!article) return null;
-  return (
-    <a href={article.url} target="_blank" rel="noreferrer" aria-label={article.headline}
-      onClick={event => event.stopPropagation()}
-      className="my-2 block aspect-video w-full max-w-[192px] overflow-hidden rounded-3xl border border-white/15 bg-panel-muted">
-      {article.image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={article.image} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-      ) : <span className="block h-full w-full bg-panel-muted" />}
-    </a>
-  );
-}
-
 type FilingIndicator = { year: number; capex: number | null; researchAndDevelopment: number | null; freeCashFlow: number | null };
 type FilingMetric = "capex" | "researchAndDevelopment" | "freeCashFlow";
 
@@ -1216,26 +1198,9 @@ function GraphWidget({ graphType, annotations, ctx }: { graphType: GraphType; an
 function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[]; ctx: GraphCtx; trailingCursor: boolean }) {
   const cleaned = segments.filter(s => s.kind !== "text" || s.value.length > 0);
   if (cleaned.length === 0) return trailingCursor ? <TextRevealCaret /> : null;
-  const arranged: Array<Segment | { kind: "news-row"; indexes: number[] }> = [];
-  for (let index = 0; index < cleaned.length; index += 1) {
-    const segment = cleaned[index];
-    if (segment.kind !== "news") {
-      arranged.push(segment);
-      continue;
-    }
-    const indexes = [segment.index];
-    while (index + 2 < cleaned.length) {
-      const separator = cleaned[index + 1];
-      const next = cleaned[index + 2];
-      if (separator.kind !== "text" || separator.value.trim() || next.kind !== "news") break;
-      indexes.push(next.index);
-      index += 2;
-    }
-    arranged.push(indexes.length > 1 ? { kind: "news-row", indexes } : segment);
-  }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      {arranged.map((seg, i) => {
+      {cleaned.map((seg, i) => {
         const isLast = i === arranged.length - 1;
         if (seg.kind === "text") {
           return (
@@ -1248,22 +1213,6 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
           return (
             <div key={i}>
               <DataPill dataKey={seg.key} ctx={ctx} />
-              {isLast && trailingCursor && <TextRevealCaret />}
-            </div>
-          );
-        }
-        if (seg.kind === "news-row") {
-          return (
-            <div key={i} className="my-2 grid w-full min-w-[240px] max-w-[400px] grid-cols-2 gap-2">
-              {seg.indexes.map(index => <NewsCard key={index} index={index} ctx={ctx} />)}
-              {isLast && trailingCursor && <TextRevealCaret />}
-            </div>
-          );
-        }
-        if (seg.kind === "news") {
-          return (
-            <div key={i}>
-              <NewsCard index={seg.index} ctx={ctx} />
               {isLast && trailingCursor && <TextRevealCaret />}
             </div>
           );
@@ -1525,7 +1474,7 @@ export async function buildStockContextAsync(
       }
       return `[${i}] ${n.headline} (${n.source})${n.summary ? `\n    Summary only (full article was not readable — treat as a brief blurb, do not claim to have read the full piece): ${n.summary}` : ""}`;
     }).join("\n");
-    lines.push(`Recent News (use [[news:INDEX]] to show one):\n${h}`);
+    lines.push(`Recent News (for written context only; do not create news-card widgets):\n${h}`);
   }
   return lines.join("\n");
 }
@@ -1565,7 +1514,7 @@ function buildStockContext(
     const h = stock.news.slice(0, 8).map((n, i) =>
       `[${i}] ${n.headline} (${n.source})${n.summary ? `\n    Summary: ${n.summary}` : ""}`
     ).join("\n");
-    lines.push(`Recent News (use [[news:INDEX]] to show one):\n${h}`);
+    lines.push(`Recent News (for written context only; do not create news-card widgets):\n${h}`);
   }
   return lines.join("\n");
 }
@@ -1736,9 +1685,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     body.style.left = "0";
     body.style.right = "0";
     body.style.overflow = "hidden";
-    const focusTimer = window.setTimeout(() => inputRef.current?.focus(), 340);
     return () => {
-      window.clearTimeout(focusTimer);
       body.style.position = previous.position;
       body.style.top = previous.top;
       body.style.left = previous.left;
@@ -1759,7 +1706,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     const vv = window.visualViewport;
     let raf = 0;
     let last = { top: Number.NaN, left: Number.NaN, width: Number.NaN, height: Number.NaN };
-    let first = true;
     const sync = () => {
       if (raf) return;
       raf = requestAnimationFrame(() => {
@@ -1776,11 +1722,6 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         if (pill) pill.style.bottom = open && keyboardInset > 8
           ? `${keyboardInset + 12}px`
           : "calc(env(safe-area-inset-bottom) - 0.5rem)";
-        if (first) {
-          panel.style.setProperty("--kb-transition", "0ms");
-          first = false;
-          requestAnimationFrame(() => panel.style.removeProperty("--kb-transition"));
-        }
         if (wasKeyboard && panel.dataset.keyboard === "false" && savedScrollYRef.current !== null) {
           const savedY = savedScrollYRef.current;
           requestAnimationFrame(() => window.scrollTo(0, savedY));
@@ -1906,13 +1847,12 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     {(open || backdropClosing) && <div ref={mobilePanelRef} className="warrent-ai-mobile-panel" style={{
       position: "fixed", left: 0, top: 0, width: "100%", height: "var(--vvh, 100vh)",
       transform: "translate3d(0, var(--vvt, 0px), 0)", display: "flex", flexDirection: "column", zIndex: 1000,
-      transition: "height var(--kb-transition, 250ms cubic-bezier(0.2, 0.8, 0.2, 1))",
       boxSizing: "border-box",
       pointerEvents: open ? "auto" : "none",
     }}>
       <div ref={scrollRef} className="ai-chat-messages" style={{
         position: "relative", flex: "1 1 auto", minHeight: 0, overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", touchAction: "pan-y",
-        display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 24, padding: "calc(env(safe-area-inset-top) + 0.75rem) 14px 112px", boxSizing: "border-box",
+        display: "flex", flexDirection: "column", justifyContent: "flex-start", gap: 24, padding: "calc(env(safe-area-inset-top) + 0.75rem) 14px 112px", boxSizing: "border-box",
         opacity: open ? 1 : 0, transition: "opacity 0.2s ease", transitionDelay: open ? "0.32s" : "0s",
       }} onClick={onEmptyAreaClick} onWheel={event => event.stopPropagation()} onTouchStart={onEmptyAreaTouchStart} onTouchEnd={onEmptyAreaTouchEnd}>
         {messages.length === 0 && !loading && !serverError && <EmptyChatPrompt />}
@@ -1924,7 +1864,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       width: open ? "calc(100vw - 2rem)" : "3.5rem", height: "3.5rem", background: chatControlGlass,
       backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)",
       boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
-      transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
+      transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1)",
     }}>
       <button onClick={() => setOpen(true)} aria-label="Ask AI" style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: open ? 0 : 1, pointerEvents: open || backdropClosing ? "none" : "auto", transition: "opacity 0.16s ease" }}><OptionalSvgIcon name="ai" className="h-8 w-8" /></button>
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", gap: 8, padding: "0 8px 0 20px", opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none", transition: "opacity 0.22s ease", transitionDelay: open ? "0.14s" : "0s" }}>
