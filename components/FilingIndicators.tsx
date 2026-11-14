@@ -33,14 +33,14 @@ function DebtEquityRange({ indicators, debtEquityRatio }: { indicators: FilingIn
   const equityColor = "var(--color-positive)";
 
   return (
-    <div className="mx-auto mb-7 w-full lg:w-3/5">
+    <div className="mb-7 w-full">
       <p className="-ml-5 mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
         <OptionalSvgIcon name="capex" className="h-5 w-5" colorClassName="text-accent" />Debt to equity
       </p>
       <div className="mb-5 text-text-primary">
         <WheelPrice value={`${debtShare.toFixed(1)}%`} size="xs" compact />
       </div>
-      <div className="relative mx-auto h-2 w-full rounded-full bg-panel-muted lg:w-4/5">
+      <div className="relative h-2 w-full rounded-full bg-panel-muted">
         <div
           className="absolute inset-y-0 left-0 rounded-l-full"
           style={{
@@ -134,21 +134,22 @@ function AnnualIndicatorChart({
   }, [started]);
 
   return (
-    <section className="mx-auto w-full lg:w-3/5">
+    <section>
       <p className="-ml-5 mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
         {icon && <OptionalSvgIcon name={icon} className="h-5 w-5" colorClassName="text-accent" />}{title}
       </p>
       <div className="mb-5 text-text-primary">
         <WheelPrice value={displayedValue === null ? "N/A" : formatValue(displayedValue)} size="xs" compact />
       </div>
-      <div className={`relative w-full ${compact ? "h-52" : "h-[19.2rem]"} border-y border-border-subtle`}>
+      <div className={`relative w-full ${compact ? "h-52" : "h-[19.2rem]"} border-y border-border-subtle lg:-mx-5 lg:w-[calc(100%+2.5rem)]`}>
         <div
           className="absolute inset-x-0 border-t border-border-subtle"
           style={hasNegativeValues ? { top: baseline } : { bottom: baseline }}
           aria-hidden
         />
-        <div className="grid h-full grid-flow-col auto-cols-fr">
-          {indicators.map((indicator) => {
+        <div className="mx-auto h-full w-full lg:w-3/5">
+          <div className="grid h-full grid-flow-col auto-cols-fr">
+            {indicators.map((indicator) => {
             const value = indicator[field];
             const percentage = value === null ? 0 : (Math.abs(value) / maxMagnitude) * 100;
             // Only charts containing a negative value reserve a lower half.
@@ -186,7 +187,8 @@ function AnnualIndicatorChart({
                 <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs font-semibold text-accent">{indicator.year}</span>
               </div>
             );
-          })}
+            })}
+          </div>
         </div>
       </div>
     </section>
