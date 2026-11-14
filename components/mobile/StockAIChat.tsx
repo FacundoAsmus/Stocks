@@ -61,7 +61,7 @@ const MemoizedChatMessages = memo(function MemoizedChatMessages({
 });
 
 function EmptyChatPrompt() {
-  return <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, padding: "24px", textAlign: "center", pointerEvents: "none", transform: "translateY(-48px)" }}>
+  return <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 18, padding: "24px", textAlign: "center", pointerEvents: "none", transform: "translateY(-80px)" }}>
     <OptionalSvgIcon name="ai" className="h-16 w-16" colorClassName="text-[var(--AI_COLOR)]" color="var(--AI_COLOR)" />
     <p style={{ margin: 0, maxWidth: 360, color: "var(--color-accent)", fontSize: 28, fontWeight: 600, lineHeight: 1.2 }}>What do you want to know buddy?</p>
   </div>;

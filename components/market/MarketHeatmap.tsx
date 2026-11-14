@@ -22,6 +22,31 @@ type DetailPayload = {
   metrics: Record<string, number | string | null> | undefined;
 };
 
+function ThemeSiteLogo() {
+  const [isLightMode, setIsLightMode] = useState(false);
+  const [darkLogoUnavailable, setDarkLogoUnavailable] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const syncTheme = () => setIsLightMode(root.classList.contains("light-mode"));
+    syncTheme();
+    const observer = new MutationObserver(syncTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => setDarkLogoUnavailable(false), [isLightMode]);
+
+  return <Image
+    src={isLightMode || darkLogoUnavailable ? "/icons/site-logo.png" : "/icons/site-logo-dark.png"}
+    alt=""
+    width={80}
+    height={40}
+    className="h-10 w-20 shrink-0 rounded-3xl object-contain"
+    onError={() => { if (!isLightMode) setDarkLogoUnavailable(true); }}
+  />;
+}
+
 type HeatmapStock = {
   symbol: string;
   name: string;
@@ -321,7 +346,7 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
               <h1 id="market-heatmap-title" className="text-4xl font-bold text-text-primary">Heatmaps</h1>
               <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-accent">Market</p>
             </div>
-            <Image src="/icons/site-logo.png" alt="" width={80} height={40} className="h-10 w-20 shrink-0 object-contain" />
+            <ThemeSiteLogo />
           </div>
         </div>
         <div className="relative z-20 shrink-0 border-b border-white/10 bg-black">

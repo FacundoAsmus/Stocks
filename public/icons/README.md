@@ -10,6 +10,13 @@ Upload SVG files into this folder using the names below. Icons are tinted by the
 
 The same files are used on desktop and phone. Each layout controls its own size and selected tint.
 
+## Site logo
+
+- `site-logo.png` — daytime/light-mode site logo.
+- `site-logo-dark.png` — nighttime/dark-mode site logo. The Market page requests this file in dark mode and falls back to `site-logo.png` until the dark version is added.
+
+Both logos are displayed as rectangular images with the same rounded corners as the alert bubble.
+
 ## Market heatmap groups
 
 Use the group id for the unselected and selected versions:
