@@ -1201,7 +1201,7 @@ function MessageSegments({ segments, ctx, trailingCursor }: { segments: Segment[
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {cleaned.map((seg, i) => {
-        const isLast = i === arranged.length - 1;
+        const isLast = i === cleaned.length - 1;
         if (seg.kind === "text") {
           return (
             <div key={i} className="min-w-0">
