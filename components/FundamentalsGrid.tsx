@@ -24,7 +24,7 @@ const INDICATOR_DESCRIPTIONS: Record<string, string> = {
   "Forward P/E": "The share price compared with forecast earnings per share. It reflects expectations and can change as estimates are updated.",
   PEG: "The P/E ratio adjusted for expected earnings growth. It combines valuation and growth estimates, so it depends on forecast quality.",
   EPS: "Earnings per share: the company's profit allocated to each outstanding share over the reported period.",
-  "Avg. Volume": "The average number of shares traded per day. Higher volume generally means more trading activity.",
+  "Average Volume": "The average number of shares traded per day. Higher volume generally means more trading activity.",
   "Dividend Yield": "Annual dividends as a percentage of the share price. The yield can change when the price or dividend changes.",
   "52W Low": "The lowest share price recorded over the past 52 weeks.",
   "52W High": "The highest share price recorded over the past 52 weeks.",
@@ -176,7 +176,7 @@ export function FundamentalsGrid({
       tone: eps && eps > 0 ? "positive" : "negative",
       note: eps && eps > 0 ? "Profitable" : "Watch Earnings"
     },
-    { label: "Avg. Volume", value: formatCompact(volume ? volume * 1_000_000 : null), tone: "neutral", note: "10 Day Avg." },
+    { label: "Average Volume", value: formatCompact(volume ? volume * 1_000_000 : null), tone: "neutral", note: "10 Day Avg." },
     { label: "Dividend Yield", value: formatPercent(dividendYield), ...dividendTone(dividendYield) }
   ];
 
@@ -191,39 +191,53 @@ export function FundamentalsGrid({
     "Market Cap", "P/E Ratio", "Forward P/E", "PEG", "EPS", "Dividend Yield"
   ]);
   const visibleItems = isEtf ? items.filter(item => !ETF_EXCLUDED_LABELS.has(item.label)) : items;
-  const indicatorGroups = [
-    ["Market Cap", "Beta", "P/E Ratio", "Forward P/E"],
-    ["PEG", "EPS"],
-    ["52W Low", "52W High", "Avg. Volume", "Dividend Yield"],
-  ].map((labels) => labels
+  const groupItems = (labels: string[]) => labels
     .map((label) => visibleItems.find((item) => item.label === label))
-    .filter((item): item is FundamentalItem => item !== undefined))
-    .filter((group) => group.length > 0);
+    .filter((item): item is FundamentalItem => item !== undefined);
+  const volumeItems = groupItems(["Market Cap", "Average Volume", "Beta"]);
+  const ratioItems = groupItems(["P/E Ratio", "Forward P/E", "PEG", "EPS"]);
+  const dividendItem = visibleItems.find((item) => item.label === "Dividend Yield");
+  const rangeItems = show52WeekRange ? [] : groupItems(["52W Low", "52W High"]);
+
+  const renderMetricRow = (item: FundamentalItem) => (
+    <div key={item.label} className="flex min-h-11 items-center justify-between gap-4 border-b border-border-subtle py-2 last:border-b-0">
+      <span className="min-w-0 text-sm text-text-muted">{item.label}</span>
+      <button
+        type="button"
+        onClick={() => setSelectedIndicator(item)}
+        className="shrink-0 text-right text-text-primary"
+        aria-label={`${item.label}: ${item.value}. Open explanation`}
+      >
+        <WheelPrice value={item.value} size="md" compact colorClass="text-text-primary" />
+      </button>
+    </div>
+  );
 
   return (
     <section>
       <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">
         <OptionalSvgIcon name="indicators" className="h-6 w-6" colorClassName="text-accent" />Indicators
       </p>
-      <div className="mx-5 grid grid-cols-1 gap-y-2">
-        {indicatorGroups.map((group, groupIndex) => (
-          <div key={groupIndex} className="grid grid-cols-2 gap-x-4 gap-y-2">
-            {group.map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => setSelectedIndicator(item)}
-                className="indicator-data-pill min-w-0 w-full rounded-3xl border px-4 py-3 text-left"
-                aria-label={`${item.label}: ${item.value}. Open explanation`}
-              >
-                <span className="indicator-data-pill__label block truncate text-xs uppercase tracking-[0.12em]">{item.label}</span>
-                <span className="indicator-data-pill__value mt-1 block text-xl font-semibold">
-                  <WheelPrice value={item.value} size="md" compact colorClass="indicator-data-pill__value" />
-                </span>
-              </button>
-            ))}
+      <div className="mx-5 space-y-4">
+        {volumeItems.length > 0 && (
+          <div>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Volume</h3>
+            {volumeItems.map(renderMetricRow)}
           </div>
-        ))}
+        )}
+        {ratioItems.length > 0 && (
+          <div>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Ratio</h3>
+            {ratioItems.map(renderMetricRow)}
+          </div>
+        )}
+        {dividendItem && <div className="border-t border-border-subtle pt-2">{renderMetricRow(dividendItem)}</div>}
+        {rangeItems.length > 0 && (
+          <div className="border-t border-border-subtle pt-2">
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">52W Range</h3>
+            {rangeItems.map(renderMetricRow)}
+          </div>
+        )}
       </div>
       {show52WeekRange && high52 !== null && low52 !== null && high52 >= low52 && (
         <div className="mx-5 mt-2">

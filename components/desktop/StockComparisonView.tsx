@@ -253,7 +253,7 @@ function FilingComparisonCharts({ primarySymbol, secondarySymbol, mobile }: { pr
               <div className="mb-5 text-text-primary">
                 <WheelPrice value={displayedValue === null ? "N/A" : `$${formatCompact(displayedValue)}`} size="xs" compact colorClass={displayedColor} />
               </div>
-              <div className={`relative mx-auto border-y border-border-subtle ${mobile ? "h-48 sm:h-64 w-full" : "h-[19.2rem] w-4/5"}`}>
+              <div className={`relative mx-auto border-y border-border-subtle ${mobile ? "h-48 sm:h-64 w-full" : "h-[19.2rem] w-3/5"}`}>
                 <div className="absolute inset-x-0 border-t border-border-subtle" style={hasNegative ? { top: `${baseline}%` } : { bottom: `${baseline}%` }} />
                 <div className="flex h-full">
                   {years.map((year, index) => {

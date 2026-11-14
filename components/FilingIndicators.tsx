@@ -33,7 +33,7 @@ function DebtEquityRange({ indicators, debtEquityRatio }: { indicators: FilingIn
   const equityColor = "var(--color-positive)";
 
   return (
-    <div className="mb-7">
+    <div className="mx-auto mb-7 w-full lg:w-3/5">
       <p className="-ml-5 mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
         <OptionalSvgIcon name="capex" className="h-5 w-5" colorClassName="text-accent" />Debt to equity
       </p>
@@ -134,14 +134,14 @@ function AnnualIndicatorChart({
   }, [started]);
 
   return (
-    <section>
+    <section className="mx-auto w-full lg:w-3/5">
       <p className="-ml-5 mb-3 inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-accent">
         {icon && <OptionalSvgIcon name={icon} className="h-5 w-5" colorClassName="text-accent" />}{title}
       </p>
       <div className="mb-5 text-text-primary">
         <WheelPrice value={displayedValue === null ? "N/A" : formatValue(displayedValue)} size="xs" compact />
       </div>
-      <div className={`relative mx-auto ${compact ? "h-52" : "h-[19.2rem]"} w-full border-y border-border-subtle lg:w-4/5`}>
+      <div className={`relative w-full ${compact ? "h-52" : "h-[19.2rem]"} border-y border-border-subtle`}>
         <div
           className="absolute inset-x-0 border-t border-border-subtle"
           style={hasNegativeValues ? { top: baseline } : { bottom: baseline }}
@@ -259,7 +259,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                     aria-pressed={selected}
                     onClick={() => setActiveCategory(category.id)}
                     style={{ flex: category.id === "financial-health" ? 1.4 : 1 }}
-                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[2.45px]" : "px-2 py-2 text-[3.5px]"} ${selected ? "text-on-accent" : "text-accent"}`}
+                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[2px]" : "px-2 py-2 text-[3.5px]"} ${selected ? "text-on-accent" : "text-accent"}`}
                   >
                     <OptionalSvgIcon name={category.icon} className="h-6 w-6" colorClassName={selected ? "text-on-accent" : "text-accent"} />
                     <span className="whitespace-nowrap">{category.label}</span>
