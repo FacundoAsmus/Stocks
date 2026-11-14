@@ -173,7 +173,7 @@ function AnnualIndicatorChart({
                 onMouseLeave={() => setHoveredValue(null)}
               >
                 <div
-                  className="absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm"
+                  className="absolute left-1/2 w-[37.5%] max-w-[30px] -translate-x-1/2 rounded-sm"
                   style={{
                     ...(negative ? { top: baseline } : { bottom: hasNegativeValues ? "55%" : baseline }),
                     height: animated ? `${height}%` : "0%",
@@ -183,7 +183,7 @@ function AnnualIndicatorChart({
                   }}
                   aria-label={value === null ? `${indicator.year}: unavailable` : `${indicator.year}: ${formatValue(value)}`}
                 />
-                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-accent">{indicator.year}</span>
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs font-semibold text-accent">{indicator.year}</span>
               </div>
             );
           })}
@@ -259,7 +259,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                     aria-pressed={selected}
                     onClick={() => setActiveCategory(category.id)}
                     style={{ flex: category.id === "financial-health" ? 1.4 : 1 }}
-                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[5px]" : "px-2 py-2 text-[5px]"} ${selected ? "text-on-accent" : "text-accent"}`}
+                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[3.5px]" : "px-2 py-2 text-[3.5px]"} ${selected ? "text-on-accent" : "text-accent"}`}
                   >
                     <OptionalSvgIcon name={category.icon} className="h-6 w-6" colorClassName={selected ? "text-on-accent" : "text-accent"} />
                     <span className="whitespace-nowrap">{category.label}</span>

@@ -885,8 +885,8 @@ function GraphFilingMetric({ ctx, title, field }: { ctx: GraphCtx; title: string
               const height = value === null ? 0 : Math.max(percentage * (hasNegative ? 0.4 : 0.78), 3);
               const color = indicatorColor(value === null ? 50 : value < 0 ? 50 - Math.abs(value) / max * 50 : 50 + value / max * 50);
               return <div key={item.year} style={{ position: "relative", borderLeft: "1px solid var(--color-border-subtle)", cursor: value === null ? "default" : "pointer" }} onMouseEnter={() => { if (value !== null) setHoveredValue(value); }} onMouseLeave={() => setHoveredValue(null)} title={value === null ? `${item.year}: unavailable` : `${item.year}: $${formatCompact(value)}`}>
-                {value !== null && <div style={{ position: "absolute", left: "37.5%", width: "25%", maxWidth: 20, borderRadius: 2, ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: `${height}%`, backgroundColor: color, boxShadow: `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` }} />}
-                <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", fontSize: 10, fontWeight: 600, color: "var(--color-accent)" }}>{item.year}</span>
+                {value !== null && <div style={{ position: "absolute", left: "31.25%", width: "37.5%", maxWidth: 30, borderRadius: 2, ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: `${height}%`, backgroundColor: color, boxShadow: `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` }} />}
+                <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", fontSize: 12, fontWeight: 600, color: "var(--color-accent)" }}>{item.year}</span>
               </div>;
             })}
           </div>
@@ -917,8 +917,8 @@ function GraphEarningsMetric({ ctx, metric, title }: { ctx: GraphCtx; metric: "r
               const color = indicatorColor(value === null ? 50 : value < 0 ? 50 - Math.abs(value) / maximum * 50 : 50 + value / maximum * 50);
               const label = metric === "revenue" ? `$${formatCompact(value)}` : formatCurrency(value);
               return <div key={event.date} style={{ position: "relative", borderLeft: "1px solid var(--color-border-subtle)", cursor: value === null ? "default" : "pointer" }} onMouseEnter={() => { if (value !== null) setHoveredValue(value); }} onMouseLeave={() => setHoveredValue(null)} title={`Q${event.quarter} ${event.year}: ${label}${estimate ? " estimate" : " actual"}`}>
-                {value !== null && <div style={{ position: "absolute", left: "37.5%", width: "25%", maxWidth: 20, borderRadius: 2, ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: `${height}%`, backgroundColor: estimate ? "rgb(var(--accent-rgb) / 0.15)" : color, border: estimate ? "1px solid var(--color-accent)" : undefined, boxShadow: estimate ? undefined : `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` }} />}
-                <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", fontSize: 10, fontWeight: 600, color: "var(--color-accent)" }}>Q{event.quarter}</span>
+                {value !== null && <div style={{ position: "absolute", left: "31.25%", width: "37.5%", maxWidth: 30, borderRadius: 2, ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: `${height}%`, backgroundColor: estimate ? "rgb(var(--accent-rgb) / 0.15)" : color, border: estimate ? "1px solid var(--color-accent)" : undefined, boxShadow: estimate ? undefined : `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` }} />}
+                <span style={{ position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)", fontSize: 12, fontWeight: 600, color: "var(--color-accent)" }}>Q{event.quarter}</span>
               </div>;
             })}
           </div>
@@ -1137,9 +1137,9 @@ function ComparisonFilingGraph({ ctx, title, field }: { ctx: GraphCtx; title: st
             if (value === null) return null;
             const height = Math.max((Math.abs(value) / maximum) * 100 * (hasNegative ? 0.4 : 0.78), 3);
             const negative = value < 0;
-            return <div key={series} className="absolute w-1/4 max-w-5 -translate-x-1/2 rounded-sm" style={{ left: series === "primary" ? "35%" : "65%", ...(negative ? { top: `${baseline}%` } : { bottom: hasNegative ? "55%" : `${baseline}%` }), height: `${height}%`, backgroundColor: color, boxShadow: series === "primary" ? "0 0 10px rgba(168, 85, 247, 0.55)" : "0 0 10px rgba(249, 115, 22, 0.55)" }} title={`${pair.year}: ${formatCurrency(value)}`} onMouseEnter={() => setHovered({ year: pair.year, series, value })} onMouseLeave={() => setHovered(null)} />;
+            return <div key={series} className="absolute w-[37.5%] max-w-[30px] -translate-x-1/2 rounded-sm" style={{ left: series === "primary" ? "35%" : "65%", ...(negative ? { top: `${baseline}%` } : { bottom: hasNegative ? "55%" : `${baseline}%` }), height: `${height}%`, backgroundColor: color, boxShadow: series === "primary" ? "0 0 10px rgba(168, 85, 247, 0.55)" : "0 0 10px rgba(249, 115, 22, 0.55)" }} title={`${pair.year}: ${formatCurrency(value)}`} onMouseEnter={() => setHovered({ year: pair.year, series, value })} onMouseLeave={() => setHovered(null)} />;
           })}
-          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-[10px] font-semibold text-text-muted">{pair.year}</span>
+          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-xs font-semibold text-text-muted">{pair.year}</span>
         </div>)}
       </div>
     </div>
@@ -1899,8 +1899,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
 
   if (!isDesktop && !containerRef) return createPortal(<>
     {(open || backdropClosing) && <div aria-hidden="true" onClick={handleDismiss} style={{
-      position: "fixed", inset: 0, zIndex: 999, background: "rgba(0,0,0,0.16)",
-      backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)",
+      position: "fixed", inset: 0, zIndex: 999, background: "transparent",
+      backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
       opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none", transition: "opacity 0.25s ease",
     }} />}
     {(open || backdropClosing) && <div ref={mobilePanelRef} className="warrent-ai-mobile-panel" style={{

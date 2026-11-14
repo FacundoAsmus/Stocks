@@ -98,7 +98,7 @@ function QuarterMetricChart({
               >
                 {value !== null && (
                   <div
-                    className={`absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm ${
+                    className={`absolute left-1/2 w-[37.5%] max-w-[30px] -translate-x-1/2 rounded-sm ${
                       isEstimate
                         ? selected
                           ? "border border-accent bg-accent/15"
@@ -119,7 +119,7 @@ function QuarterMetricChart({
                     aria-label={`${event.year} Q${event.quarter}: ${formattedValue}${isEstimate ? " estimate" : " actual"}`}
                   />
                 )}
-                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold text-accent">Q{event.quarter}</span>
+                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-semibold text-accent">Q{event.quarter}</span>
               </div>
             );
           })}

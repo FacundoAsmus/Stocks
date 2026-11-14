@@ -57,8 +57,8 @@ function MobileQuarterMetricChart({ metric, title, events, selectedDate }: { met
             const color = metricColor(value === null ? 50 : value < 0 ? 50 - Math.abs(value) / maximum * 50 : 50 + value / maximum * 50);
             const selected = event.date === selectedDate;
             return <div key={event.date} className="relative border-l border-border-subtle first:border-l-0" onMouseEnter={() => { if (value !== null) setHoveredValue(value); }} onMouseLeave={() => setHoveredValue(null)}>
-              {value !== null && <div className={`absolute left-1/2 w-1/4 max-w-5 -translate-x-1/2 rounded-sm ${estimate ? selected ? "border-2 border-accent bg-accent/15" : "border border-accent/70 bg-accent/15 opacity-45" : selected ? "border-2 border-accent" : ""}`} style={{ ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: animated ? `${height}%` : "0%", ...(!estimate ? { backgroundColor: color, boxShadow: `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` } : {}), transition: "height 1.657s cubic-bezier(0.22, 1, 0.36, 1)" }} />}
-              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-semibold text-accent">Q{event.quarter}</span>
+              {value !== null && <div className={`absolute left-1/2 w-[37.5%] max-w-[30px] -translate-x-1/2 rounded-sm ${estimate ? selected ? "border-2 border-accent bg-accent/15" : "border border-accent/70 bg-accent/15 opacity-45" : selected ? "border-2 border-accent" : ""}`} style={{ ...(value < 0 ? { top: baseline } : { bottom: hasNegative ? "55%" : baseline }), height: animated ? `${height}%` : "0%", ...(!estimate ? { backgroundColor: color, boxShadow: `0 0 10px ${color.replace("rgb(", "rgba(").replace(")", ", 0.42)")}` } : {}), transition: "height 1.657s cubic-bezier(0.22, 1, 0.36, 1)" }} />}
+              <span className="absolute bottom-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs font-semibold text-accent">Q{event.quarter}</span>
             </div>;
           })}
         </div>
