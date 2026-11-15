@@ -2,7 +2,6 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import type { CSSProperties } from "react";
 
 import { MARKET_HEATMAP_GROUPS } from "@/lib/marketHeatmap";
@@ -12,6 +11,7 @@ import { DesktopStockDetail } from "@/components/DesktopStockDetail";
 import { ErrorState } from "@/components/ErrorState";
 import { MarketIcon } from "@/components/MarketIcon";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
+import { ThemeSiteLogo } from "@/components/ThemeSiteLogo";
 import type { getStockDetail } from "@/lib/finnhub";
 
 type StockDetail = Awaited<ReturnType<typeof getStockDetail>>;
@@ -21,31 +21,6 @@ type DetailPayload = {
   sentiment: { score: number; drivers: string[] };
   metrics: Record<string, number | string | null> | undefined;
 };
-
-function ThemeSiteLogo() {
-  const [isLightMode, setIsLightMode] = useState(false);
-  const [darkLogoUnavailable, setDarkLogoUnavailable] = useState(false);
-
-  useEffect(() => {
-    const root = document.documentElement;
-    const syncTheme = () => setIsLightMode(root.classList.contains("light-mode"));
-    syncTheme();
-    const observer = new MutationObserver(syncTheme);
-    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => setDarkLogoUnavailable(false), [isLightMode]);
-
-  return <Image
-    src={isLightMode || darkLogoUnavailable ? "/icons/site-logo.png" : "/icons/site-logo-dark.png"}
-    alt=""
-    width={80}
-    height={40}
-    className="h-10 w-20 shrink-0 rounded-3xl object-contain"
-    onError={() => { if (!isLightMode) setDarkLogoUnavailable(true); }}
-  />;
-}
 
 type HeatmapStock = {
   symbol: string;
@@ -304,9 +279,6 @@ export function MarketHeatmap({ desktopLayout = false }: { desktopLayout?: boole
       {desktopLayout ? (
         <aside className="desktop-alert-glass desktop-list-holder m-3 flex w-1/6 shrink-0 flex-col overflow-hidden rounded-3xl border border-white/15">
           <div className="shrink-0 px-6 pb-4 pt-6">
-            <div className="mb-3 flex justify-end">
-              <ThemeSiteLogo />
-            </div>
             <p className="mt-2 text-3xl font-semibold tracking-normal text-text-primary">Heatmaps</p>
             <h2 id="market-heatmap-title" className="text-sm font-medium uppercase tracking-[0.18em] text-accent">Market</h2>
           </div>

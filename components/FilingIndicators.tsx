@@ -261,7 +261,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                     aria-pressed={selected}
                     onClick={() => setActiveCategory(category.id)}
                     style={{ flex: category.id === "financial-health" ? 1.4 : 1 }}
-                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[1.6px]" : "px-2 py-2 text-[3.5px]"} ${selected ? "text-on-accent" : "text-accent"}`}
+                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[0.8px]" : "px-2 py-2 text-[3.5px]"} ${selected ? "text-on-accent" : "text-accent"}`}
                   >
                     <OptionalSvgIcon name={category.icon} className="h-6 w-6" colorClassName={selected ? "text-on-accent" : "text-accent"} />
                     <span className="whitespace-nowrap">{category.label}</span>

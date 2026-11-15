@@ -226,12 +226,12 @@ export function FundamentalsGrid({
           </div>
         )}
         {ratioItems.length > 0 && (
-          <div className="border-t border-border-subtle pt-4">
+          <div className="pt-4">
             <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-accent">Ratio</h3>
             {ratioItems.map(renderMetricRow)}
           </div>
         )}
-        {dividendItem && <div className="border-t border-border-subtle pt-2">{renderMetricRow(dividendItem)}</div>}
+        {dividendItem && <div className="pt-2">{renderMetricRow(dividendItem)}</div>}
         {rangeItems.length > 0 && (
           <div className="border-t border-border-subtle pt-2">
             <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">52W Range</h3>

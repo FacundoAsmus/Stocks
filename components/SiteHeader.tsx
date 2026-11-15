@@ -2,10 +2,10 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import Link from "next/link";
 
 import { AppNav } from "@/components/AppNav";
 import { SearchBar } from "@/components/SearchBar";
+import { ThemeSiteLogo } from "@/components/ThemeSiteLogo";
 
 export function SiteHeader() {
   const headerRef = useRef<HTMLElement>(null);
@@ -33,14 +33,10 @@ export function SiteHeader() {
       className="sticky top-0 z-40 hidden border-b border-transparent bg-transparent backdrop-blur-none lg:block"
     >
       <div className={`flex flex-col gap-4 px-4 py-2 sm:px-6 lg:flex-row lg:items-center lg:justify-between ${usesUnifiedToolbar ? "lg:px-4" : "mx-auto max-w-7xl lg:px-8"}`}>
-        {usesUnifiedToolbar ? (
-          <div className="flex items-center gap-4">
-            <Link href="/" aria-label="Home" className="relative flex h-10 w-[90px] shrink-0 items-center justify-center">
-              <img src="/icons/site-logo.png" alt="" className="absolute left-0 top-1/2 h-[90px] w-[90px] -translate-y-1/2 object-contain" />
-            </Link>
-            <AppNav variant="links" />
-          </div>
-        ) : <AppNav variant="full" />}
+        <div className="flex min-w-0 items-center gap-5">
+          <ThemeSiteLogo />
+          <AppNav variant={usesUnifiedToolbar ? "links" : "full"} />
+        </div>
         {usesUnifiedToolbar ? (
           <div className="flex w-full items-center gap-3 lg:w-auto lg:min-w-[34rem]">
             <SearchBar />
