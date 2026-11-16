@@ -729,6 +729,28 @@ input {
 html.light-mode .watchlist-list-panel { background: #ececec; }
 .mobile-watchlist-row-separator { border-bottom-color: rgba(255,255,255,0.2) !important; }
 html.light-mode .mobile-watchlist-row-separator { border-bottom-color: var(--color-border-subtle) !important; }
+.watchlist-row-top-mark,
+.watchlist-row-bottom-mark {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+}
+.watchlist-row-top-mark {
+  top: 0;
+  right: 0.75rem;
+  left: 0.75rem;
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+}
+.watchlist-row-bottom-mark {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.2);
+}
+html.light-mode .watchlist-row-top-mark { background: rgba(0,0,0,0.08); }
+html.light-mode .watchlist-row-bottom-mark { background: var(--color-border-subtle); }
 @media (min-width: 1024px) {
   /* The desktop 1/4 watchlist and 1/5 market rails keep their tinted glass
      color, composited over a solid base instead of blurring the page behind. */

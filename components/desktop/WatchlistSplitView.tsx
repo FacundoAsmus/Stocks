@@ -109,7 +109,7 @@ function WatchlistListRow({
     <div
       onClick={onSelect}
       className={cn(
-        "desktop-alert-glass desktop-alert-glass-list-item flex cursor-pointer items-center gap-3 rounded-3xl border-2 px-4 py-3.5 transition-[filter,border-color,box-shadow] select-none",
+        "desktop-alert-glass desktop-alert-glass-list-item relative flex cursor-pointer items-center gap-3 rounded-3xl border-2 px-4 py-3.5 transition-[filter,border-color,box-shadow] select-none",
         isDragging
           ? `is-lifted brightness-125 ${isActive ? "is-selected" : ""}`
           : isActive ? "is-selected brightness-105 hover:brightness-110" : "hover:brightness-110"
@@ -135,6 +135,8 @@ function WatchlistListRow({
           <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass={isPos ? "text-positive" : "text-negative"} compact />
         </span>
       </span>
+      <span aria-hidden="true" className="watchlist-row-top-mark" />
+      <span aria-hidden="true" className="watchlist-row-bottom-mark" />
     </div>
   );
 }
