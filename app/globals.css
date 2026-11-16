@@ -740,17 +740,9 @@ html.light-mode .mobile-watchlist-row-separator { border-bottom-color: var(--col
   right: 0.75rem;
   left: 0.75rem;
   height: 1px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(148,163,184,0.2);
 }
-.watchlist-row-bottom-mark {
-  right: 0;
-  bottom: 0;
-  left: 0;
-  height: 1px;
-  background: rgba(255,255,255,0.2);
-}
-html.light-mode .watchlist-row-top-mark { background: rgba(0,0,0,0.08); }
-html.light-mode .watchlist-row-bottom-mark { background: var(--color-border-subtle); }
+html.light-mode .watchlist-row-top-mark { background: rgba(0,0,0,0.12); }
 @media (min-width: 1024px) {
   /* The desktop 1/4 watchlist and 1/5 market rails keep their tinted glass
      color, composited over a solid base instead of blurring the page behind. */
@@ -797,7 +789,8 @@ html.light-mode .watchlist-row-bottom-mark { background: var(--color-border-subt
     box-shadow: 0 24px 70px rgba(0,0,0,0.028), 0 6px 22px rgba(0,0,0,0.014), inset 0 0 18px rgba(0,0,0,0.018) !important;
   }
   .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item:not(.is-selected):not(.is-lifted) {
-    border-color: rgba(255,255,255,0.16) !important;
+    border-color: transparent !important;
+    border-bottom-color: rgba(148,163,184,0.46) !important;
   }
   .desktop-alert-glass.desktop-alert-glass-list-item.is-selected,
   .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted.is-selected {

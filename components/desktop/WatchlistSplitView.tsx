@@ -136,7 +136,6 @@ function WatchlistListRow({
         </span>
       </span>
       <span aria-hidden="true" className="watchlist-row-top-mark" />
-      <span aria-hidden="true" className="watchlist-row-bottom-mark" />
     </div>
   );
 }
