@@ -345,7 +345,7 @@ function xAxisLabel(dateStr: string, period: ChartPeriod): string {
 
 /* ─── Number-wheel digit ─────────────────────────────────────────────────── */
 const DIGIT_CHARS = ["0","1","2","3","4","5","6","7","8","9"];
-const FONT_PX = { lg: 48, sm: 24, md: 20, badge: 21, xs: 12 } as const; // the Tailwind text sizes in fontClass
+const FONT_PX = { lg: 48, sm: 24, md: 20, badge: 16.8, xs: 12 } as const; // the Tailwind text sizes in fontClass
 // Slot width as a fraction of the font size. Inter's widest digit ink is 0.55-0.58em,
 // so these leave a small gap and never clip. Raise or lower these to tune.
 const WHEEL_SLOT_EM = {
@@ -388,7 +388,7 @@ function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: strin
     });
   }, [idx, isDigit, animate]);
 
-  const rowPx     = size === "lg" ? 54 : size === "sm" ? 32 : size === "md" ? 30 : size === "badge" ? 33 : 22;
+  const rowPx     = size === "lg" ? 54 : size === "sm" ? 32 : size === "md" ? 30 : size === "badge" ? 26.4 : 22;
   const fontClass = size === "lg"
     ? "text-5xl font-semibold text-current"
     : size === "sm"
@@ -396,7 +396,7 @@ function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: strin
       : size === "md"
         ? "text-xl font-semibold text-current"
         : size === "badge"
-        ? "text-[21px] font-extrabold text-current"
+        ? "text-[16.8px] font-extrabold text-current"
           : "text-xs font-semibold text-current";
 
   if (!isDigit) {
