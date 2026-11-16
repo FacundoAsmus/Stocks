@@ -396,7 +396,7 @@ function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: strin
       : size === "md"
         ? "text-xl font-semibold text-current"
         : size === "badge"
-          ? "text-sm font-bold text-current"
+        ? "text-sm font-extrabold text-current"
           : "text-xs font-semibold text-current";
 
   if (!isDigit) {
