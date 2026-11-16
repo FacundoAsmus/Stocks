@@ -727,22 +727,14 @@ input {
    distinct from the page/detail-panel background on either side of it. */
 .watchlist-list-panel { background: #0e0e0e; }
 html.light-mode .watchlist-list-panel { background: #ececec; }
-.mobile-watchlist-row-separator { border-bottom-color: rgba(255,255,255,0.2) !important; }
-html.light-mode .mobile-watchlist-row-separator { border-bottom-color: var(--color-border-subtle) !important; }
-.watchlist-row-top-mark,
-.watchlist-row-bottom-mark {
-  position: absolute;
-  z-index: 2;
-  pointer-events: none;
+.mobile-watchlist-row-separator {
+  border-color: rgba(148,163,184,0.14) !important;
+  border-bottom-color: rgba(148,163,184,0.46) !important;
 }
-.watchlist-row-top-mark {
-  top: 0;
-  right: 0.75rem;
-  left: 0.75rem;
-  height: 1px;
-  background: rgba(148,163,184,0.2);
+html.light-mode .mobile-watchlist-row-separator {
+  border-color: rgba(0,0,0,0.08) !important;
+  border-bottom-color: var(--color-border-subtle) !important;
 }
-html.light-mode .watchlist-row-top-mark { background: rgba(0,0,0,0.12); }
 @media (min-width: 1024px) {
   /* The desktop 1/4 watchlist and 1/5 market rails keep their tinted glass
      color, composited over a solid base instead of blurring the page behind. */
@@ -789,8 +781,12 @@ html.light-mode .watchlist-row-top-mark { background: rgba(0,0,0,0.12); }
     box-shadow: 0 24px 70px rgba(0,0,0,0.028), 0 6px 22px rgba(0,0,0,0.014), inset 0 0 18px rgba(0,0,0,0.018) !important;
   }
   .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item:not(.is-selected):not(.is-lifted) {
-    border-color: transparent !important;
+    border-color: rgba(148,163,184,0.14) !important;
     border-bottom-color: rgba(148,163,184,0.46) !important;
+  }
+  html.light-mode .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item:not(.is-selected):not(.is-lifted) {
+    border-color: rgba(0,0,0,0.08) !important;
+    border-bottom-color: var(--color-border-subtle) !important;
   }
   .desktop-alert-glass.desktop-alert-glass-list-item.is-selected,
   .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted.is-selected {

@@ -123,8 +123,7 @@ function MobileWatchlistSkeleton() {
       </div>
       <div>
         {Array.from({ length: 8 }, (_, index) => (
-          <div key={index} className="mobile-watchlist-row-separator relative flex h-[68px] items-center gap-3 rounded-3xl border-b border-border-subtle/70 bg-black px-4 py-3.5">
-            <span aria-hidden="true" className="watchlist-row-top-mark" />
+          <div key={index} className="mobile-watchlist-row-separator relative flex h-[68px] items-center gap-3 rounded-3xl border bg-black px-4 py-3.5">
             <div className="flex min-w-0 flex-1 basis-0 items-center gap-3">
               <div className="h-9 w-9 shrink-0 rounded-full bg-panel-muted" />
               <div className="h-4 min-w-0 flex-1 rounded-full bg-panel-muted" />
@@ -321,7 +320,7 @@ function WatchlistRow({
       layout="position"
       initial={false}
       animate={isRemoving ? { height: 0, opacity: 0, scale: 0.96, marginTop: 0, marginBottom: 0 } : { height: "auto", opacity: 1, scale: 1 }}
-      className="mobile-watchlist-row-separator relative overflow-hidden rounded-3xl border-b border-border-subtle/70 last:border-0 bg-black select-none"
+      className="mobile-watchlist-row-separator relative overflow-hidden rounded-3xl border bg-black select-none"
       whileDrag={{
         scale: 1.03,
         boxShadow: "0 16px 40px rgba(0,0,0,0.55)",
@@ -335,7 +334,6 @@ function WatchlistRow({
         WebkitTouchCallout: "none",
       }}
     >
-      <span aria-hidden="true" className="watchlist-row-top-mark" />
       <div className="relative">
         <div
           className="absolute inset-y-0 right-0 flex items-center justify-center"
