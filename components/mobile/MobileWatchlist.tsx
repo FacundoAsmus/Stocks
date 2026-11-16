@@ -91,11 +91,11 @@ function RowContent({ stock }: { stock: StockSummary }) {
       <span className="flex min-w-0 flex-1 basis-0 justify-end pointer-events-none">
         <span
           className={cn(
-            "watchlist-change-badge inline-block text-sm font-bold text-black px-3 py-1 rounded-3xl",
-            isPos ? "is-positive bg-positive" : "is-negative bg-negative"
+            "inline-block text-sm font-bold",
+            isPos ? "text-positive" : "text-negative"
           )}
         >
-          <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass="text-black" compact />
+          <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass={isPos ? "text-positive" : "text-negative"} compact />
         </span>
       </span>
     </>
@@ -123,14 +123,14 @@ function MobileWatchlistSkeleton() {
       </div>
       <div>
         {Array.from({ length: 8 }, (_, index) => (
-          <div key={index} className="flex h-[68px] items-center gap-3 rounded-3xl border-b border-border-subtle/70 bg-black px-4 py-3.5">
+          <div key={index} className="mobile-watchlist-row-separator flex h-[68px] items-center gap-3 rounded-3xl border-b border-border-subtle/70 bg-black px-4 py-3.5">
             <div className="flex min-w-0 flex-1 basis-0 items-center gap-3">
               <div className="h-9 w-9 shrink-0 rounded-full bg-panel-muted" />
               <div className="h-4 min-w-0 flex-1 rounded-full bg-panel-muted" />
             </div>
             <div className="h-10 w-20 shrink-0 rounded-md bg-panel-muted/70" />
             <div className="flex min-w-0 flex-1 basis-0 justify-end">
-              <div className="h-7 w-16 shrink-0 rounded-full bg-panel-muted" />
+              <div className="h-3 w-10 shrink-0 rounded bg-panel-muted" />
             </div>
           </div>
         ))}
@@ -320,7 +320,7 @@ function WatchlistRow({
       layout="position"
       initial={false}
       animate={isRemoving ? { height: 0, opacity: 0, scale: 0.96, marginTop: 0, marginBottom: 0 } : { height: "auto", opacity: 1, scale: 1 }}
-      className="relative overflow-hidden rounded-3xl border-b border-border-subtle/70 last:border-0 bg-black select-none"
+      className="mobile-watchlist-row-separator relative overflow-hidden rounded-3xl border-b border-border-subtle/70 last:border-0 bg-black select-none"
       whileDrag={{
         scale: 1.03,
         boxShadow: "0 16px 40px rgba(0,0,0,0.55)",

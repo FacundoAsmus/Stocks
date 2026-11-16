@@ -128,11 +128,11 @@ function WatchlistListRow({
       <span className="ml-1 shrink-0 pointer-events-none">
         <span
           className={cn(
-            "watchlist-change-badge inline-block rounded-3xl px-3 py-1 text-sm font-bold text-black",
-            isPos ? "is-positive bg-positive" : "is-negative bg-negative"
+            "inline-block text-sm font-bold",
+            isPos ? "text-positive" : "text-negative"
           )}
         >
-          <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass="text-black" compact />
+          <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass={isPos ? "text-positive" : "text-negative"} compact />
         </span>
       </span>
     </div>
@@ -190,7 +190,7 @@ function DesktopWatchlistSkeleton() {
                 <div className="h-2 w-24 animate-pulse rounded-full bg-panel-muted/70" />
               </div>
               <div className="h-8 w-16 shrink-0 animate-pulse rounded-md bg-panel-muted/80" />
-              <div className="h-7 w-14 shrink-0 animate-pulse rounded-lg bg-panel-muted" />
+              <div className="h-3 w-10 shrink-0 animate-pulse rounded bg-panel-muted" />
             </div>
           ))}
         </div>
