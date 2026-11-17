@@ -132,7 +132,6 @@ function MobileWatchlistSkeleton() {
             <div className="flex min-w-0 flex-1 basis-0 justify-end">
               <div className="h-3 w-10 shrink-0 rounded bg-panel-muted" />
             </div>
-            <span aria-hidden="true" className="watchlist-row-lower-fade" />
           </div>
         ))}
       </div>
@@ -377,7 +376,6 @@ function WatchlistRow({
           </div>
         </div>
       </div>
-      <span aria-hidden="true" className="watchlist-row-lower-fade" />
     </Reorder.Item>
   );
 }
