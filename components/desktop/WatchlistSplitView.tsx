@@ -135,7 +135,8 @@ function WatchlistListRow({
           <WheelPrice value={formatPercent(stock.changePercent)} size="badge" colorClass={isPos ? "text-positive" : "text-negative"} compact />
         </span>
       </span>
-      <span aria-hidden="true" className="watchlist-row-lower-border-shade" />
+      <span aria-hidden="true" className="watchlist-lower-outline" />
+      <span aria-hidden="true" className="watchlist-lower-outline-taper" />
     </div>
   );
 }
