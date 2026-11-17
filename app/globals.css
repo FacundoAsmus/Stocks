@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --watchlist-lower-rim-rgb: 148 163 184;
   --color-range-marker: #ffffff;
   --indicator-pill-body-start: #111416;
   --indicator-pill-body-mid: #0c0f11;
@@ -104,6 +105,7 @@ html.light-mode body {
 }
 html.light-mode :root,
 html.light-mode {
+  --watchlist-lower-rim-rgb: 60 60 67;
   --color-range-marker: #000000;
   --indicator-pill-body-start: #ffffff;
   --indicator-pill-body-mid: #f1f8ff;
@@ -729,11 +731,24 @@ input {
 html.light-mode .watchlist-list-panel { background: #ececec; }
 .mobile-watchlist-row-separator {
   border-color: rgba(148,163,184,0.14) !important;
-  border-bottom-color: rgba(148,163,184,0.46) !important;
 }
 html.light-mode .mobile-watchlist-row-separator {
   border-color: rgba(0,0,0,0.08) !important;
-  border-bottom-color: var(--color-border-subtle) !important;
+}
+.watchlist-row-lower-fade {
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 50%;
+  border-radius: 0 0 1.5rem 1.5rem;
+  pointer-events: none;
+  background: linear-gradient(to top,
+    rgb(var(--watchlist-lower-rim-rgb) / 0.24) 0%,
+    rgb(var(--watchlist-lower-rim-rgb) / 0.18) 16%,
+    rgb(var(--watchlist-lower-rim-rgb) / 0.1) 50%,
+    transparent 100%);
 }
 @media (min-width: 1024px) {
   /* The desktop 1/4 watchlist and 1/5 market rails keep their tinted glass
@@ -782,11 +797,9 @@ html.light-mode .mobile-watchlist-row-separator {
   }
   .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item:not(.is-selected):not(.is-lifted) {
     border-color: rgba(148,163,184,0.14) !important;
-    border-bottom-color: rgba(148,163,184,0.46) !important;
   }
   html.light-mode .watchlist-desktop-root .desktop-alert-glass.desktop-alert-glass-list-item:not(.is-selected):not(.is-lifted) {
     border-color: rgba(0,0,0,0.08) !important;
-    border-bottom-color: var(--color-border-subtle) !important;
   }
   .desktop-alert-glass.desktop-alert-glass-list-item.is-selected,
   .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted.is-selected {

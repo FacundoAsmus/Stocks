@@ -123,7 +123,7 @@ function MobileWatchlistSkeleton() {
       </div>
       <div>
         {Array.from({ length: 8 }, (_, index) => (
-          <div key={index} className="mobile-watchlist-row-separator relative flex h-[68px] items-center gap-3 rounded-3xl border bg-black px-4 py-3.5">
+          <div key={index} className="mobile-watchlist-row-separator relative flex h-[68px] items-center gap-3 overflow-hidden rounded-3xl border bg-black px-4 py-3.5">
             <div className="flex min-w-0 flex-1 basis-0 items-center gap-3">
               <div className="h-9 w-9 shrink-0 rounded-full bg-panel-muted" />
               <div className="h-4 min-w-0 flex-1 rounded-full bg-panel-muted" />
@@ -132,6 +132,7 @@ function MobileWatchlistSkeleton() {
             <div className="flex min-w-0 flex-1 basis-0 justify-end">
               <div className="h-3 w-10 shrink-0 rounded bg-panel-muted" />
             </div>
+            <span aria-hidden="true" className="watchlist-row-lower-fade" />
           </div>
         ))}
       </div>
@@ -376,6 +377,7 @@ function WatchlistRow({
           </div>
         </div>
       </div>
+      <span aria-hidden="true" className="watchlist-row-lower-fade" />
     </Reorder.Item>
   );
 }
