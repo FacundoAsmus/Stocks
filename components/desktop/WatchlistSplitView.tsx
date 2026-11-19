@@ -525,7 +525,7 @@ export function WatchlistSplitView() {
   return (
     <div className="watchlist-desktop-root flex w-full" style={{ height: "calc(100dvh - var(--header-height, 0px))" }}>
       {/* Left: 1/4 — its own rounded, distinctly-shaded card holding the title + list.
-          Background: #0e0e0e dark / #ffffff light (see .watchlist-list-panel in globals.css).
+          Background: #0e0e0e dark / var(--color-white) light (see .watchlist-list-panel in globals.css).
           Page background behind it: #ececec in light mode (.watchlist-desktop-root). */}
       <div className="desktop-alert-glass desktop-list-holder m-3 flex w-[23%] shrink-0 flex-col overflow-hidden rounded-3xl border border-white/15">
         <div className="shrink-0 px-6 pb-4 pt-6">

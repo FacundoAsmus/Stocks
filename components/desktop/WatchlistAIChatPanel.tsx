@@ -187,8 +187,8 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
     }
   }
 
-  const glassBg = "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))";
-  const glassShadow = "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)";
+  const glassBg = "linear-gradient(155deg, rgb(var(--white-rgb) / 0.14), rgb(var(--white-rgb) / 0.03) 40%, rgba(0,0,0,0.35))";
+  const glassShadow = "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgb(var(--white-rgb) / 0.16), inset 0 0 0 1px rgb(var(--white-rgb) / 0.04)";
 
   return (
     <>
@@ -204,7 +204,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
           <div
             aria-hidden
             className="absolute top-0 left-[18%] right-[18%] pointer-events-none"
-            style={{ height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)" }}
+            style={{ height: 1, background: "linear-gradient(90deg, transparent, rgb(var(--white-rgb) / 0.5), transparent)" }}
           />
           <OptionalSvgIcon name="ai" className="ai-button-icon relative h-7 w-7" />
         </button>
@@ -226,10 +226,10 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
           className="pointer-events-auto flex w-full max-w-[420px] flex-col overflow-hidden rounded-3xl border border-white/25"
           style={{
             height: "min(640px, calc(100dvh - 2rem))",
-            background: "linear-gradient(155deg, rgba(255,255,255,0.10), rgba(255,255,255,0.02) 40%, rgba(0,0,0,0.6))",
+            background: "linear-gradient(155deg, rgb(var(--white-rgb) / 0.10), rgb(var(--white-rgb) / 0.02) 40%, rgba(0,0,0,0.6))",
             backdropFilter: "blur(28px) saturate(160%)",
             WebkitBackdropFilter: "blur(28px) saturate(160%)",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgb(var(--white-rgb) / 0.16), inset 0 0 0 1px rgb(var(--white-rgb) / 0.04)",
           }}
           role="dialog"
           aria-modal="true"

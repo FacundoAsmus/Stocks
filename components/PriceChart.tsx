@@ -1347,7 +1347,7 @@ export function PriceChart({
     preview.style.top = `${rect.top}px`;
     preview.style.width = `${rect.width}px`;
     preview.style.height = `${rect.height}px`;
-    Object.assign(preview.style, getDrawingAreaStyle(point.y <= anchor.y ? "up" : "down", "#ffffff"));
+    Object.assign(preview.style, getDrawingAreaStyle(point.y <= anchor.y ? "up" : "down", "var(--color-white)"));
   }, []);
 
   const updateDiagonalPreview = useCallback((clientX: number, clientY: number, bounds: DOMRect) => {
@@ -1591,7 +1591,7 @@ export function PriceChart({
                 preview.style.top = `${point.y}px`;
                 preview.style.width = "0px";
                 preview.style.height = "0px";
-                Object.assign(preview.style, getDrawingAreaStyle("up", "#ffffff"));
+                Object.assign(preview.style, getDrawingAreaStyle("up", "var(--color-white)"));
               }
               return;
             }
@@ -1829,7 +1829,7 @@ export function PriceChart({
               const x = ((line.index - visibleRange.start) / (visibleRange.end - visibleRange.start)) * bounds.width;
               const selected = selectedManualVerticalId === line.id;
               return <g key={line.id}>
-                <line x1={x} y1="8" x2={x} y2={bounds.height} stroke="#ffffff" strokeWidth={selected ? 1.5 : 1} strokeDasharray="8 6" pointerEvents="none" />
+                <line x1={x} y1="8" x2={x} y2={bounds.height} stroke="var(--color-white)" strokeWidth={selected ? 1.5 : 1} strokeDasharray="8 6" pointerEvents="none" />
                 <line data-drawing-hit="true" role="button" tabIndex={anyDrawingPlacementActive ? -1 : 0} aria-label={selected ? "Selected vertical line; press Delete to remove" : "Select vertical line; press Delete to remove"}
                   x1={x} y1="8" x2={x} y2={bounds.height} stroke="transparent" strokeWidth={14} pointerEvents={anyDrawingPlacementActive ? "none" : "stroke"}
                   onClick={(event) => {
@@ -1841,7 +1841,7 @@ export function PriceChart({
                   }} />
               </g>;
             })}
-            <line ref={verticalPreviewRef} x1="0" y1="8" x2="0" y2="8" stroke="#ffffff" strokeWidth={1} strokeDasharray="8 6" style={{ display: "none" }} />
+            <line ref={verticalPreviewRef} x1="0" y1="8" x2="0" y2="8" stroke="var(--color-white)" strokeWidth={1} strokeDasharray="8 6" style={{ display: "none" }} />
           </svg>}
 
           {(manualDiagonals.length > 0 || diagonalPlacementActive) && <svg className="manual-drawing-svg pointer-events-none absolute inset-0 z-20 h-full w-full overflow-hidden" aria-hidden="false">
@@ -1864,7 +1864,7 @@ export function PriceChart({
               const b = pointFor(indices[1], diagonal.x1 === diagonal.x2 ? diagonal.y2 : priceAt(indices[1]));
               const selected = selectedManualDiagonalId === diagonal.id;
               return <g key={diagonal.id}>
-                <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#ffffff" strokeWidth={selected ? 1.5 : 1} strokeDasharray="8 6" pointerEvents="none" />
+                <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="var(--color-white)" strokeWidth={selected ? 1.5 : 1} strokeDasharray="8 6" pointerEvents="none" />
                 <line data-drawing-hit="true" role="button" tabIndex={anyDrawingPlacementActive ? -1 : 0} aria-label={selected ? "Selected diagonal line; press Delete to remove" : "Select diagonal line; press Delete to remove"}
                   x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="transparent" strokeWidth={14} pointerEvents={anyDrawingPlacementActive ? "none" : "stroke"}
                   onClick={(event) => {
@@ -1876,7 +1876,7 @@ export function PriceChart({
                   }} />
               </g>;
             })}
-            <line ref={diagonalPreviewRef} x1="0" y1="0" x2="0" y2="0" stroke="#ffffff" strokeWidth={1} strokeDasharray="8 6" style={{ display: "none" }} />
+            <line ref={diagonalPreviewRef} x1="0" y1="0" x2="0" y2="0" stroke="var(--color-white)" strokeWidth={1} strokeDasharray="8 6" style={{ display: "none" }} />
           </svg>}
 
           {/* Manual price lines and the live placement preview are chart overlays. */}
@@ -1911,7 +1911,7 @@ export function PriceChart({
                   className="manual-price-line-dash pointer-events-auto absolute inset-x-0 top-1/2 h-3 min-w-0 -translate-y-1/2 cursor-crosshair border-0 bg-transparent p-0"
                   style={{
                     backgroundColor: "transparent",
-                    backgroundImage: "repeating-linear-gradient(90deg, #ffffff 0 8px, transparent 8px 14px)",
+                    backgroundImage: "repeating-linear-gradient(90deg, var(--color-white) 0 8px, transparent 8px 14px)",
                     backgroundSize: "auto 1px",
                     backgroundPosition: "center",
                     backgroundRepeat: "repeat-x",
@@ -1958,7 +1958,7 @@ export function PriceChart({
                 top: `${(top / bounds.height) * 100}%`,
                 width: `${((indexEnd - indexStart) / visibleCount) * 100}%`,
                 height: `${((bottom - top) / bounds.height) * 100}%`,
-                ...getDrawingAreaStyle(square.trend, "#ffffff"),
+                ...getDrawingAreaStyle(square.trend, "var(--color-white)"),
                 appearance: "none",
                 pointerEvents: anyDrawingPlacementActive ? "none" : "auto",
               }}
@@ -1968,7 +1968,7 @@ export function PriceChart({
             ref={squarePreviewRef}
             aria-hidden="true"
             className="manual-drawing-area pointer-events-none absolute z-10 hidden"
-            style={getDrawingAreaStyle("up", "#ffffff")}
+            style={getDrawingAreaStyle("up", "var(--color-white)")}
           />
 
           {/* ── Pro mode desktop horizontal crosshair — follows the active dot ── */}
@@ -2005,7 +2005,7 @@ export function PriceChart({
                   <div
                     data-crosshair-h=""
                     className="absolute left-0 right-0 h-px"
-                    style={{ top: `${dotTopPct}%`, background: "rgba(255,255,255,0.18)" }}
+                    style={{ top: `${dotTopPct}%`, background: "rgb(var(--white-rgb) / 0.18)" }}
                   />
                 )}
                 {/* Dot */}
@@ -2028,10 +2028,10 @@ export function PriceChart({
                     style={{
                       left: xPct > 65 ? undefined : `calc(${xPct}% + 10px)`,
                       right: xPct > 65 ? `calc(${100 - xPct}% + 10px)` : undefined,
-                      background: "linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03) 40%, rgba(0,0,0,0.35))",
+                      background: "linear-gradient(155deg, rgb(var(--white-rgb) / 0.14), rgb(var(--white-rgb) / 0.03) 40%, rgba(0,0,0,0.35))",
                       backdropFilter: "blur(22px) saturate(160%)",
                       WebkitBackdropFilter: "blur(22px) saturate(160%)",
-                      boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 0 1px rgba(255,255,255,0.04)",
+                      boxShadow: "0 10px 34px rgba(0,0,0,0.45), inset 0 1px 0 rgb(var(--white-rgb) / 0.16), inset 0 0 0 1px rgb(var(--white-rgb) / 0.04)",
                     }}
                   >
                     {tooltipLabel(hoverDate, period)}

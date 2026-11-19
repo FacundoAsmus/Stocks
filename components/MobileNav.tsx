@@ -312,8 +312,8 @@ function MobileSearchPill({ origin }: { origin: string }) {
   const winH = typeof window !== "undefined" ? window.innerHeight : 0;
   const keyboardInset = Math.max(0, winH - vpH - vp.top);
   const pillBottom = open && keyboardInset > 8
-    ? `${keyboardInset + 12}px`
-    : "calc(env(safe-area-inset-bottom) - 0.5rem)";
+    ? `calc(${keyboardInset + 12}px - var(--phone-controls-lower))`
+    : "calc(env(safe-area-inset-bottom) - 0.5rem - var(--phone-controls-lower))";
 
   const showDropdown = open && (loading || results.length > 0 || query.trim().length > 0);
 
@@ -556,10 +556,6 @@ export function MobileNav() {
   }
 
   const iconWrapClass = "relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 transition-colors duration-300";
-  function iconClass(active: boolean) {
-    return cn("transition-colors duration-300", active ? "text-accent" : "text-text-muted");
-  }
-
   return (
     <>
       {settingsPhase !== "closed" && <MobileSettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} origin={settingsOrigin} />}
@@ -568,7 +564,7 @@ export function MobileNav() {
           keeps its separate circle so it can morph into the existing search bar. */}
       <nav
         className="fixed bottom-0 inset-x-0 z-[60] flex lg:hidden items-center px-5 pointer-events-none"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 0.5rem)", paddingTop: "1rem" }}
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 1rem)", paddingTop: "1rem" }}
       >
         <div
           className="smoked-glass-surface relative flex h-14 w-[calc(100%-4.25rem)] flex-none items-center rounded-full border border-white/25 overflow-hidden pointer-events-auto"
@@ -587,7 +583,6 @@ export function MobileNav() {
             aria-label="Market"
           >
             <OptionalSvgIcon name="market" selected={activeIndex === 0} className="h-6 w-6" colorClassName={activeIndex === 0 ? "text-accent" : "text-text-muted"} />
-            <span className={cn("text-xs font-medium leading-none", iconClass(activeIndex === 0))}>Market</span>
           </button>
 
           <button
@@ -596,7 +591,6 @@ export function MobileNav() {
             aria-label="Watchlist"
           >
             <OptionalSvgIcon name="watchlist" selected={activeIndex === 1} className="h-6 w-6" colorClassName={activeIndex === 1 ? "text-accent" : "text-text-muted"} />
-            <span className={cn("text-xs font-medium leading-none", iconClass(activeIndex === 1))}>Watchlist</span>
           </button>
 
           <button
@@ -605,7 +599,6 @@ export function MobileNav() {
             aria-label="Settings"
           >
             <OptionalSvgIcon name="settings" selected={activeIndex === 2} className="h-6 w-6" colorClassName={activeIndex === 2 ? "text-accent" : "text-text-muted"} />
-            <span className={cn("text-xs font-medium leading-none", iconClass(activeIndex === 2))}>Settings</span>
           </button>
         </div>
       </nav>

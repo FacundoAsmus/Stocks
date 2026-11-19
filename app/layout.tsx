@@ -39,7 +39,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             var isDark = t === 'dark' || (t === 'system' && prefersDark);
             if (!isDark) document.documentElement.classList.add('light-mode');
             var meta = document.querySelector('meta[name="theme-color"]');
-            if (meta) meta.setAttribute('content', isDark ? '#000000' : '#ffffff');
+            if (meta) meta.setAttribute('content', isDark ? '#000000' : getComputedStyle(document.documentElement).getPropertyValue('--color-white').trim());
           })();
         `}} />
         <ToastProvider>

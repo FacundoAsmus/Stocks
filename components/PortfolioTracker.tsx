@@ -267,7 +267,7 @@ function PortfolioChart({
                 cursor={(() => {
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
                   if (isTouchDevice) return false;
-                  return { stroke: "#ffffff22", strokeWidth: 1 };
+                  return { stroke: "rgb(var(--white-rgb) / 0.13)", strokeWidth: 1 };
                 })()}
                 content={(() => {
                   const isTouchDevice = typeof window !== "undefined" && "ontouchstart" in window;
@@ -392,7 +392,7 @@ function PositionRow({
     <div className="border-b border-border-subtle/70 last:border-0 group">
       <div className="flex items-center gap-3 px-5 py-4">
         <Link href={`/stock/${position.ticker}`} className="flex items-center gap-3 flex-1 min-w-0">
-          <StockLogo logo={hasStockLogo ? stock?.logo : undefined} symbol={position.ticker} size={48} shape="rounded-md"
+          <StockLogo logo={hasStockLogo ? stock?.logo : undefined} size={48} shape="rounded-md"
             sizeClassName="h-9 w-9 shrink-0"
             imageClassName="h-9 w-9 rounded-md border border-white/10 bg-white/5 object-contain shrink-0"
             fallbackClassName="h-9 w-9 shrink-0 rounded-md object-contain" />

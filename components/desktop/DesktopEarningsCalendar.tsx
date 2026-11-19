@@ -404,7 +404,7 @@ export function DesktopEarningsCalendar({
         }
         .earnings-detail-glass {
           background: linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54));
-          border: 1px solid rgba(255,255,255,0.15);
+          border: 1px solid rgb(var(--white-rgb) / 0.15);
           -webkit-backdrop-filter: blur(24px) saturate(180%);
           backdrop-filter: blur(24px) saturate(180%);
           box-shadow: 0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18);

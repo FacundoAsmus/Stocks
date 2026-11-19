@@ -392,7 +392,7 @@ function GraphSentiment({ ctx }: { ctx: GraphCtx }) {
           <span style={{ fontSize: 28, fontWeight: 700, color }}>{score}</span>
           <span style={{ fontSize: 13, color: "#9a9aa2" }}>/ 100</span>
         </div>
-        <div style={{ height: 8, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+        <div style={{ height: 8, borderRadius: 999, backgroundColor: "rgb(var(--white-rgb) / 0.08)", overflow: "hidden" }}>
           <div style={{ height: "100%", width: `${pct}%`, backgroundColor: color, boxShadow: `0 0 10px ${color}70`, transition: "width 0.8s cubic-bezier(0.22,1,0.36,1)", borderRadius: 999 }} />
         </div>
       </div>
@@ -431,7 +431,7 @@ function GraphAnalyst({ ctx }: { ctx: GraphCtx }) {
           {rows.map(([label, count, color]) => (
             <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 10, width: 62, color: "#9a9aa2", flexShrink: 0 }}>{label}</span>
-              <div style={{ flex: 1, height: 6, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+              <div style={{ flex: 1, height: 6, borderRadius: 999, backgroundColor: "rgb(var(--white-rgb) / 0.08)", overflow: "hidden" }}>
                 <div style={{
                   height: "100%",
                   width: `${progress * Math.max((count / total) * 100, count ? 4 : 0)}%`,
@@ -715,7 +715,7 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
                 if (cx == null || cy == null || !payload || (typeof window !== "undefined" && "ontouchstart" in window)) return <g />;
                 if (hoverPrice !== payload.close) setHoverPrice(payload.close);
                 if (proMode && dotCY !== cy) setDotCY(cy);
-                return <circle cx={cx} cy={cy} r={4} fill={lineColor} stroke={isLightMode ? "#fff" : "#000"} strokeWidth={1.5} />;
+                return <circle cx={cx} cy={cy} r={4} fill={lineColor} stroke={isLightMode ? "var(--color-white)" : "#000"} strokeWidth={1.5} />;
               }}
             />
             {maWindow && (
@@ -797,7 +797,7 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
                   x={x} y={a.price}
                   r={3.5}
                   fill={MARK_COLOR}
-                  stroke={isLightMode ? "#fff" : "#000"}
+                  stroke={isLightMode ? "var(--color-white)" : "#000"}
                   strokeWidth={1.5}
                   ifOverflow="extendDomain"
                   label={markLabelRenderer(a.label, xSide, ySide)}
@@ -815,7 +815,7 @@ function GraphPrice({ ctx, period = "1M", annotations, maWindow }: { ctx: GraphC
           return <div className="absolute inset-0 pointer-events-none" aria-hidden>
             <div data-crosshair-v="" style={{ position: "absolute", left: `${xPct}%`, top: 0, bottom: 0, width: 1, background: "rgba(128,128,128,0.5)" }} />
             {proMode && <div data-crosshair-h="" style={{ position: "absolute", left: 0, right: 0, top: `${dotTopPct}%`, height: 1, background: "rgba(128,128,128,0.5)" }} />}
-            <div style={{ position: "absolute", left: `${xPct}%`, top: `${dotTopPct}%`, width: 12, height: 12, transform: "translate(-50%, -50%)", borderRadius: "50%", border: `2px solid ${isLightMode ? "#fff" : "#000"}`, background: lineColor }} />
+            <div style={{ position: "absolute", left: `${xPct}%`, top: `${dotTopPct}%`, width: 12, height: 12, transform: "translate(-50%, -50%)", borderRadius: "50%", border: `2px solid ${isLightMode ? "var(--color-white)" : "#000"}`, background: lineColor }} />
           </div>;
         })()}
         </div>
@@ -1061,7 +1061,7 @@ function ComparisonPriceGraph({ ctx, period, annotations }: { ctx: GraphCtx; per
                 const base = seriesBase(series);
                 if (!base) return null;
                 const y = (item.price / base - 1) * 100;
-                return <ReferenceDot key={`compare-mark-${index}`} x={row.date} y={y} r={3.5} fill={MARK_COLOR} stroke={ctx.isLightMode ? "#fff" : "#000"} strokeWidth={1.5} label={markLabelRenderer(item.label, "right", y > (domain[0] + domain[1]) / 2 ? "below" : "above")} />;
+                return <ReferenceDot key={`compare-mark-${index}`} x={row.date} y={y} r={3.5} fill={MARK_COLOR} stroke={ctx.isLightMode ? "var(--color-white)" : "#000"} strokeWidth={1.5} label={markLabelRenderer(item.label, "right", y > (domain[0] + domain[1]) / 2 ? "below" : "above")} />;
               })}
             </LineChart>
           </ResponsiveContainer>
@@ -1720,8 +1720,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         const keyboardInset = Math.max(0, window.innerHeight - current.height - current.top);
         const pill = mobilePillRef.current;
         if (pill) pill.style.bottom = open && keyboardInset > 8
-          ? `${keyboardInset + 12}px`
-          : "calc(env(safe-area-inset-bottom) - 0.5rem)";
+          ? `calc(${keyboardInset + 12}px - var(--phone-controls-lower))`
+          : "calc(env(safe-area-inset-bottom) - 0.5rem - var(--phone-controls-lower))";
         if (wasKeyboard && panel.dataset.keyboard === "false" && savedScrollYRef.current !== null) {
           const savedY = savedScrollYRef.current;
           requestAnimationFrame(() => window.scrollTo(0, savedY));
@@ -1860,7 +1860,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       </div>
     </div>}
     {(!hideTrigger || open || backdropClosing) && <div ref={mobilePillRef} className={`smoked-glass-surface fixed z-[1002] overflow-hidden rounded-full border border-white/15 text-accent${open ? " ai-typing-bar" : " ai-aberration"}`} style={{
-      right: open ? "1rem" : "1.25rem", bottom: "calc(env(safe-area-inset-bottom) - 0.5rem)",
+      right: open ? "1rem" : "1.25rem", bottom: "calc(env(safe-area-inset-bottom) - 0.5rem - var(--phone-controls-lower))",
       width: open ? "calc(100vw - 2rem)" : "3.5rem", height: "3.5rem", background: chatControlGlass,
       backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)",
       boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
