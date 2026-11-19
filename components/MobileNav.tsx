@@ -243,7 +243,7 @@ export function MobileNav() {
     body.style.top = `-${savedScroll}px`;
     body.style.left = "0";
     body.style.right = "0";
-    const focusTimer = window.setTimeout(() => searchInputRef.current?.focus(), 540);
+    const focusTimer = window.setTimeout(() => searchInputRef.current?.focus(), 660);
     return () => {
       window.clearTimeout(focusTimer);
       body.style.overflow = body.style.position = body.style.top = body.style.left = body.style.right = "";
@@ -402,7 +402,7 @@ export function MobileNav() {
         style={{ bottom: searchOpen ? searchBottom : 0, paddingBottom: searchOpen ? 0 : "calc(env(safe-area-inset-bottom) - 1rem)", paddingTop: searchOpen ? 0 : "1rem", zIndex: searchOpen ? 1002 : 60 }}
       >
         <div
-          className="phone-menu-bar relative flex h-12 w-full max-w-[34rem] flex-none items-center rounded-[14px] overflow-hidden pointer-events-auto"
+          className="phone-menu-bar relative flex h-12 w-full max-w-[34rem] flex-none items-center overflow-hidden pointer-events-auto"
           data-search-open={searchOpen}
           style={{
             height: searchOpen ? "3.6rem" : BUBBLE_SIZE,
@@ -414,7 +414,7 @@ export function MobileNav() {
             onClick={() => navigateTo("/")}
             aria-label="Market"
           >
-            <OptionalSvgIcon name="market" selected={activeIndex === 0} className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="market" selected={activeIndex === 0} className={activeIndex === 0 ? "h-6 w-6" : "h-5 w-5"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
 
           <button
@@ -422,7 +422,7 @@ export function MobileNav() {
             onClick={() => navigateTo("/watchlist")}
             aria-label="Watchlist"
           >
-            <OptionalSvgIcon name="watchlist" selected={activeIndex === 1} className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="watchlist" selected={activeIndex === 1} className={activeIndex === 1 ? "h-6 w-6" : "h-5 w-5"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
 
           <button
@@ -430,7 +430,7 @@ export function MobileNav() {
             onClick={openSettings}
             aria-label="Settings"
           >
-            <OptionalSvgIcon name="settings" selected={activeIndex === 2} className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="settings" selected={activeIndex === 2} className={activeIndex === 2 ? "h-6 w-6" : "h-5 w-5"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
           <div className="phone-menu-search-input absolute inset-0 z-20 flex items-center gap-2 px-2">
             <input ref={searchInputRef} value={searchQuery} onChange={event => setSearchQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && searchResults[0]) openStock(searchResults[0].symbol); }} placeholder="Search stocks…" className="min-w-0 flex-1 bg-transparent px-3 text-base text-text-primary outline-none placeholder:text-text-muted" style={{ fontSize: 16, caretColor: "var(--color-accent)" }} />

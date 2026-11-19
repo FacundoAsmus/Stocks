@@ -3,10 +3,11 @@
 :root {
   --phone-controls-lower: 0.25rem;
   --white-rgb: 250 248 247;
-  --phone-menu-background: var(--color-white);
-  --phone-menu-icon: #131313;
-  --phone-menu-close-background: #131313;
-  --phone-menu-close-icon: var(--color-white);
+  --phone-menu-background: #151514;
+  --phone-menu-icon: var(--color-white);
+  --phone-menu-close-background: #ffffff;
+  --phone-menu-close-icon: #151514;
+  --phone-menu-radius: 20px;
   --watchlist-outline-rgb: 148 163 184;
   --color-range-marker: var(--color-white);
   --indicator-pill-body-start: #111416;
@@ -104,17 +105,17 @@ body {
 /* ── Light mode ──────────────────────────────────────────────────────────── */
 html.light-mode {
   color-scheme: light;
-  --phone-menu-background: #131313;
-  --phone-menu-icon: var(--color-white);
-  --phone-menu-close-background: var(--color-white);
-  --phone-menu-close-icon: #131313;
+  --phone-menu-background: #ffffff;
+  --phone-menu-icon: #151514;
+  --phone-menu-close-background: #151514;
+  --phone-menu-close-icon: #ffffff;
   background: var(--color-white);
 }
 
 .phone-menu-bar {
   background: var(--phone-menu-background);
   border: 0;
-  border-radius: 14px;
+  border-radius: var(--phone-menu-radius);
   box-shadow: none;
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -123,7 +124,7 @@ html.light-mode {
 .phone-menu-icon {
   color: var(--phone-menu-icon);
   transform: translateY(0);
-  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 480ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .phone-menu-bar[data-search-open="true"] .phone-menu-icon {
   transform: translateY(-110%);
@@ -136,7 +137,7 @@ html.light-mode {
 .phone-menu-bar[data-search-open="true"] .phone-menu-search-input {
   opacity: 1;
   pointer-events: auto;
-  transition-delay: 360ms;
+  transition-delay: 480ms;
 }
 .phone-menu-close {
   display: grid;
@@ -145,7 +146,7 @@ html.light-mode {
   flex: 0 0 40px;
   place-items: center;
   border: 0;
-  border-radius: 0;
+  border-radius: var(--phone-menu-radius);
   background: var(--phone-menu-close-background);
   color: var(--phone-menu-close-icon);
 }
