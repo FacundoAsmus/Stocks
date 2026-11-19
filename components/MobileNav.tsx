@@ -1,9 +1,11 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { SECTOR_ETFS } from "@/lib/etfs";
+import { StockLogo } from "@/components/StockLogo";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
@@ -214,10 +216,93 @@ export function MobileNav() {
   const [activePill,   setActivePill]   = useState<"market" | "watchlist">(
     pathname === "/watchlist" ? "watchlist" : "market"
   );
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Array<{ symbol: string; name: string }>>([]);
+  const [searchLogos, setSearchLogos] = useState<Record<string, string>>({});
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [visualViewport, setVisualViewport] = useState({ top: 0, left: 0, width: 0, height: 0 });
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setActivePill(pathname === "/watchlist" ? "watchlist" : "market");
   }, [pathname]);
+
+  useEffect(() => {
+    const openSearch = () => setSearchOpen(true);
+    window.addEventListener("open-phone-stock-search", openSearch);
+    return () => window.removeEventListener("open-phone-stock-search", openSearch);
+  }, []);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const savedScroll = window.scrollY;
+    const body = document.body;
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${savedScroll}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    const focusTimer = window.setTimeout(() => searchInputRef.current?.focus(), 540);
+    return () => {
+      window.clearTimeout(focusTimer);
+      body.style.overflow = body.style.position = body.style.top = body.style.left = body.style.right = "";
+      window.scrollTo(0, savedScroll);
+    };
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (!searchOpen) return;
+    const updateViewport = () => {
+      const vv = window.visualViewport;
+      setVisualViewport(vv
+        ? { top: vv.offsetTop, left: vv.offsetLeft, width: vv.width, height: vv.height }
+        : { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight });
+    };
+    updateViewport();
+    window.visualViewport?.addEventListener("resize", updateViewport);
+    window.visualViewport?.addEventListener("scroll", updateViewport);
+    window.addEventListener("resize", updateViewport);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateViewport);
+      window.visualViewport?.removeEventListener("scroll", updateViewport);
+      window.removeEventListener("resize", updateViewport);
+    };
+  }, [searchOpen]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setSearchLogos({});
+      setSearchLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    setSearchLoading(true);
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`, { signal: controller.signal });
+        const data = await response.json() as { results?: Array<{ symbol: string; description: string }> };
+        const results = (data.results ?? []).slice(0, 8).map(item => ({ symbol: item.symbol, name: item.description }));
+        setSearchResults(results);
+        if (results.length) {
+          try {
+            const symbols = results.map(item => item.symbol).join(",");
+            const stockResponse = await fetch(`/api/stocks?symbols=${encodeURIComponent(symbols)}`, { signal: controller.signal });
+            const stockData = await stockResponse.json() as { stocks?: Array<{ symbol: string; logo?: string }> };
+            const logos: Record<string, string> = {};
+            for (const stock of stockData.stocks ?? []) if (stock.logo) logos[stock.symbol] = stock.logo;
+            if (!controller.signal.aborted) setSearchLogos(logos);
+          } catch { /* stock logos are optional */ }
+        }
+      } catch {
+        if (!controller.signal.aborted) setSearchResults([]);
+      } finally {
+        if (!controller.signal.aborted) setSearchLoading(false);
+      }
+    }, 180);
+    return () => { controller.abort(); window.clearTimeout(timer); };
+  }, [searchQuery]);
 
   // Apply stored theme on mount
   useEffect(() => {
@@ -230,6 +315,26 @@ export function MobileNav() {
   const isWatchlist = activePill === "watchlist";
   const activeIndex = settingsPhase !== "closed" ? 2 : (isWatchlist ? 1 : 0);
   const BUBBLE_SIZE = "3rem";
+  const viewportHeight = visualViewport.height || (typeof window !== "undefined" ? window.innerHeight : 0);
+  const keyboardInset = Math.max(0, (typeof window !== "undefined" ? window.innerHeight : 0) - viewportHeight - visualViewport.top);
+  const searchBottom = searchOpen && keyboardInset > 8
+    ? `calc(${keyboardInset + 12}px - var(--phone-controls-lower))`
+    : "calc(env(safe-area-inset-bottom) - 0.5rem - var(--phone-controls-lower))";
+
+  function closeSearch() {
+    setSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchLogos({});
+  }
+
+  function openStock(symbol: string) {
+    sessionStorage.setItem("nav-from-search", "1");
+    sessionStorage.setItem("search-origin", pathname);
+    closeSearch();
+    window.dispatchEvent(new Event("stock-sheet-capture-page"));
+    router.push(`/stock/${symbol}`);
+  }
 
   function navigateTo(href: "/" | "/watchlist") {
     const goingToWatchlist = href === "/watchlist";
@@ -273,20 +378,35 @@ export function MobileNav() {
     setTimeout(() => setSettingsPhase("closed"), SETTINGS_DURATION);
   }
 
-  const iconWrapClass = "relative z-10 flex h-full min-w-0 flex-1 flex-col items-center justify-center gap-1 transition-colors duration-300";
+  const iconWrapClass = "phone-menu-icon relative z-10 flex h-full min-w-0 flex-1 items-center justify-center";
   return (
     <>
       {settingsPhase !== "closed" && <MobileSettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} origin={settingsOrigin} />}
 
       {/* Centered phone navigation bar. */}
+      {searchOpen && <div className="fixed z-[1000] lg:hidden" style={{ top: visualViewport.top, left: visualViewport.left, width: visualViewport.width || "100vw", height: visualViewport.height || "100dvh", background: "transparent", backdropFilter: "blur(3px) brightness(0.97)", WebkitBackdropFilter: "blur(3px) brightness(0.97)" }} onClick={closeSearch} />}
+      {searchOpen && (searchLoading || searchResults.length > 0 || searchQuery.trim()) && (
+        <div className="smoked-glass-surface fixed z-[1001] max-h-[55vh] w-[calc(100vw-2rem)] overflow-y-auto rounded-3xl border border-white/25 lg:hidden" style={{ right: "1rem", bottom: `calc(${searchBottom} + 3.6rem + 0.75rem)`, display: "flex", flexDirection: "column-reverse", background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
+          {searchLoading && <p className="px-4 py-3 text-sm text-text-muted">Searching…</p>}
+          {!searchLoading && searchQuery.trim() && !searchResults.length && <p className="px-4 py-3 text-sm text-text-muted">No results for “{searchQuery}”</p>}
+          {!searchLoading && searchResults.map(result => (
+            <button key={result.symbol} onClick={() => openStock(result.symbol)} className="flex w-full items-center gap-3 border-t border-border-subtle p-3 text-left">
+              <StockLogo logo={searchLogos[result.symbol] && !SECTOR_ETFS.some(etf => etf.symbol === result.symbol) ? searchLogos[result.symbol] : undefined} size={48} sizeClassName="h-10 w-10 shrink-0" imageClassName="h-10 w-10 shrink-0 rounded-3xl border border-border-subtle bg-panel-muted object-contain" fallbackClassName="h-10 w-10 shrink-0 rounded-3xl object-contain" fallbackDisplay="flex" />
+              <span className="min-w-0"><span className="block text-sm font-semibold text-text-primary">{result.symbol}</span><span className="block truncate text-xs text-text-muted">{result.name}</span></span>
+            </button>
+          ))}
+        </div>
+      )}
       <nav
-        className="fixed bottom-0 inset-x-0 z-[60] flex lg:hidden items-center justify-center px-5 pointer-events-none"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 1rem)", paddingTop: "1rem" }}
+        className="fixed inset-x-0 z-[60] flex lg:hidden items-center justify-center px-5 pointer-events-none"
+        style={{ bottom: searchOpen ? searchBottom : 0, paddingBottom: searchOpen ? 0 : "calc(env(safe-area-inset-bottom) - 1rem)", paddingTop: searchOpen ? 0 : "1rem", zIndex: searchOpen ? 1002 : 60 }}
       >
         <div
           className="phone-menu-bar relative flex h-12 w-full max-w-[34rem] flex-none items-center rounded-[14px] overflow-hidden pointer-events-auto"
+          data-search-open={searchOpen}
           style={{
-            height: BUBBLE_SIZE,
+            height: searchOpen ? "3.6rem" : BUBBLE_SIZE,
+            transition: "height 360ms cubic-bezier(0.22, 1, 0.36, 1)",
           }}
         >
           <button
@@ -294,7 +414,7 @@ export function MobileNav() {
             onClick={() => navigateTo("/")}
             aria-label="Market"
           >
-            <OptionalSvgIcon name="market" selected={activeIndex === 0} className="h-6 w-6" colorClassName={activeIndex === 0 ? "text-accent" : "text-text-muted"} />
+            <OptionalSvgIcon name="market" selected={activeIndex === 0} className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
 
           <button
@@ -302,7 +422,7 @@ export function MobileNav() {
             onClick={() => navigateTo("/watchlist")}
             aria-label="Watchlist"
           >
-            <OptionalSvgIcon name="watchlist" selected={activeIndex === 1} className="h-6 w-6" colorClassName={activeIndex === 1 ? "text-accent" : "text-text-muted"} />
+            <OptionalSvgIcon name="watchlist" selected={activeIndex === 1} className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
 
           <button
@@ -310,8 +430,12 @@ export function MobileNav() {
             onClick={openSettings}
             aria-label="Settings"
           >
-            <OptionalSvgIcon name="settings" selected={activeIndex === 2} className="h-6 w-6" colorClassName={activeIndex === 2 ? "text-accent" : "text-text-muted"} />
+            <OptionalSvgIcon name="settings" selected={activeIndex === 2} className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
+          <div className="phone-menu-search-input absolute inset-0 z-20 flex items-center gap-2 px-2">
+            <input ref={searchInputRef} value={searchQuery} onChange={event => setSearchQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && searchResults[0]) openStock(searchResults[0].symbol); }} placeholder="Search stocks…" className="min-w-0 flex-1 bg-transparent px-3 text-base text-text-primary outline-none placeholder:text-text-muted" style={{ fontSize: 16, caretColor: "var(--color-accent)" }} />
+            <button type="button" aria-label="Close search" onClick={closeSearch} className="phone-menu-close"><OptionalSvgIcon name="close" className="h-5 w-5" color="var(--phone-menu-close-icon)" /></button>
+          </div>
         </div>
       </nav>
 

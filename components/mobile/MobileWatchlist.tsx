@@ -517,7 +517,9 @@ export function MobileWatchlist() {
             <h1 className="text-4xl font-bold text-text-primary">Your Stocks</h1>
             <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-accent">Watchlist</p>
           </div>
-          <OptionalSvgIcon name="plus" className="mt-2 h-6 w-6" />
+          <button type="button" aria-label="Add stock" onClick={() => window.dispatchEvent(new Event("open-phone-stock-search"))} className="mt-1 flex h-10 w-10 items-center justify-center border-0 bg-transparent p-0">
+            <OptionalSvgIcon name="plus" className="h-6 w-6" />
+          </button>
         </div>
       </div>
 
