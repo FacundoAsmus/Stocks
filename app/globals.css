@@ -2,7 +2,8 @@
 
 :root {
   --phone-controls-lower: 0.25rem;
-  --white-rgb: 245 236 231;
+  --white-rgb: 250 248 247;
+  --phone-menu-background: #000000;
   --watchlist-outline-rgb: 148 163 184;
   --color-range-marker: var(--color-white);
   --indicator-pill-body-start: #111416;
@@ -63,7 +64,7 @@ html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
 }
 
 @theme {
-  --color-white: #F5ECE7;
+  --color-white: #FAF8F7;
   --color-background: #050507;
   --color-panel: #0a0a0d;
   --color-panel-muted: #111114;
@@ -100,7 +101,18 @@ body {
 /* ── Light mode ──────────────────────────────────────────────────────────── */
 html.light-mode {
   color-scheme: light;
+  --phone-menu-background: #ffffff;
   background: var(--color-white);
+}
+
+.phone-menu-bar {
+  background: var(--phone-menu-background);
+  border: 0;
+  border-radius: 19px;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  outline: none;
 }
 html.light-mode body {
   background: var(--color-white);

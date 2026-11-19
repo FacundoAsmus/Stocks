@@ -511,7 +511,7 @@ export function MobileNav() {
 
   const isWatchlist = activePill === "watchlist";
   const activeIndex = settingsPhase !== "closed" ? 2 : (isWatchlist ? 1 : 0);
-  const BUBBLE_SIZE = "3.5rem"; // matches the search pill's h-14 exactly
+  const BUBBLE_SIZE = "4rem";
 
   function navigateTo(href: "/" | "/watchlist") {
     const goingToWatchlist = href === "/watchlist";
@@ -567,14 +567,10 @@ export function MobileNav() {
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 1rem)", paddingTop: "1rem" }}
       >
         <div
-          className="smoked-glass-surface relative flex h-14 w-[calc(100%-4.25rem)] flex-none items-center rounded-full border border-white/25 overflow-hidden pointer-events-auto"
+          className="phone-menu-bar relative flex h-16 w-[calc(100%-4.25rem)] flex-none items-center rounded-[19px] overflow-hidden pointer-events-auto"
           style={{
             height: BUBBLE_SIZE,
             marginRight: "0.75rem",
-            background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
-            backdropFilter: "blur(var(--phone-floating-pill-blur))",
-            WebkitBackdropFilter: "blur(var(--phone-floating-pill-blur))",
-            boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
           }}
         >
           <button
