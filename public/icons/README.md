@@ -7,6 +7,7 @@ Upload SVG files into this folder using the names below. Icons are tinted by the
 - `market.svg`, `market-selected.svg`
 - `watchlist.svg`, `watchlist-selected.svg`
 - `settings.svg`, `settings-selected.svg`
+- `plus.svg` — plus icon at the top right of the phone Watchlist page's “Your Stocks” heading.
 
 The same files are used on desktop and phone. Each layout controls its own size and selected tint.
 

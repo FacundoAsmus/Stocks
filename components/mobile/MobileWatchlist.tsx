@@ -512,9 +512,12 @@ export function MobileWatchlist() {
               : "var(--color-background)",
           }}
         />
-        <div>
-          <h1 className="text-4xl font-bold text-text-primary">Your Stocks</h1>
-          <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-accent">Watchlist</p>
+        <div className="flex min-w-0 flex-1 items-start justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-text-primary">Your Stocks</h1>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-accent">Watchlist</p>
+          </div>
+          <OptionalSvgIcon name="plus" className="mt-2 h-6 w-6" />
         </div>
       </div>
 

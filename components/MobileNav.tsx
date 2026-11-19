@@ -1,12 +1,9 @@
 "use client";
 
-import { Search } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
-import { SECTOR_ETFS } from "@/lib/etfs";
-import { StockLogo } from "@/components/StockLogo";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 
@@ -189,280 +186,6 @@ export function MobileSettingsPanel({ closing, onClose, origin }: { closing: boo
   );
 }
 
-// ─── Search pill — mirrors the AI chat pill exactly: same size, position,
-// easing, and morph-from-circle-to-bar behaviour. Results appear in a
-// translucent rounded box that grows upward from the bar, closest match
-// nearest the bar. ──────────────────────────────────────────────────────
-function MobileSearchPill({ origin }: { origin: string }) {
-  const router = useRouter();
-  const [open, setOpen]     = useState(false);
-  const [query, setQuery]   = useState("");
-  const [results, setResults] = useState<Array<{ symbol: string; name: string }>>([]);
-  const [logos, setLogos]   = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(false);
-  const [vp, setVp] = useState({ top: 0, left: 0, width: 0, height: 0 });
-  const inputRef   = useRef<HTMLInputElement>(null);
-  const touchStart = useRef<{ x: number; y: number; time: number } | null>(null);
-
-  // Track visual viewport (handles iOS keyboard shrinking the screen) — same
-  // pattern as the AI chat pill.
-  useEffect(() => {
-    function update() {
-      const vv = window.visualViewport;
-      setVp(vv
-        ? { top: vv.offsetTop, left: vv.offsetLeft, width: vv.width, height: vv.height }
-        : { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight }
-      );
-    }
-    update();
-    window.visualViewport?.addEventListener("resize", update);
-    window.visualViewport?.addEventListener("scroll", update);
-    window.addEventListener("resize", update);
-    return () => {
-      window.visualViewport?.removeEventListener("resize", update);
-      window.visualViewport?.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
-  }, []);
-
-  // Lock body scroll (without jumping to top) only while search is open
-  useEffect(() => {
-    if (!open) return;
-    const scrollY = window.scrollY;
-    const b = document.body;
-    b.style.overflow = "hidden";
-    b.style.position = "fixed";
-    b.style.top      = `-${scrollY}px`;
-    b.style.left     = "0";
-    b.style.right    = "0";
-    const t = setTimeout(() => inputRef.current?.focus(), 340);
-    return () => {
-      clearTimeout(t);
-      b.style.overflow = b.style.position = b.style.top = b.style.left = b.style.right = "";
-      window.scrollTo(0, scrollY);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!query.trim()) { setResults([]); setLogos({}); setLoading(false); return; }
-    const controller = new AbortController();
-    setLoading(true);
-    const t = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
-        const data = await res.json() as { results?: Array<{ symbol: string; description: string }> };
-        const newResults = (data.results ?? []).slice(0, 8).map(r => ({ symbol: r.symbol, name: r.description }));
-        setResults(newResults);
-
-        // Logos are a nice-to-have enrichment, not the search result itself —
-        // a failure here (rate limit, a bad symbol in the batch, a network
-        // blip) must never clear the real results that already loaded above.
-        if (newResults.length) {
-          try {
-            const symbols = newResults.map(r => r.symbol).join(",");
-            const stockRes = await fetch(`/api/stocks?symbols=${encodeURIComponent(symbols)}`, { signal: controller.signal });
-            const stockData = await stockRes.json() as { stocks?: Array<{ symbol: string; logo?: string }> };
-            const logoMap: Record<string, string> = {};
-            for (const s of stockData.stocks ?? []) {
-              if (s.logo) logoMap[s.symbol] = s.logo;
-            }
-            if (!controller.signal.aborted) setLogos(logoMap);
-          } catch { /* logos are optional — results above stay intact either way */ }
-        }
-      } catch { if (!controller.signal.aborted) setResults([]); }
-      finally { if (!controller.signal.aborted) setLoading(false); }
-    }, 180);
-    return () => { controller.abort(); clearTimeout(t); };
-  }, [query]);
-
-  function handleDismiss() {
-    setOpen(false);
-    setQuery("");
-    setResults([]);
-    setLogos({});
-  }
-
-  function goToSymbol(symbol: string) {
-    sessionStorage.setItem("nav-from-search", "1");
-    sessionStorage.setItem("search-origin", origin);
-    handleDismiss();
-    window.dispatchEvent(new Event("stock-sheet-capture-page"));
-    router.push(`/stock/${symbol}`);
-  }
-
-  // Tap-to-dismiss on empty space, identical pattern to the AI chat's messages area
-  function onEmptyAreaTouchStart(e: React.TouchEvent) {
-    if (e.target !== e.currentTarget) { touchStart.current = null; return; }
-    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, time: Date.now() };
-  }
-  function onEmptyAreaTouchEnd(e: React.TouchEvent) {
-    if (!touchStart.current) return;
-    const dx = Math.abs(e.changedTouches[0].clientX - touchStart.current.x);
-    const dy = Math.abs(e.changedTouches[0].clientY - touchStart.current.y);
-    const dt = Date.now() - touchStart.current.time;
-    if (dx < 8 && dy < 8 && dt < 300) handleDismiss();
-    touchStart.current = null;
-  }
-  function onEmptyAreaClick(e: React.MouseEvent) {
-    if (e.target === e.currentTarget) handleDismiss();
-  }
-
-  const vpW = vp.width  || (typeof window !== "undefined" ? window.innerWidth  : 0);
-  const vpH = vp.height || (typeof window !== "undefined" ? window.innerHeight : 0);
-  const winH = typeof window !== "undefined" ? window.innerHeight : 0;
-  const keyboardInset = Math.max(0, winH - vpH - vp.top);
-  const pillBottom = open && keyboardInset > 8
-    ? `calc(${keyboardInset + 12}px - var(--phone-controls-lower))`
-    : "calc(env(safe-area-inset-bottom) - 0.5rem - var(--phone-controls-lower))";
-
-  const showDropdown = open && (loading || results.length > 0 || query.trim().length > 0);
-
-  return (
-    <>
-      {/* Backdrop — pinned to the exact visual viewport rectangle, tap dismisses */}
-      <div
-        className="lg:hidden"
-        style={{
-          position: "fixed",
-          top: vp.top, left: vp.left, width: vpW, height: vpH,
-          zIndex: 1000,
-          opacity: open ? 1 : 0,
-          pointerEvents: open ? "auto" : "none",
-          transition: "opacity 0.28s ease",
-        }}
-        onClick={handleDismiss}
-      >
-        <div style={{
-          position: "absolute", inset: 0,
-          backdropFilter:       open ? "blur(3px) brightness(0.97)" : "none",
-          WebkitBackdropFilter: open ? "blur(3px) brightness(0.97)" : "none",
-          transition: "backdrop-filter 0.28s ease, -webkit-backdrop-filter 0.28s ease",
-          transform: "translateZ(0)",
-          WebkitTransform: "translateZ(0)",
-          willChange: "backdrop-filter",
-        }} />
-      </div>
-
-      {/* Results — translucent rounded box, grows upward from the bar. Item 0
-          (closest match) renders nearest the bar via column-reverse. */}
-      {showDropdown && (
-        <div
-          className="smoked-glass-surface fixed lg:hidden rounded-3xl border border-white/25"
-          style={{
-            zIndex: 1001,
-            right: "1rem",
-            width: "calc(100vw - 2rem)",
-            bottom: `calc(${pillBottom} + 3.5rem + 0.75rem)`,
-            maxHeight: "55vh",
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column-reverse",
-            opacity: open ? 1 : 0,
-            transform: open ? "translateY(0)" : "translateY(8px)",
-            transition: "opacity 0.22s ease, transform 0.22s ease",
-            background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
-            backdropFilter: "blur(24px) saturate(180%)",
-            WebkitBackdropFilter: "blur(24px) saturate(180%)",
-            boxShadow: open
-              ? "0 0 14px rgb(var(--accent-rgb) / 0.45), 0 0 5px rgb(var(--accent-rgb) / 0.65), 0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)"
-              : "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
-          }}
-          onClick={onEmptyAreaClick}
-          onTouchStart={onEmptyAreaTouchStart}
-          onTouchEnd={onEmptyAreaTouchEnd}
-        >
-          {loading && (
-            <p style={{ padding: "16px 18px", fontSize: 13, color: "var(--color-text-muted)" }}>Searching…</p>
-          )}
-          {!loading && query.trim() && !results.length && (
-            <p style={{ padding: "16px 18px", fontSize: 13, color: "var(--color-text-muted)" }}>No results for &ldquo;{query}&rdquo;</p>
-          )}
-          {!loading && results.map(r => (
-            <button
-              key={r.symbol}
-              onClick={() => goToSymbol(r.symbol)}
-              style={{
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "12px 16px",
-                width: "100%",
-                textAlign: "left",
-                borderTop: "1px solid var(--color-border-subtle)",
-              }}
-            >
-              <StockLogo logo={logos[r.symbol] && !SECTOR_ETFS.some((etf) => etf.symbol === r.symbol) ? logos[r.symbol] : undefined}
-                size={48} sizeClassName="h-10 w-10 shrink-0"
-                imageClassName="h-10 w-10 shrink-0 rounded-3xl border border-border-subtle bg-panel-muted object-contain"
-                fallbackClassName="h-10 w-10 shrink-0 rounded-3xl object-contain" fallbackDisplay="flex" />
-              <span style={{ minWidth: 0 }}>
-                <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" }}>{r.symbol}</span>
-                <span style={{ display: "block", fontSize: 12, color: "var(--color-text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* The pill — same element morphs from a small circle into the search
-          bar, identical geometry/easing/timing to the AI chat pill. */}
-      <div
-        className="smoked-glass-surface fixed lg:hidden overflow-hidden rounded-full border border-white/25 text-accent"
-        style={{
-          zIndex: 1002,
-          bottom: pillBottom,
-          right: open ? "1rem" : "1.25rem",
-          width: open ? "calc(100vw - 2rem)" : "3.5rem",
-          height: "3.5rem",
-          background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))",
-          backdropFilter: "blur(24px) saturate(180%)",
-          WebkitBackdropFilter: "blur(24px) saturate(180%)",
-          boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)",
-          transition: "width 0.32s cubic-bezier(0.2,0,0,1), right 0.32s cubic-bezier(0.2,0,0,1), bottom 0.2s ease",
-        }}
-      >
-        {/* Closed state: search icon */}
-        <button
-          onClick={() => setOpen(true)}
-          aria-label="Search"
-          style={{
-            position: "absolute", inset: 0,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            opacity: open ? 0 : 1,
-            pointerEvents: open ? "none" : "auto",
-            transition: "opacity 0.16s ease",
-          }}
-        >
-          <Search className="h-7 w-7 text-accent" />
-        </button>
-
-        {/* Open state: the actual search input row */}
-        <div
-          style={{
-            position: "absolute", inset: 0,
-            display: "flex", alignItems: "center", gap: 8,
-            padding: "0 8px 0 20px",
-            opacity: open ? 1 : 0,
-            pointerEvents: open ? "auto" : "none",
-            transition: "opacity 0.22s ease",
-            transitionDelay: open ? "0.14s" : "0s",
-          }}
-        >
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search stocks…"
-            className="text-text-primary placeholder:text-text-muted"
-            style={{ flex: 1, background: "transparent", border: "none", outline: "none", fontSize: 16, caretColor: "var(--color-accent)" }}
-          />
-          <GlossyIconButton aria-label="Close search" onClick={handleDismiss} size={38} className="shrink-0">
-            <GlossyCloseIcon />
-          </GlossyIconButton>
-        </div>
-      </div>
-    </>
-  );
-}
-
 // ─── Slide helpers ────────────────────────────────────────────────────────
 const SLIDE_DURATION = 260;
 const SETTINGS_DURATION = 300;
@@ -494,11 +217,6 @@ export function MobileNav() {
 
   useEffect(() => {
     setActivePill(pathname === "/watchlist" ? "watchlist" : "market");
-    // Reopen search only if flagged (back from search-opened stock)
-    if (typeof window !== "undefined" && sessionStorage.getItem("reopen-search")) {
-      sessionStorage.removeItem("reopen-search");
-      // Don't reopen — spec says we DON'T reopen on back
-    }
   }, [pathname]);
 
   // Apply stored theme on mount
@@ -511,7 +229,7 @@ export function MobileNav() {
 
   const isWatchlist = activePill === "watchlist";
   const activeIndex = settingsPhase !== "closed" ? 2 : (isWatchlist ? 1 : 0);
-  const BUBBLE_SIZE = "4rem";
+  const BUBBLE_SIZE = "3rem";
 
   function navigateTo(href: "/" | "/watchlist") {
     const goingToWatchlist = href === "/watchlist";
@@ -560,17 +278,15 @@ export function MobileNav() {
     <>
       {settingsPhase !== "closed" && <MobileSettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} origin={settingsOrigin} />}
 
-      {/* Bottom dock: navigation stays grouped in the capsule, while search
-          keeps its separate circle so it can morph into the existing search bar. */}
+      {/* Centered phone navigation bar. */}
       <nav
-        className="fixed bottom-0 inset-x-0 z-[60] flex lg:hidden items-center px-5 pointer-events-none"
+        className="fixed bottom-0 inset-x-0 z-[60] flex lg:hidden items-center justify-center px-5 pointer-events-none"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) - 1rem)", paddingTop: "1rem" }}
       >
         <div
-          className="phone-menu-bar relative flex h-16 w-[calc(100%-4.25rem)] flex-none items-center rounded-[19px] overflow-hidden pointer-events-auto"
+          className="phone-menu-bar relative flex h-12 w-full max-w-[34rem] flex-none items-center rounded-[14px] overflow-hidden pointer-events-auto"
           style={{
             height: BUBBLE_SIZE,
-            marginRight: "0.75rem",
           }}
         >
           <button
@@ -599,8 +315,6 @@ export function MobileNav() {
         </div>
       </nav>
 
-      {/* Search — self-contained pill, same behaviour as the AI chat pill */}
-      <MobileSearchPill origin={pathname} />
     </>
   );
 }
