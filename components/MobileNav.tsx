@@ -434,10 +434,10 @@ export function MobileNav() {
             <OptionalSvgIcon name="conversations" selected={activeIndex === 2} className={activeIndex === 2 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
           <button className={iconWrapClass} onClick={() => navigateTo("/profile")} aria-label="Profile">
-            <OptionalSvgIcon name="profile" selected={activeIndex === 3} className={activeIndex === 3 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="profile" selected={activeIndex === 3} className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
           <button className={iconWrapClass} onClick={openSettings} aria-label="Settings">
-            <OptionalSvgIcon name="settings" selected={activeIndex === 4} className={activeIndex === 4 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="settings" selected={activeIndex === 4} className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
           <div className="phone-menu-search-input absolute inset-0 z-20 flex items-center gap-2 px-2">
             <input ref={searchInputRef} value={searchQuery} onChange={event => setSearchQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && searchResults[0]) openStock(searchResults[0].symbol); }} placeholder="Search stocks…" className="min-w-0 flex-1 bg-transparent px-3 text-base text-text-primary outline-none placeholder:text-text-muted" style={{ fontSize: 16, caretColor: "var(--color-accent)" }} />

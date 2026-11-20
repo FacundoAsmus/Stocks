@@ -11,7 +11,7 @@ export function SiteHeader() {
   const headerRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
   // Market and Watchlist intentionally share the same desktop control bar.
-  const usesUnifiedToolbar = pathname === "/" || pathname === "/watchlist";
+  const usesUnifiedToolbar = pathname === "/" || pathname === "/watchlist" || pathname === "/conversations" || pathname === "/profile";
 
   // Publish the header's real rendered height as a CSS var so anything
   // sticky below it (e.g. the market ticker bar) can pin flush underneath
