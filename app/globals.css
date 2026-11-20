@@ -2,7 +2,7 @@
 
 :root {
   --phone-controls-lower: 0.25rem;
-  --white-rgb: 250 248 247;
+  --white-rgb: 246 246 245;
   --phone-menu-background: #151514;
   --phone-menu-icon: var(--color-white);
   --phone-menu-close-background: #ffffff;
@@ -68,7 +68,7 @@ html.light-mode .market-icon-frame { background-color: #e5e5e8 !important; }
 }
 
 @theme {
-  --color-white: #FAF8F7;
+  --color-white: #F6F6F5;
   --color-background: #050507;
   --color-panel: #0a0a0d;
   --color-panel-muted: #111114;
@@ -146,7 +146,7 @@ html.light-mode {
   flex: 0 0 40px;
   place-items: center;
   border: 0;
-  border-radius: var(--phone-menu-radius);
+  border-radius: 10px;
   background: var(--phone-menu-close-background);
   color: var(--phone-menu-close-icon);
 }
