@@ -228,9 +228,9 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
     indicator.capex !== null || indicator.researchAndDevelopment !== null || indicator.freeCashFlow !== null
   );
   const chartCategories = [
-    { id: "growth" as const, label: "Growth", icon: "growth" },
-    { id: "financial-health" as const, label: "Financial health", icon: "financial-health" },
-    { id: "cash-flows" as const, label: "Cash flows", icon: "cash-flows" },
+    { id: "growth" as const, label: "Growth" },
+    { id: "financial-health" as const, label: "Health" },
+    { id: "cash-flows" as const, label: "Cash flows" },
   ];
   const hasFinnhubDebtEquityRatio = debtEquityRatio != null && Number.isFinite(Number(debtEquityRatio)) && Number(debtEquityRatio) >= 0;
   if (indicators !== null && !hasAnyChart) return null;
@@ -247,10 +247,10 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                 className="filing-category-indicator"
                 aria-hidden="true"
                 style={activeCategory === "growth"
-                  ? { left: "5px", width: "calc(29.4118% - 2.94px)", transform: "none" }
+                  ? { left: "5px", width: "calc(33.3333% - 3.333px)", transform: "none" }
                   : activeCategory === "financial-health"
-                    ? { left: "calc(29.4118% + 2.06px)", width: "calc(41.1765% - 4.12px)", transform: "none" }
-                    : { left: "calc(70.5882% - 2.06px)", width: "calc(29.4118% - 2.94px)", transform: "none" }}
+                    ? { left: "calc(33.3333% + 1.667px)", width: "calc(33.3333% - 3.333px)", transform: "none" }
+                    : { left: "calc(66.6667% - 1.667px)", width: "calc(33.3333% - 3.333px)", transform: "none" }}
               />
               {chartCategories.map((category) => {
                 const selected = activeCategory === category.id;
@@ -260,10 +260,9 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setActiveCategory(category.id)}
-                    style={{ flex: category.id === "financial-health" ? 1.4 : 1 }}
-                    className={`relative z-10 flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[0.8px]" : "px-2 py-2 text-[3.5px]"} ${selected ? "text-on-accent" : "text-accent"}`}
+                    style={{ flex: 1 }}
+                    className={`relative z-10 flex min-w-0 flex-1 items-center justify-center rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[0.8px]" : "px-2 py-2 text-[3.5px]"} ${selected ? "text-on-accent" : "text-accent"}`}
                   >
-                    <OptionalSvgIcon name={category.icon} className="h-6 w-6" colorClassName={selected ? "text-on-accent" : "text-accent"} />
                     <span className="whitespace-nowrap">{category.label}</span>
                   </button>
                 );

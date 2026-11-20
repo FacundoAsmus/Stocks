@@ -314,7 +314,7 @@ export function MobileNav() {
 
   const isWatchlist = activePill === "watchlist";
   const activeIndex = settingsPhase !== "closed" ? 2 : (isWatchlist ? 1 : 0);
-  const BUBBLE_SIZE = "3rem";
+  const BUBBLE_SIZE = "3.6rem";
   const viewportHeight = visualViewport.height || (typeof window !== "undefined" ? window.innerHeight : 0);
   const keyboardInset = Math.max(0, (typeof window !== "undefined" ? window.innerHeight : 0) - viewportHeight - visualViewport.top);
   const searchBottom = searchOpen && keyboardInset > 8
@@ -402,11 +402,10 @@ export function MobileNav() {
         style={{ bottom: searchOpen ? searchBottom : 0, paddingBottom: searchOpen ? 0 : "calc(env(safe-area-inset-bottom) - 1rem)", paddingTop: searchOpen ? 0 : "1rem", zIndex: searchOpen ? 1002 : 60 }}
       >
         <div
-          className="phone-menu-bar relative flex h-12 w-full max-w-[34rem] flex-none items-center overflow-hidden pointer-events-auto"
+          className="phone-menu-bar relative flex h-[3.6rem] w-full max-w-[34rem] flex-none items-center overflow-hidden pointer-events-auto"
           data-search-open={searchOpen}
           style={{
-            height: searchOpen ? "3.6rem" : BUBBLE_SIZE,
-            transition: "height 360ms cubic-bezier(0.22, 1, 0.36, 1)",
+            height: BUBBLE_SIZE,
           }}
         >
           <button
@@ -414,7 +413,7 @@ export function MobileNav() {
             onClick={() => navigateTo("/")}
             aria-label="Market"
           >
-            <OptionalSvgIcon name="market" selected={activeIndex === 0} className={activeIndex === 0 ? "h-6 w-6" : "h-5 w-5"} colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="market" selected={activeIndex === 0} className={activeIndex === 0 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
 
           <button
@@ -422,7 +421,7 @@ export function MobileNav() {
             onClick={() => navigateTo("/watchlist")}
             aria-label="Watchlist"
           >
-            <OptionalSvgIcon name="watchlist" selected={activeIndex === 1} className={activeIndex === 1 ? "h-6 w-6" : "h-5 w-5"} colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="watchlist" selected={activeIndex === 1} className={activeIndex === 1 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
 
           <button
@@ -430,7 +429,7 @@ export function MobileNav() {
             onClick={openSettings}
             aria-label="Settings"
           >
-            <OptionalSvgIcon name="settings" selected={activeIndex === 2} className={activeIndex === 2 ? "h-6 w-6" : "h-5 w-5"} colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="settings" selected={activeIndex === 2} className={activeIndex === 2 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
           <div className="phone-menu-search-input absolute inset-0 z-20 flex items-center gap-2 px-2">
             <input ref={searchInputRef} value={searchQuery} onChange={event => setSearchQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && searchResults[0]) openStock(searchResults[0].symbol); }} placeholder="Search stocks…" className="min-w-0 flex-1 bg-transparent px-3 text-base text-text-primary outline-none placeholder:text-text-muted" style={{ fontSize: 16, caretColor: "var(--color-accent)" }} />
