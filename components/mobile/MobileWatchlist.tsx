@@ -121,7 +121,7 @@ function MobileWatchlistSkeleton() {
         <div className="mb-2 h-10 w-52 max-w-full rounded-lg bg-panel-muted" />
         <div className="h-3 w-24 rounded-full bg-panel-muted/70" />
       </div>
-      <div>
+      <div className="flex flex-col gap-2">
         {Array.from({ length: 8 }, (_, index) => (
           <div key={index} className="mobile-watchlist-row-separator relative flex h-[68px] items-center gap-3 overflow-hidden rounded-3xl border bg-black px-4 py-3.5">
             <span aria-hidden="true" className="watchlist-lower-outline" />
@@ -534,7 +534,7 @@ export function MobileWatchlist() {
           axis="y"
           values={orderedStocks.map((s) => s.symbol)}
           onReorder={handleReorder}
-          className="mx-2 mt-[0.95rem] rounded-3xl bg-black"
+          className="mx-2 mt-[0.95rem] flex flex-col gap-2 rounded-3xl bg-black"
         >
           {orderedStocks.map((stock) => (
             <WatchlistRow key={stock.symbol} stock={stock} onRemove={handleRemove} isRemoving={removingSymbols.has(stock.symbol)} />

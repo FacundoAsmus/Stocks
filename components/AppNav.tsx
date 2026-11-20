@@ -196,6 +196,8 @@ function DesktopSettingsPanel({ onClose, anchorRef }: { onClose: () => void; anc
 const navItems = [
   { href: "/", label: "Market", icon: "market" as const },
   { href: "/watchlist", label: "Watchlist", icon: "watchlist" as const },
+  { href: "/conversations", label: "Conversations", icon: "conversations" as const },
+  { href: "/profile", label: "Profile", icon: "profile" as const },
 ] as const;
 
 type AppNavProps = {

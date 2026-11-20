@@ -213,8 +213,8 @@ export function MobileNav() {
   const router   = useRouter();
   const [settingsPhase, setSettingsPhase] = useState<"closed" | "open" | "closing">("closed");
   const [settingsOrigin, setSettingsOrigin] = useState({ x: 0, y: 0 });
-  const [activePill,   setActivePill]   = useState<"market" | "watchlist">(
-    pathname === "/watchlist" ? "watchlist" : "market"
+  const [activePill,   setActivePill]   = useState<"market" | "watchlist" | "conversations" | "profile">(
+    pathname === "/watchlist" ? "watchlist" : pathname === "/conversations" ? "conversations" : pathname === "/profile" ? "profile" : "market"
   );
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -225,7 +225,7 @@ export function MobileNav() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setActivePill(pathname === "/watchlist" ? "watchlist" : "market");
+    setActivePill(pathname === "/watchlist" ? "watchlist" : pathname === "/conversations" ? "conversations" : pathname === "/profile" ? "profile" : "market");
   }, [pathname]);
 
   useEffect(() => {
@@ -309,11 +309,11 @@ export function MobileNav() {
     applyTheme(getStoredTheme());
   }, []);
 
-  const showNav = pathname === "/" || pathname === "/watchlist";
+  const showNav = pathname === "/" || pathname === "/watchlist" || pathname === "/conversations" || pathname === "/profile";
   if (!showNav) return null;
 
   const isWatchlist = activePill === "watchlist";
-  const activeIndex = settingsPhase !== "closed" ? 2 : (isWatchlist ? 1 : 0);
+  const activeIndex = settingsPhase !== "closed" ? 4 : activePill === "market" ? 0 : activePill === "watchlist" ? 1 : activePill === "conversations" ? 2 : 3;
   const BUBBLE_SIZE = "3.6rem";
   const viewportHeight = visualViewport.height || (typeof window !== "undefined" ? window.innerHeight : 0);
   const keyboardInset = Math.max(0, (typeof window !== "undefined" ? window.innerHeight : 0) - viewportHeight - visualViewport.top);
@@ -336,15 +336,13 @@ export function MobileNav() {
     router.push(`/stock/${symbol}`);
   }
 
-  function navigateTo(href: "/" | "/watchlist") {
-    const goingToWatchlist = href === "/watchlist";
-    const currentIsMarket  = pathname === "/";
-    const alreadyThere = (goingToWatchlist && !currentIsMarket) || (!goingToWatchlist && currentIsMarket);
+  function navigateTo(href: "/" | "/watchlist" | "/conversations" | "/profile") {
+    const alreadyThere = pathname === href;
 
     if (settingsPhase !== "closed") {
       // Leaving Settings for Market/Watchlist always plays the swipe-right
       // close transition, then (only if actually changing page) navigates.
-      setActivePill(goingToWatchlist ? "watchlist" : "market");
+      setActivePill(href === "/" ? "market" : href === "/watchlist" ? "watchlist" : href === "/conversations" ? "conversations" : "profile");
       setSettingsPhase("closing");
       setTimeout(() => {
         setSettingsPhase("closed");
@@ -354,9 +352,13 @@ export function MobileNav() {
     }
 
     if (alreadyThere) return;
-    setActivePill(goingToWatchlist ? "watchlist" : "market");
-    const exitClass = goingToWatchlist ? "page-slide-left" : "page-slide-right";
-    slideAndNavigate(router, href, exitClass);
+    setActivePill(href === "/" ? "market" : href === "/watchlist" ? "watchlist" : href === "/conversations" ? "conversations" : "profile");
+    const exitClass = href === "/" ? "page-slide-right" : "page-slide-left";
+    const main = document.querySelector("main");
+    if (!main) { router.push(href); return; }
+    main.classList.remove("page-slide-left", "page-slide-right", "page-enter-left", "page-enter-right");
+    main.classList.add(exitClass);
+    setTimeout(() => { router.push(href); setTimeout(() => main.classList.remove(exitClass), 100); }, SLIDE_DURATION - 20);
   }
 
   function openSettings(event: React.MouseEvent<HTMLButtonElement>) {
@@ -426,10 +428,16 @@ export function MobileNav() {
 
           <button
             className={iconWrapClass}
-            onClick={openSettings}
-            aria-label="Settings"
+            onClick={() => navigateTo("/conversations")}
+            aria-label="Conversations"
           >
-            <OptionalSvgIcon name="settings" selected={activeIndex === 2} className={activeIndex === 2 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="conversations" selected={activeIndex === 2} className={activeIndex === 2 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
+          </button>
+          <button className={iconWrapClass} onClick={() => navigateTo("/profile")} aria-label="Profile">
+            <OptionalSvgIcon name="profile" selected={activeIndex === 3} className={activeIndex === 3 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
+          </button>
+          <button className={iconWrapClass} onClick={openSettings} aria-label="Settings">
+            <OptionalSvgIcon name="settings" selected={activeIndex === 4} className={activeIndex === 4 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
           <div className="phone-menu-search-input absolute inset-0 z-20 flex items-center gap-2 px-2">
             <input ref={searchInputRef} value={searchQuery} onChange={event => setSearchQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && searchResults[0]) openStock(searchResults[0].symbol); }} placeholder="Search stocks…" className="min-w-0 flex-1 bg-transparent px-3 text-base text-text-primary outline-none placeholder:text-text-muted" style={{ fontSize: 16, caretColor: "var(--color-accent)" }} />
