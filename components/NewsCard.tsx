@@ -10,10 +10,8 @@ import type { CompanyNewsArticle } from "@/types/stock";
 // tall — a portrait shape, not a flat wide one). `aspect-[3/4]` locks that
 // same portrait shape at any card width, rather than a fixed pixel height
 // that would flatten out in a wider grid column.
-// Built around the article image instead of a price chart: the image fills
-// the top 3/4 of the card edge-to-edge (the card's own rounded corners +
-// overflow-hidden do the clipping — the image itself has no border-radius
-// of its own), and the headline sits in the bottom 1/4.
+// The image sits slightly inset within the top 3/4, leaving an even gap from
+// the card edges while keeping its original centered position.
 export const NewsCard = memo(function NewsCard({ article, showSummary = true, compactTitle = false }: { article: CompanyNewsArticle; showSummary?: boolean; compactTitle?: boolean }) {
   return (
     <article
@@ -25,9 +23,11 @@ export const NewsCard = memo(function NewsCard({ article, showSummary = true, co
         rel="noreferrer"
         className="flex h-full w-full flex-col outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
-        {/* Image — top 3/4, flush to the card's edges */}
+        {/* Image — 95% size, centered in the top 3/4 with rounded corners. */}
         <div className="relative h-3/4 w-full shrink-0 bg-panel-muted">
-          <NewsImage src={article.image} />
+          <div className="absolute inset-[2.5%] overflow-hidden rounded-xl">
+            <NewsImage src={article.image} />
+          </div>
         </div>
 
         <div className="news-card-body flex h-1/4 shrink-0 flex-col items-start justify-center gap-1 px-3 py-2">
