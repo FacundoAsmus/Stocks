@@ -25,7 +25,7 @@ export const NewsCard = memo(function NewsCard({ article, showSummary = true, co
         className="flex h-full w-full flex-col outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         {/* Image — 95% size, centered in the top 3/4 with rounded corners. */}
-        <div className="relative h-3/4 w-full shrink-0 bg-panel-muted">
+        <div className="relative h-3/4 w-full shrink-0" style={{ backgroundColor: "var(--phone-menu-close-background)" }}>
           <div className="absolute inset-[2.5%] overflow-hidden rounded-xl">
             <NewsImage src={article.image} />
           </div>
