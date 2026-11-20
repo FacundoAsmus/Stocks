@@ -15,7 +15,8 @@ import type { CompanyNewsArticle } from "@/types/stock";
 export const NewsCard = memo(function NewsCard({ article, showSummary = true, compactTitle = false }: { article: CompanyNewsArticle; showSummary?: boolean; compactTitle?: boolean }) {
   return (
     <article
-      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-2xl border border-[#3a3a42] bg-black transition-[transform,border-color] duration-300 ease-out hover:border-accent hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]"
+      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-2xl border bg-black transition-[transform,border-color] duration-300 ease-out hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]"
+      style={{ borderColor: "var(--phone-menu-close-background)" }}
     >
       <a
         href={article.url}
