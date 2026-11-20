@@ -243,7 +243,7 @@ export function MobileNav() {
     body.style.top = `-${savedScroll}px`;
     body.style.left = "0";
     body.style.right = "0";
-    const focusTimer = window.setTimeout(() => searchInputRef.current?.focus(), 660);
+    const focusTimer = window.setTimeout(() => searchInputRef.current?.focus(), 480);
     return () => {
       window.clearTimeout(focusTimer);
       body.style.overflow = body.style.position = body.style.top = body.style.left = body.style.right = "";
@@ -434,7 +434,7 @@ export function MobileNav() {
             <OptionalSvgIcon name="conversations" selected={activeIndex === 2} className={activeIndex === 2 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
           <button className={iconWrapClass} onClick={() => navigateTo("/profile")} aria-label="Profile">
-            <OptionalSvgIcon name="profile" selected={activeIndex === 3} className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="profile" selected={activeIndex === 3} className={activeIndex === 3 ? "h-6 w-6" : "h-5 w-5"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
           <button className={iconWrapClass} onClick={openSettings} aria-label="Settings">
             <OptionalSvgIcon name="settings" selected={activeIndex === 4} className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />

@@ -30,7 +30,7 @@ export const NewsCard = memo(function NewsCard({ article, showSummary = true, co
           <NewsImage src={article.image} />
         </div>
 
-        <div className="flex h-1/4 shrink-0 flex-col items-start justify-center gap-1 px-3 py-2">
+        <div className="news-card-body flex h-1/4 shrink-0 flex-col items-start justify-center gap-1 px-3 py-2">
           <h3 className={`line-clamp-2 ${compactTitle ? "text-[11px]" : "text-[13px]"} font-semibold leading-snug text-text-primary`}>
             {article.headline}
           </h3>

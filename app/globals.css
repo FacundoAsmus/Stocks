@@ -139,7 +139,7 @@ html.light-mode {
 .phone-menu-bar[data-search-open="true"] .phone-menu-search-input {
   opacity: 1;
   pointer-events: auto;
-  transition-delay: 480ms;
+  transition-delay: 320ms;
 }
 .phone-menu-close {
   display: grid;
@@ -250,7 +250,9 @@ html.light-mode .earnings-detail-glass.smoked-glass-surface {
 }
 /* Shared material for the phone stock page's compact top controls. */
 .phone-stock-control-glass {
-  border: 1px solid rgb(var(--white-rgb) / 0.15);
+  position: relative;
+  isolation: isolate;
+  border: 1px solid transparent;
   background: linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54));
   backdrop-filter: blur(var(--phone-floating-pill-blur));
   -webkit-backdrop-filter: blur(var(--phone-floating-pill-blur));
@@ -411,6 +413,7 @@ html.light-mode .glossy-icon-button__icon > svg {
 }
 
 .filing-category-selector {
+  isolation: isolate;
   width: min(100%, 400px);
   min-height: 68px;
 }
@@ -568,17 +571,42 @@ html.light-mode .main-chart-period-selector {
 }
 
 .ai-typing-bar {
-  border-color: var(--AI_COLOR) !important;
-  box-shadow: 0 0 12px color-mix(in srgb, var(--AI_COLOR) 34%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 52%, transparent), 0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18) !important;
+  isolation: isolate;
+  border-color: transparent !important;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18) !important;
 }
 html.light-mode .smoked-glass-surface.ai-typing-bar {
-  border-color: var(--AI_COLOR) !important;
-  box-shadow: 0 0 12px color-mix(in srgb, var(--AI_COLOR) 34%, transparent), 0 0 3px color-mix(in srgb, var(--AI_COLOR) 52%, transparent), 0 24px 70px rgba(45,73,96,0.13), 0 5px 18px rgba(45,73,96,0.08), inset 0 0 18px rgba(78,125,158,0.075) !important;
+  border-color: transparent !important;
+  box-shadow: 0 24px 70px rgba(45,73,96,0.13), 0 5px 18px rgba(45,73,96,0.08), inset 0 0 18px rgba(78,125,158,0.075) !important;
+}
+
+.phone-stock-control-glass::after,
+.ai-typing-bar::after,
+.filing-category-selector::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(145deg, var(--gf-rim-1), var(--gf-rim-2) 38%, var(--gf-rim-2) 62%, var(--gf-rim-3));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
 }
 
 .desktop-nav-selected-glow {
   box-shadow: 0 0 13px rgb(var(--accent-rgb) / 0.48), 0 0 4px rgb(var(--accent-rgb) / 0.68);
 }
+
+.news-card-body {
+  background-color: var(--phone-menu-close-background);
+  color: var(--phone-menu-background);
+}
+.news-card-body h3,
+.news-card-body p { color: var(--phone-menu-background) !important; }
 
 .ai-aberration:not(.absolute):not(.fixed) {
   position: relative;
@@ -863,7 +891,7 @@ html.light-mode .mobile-watchlist-row-separator {
   }
   .desktop-alert-glass.desktop-alert-glass-list-item.is-selected,
   .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted.is-selected {
-    border-color: transparent !important;
+    border-color: var(--color-accent) !important;
   }
   .desktop-alert-glass.desktop-alert-glass-list-item.is-lifted:not(.is-selected),
   .desktop-alert-glass.market-heatmap-list-item:hover:not(.is-selected),
