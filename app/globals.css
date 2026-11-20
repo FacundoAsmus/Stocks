@@ -113,8 +113,10 @@ html.light-mode {
 }
 
 .phone-menu-bar {
-  background: var(--phone-menu-background);
-  border: 0;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--phone-menu-background), var(--phone-menu-background)) padding-box,
+    linear-gradient(145deg, var(--gf-rim-1), var(--gf-rim-2) 38%, var(--gf-rim-2) 62%, var(--gf-rim-3)) border-box;
   border-radius: var(--phone-menu-radius);
   box-shadow: none;
   -webkit-backdrop-filter: none;
