@@ -42,7 +42,7 @@ export function hasCompleteInvestorTest(profile: InvestorProfile | null | undefi
 
 function scoreProfile(profile: InvestorProfile) {
   return METRICS.map((metric, metricIndex) => {
-    const raw = metric.questionIndexes.reduce((total, questionIndex) => {
+    const raw = metric.questionIndexes.reduce<number>((total, questionIndex) => {
       const answer = profile.answers[questionIndex];
       const points = answer - 3;
       const reversed = (metricIndex === 0 && questionIndex === 1) || (metricIndex === 3 && questionIndex === 9);
