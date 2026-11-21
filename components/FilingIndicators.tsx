@@ -174,7 +174,7 @@ function AnnualIndicatorChart({
                 onMouseLeave={() => setHoveredValue(null)}
               >
                 <div
-                  className="absolute left-1/2 w-[37.5%] max-w-[30px] -translate-x-1/2 rounded-sm lg:w-[56.25%] lg:max-w-[45px]"
+                  className={`absolute left-1/2 w-[37.5%] max-w-[30px] -translate-x-1/2 lg:w-[56.25%] lg:max-w-[45px] ${negative ? "rounded-b-3xl rounded-t-none" : "rounded-t-3xl rounded-b-none"}`}
                   style={{
                     ...(negative ? { top: baseline } : { bottom: hasNegativeValues ? "55%" : baseline }),
                     height: animated ? `${height}%` : "0%",
@@ -230,7 +230,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
   const chartCategories = [
     { id: "growth" as const, label: "Growth" },
     { id: "financial-health" as const, label: "Health" },
-    { id: "cash-flows" as const, label: "Cash flows" },
+    { id: "cash-flows" as const, label: "Cash flow" },
   ];
   const hasFinnhubDebtEquityRatio = debtEquityRatio != null && Number.isFinite(Number(debtEquityRatio)) && Number(debtEquityRatio) >= 0;
   if (indicators !== null && !hasAnyChart) return null;
@@ -242,7 +242,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
       ) : (
         <div className="space-y-8">
           {includeExtendedMetrics && (
-      <div className={`filing-category-selector chart-period-selector-glass relative mx-auto flex max-w-full items-center rounded-full border p-1 ${compact ? "filing-category-selector--compact" : ""}`}>
+      <div className={`filing-category-selector chart-period-selector-glass relative mx-auto flex max-w-full items-center rounded-full p-1 ${compact ? "filing-category-selector--compact" : ""}`}>
               <span
                 className="filing-category-indicator"
                 aria-hidden="true"
@@ -261,7 +261,7 @@ export function FilingIndicators({ symbol, compact = false, includeExtendedMetri
                     aria-pressed={selected}
                     onClick={() => setActiveCategory(category.id)}
                     style={{ flex: 1 }}
-                    className={`relative z-10 flex min-w-0 flex-1 items-center justify-center rounded-full font-semibold transition-colors ${compact ? "px-1 py-1.5 text-[0.8px]" : "px-2 py-2 text-[3.5px]"} ${selected ? "text-on-accent" : "text-accent"}`}
+                    className={`relative z-10 flex min-w-0 flex-1 items-center justify-center rounded-full px-1 py-1.5 text-xl font-semibold transition-colors ${selected ? "text-on-accent" : "text-accent"}`}
                   >
                     <span className="whitespace-nowrap">{category.label}</span>
                   </button>
