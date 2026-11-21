@@ -172,7 +172,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
       {mounted && settingsPhase === "closed" && !compareSearchOpen && createPortal(
         <>
           <div
-            className="fixed left-4 right-4 flex items-center justify-between lg:hidden"
+            className="absolute left-4 right-4 flex items-center justify-between lg:hidden"
             data-stock-top-controls
             style={{ top: "env(safe-area-inset-top)", zIndex: 500 }}
           >
@@ -230,8 +230,8 @@ export function MobileStockPage(props: MobileStockPageProps) {
         <div className="flex items-center gap-3 px-4 pt-5 pb-3">
           <StockLogo logo={!isEtf ? stock.profile.logo : undefined} size={53}
             sizeClassName="h-[53px] w-[53px] shrink-0"
-            imageClassName="h-[53px] w-[53px] rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0"
-            fallbackClassName="h-[53px] w-[53px] shrink-0 rounded-3xl object-contain" />
+            imageClassName="h-[53px] w-[53px] rounded-full border border-white/10 bg-white/5 object-contain shrink-0"
+            fallbackClassName="h-[53px] w-[53px] shrink-0 rounded-full object-contain" />
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-text-primary leading-tight truncate">{stock.profile.name ?? stock.symbol}</h1>
           </div>
@@ -248,7 +248,8 @@ export function MobileStockPage(props: MobileStockPageProps) {
             hideCursorDateTooltip
             hideMovingAverageControls
             holdPriceUntilChartReady
-            changePercentScale={0.7}
+            changePercentScale={0.85}
+            centerPriceHeaderReadouts
           />
         </div>
 

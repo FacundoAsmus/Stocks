@@ -579,7 +579,8 @@ export function PriceChart({
   hideCursorDateTooltip = false,
   hideMovingAverageControls = false,
   holdPriceUntilChartReady = false,
-  changePercentScale = 1
+  changePercentScale = 1,
+  centerPriceHeaderReadouts = false
 }: {
   symbol: string;
   currentPrice: number;
@@ -592,6 +593,7 @@ export function PriceChart({
   hideMovingAverageControls?: boolean;
   holdPriceUntilChartReady?: boolean;
   changePercentScale?: number;
+  centerPriceHeaderReadouts?: boolean;
 }) {
   const initialSeriesKey = `${symbol}:${initialPeriod}`;
   const initialCachedData = PRICE_CHART_DATA_CACHE.get(initialSeriesKey) ?? [];
@@ -1475,7 +1477,7 @@ export function PriceChart({
     <div>
       {/* ── Price header — indented to align with name when priceIndent is set ── */}
       <div className="mb-6 price-block-fade" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible && (!holdPriceUntilChartReady || !chartLoading || visibleChartSymbolRef.current === symbol) ? 1 : 0, transition: "opacity 0.18s ease", WebkitTransition: "opacity 0.18s ease" }}>
-        <div className="flex items-end gap-3">
+        <div className={cn("flex gap-3", centerPriceHeaderReadouts ? "items-center" : "items-end")}>
           <WheelPrice value={priceStr} size="lg" animate={!anyDrawingPlacementActive} />
           <WheelPrice value={pctStr} size="sm" colorClass={pctColor} animate={!anyDrawingPlacementActive} scale={changePercentScale} />
         </div>
