@@ -72,11 +72,16 @@ export function StockSheet() {
       const snapshotPinnedHeader = snapshot.querySelector<HTMLElement>("[data-stock-sheet-pinned-header]");
       if (sourcePinnedHeader && snapshotPinnedHeader) {
         const headerRect = sourcePinnedHeader.getBoundingClientRect();
-        const placeholder = document.createElement("div");
-        placeholder.style.height = `${headerRect.height}px`;
-        placeholder.style.width = `${headerRect.width}px`;
-        placeholder.style.visibility = "hidden";
-        snapshotPinnedHeader.replaceWith(placeholder);
+        const headerIsFixed = getComputedStyle(sourcePinnedHeader).position === "fixed";
+        if (!headerIsFixed) {
+          const placeholder = document.createElement("div");
+          placeholder.style.height = `${headerRect.height}px`;
+          placeholder.style.width = `${headerRect.width}px`;
+          placeholder.style.visibility = "hidden";
+          snapshotPinnedHeader.replaceWith(placeholder);
+        } else {
+          snapshotPinnedHeader.remove();
+        }
         snapshotPinnedHeader.style.position = "absolute";
         snapshotPinnedHeader.style.top = `${headerRect.top + window.scrollY}px`;
         snapshotPinnedHeader.style.left = `${headerRect.left}px`;

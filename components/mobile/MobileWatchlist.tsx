@@ -497,7 +497,7 @@ export function MobileWatchlist() {
   return (
     <div className="pb-24">
       <div
-        className="sticky top-0 z-30 px-4 pb-4 flex items-end justify-between gap-3"
+        className="fixed inset-x-0 top-0 z-30 px-4 pb-4 flex items-end justify-between gap-3"
         data-stock-sheet-pinned-header
         style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}
       >
@@ -522,6 +522,7 @@ export function MobileWatchlist() {
           </button>
         </div>
       </div>
+      <div aria-hidden="true" className="phone-watchlist-title-spacer" />
 
       {orderedStocks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">

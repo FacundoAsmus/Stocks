@@ -123,6 +123,9 @@ html.light-mode {
   backdrop-filter: none;
   outline: none;
 }
+.phone-watchlist-title-spacer {
+  height: calc(env(safe-area-inset-top) + 5.5rem);
+}
 .phone-menu-icon {
   color: var(--phone-menu-icon);
   transform: translateY(0);

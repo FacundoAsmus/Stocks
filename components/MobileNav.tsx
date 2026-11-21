@@ -353,7 +353,8 @@ export function MobileNav() {
 
     if (alreadyThere) return;
     setActivePill(href === "/" ? "market" : href === "/watchlist" ? "watchlist" : href === "/conversations" ? "conversations" : "profile");
-    const exitClass = href === "/" ? "page-slide-right" : "page-slide-left";
+    const returningToWatchlist = href === "/watchlist" && (pathname === "/conversations" || pathname === "/profile");
+    const exitClass = href === "/" || returningToWatchlist ? "page-slide-right" : "page-slide-left";
     const main = document.querySelector("main");
     if (!main) { router.push(href); return; }
     main.classList.remove("page-slide-left", "page-slide-right", "page-enter-left", "page-enter-right");
