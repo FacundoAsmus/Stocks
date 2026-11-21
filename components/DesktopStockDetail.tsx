@@ -70,14 +70,17 @@ export function DesktopStockDetail({
           {watchlistDetailHeader && <StockChartToolsMenu symbol={stock.symbol} />}
           {/* ── Logo + name row ── */}
           <div className={`flex gap-4 ${watchlistDetailHeader ? "-ml-5 items-center pr-44" : "items-start"}`}>
-            <div className="shrink-0">
+            <div className={watchlistDetailHeader ? "relative h-14 w-14 shrink-0 overflow-hidden rounded-full" : "shrink-0"}>
               <StockLogo
                 logo={isEtf ? undefined : stock.profile.logo}
                 shape={watchlistDetailHeader ? "circle" : "rounded"}
+                imageClassName={watchlistDetailHeader ? "h-14 w-14 rounded-full bg-white/5 object-contain" : undefined}
+                fallbackClassName={watchlistDetailHeader ? "h-14 w-14 rounded-full object-contain" : undefined}
               />
+              {watchlistDetailHeader && <span aria-hidden="true" className="watchlist-lower-outline" />}
             </div>
             <div>
-              <h1 className={`font-semibold tracking-normal text-text-primary ${watchlistDetailHeader ? "text-4xl sm:text-5xl" : "text-3xl sm:text-4xl"}`}>
+              <h1 className={`font-semibold tracking-normal text-text-primary ${watchlistDetailHeader ? "text-[25.2px] sm:text-[33.6px]" : "text-3xl sm:text-4xl"}`}>
                 {stock.profile.name ?? stock.symbol}
               </h1>
               {!watchlistDetailHeader && <p className="mt-0.5 text-base text-text-muted">{stock.symbol}</p>}
@@ -128,7 +131,7 @@ export function DesktopStockDetail({
         <section className="px-5">
           <div className="mb-4 flex items-end justify-between">
             <div>
-              <p className="-ml-5 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="news" className="h-5 w-5" />News</p>
+              <h2 className="-ml-5 inline-flex items-center gap-2 text-xl font-semibold text-text-primary"><OptionalSvgIcon name="news" className="h-6 w-6 text-accent" />News</h2>
             </div>
           </div>
           {stock.newsUnavailable ? <AIUnavailableNotice /> : stock.news.length > 0 && <NewsSummary symbol={stock.symbol} companyName={stock.profile.name ?? stock.symbol} articles={stock.news} />}

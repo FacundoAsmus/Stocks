@@ -23,7 +23,7 @@ export function AISummaryText({ text }: { text: string }) {
   const { visibleLength, complete } = useTypingReveal(text.length, text, 6);
 
   return (
-    <p className="animate-[description-fade_240ms_ease-out_both] text-[1.05rem] text-text-primary whitespace-pre-line">
+    <p className="animate-[description-fade_240ms_ease-out_both] text-sm text-text-muted whitespace-pre-line">
       {text.slice(0, visibleLength)}
       {!complete && <TextRevealCaret />}
     </p>
@@ -62,7 +62,7 @@ export function CompanyDescription({ symbol, className = "" }: { symbol: string;
 
   return (
     <section className={className}>
-      <p className="-ml-3 sm:-ml-5 mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="description" className="h-5 w-5" />Description</p>
+      <h2 className="-ml-3 sm:-ml-5 mb-3 inline-flex items-center gap-2 text-xl font-semibold text-text-primary"><OptionalSvgIcon name="description" className="h-6 w-6 text-accent" />Description</h2>
       {state.status === "loading" && <AISummaryLoader />}
       {state.status === "ready" && <AISummaryText text={state.text} />}
       {state.status === "error" && <AIUnavailableNotice />}

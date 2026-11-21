@@ -158,7 +158,7 @@ export function AnalystSection({
     <section ref={ref} className="rounded-md bg-black p-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="-ml-5 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent"><OptionalSvgIcon name="analyst" className="h-6 w-6" />Analysts</p>
+          <h2 className="-ml-5 inline-flex items-center gap-2 text-xl font-semibold text-text-primary"><OptionalSvgIcon name="analyst" className="h-6 w-6 text-accent" />Analysts</h2>
         </div>
         {priceTarget.lastUpdated ? (
           <p className="text-sm text-text-muted">Updated {priceTarget.lastUpdated}</p>

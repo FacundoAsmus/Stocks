@@ -174,10 +174,10 @@ export function MarketSentiment({
 }) {
   return (
     <section className="rounded-xl bg-black p-5">
-      <p className="-ml-5 mb-4 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">
-        <OptionalSvgIcon name="stock-sentiment" className="h-6 w-6" />
+      <h2 className="-ml-5 mb-4 inline-flex items-center gap-2 text-xl font-semibold text-text-primary">
+        <OptionalSvgIcon name="stock-sentiment" className="h-6 w-6 text-accent" />
         Stock Sentiment
-      </p>
+      </h2>
 
       <SentimentBar score={score} />
     </section>

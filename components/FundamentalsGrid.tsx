@@ -215,9 +215,9 @@ export function FundamentalsGrid({
 
   return (
     <section>
-      <p className="mb-3 inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-accent">
+      <h2 className="mb-3 inline-flex items-center gap-2 text-xl font-semibold text-text-primary">
         <OptionalSvgIcon name="indicators" className="h-6 w-6" colorClassName="text-accent" />Indicators
-      </p>
+      </h2>
       <div className="mx-5 mt-2 space-y-4">
         {volumeItems.length > 0 && (
           <div>
