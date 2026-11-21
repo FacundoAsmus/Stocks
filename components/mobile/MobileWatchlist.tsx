@@ -79,10 +79,13 @@ function RowContent({ stock }: { stock: StockSummary }) {
   return (
     <>
       <div className="flex min-w-0 flex-1 basis-0 items-center gap-3">
-        <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48}
-          sizeClassName="h-9 w-9 shrink-0"
-          imageClassName="h-9 w-9 rounded-3xl border border-white/10 bg-white/5 object-contain shrink-0 pointer-events-none"
-          fallbackClassName="h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none" />
+        <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-3xl pointer-events-none">
+          <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48}
+            sizeClassName="h-9 w-9 shrink-0"
+            imageClassName="h-9 w-9 rounded-3xl bg-white/5 object-contain shrink-0 pointer-events-none"
+            fallbackClassName="h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none" />
+          <span aria-hidden="true" className="watchlist-lower-outline" />
+        </div>
         <span className="min-w-0 pointer-events-none">
           <span className="block text-sm font-bold text-text-primary truncate">{stock.symbol}</span>
         </span>

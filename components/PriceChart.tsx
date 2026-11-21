@@ -1479,7 +1479,7 @@ export function PriceChart({
       <div className="mb-6 price-block-fade" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible && (!holdPriceUntilChartReady || !chartLoading || visibleChartSymbolRef.current === symbol) ? 1 : 0, transition: "opacity 0.18s ease", WebkitTransition: "opacity 0.18s ease" }}>
         <div className={cn("flex gap-3", centerPriceHeaderReadouts ? "items-center" : "items-end")}>
           <WheelPrice value={priceStr} size="lg" animate={!anyDrawingPlacementActive} />
-          <div style={centerPriceHeaderReadouts ? { transform: "translateY(12px)" } : undefined}>
+          <div style={centerPriceHeaderReadouts ? { transform: "translateY(9px)" } : undefined}>
             <WheelPrice value={pctStr} size="sm" colorClass={pctColor} animate={!anyDrawingPlacementActive} scale={changePercentScale} />
           </div>
         </div>

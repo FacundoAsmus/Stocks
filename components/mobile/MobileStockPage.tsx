@@ -228,10 +228,13 @@ export function MobileStockPage(props: MobileStockPageProps) {
           ) : null
         ) : <>
         <div className="flex items-center gap-3 px-2 pt-5 pb-3">
-          <StockLogo logo={!isEtf ? stock.profile.logo : undefined} size={53}
-            sizeClassName="h-[53px] w-[53px] shrink-0"
-            imageClassName="h-[53px] w-[53px] rounded-full border border-white/10 bg-white/5 object-contain shrink-0"
-            fallbackClassName="h-[53px] w-[53px] shrink-0 rounded-full object-contain" />
+          <div className="relative h-[53px] w-[53px] shrink-0 overflow-hidden rounded-full">
+            <StockLogo logo={!isEtf ? stock.profile.logo : undefined} size={53}
+              sizeClassName="h-[53px] w-[53px] shrink-0"
+              imageClassName="h-[53px] w-[53px] rounded-full bg-white/5 object-contain shrink-0"
+              fallbackClassName="h-[53px] w-[53px] shrink-0 rounded-full object-contain" />
+            <span aria-hidden="true" className="watchlist-lower-outline" />
+          </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-xl font-bold text-text-primary leading-tight truncate">{stock.profile.name ?? stock.symbol}</h1>
           </div>

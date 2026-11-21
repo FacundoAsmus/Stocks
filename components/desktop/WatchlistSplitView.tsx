@@ -115,10 +115,13 @@ function WatchlistListRow({
           : isActive ? "is-selected brightness-105 hover:brightness-110" : "hover:brightness-110"
       )}
     >
-      <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48}
-        sizeClassName="h-9 w-9 shrink-0"
-        imageClassName="h-9 w-9 shrink-0 rounded-3xl border border-white/10 bg-white/5 object-contain pointer-events-none"
-        fallbackClassName="h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none" />
+      <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-3xl pointer-events-none">
+        <StockLogo logo={hasStockLogo ? stock.logo : undefined} size={48}
+          sizeClassName="h-9 w-9 shrink-0"
+          imageClassName="h-9 w-9 shrink-0 rounded-3xl bg-white/5 object-contain pointer-events-none"
+          fallbackClassName="h-9 w-9 shrink-0 rounded-3xl object-contain pointer-events-none" />
+        <span aria-hidden="true" className="watchlist-lower-outline" />
+      </div>
       <span className="min-w-0 flex-1 pointer-events-none">
         <span className="block truncate text-sm font-bold text-text-primary">{stock.symbol}</span>
       </span>
