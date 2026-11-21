@@ -24,7 +24,6 @@ const QUESTIONS = [
   "I believe that holding fundamentally strong investments for several years is generally more effective than frequently buying and selling assets.",
 ];
 const ANSWER_LABELS = ["Strongly disagree", "Disagree", "Neutral", "Agree", "Strongly agree"];
-const QUESTION_GROUPS = ["Technical analysis vs. fundamentals", "Technical analysis vs. fundamentals", "Technical analysis vs. fundamentals", "Risk tolerance", "Risk tolerance", "Expertise", "Expertise", "Short-term vs. long-term", "Short-term vs. long-term", "Short-term vs. long-term"];
 const EMPTY_PROFILE: InvestorProfile = { name: "", description: "", answers: [] };
 
 function saveProfile(profile: InvestorProfile) {
@@ -130,14 +129,14 @@ export default function ProfilePage() {
           </div>
 
           {testComplete ? (
-            <div className="relative overflow-hidden rounded-3xl bg-panel px-5 py-5 lg:px-6">
+            <div className="relative overflow-hidden rounded-3xl px-5 py-5 lg:px-6" style={{ backgroundColor: "var(--phone-menu-background)" }}>
               <div className="relative z-[1] space-y-6">
                 {ratings.map((rating) => <RatingBar key={rating.key} label={rating.label} score={rating.score} low={rating.low} high={rating.high} />)}
               </div>
               <span aria-hidden="true" className="watchlist-lower-outline" />
             </div>
           ) : (
-            <div className="relative overflow-hidden rounded-3xl bg-panel px-5 py-5 text-sm text-text-muted">
+            <div className="relative overflow-hidden rounded-3xl px-5 py-5 text-sm text-text-muted" style={{ backgroundColor: "var(--phone-menu-background)" }}>
               <div className="relative z-[1]">{profile.answers.filter((answer) => Number.isInteger(answer) && answer >= 1 && answer <= 5).length} of {QUESTIONS.length} answers completed. Your results appear here when the test is complete.</div>
               <span aria-hidden="true" className="watchlist-lower-outline" />
             </div>
@@ -147,7 +146,7 @@ export default function ProfilePage() {
         <section className="max-w-3xl">
           <label htmlFor="investor-description" className="mb-2 block text-xl font-semibold text-text-primary">Description</label>
           <p className="mb-3 text-sm text-text-muted">Tell Warrent what matters to you as an investor.</p>
-          <div className="relative overflow-hidden rounded-3xl bg-panel">
+          <div className="relative overflow-hidden rounded-3xl" style={{ backgroundColor: "var(--phone-menu-background)" }}>
             <textarea
               id="investor-description"
               value={profile.description}
@@ -169,10 +168,7 @@ export default function ProfilePage() {
           <section role="dialog" aria-modal="true" aria-labelledby="investor-question-title" className="investor-profile-outline desktop-alert-glass smoked-glass-surface relative w-full max-w-xl overflow-hidden rounded-3xl border border-transparent p-5 shadow-2xl lg:p-7" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
             <div className="relative z-[1]">
             <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">{QUESTION_GROUPS[questionIndex]}</p>
-                <h2 id="investor-question-title" className="mt-2 text-lg font-semibold text-text-primary">Question {questionIndex + 1} of {QUESTIONS.length}</h2>
-              </div>
+              <h2 id="investor-question-title" className="text-2xl font-semibold text-text-primary">Question {questionIndex + 1} of {QUESTIONS.length}</h2>
               <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-full">
                 <GlossyIconButton aria-label="Close investor style test" onClick={() => setQuestionIndex(null)} size={36}><GlossyCloseIcon /></GlossyIconButton>
                 <span aria-hidden="true" className="watchlist-lower-outline" />

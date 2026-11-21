@@ -176,11 +176,8 @@ export function MobileStockPage(props: MobileStockPageProps) {
             className="pointer-events-none fixed inset-x-0 top-0 lg:hidden"
             style={{
               zIndex: 400,
-              height: "calc(var(--bottom-edge-blur-height) + env(safe-area-inset-top))",
-              backdropFilter: "blur(var(--phone-stock-top-blur))",
-              WebkitBackdropFilter: "blur(var(--phone-stock-top-blur))",
-              maskImage: "linear-gradient(to bottom, black, transparent)",
-              WebkitMaskImage: "linear-gradient(to bottom, black, transparent)",
+              height: "env(safe-area-inset-top)",
+              backgroundColor: "var(--color-background)",
             }}
           />
           <div
