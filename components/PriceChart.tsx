@@ -356,7 +356,7 @@ const WHEEL_SLOT_EM = {
   badge: { normal: 0.63, compact: 0.62 }, // bold
 } as const;
 
-function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg"; compact?: boolean; animate?: boolean }) {
+function Digit({ ch, size = "lg", compact = false, animate = true, scale = 1 }: { ch: string; size?: "xs" | "badge" | "sm" | "md" | "lg"; compact?: boolean; animate?: boolean; scale?: number }) {
   const isDigit = DIGIT_CHARS.includes(ch);
   const idx     = isDigit ? parseInt(ch) : 0;
   const previousDigitRef = useRef(idx);
@@ -388,7 +388,7 @@ function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: strin
     });
   }, [idx, isDigit, animate]);
 
-  const rowPx     = size === "lg" ? 54 : size === "sm" ? 32 : size === "md" ? 30 : size === "badge" ? 26.4 : 22;
+  const rowPx     = (size === "lg" ? 54 : size === "sm" ? 32 : size === "md" ? 30 : size === "badge" ? 26.4 : 22) * scale;
   const fontClass = size === "lg"
     ? "text-5xl font-semibold text-current"
     : size === "sm"
@@ -403,14 +403,14 @@ function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: strin
     return (
       <span
         className={cn(fontClass, "inline-block leading-none")}
-        style={{ lineHeight: `${rowPx}px` }}
+        style={{ lineHeight: `${rowPx}px`, fontSize: FONT_PX[size] * scale }}
       >
         {ch}
       </span>
     );
   }
 
-  const slotPx = FONT_PX[size] * WHEEL_SLOT_EM[size][compact ? "compact" : "normal"];
+  const slotPx = FONT_PX[size] * scale * WHEEL_SLOT_EM[size][compact ? "compact" : "normal"];
   const rollingDigits = roll
     ? (roll.direction === "up" ? [roll.from, roll.to] : [roll.to, roll.from])
     : [idx];
@@ -440,7 +440,7 @@ function Digit({ ch, size = "lg", compact = false, animate = true }: { ch: strin
           <span
             key={digitIndex}
             className={cn(fontClass, "block text-center select-none leading-none")}
-            style={{ height: rowPx, lineHeight: `${rowPx}px`, width: slotPx }}
+            style={{ height: rowPx, lineHeight: `${rowPx}px`, width: slotPx, fontSize: FONT_PX[size] * scale }}
           >
             {digit}
           </span>
@@ -457,6 +457,7 @@ export function WheelPrice({
   colorClass,
   compact = false,
   animate = true,
+  scale = 1,
 }: {
   value: string;
   size?: "xs" | "badge" | "sm" | "md" | "lg";
@@ -465,6 +466,8 @@ export function WheelPrice({
   compact?: boolean;
   /** Disable digit rolling while the chart is in manual line-placement mode. */
   animate?: boolean;
+  /** Scale this readout without changing its rolling animation. */
+  scale?: number;
 }) {
   const chars = value.split("");
   const decimalIndex = chars.lastIndexOf(".");
@@ -506,7 +509,7 @@ export function WheelPrice({
           } else {
             key = `symbol-${index}-${ch}`;
           }
-          return <Digit key={key} ch={ch} size={size} compact={compact} animate={animate} />;
+          return <Digit key={key} ch={ch} size={size} compact={compact} animate={animate} scale={scale} />;
         })}
       </span>
     </>
@@ -575,7 +578,8 @@ export function PriceChart({
   priceIndent,
   hideCursorDateTooltip = false,
   hideMovingAverageControls = false,
-  holdPriceUntilChartReady = false
+  holdPriceUntilChartReady = false,
+  changePercentScale = 1
 }: {
   symbol: string;
   currentPrice: number;
@@ -587,6 +591,7 @@ export function PriceChart({
   hideCursorDateTooltip?: boolean;
   hideMovingAverageControls?: boolean;
   holdPriceUntilChartReady?: boolean;
+  changePercentScale?: number;
 }) {
   const initialSeriesKey = `${symbol}:${initialPeriod}`;
   const initialCachedData = PRICE_CHART_DATA_CACHE.get(initialSeriesKey) ?? [];
@@ -1472,7 +1477,7 @@ export function PriceChart({
       <div className="mb-6 price-block-fade" style={{ ...(priceIndent ? { paddingLeft: priceIndent } : {}), opacity: priceVisible && (!holdPriceUntilChartReady || !chartLoading || visibleChartSymbolRef.current === symbol) ? 1 : 0, transition: "opacity 0.18s ease", WebkitTransition: "opacity 0.18s ease" }}>
         <div className="flex items-end gap-3">
           <WheelPrice value={priceStr} size="lg" animate={!anyDrawingPlacementActive} />
-          <WheelPrice value={pctStr} size="sm" colorClass={pctColor} animate={!anyDrawingPlacementActive} />
+          <WheelPrice value={pctStr} size="sm" colorClass={pctColor} animate={!anyDrawingPlacementActive} scale={changePercentScale} />
         </div>
         <p className="mt-2 text-sm text-text-muted">
           {hoverDate ? tooltipLabel(hoverDate, period) : "Current price"}

@@ -122,7 +122,7 @@ export default function ProfilePage() {
               <h1 className="text-xl font-semibold text-text-primary">Investor style</h1>
               <p className="mt-1 text-sm text-text-muted">Answer 10 questions to build your investor profile.</p>
             </div>
-            <button type="button" onClick={startOrContinueTest} className="relative overflow-hidden rounded-3xl border border-transparent px-4 py-2 text-sm font-medium text-text-primary transition hover:bg-panel-muted">
+            <button type="button" onClick={startOrContinueTest} className="relative overflow-hidden rounded-3xl border border-transparent px-4 py-2 text-sm font-medium text-accent transition hover:brightness-95" style={testComplete ? { backgroundColor: "var(--phone-menu-background)" } : undefined}>
               <span className="relative z-[1]">{testComplete ? "Retake test" : profile.answers.length ? "Continue test" : "Start test"}</span>
               <span aria-hidden="true" className="watchlist-lower-outline" />
             </button>
