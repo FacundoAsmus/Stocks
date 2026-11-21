@@ -920,6 +920,12 @@ html.light-mode .watchlist-desktop-root { background: var(--color-white); }
    so this has no effect on mobile or any other desktop page. */
 html.light-mode .watchlist-desktop-root .bg-black { background-color: var(--color-white) !important; }
 
+/* Profile test dialog uses the shared list rim in place of a flat border. */
+.investor-profile-outline,
+html.light-mode .investor-profile-outline {
+  border-color: transparent !important;
+}
+
 /* The desktop watchlist toolbar stays visibly translucent in light mode;
    the general light-theme header rule above is intentionally more opaque. */
 .watchlist-toolbar {

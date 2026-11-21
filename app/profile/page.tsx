@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
+import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import {
   getInvestorRatings,
   hasCompleteInvestorTest,
@@ -100,8 +101,9 @@ export default function ProfilePage() {
     <main className="min-h-screen px-4 pb-28 pt-8 text-text-primary lg:px-10 lg:pb-12 lg:pt-10">
       <div className="mx-auto max-w-5xl">
         <header className="mb-8 flex flex-col items-center text-center lg:mb-10 lg:items-start lg:text-left">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full" style={{ backgroundColor: "var(--phone-menu-background)" }}>
+          <div className="relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-full" style={{ backgroundColor: "var(--phone-menu-background)" }}>
             <OptionalSvgIcon name="profile" className="h-11 w-11" color="var(--phone-menu-icon)" />
+            <span aria-hidden="true" className="watchlist-lower-outline" />
           </div>
           <label className="mt-4 block w-full max-w-md lg:mt-5">
             <span className="sr-only">Your name</span>
@@ -121,18 +123,23 @@ export default function ProfilePage() {
               <h1 className="text-xl font-semibold text-text-primary">Investor style</h1>
               <p className="mt-1 text-sm text-text-muted">Answer 10 questions to build your investor profile.</p>
             </div>
-            <button type="button" onClick={startOrContinueTest} className="rounded-3xl border border-border-subtle px-4 py-2 text-sm font-medium text-text-primary transition hover:bg-panel-muted">
-              {testComplete ? "Retake test" : profile.answers.length ? "Continue test" : "Start test"}
+            <button type="button" onClick={startOrContinueTest} className="relative overflow-hidden rounded-3xl border border-transparent px-4 py-2 text-sm font-medium text-text-primary transition hover:bg-panel-muted">
+              <span className="relative z-[1]">{testComplete ? "Retake test" : profile.answers.length ? "Continue test" : "Start test"}</span>
+              <span aria-hidden="true" className="watchlist-lower-outline" />
             </button>
           </div>
 
           {testComplete ? (
-            <div className="space-y-6 rounded-3xl border border-border-subtle bg-panel px-5 py-5 lg:px-6">
-              {ratings.map((rating) => <RatingBar key={rating.key} label={rating.label} score={rating.score} low={rating.low} high={rating.high} />)}
+            <div className="relative overflow-hidden rounded-3xl bg-panel px-5 py-5 lg:px-6">
+              <div className="relative z-[1] space-y-6">
+                {ratings.map((rating) => <RatingBar key={rating.key} label={rating.label} score={rating.score} low={rating.low} high={rating.high} />)}
+              </div>
+              <span aria-hidden="true" className="watchlist-lower-outline" />
             </div>
           ) : (
-            <div className="rounded-3xl border border-border-subtle bg-panel px-5 py-5 text-sm text-text-muted">
-              {profile.answers.length} of {QUESTIONS.length} answers completed. Your results appear here when the test is complete.
+            <div className="relative overflow-hidden rounded-3xl bg-panel px-5 py-5 text-sm text-text-muted">
+              <div className="relative z-[1]">{profile.answers.filter((answer) => Number.isInteger(answer) && answer >= 1 && answer <= 5).length} of {QUESTIONS.length} answers completed. Your results appear here when the test is complete.</div>
+              <span aria-hidden="true" className="watchlist-lower-outline" />
             </div>
           )}
         </section>
@@ -140,28 +147,36 @@ export default function ProfilePage() {
         <section className="max-w-3xl">
           <label htmlFor="investor-description" className="mb-2 block text-xl font-semibold text-text-primary">Description</label>
           <p className="mb-3 text-sm text-text-muted">Tell Warrent what matters to you as an investor.</p>
-          <textarea
-            id="investor-description"
-            value={profile.description}
-            onChange={(event) => updateProfile({ ...profile, description: event.target.value.slice(0, 240) })}
-            maxLength={240}
-            rows={4}
-            placeholder="Describe your goals, preferences, or investing approach..."
-            className="w-full resize-y rounded-3xl border border-border-subtle bg-panel px-4 py-3 text-sm leading-6 text-text-primary outline-none placeholder:text-text-muted focus:border-accent"
-          />
+          <div className="relative overflow-hidden rounded-3xl bg-panel">
+            <textarea
+              id="investor-description"
+              value={profile.description}
+              onChange={(event) => updateProfile({ ...profile, description: event.target.value.slice(0, 240) })}
+              maxLength={240}
+              rows={4}
+              placeholder="Describe your goals, preferences, or investing approach..."
+              className="relative z-[1] w-full resize-y rounded-3xl border-0 bg-transparent px-4 py-3 text-sm leading-6 text-text-primary outline-none placeholder:text-text-muted"
+            />
+            <span aria-hidden="true" className="watchlist-lower-outline" />
+          </div>
           <p className="mt-1 text-right text-xs text-text-muted">{profile.description.length}/240</p>
+          <p className="mt-2 text-xs text-text-muted">Warrent receives this profile only when your name, description, and all 10 answers are complete.</p>
         </section>
       </div>
 
       {questionIndex !== null && (
-        <div className="fixed inset-0 z-[1300] flex items-center justify-center bg-black/16 px-4 py-6" style={{ backdropFilter: "blur(12px) brightness(0.97)", WebkitBackdropFilter: "blur(12px) brightness(0.97)" }} onMouseDown={(event) => { if (event.target === event.currentTarget) setQuestionIndex(null); }}>
-          <section role="dialog" aria-modal="true" aria-labelledby="investor-question-title" className="desktop-alert-glass smoked-glass-surface w-full max-w-xl rounded-3xl border border-white/15 p-5 shadow-2xl lg:p-7" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
+        <div className="smoked-glass-backdrop ai-chat-backdrop fixed inset-0 z-[1300] flex items-center justify-center px-4 py-6" style={{ background: "transparent", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }} onMouseDown={(event) => { if (event.target === event.currentTarget) setQuestionIndex(null); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="investor-question-title" className="investor-profile-outline desktop-alert-glass smoked-glass-surface relative w-full max-w-xl overflow-hidden rounded-3xl border border-transparent p-5 shadow-2xl lg:p-7" style={{ background: "linear-gradient(145deg, rgba(8,20,20,0.48), rgba(5,15,15,0.62) 56%, rgba(3,10,10,0.54))", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", boxShadow: "0 24px 70px rgba(0,0,0,0.28), 0 6px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(0,0,0,0.18)" }}>
+            <div className="relative z-[1]">
             <div className="mb-5 flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">{QUESTION_GROUPS[questionIndex]}</p>
                 <h2 id="investor-question-title" className="mt-2 text-lg font-semibold text-text-primary">Question {questionIndex + 1} of {QUESTIONS.length}</h2>
               </div>
-              <button type="button" onClick={() => setQuestionIndex(null)} aria-label="Close investor style test" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-text-primary">×</button>
+              <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-full">
+                <GlossyIconButton aria-label="Close investor style test" onClick={() => setQuestionIndex(null)} size={36}><GlossyCloseIcon /></GlossyIconButton>
+                <span aria-hidden="true" className="watchlist-lower-outline" />
+              </span>
             </div>
             <p className="text-base leading-7 text-text-primary">{QUESTIONS[questionIndex]}</p>
             <div className="mt-7">
@@ -172,9 +187,11 @@ export default function ProfilePage() {
               <p className="mt-4 text-center text-sm font-medium text-text-primary">{ANSWER_LABELS[draftAnswer - 1]}</p>
             </div>
             <div className="mt-7 flex justify-between gap-3">
-              <button type="button" onClick={saveAnswerAndGoBack} className="rounded-3xl border border-border-subtle px-4 py-2 text-sm text-text-primary">{questionIndex > 0 ? "Back" : "Cancel"}</button>
-              <button type="button" onClick={saveAnswerAndContinue} className="rounded-3xl bg-accent px-5 py-2 text-sm font-semibold text-on-accent">{questionIndex === QUESTIONS.length - 1 ? "Finish" : "Next"}</button>
+              <button type="button" onClick={saveAnswerAndGoBack} className="relative overflow-hidden rounded-3xl border border-transparent px-4 py-2 text-sm text-accent" style={{ backgroundColor: "var(--phone-menu-background)" }}><span className="relative z-[1]">{questionIndex > 0 ? "Back" : "Cancel"}</span><span aria-hidden="true" className="watchlist-lower-outline" /></button>
+              <button type="button" onClick={saveAnswerAndContinue} className="relative overflow-hidden rounded-3xl border border-transparent bg-accent px-5 py-2 text-sm font-semibold text-on-accent"><span className="relative z-[1]">{questionIndex === QUESTIONS.length - 1 ? "Finish" : "Next"}</span><span aria-hidden="true" className="watchlist-lower-outline" /></button>
             </div>
+            </div>
+            <span aria-hidden="true" className="watchlist-lower-outline" />
           </section>
         </div>
       )}
