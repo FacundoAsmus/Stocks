@@ -16,6 +16,7 @@ import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 import { StockFunctionButton, StockChartToolsMenu } from "@/components/desktop/StockToolsButton";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { SECTOR_ETFS } from "@/lib/etfs";
+import { shortCompanyName } from "@/lib/shortCompanyName";
 import type { getStockDetail } from "@/lib/finnhub";
 
 type StockDetail = Awaited<ReturnType<typeof getStockDetail>>;
@@ -81,7 +82,7 @@ export function DesktopStockDetail({
             </div>
             <div>
               <h1 className={`font-semibold tracking-normal text-text-primary ${watchlistDetailHeader ? "text-[25.2px] sm:text-[33.6px]" : "text-3xl sm:text-4xl"}`}>
-                {stock.profile.name ?? stock.symbol}
+                {shortCompanyName(stock.symbol, stock.profile.name)}
               </h1>
               {!watchlistDetailHeader && <p className="mt-0.5 text-base text-text-muted">{stock.symbol}</p>}
             </div>

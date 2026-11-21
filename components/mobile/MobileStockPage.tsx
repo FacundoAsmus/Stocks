@@ -25,6 +25,7 @@ import { MobileCompareSearch } from "@/components/mobile/MobileCompareSearch";
 import { StockComparisonView, type ComparisonDetailPayload } from "@/components/desktop/StockComparisonView";
 import { MobileSettingsPanel } from "@/components/MobileNav";
 import { isUsEquityMarketOpen } from "@/lib/usMarketHours";
+import { shortCompanyName } from "@/lib/shortCompanyName";
 import { subscribeToMarketRefresh } from "@/lib/marketRefresh";
 import type { StockDetail } from "@/types/stock";
 
@@ -236,7 +237,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             <span aria-hidden="true" className="watchlist-lower-outline" />
           </div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-text-primary leading-tight truncate">{stock.profile.name ?? stock.symbol}</h1>
+            <h1 className="text-xl font-bold text-text-primary leading-tight truncate">{shortCompanyName(stock.symbol, stock.profile.name)}</h1>
           </div>
           <AddToWatchlistButton symbol={stock.symbol} name={stock.profile.name ?? stock.symbol} compact />
         </div>
