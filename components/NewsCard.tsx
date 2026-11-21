@@ -15,8 +15,8 @@ import type { CompanyNewsArticle } from "@/types/stock";
 export const NewsCard = memo(function NewsCard({ article, showSummary = true, compactTitle = false }: { article: CompanyNewsArticle; showSummary?: boolean; compactTitle?: boolean }) {
   return (
     <article
-      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-2xl border bg-black transition-[transform,border-color] duration-300 ease-out hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]"
-      style={{ borderColor: "var(--phone-menu-close-background)" }}
+      className="group relative flex aspect-[3/4] w-full flex-col overflow-hidden rounded-2xl border transition-[transform,border-color] duration-300 ease-out hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:-translate-y-2 hover:scale-[1.02]"
+      style={{ backgroundColor: "var(--phone-menu-background)", borderColor: "var(--phone-menu-background)" }}
     >
       <a
         href={article.url}
@@ -25,7 +25,7 @@ export const NewsCard = memo(function NewsCard({ article, showSummary = true, co
         className="flex h-full w-full flex-col outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         {/* Image — 95% size, centered in the top 3/4 with rounded corners. */}
-        <div className="relative h-3/4 w-full shrink-0" style={{ backgroundColor: "var(--phone-menu-close-background)" }}>
+        <div className="relative h-3/4 w-full shrink-0" style={{ backgroundColor: "var(--phone-menu-background)" }}>
           <div className="absolute inset-[2.5%] overflow-hidden rounded-xl">
             <NewsImage src={article.image} />
           </div>

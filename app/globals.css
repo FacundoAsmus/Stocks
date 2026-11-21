@@ -605,11 +605,11 @@ html.light-mode .smoked-glass-surface.ai-typing-bar {
 }
 
 .news-card-body {
-  background-color: var(--phone-menu-close-background);
-  color: var(--phone-menu-background);
+  background-color: var(--phone-menu-background);
+  color: var(--phone-menu-icon);
 }
 .news-card-body h3,
-.news-card-body p { color: var(--phone-menu-background) !important; }
+.news-card-body p { color: var(--phone-menu-icon) !important; }
 
 .ai-aberration:not(.absolute):not(.fixed) {
   position: relative;
