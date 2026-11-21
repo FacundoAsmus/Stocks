@@ -227,7 +227,7 @@ export function MobileStockPage(props: MobileStockPageProps) {
             />
           ) : null
         ) : <>
-        <div className="flex items-center gap-3 px-4 pt-5 pb-3">
+        <div className="flex items-center gap-3 px-2 pt-5 pb-3">
           <StockLogo logo={!isEtf ? stock.profile.logo : undefined} size={53}
             sizeClassName="h-[53px] w-[53px] shrink-0"
             imageClassName="h-[53px] w-[53px] rounded-full border border-white/10 bg-white/5 object-contain shrink-0"
