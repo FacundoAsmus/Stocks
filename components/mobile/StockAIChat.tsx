@@ -11,6 +11,7 @@ import { AIStarLoader } from "@/components/AIStarLoader";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 import { requestAIChat } from "@/lib/aiChatRequest";
+import { getCompleteInvestorContext } from "@/lib/investorProfile";
 import { AIFormattedText } from "@/components/AIFormattedText";
 import { TextRevealCaret, useTypingReveal } from "@/components/TextReveal";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
@@ -1760,7 +1761,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     setLoading(true);
     setServerError(false);
     try {
-      const reply = await requestAIChat({ messages: newMessages.map(m => ({ role: m.role, text: m.text })), stockContext });
+      const reply = await requestAIChat({ messages: newMessages.map(m => ({ role: m.role, text: m.text })), stockContext: `${stockContext}${getCompleteInvestorContext()}` });
       setMessages(prev => [...prev, { role: "model", text: reply, animating: true }]);
     } catch {
       setServerError(true);

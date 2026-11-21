@@ -9,6 +9,7 @@ import { AIStarLoader } from "@/components/AIStarLoader";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
 import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 import { requestAIChat } from "@/lib/aiChatRequest";
+import { getCompleteInvestorContext } from "@/lib/investorProfile";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import { cn } from "@/lib/utils";
 import { getRandomAIWelcome } from "@/lib/aiWelcome";
@@ -178,7 +179,7 @@ export function WatchlistAIChatPanel({ stock, currentPrice, sentiment, metrics }
     setLoading(true);
     setServerError(false);
     try {
-      const reply = await requestAIChat({ messages: next.map(m => ({ role: m.role, text: m.text })), stockContext });
+      const reply = await requestAIChat({ messages: next.map(m => ({ role: m.role, text: m.text })), stockContext: `${stockContext}${getCompleteInvestorContext()}` });
       setMessages(prev => [...prev, { role: "model", text: reply }]);
     } catch {
       setServerError(true);
