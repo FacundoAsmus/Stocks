@@ -36,7 +36,7 @@ export function isInvestorProfileComplete(profile: InvestorProfile | null | unde
   );
 }
 
-export function hasCompleteInvestorTest(profile: InvestorProfile | null | undefined): profile is InvestorProfile {
+export function hasCompleteInvestorTest(profile: InvestorProfile | null | undefined): boolean {
   return Boolean(profile && profile.answers.length === 10 && profile.answers.every((answer) => Number.isInteger(answer) && answer >= 1 && answer <= 5));
 }
 
