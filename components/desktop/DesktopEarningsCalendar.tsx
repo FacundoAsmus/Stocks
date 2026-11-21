@@ -98,7 +98,7 @@ function QuarterMetricChart({
               >
                 {value !== null && (
                   <div
-                    className={`absolute left-1/2 w-[37.5%] max-w-[30px] -translate-x-1/2 ${negative ? "rounded-b-3xl rounded-t-none" : "rounded-t-3xl rounded-b-none"} ${
+                    className={`absolute left-1/2 w-[37.5%] max-w-[30px] -translate-x-1/2 rounded-sm ${
                       isEstimate
                         ? selected
                           ? "border border-accent bg-accent/15"
