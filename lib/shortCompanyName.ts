@@ -1,6 +1,9 @@
 const SHORT_NAMES: Record<string, string> = {
   AMD: "AMD",
   META: "Meta",
+  AMZN: "Amazon",
+  ANT: "Anthropic",
+  MU: "Micron",
   "BRK.B": "Berkshire Hathaway",
 };
 
@@ -13,7 +16,7 @@ export function shortCompanyName(symbol: string, name?: string | null): string {
 
   const cleanedName = (name ?? "")
     .replace(COMPANY_SUFFIXES, " ")
-    .replace(/[,.]/g, " ")
+    .replace(/[,.&]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
