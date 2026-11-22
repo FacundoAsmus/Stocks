@@ -31,7 +31,7 @@ function NewsSummaryText({ text }: { text: string }) {
 
   let remaining = visibleLength;
   return (
-    <p className="animate-[description-fade_240ms_ease-out_both] whitespace-pre-line text-sm text-text-primary">
+    <p className="animate-[description-fade_240ms_ease-out_both] whitespace-pre-line text-base leading-relaxed text-text-primary">
       {parts.map((part, index) => {
         const visibleText = part.text.slice(0, Math.max(0, Math.min(part.text.length, remaining)));
         remaining -= part.text.length;

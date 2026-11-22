@@ -234,14 +234,14 @@ export function FundamentalsGrid({
         {dividendItem && <div className="pt-2">{renderMetricRow(dividendItem)}</div>}
         {rangeItems.length > 0 && (
           <div className="border-t border-border-subtle pt-2">
-            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">52W Range</h3>
+            <h3 className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-accent">52W Range</h3>
             {rangeItems.map(renderMetricRow)}
           </div>
         )}
       </div>
       {show52WeekRange && high52 !== null && low52 !== null && high52 >= low52 && (
         <div className="mx-5 mt-2">
-          <p className="mb-3 text-xs uppercase tracking-[0.12em] text-text-muted">52W Range</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-accent">52W Range</p>
           {(() => {
             // Low is at the left and high is at the right, like a range scale.
             const position = high52 === low52 ? 50 : ((currentPrice - low52) / (high52 - low52)) * 100;
