@@ -36,7 +36,7 @@ export const NewsCard = memo(function NewsCard({ article, showSummary = true, co
             {article.headline}
           </h3>
           {showSummary && (
-            <p className="line-clamp-2 text-[11px] leading-snug text-gray-400">
+            <p className="line-clamp-2 text-[11px] leading-snug text-text-muted">
               {article.summary}
             </p>
           )}
