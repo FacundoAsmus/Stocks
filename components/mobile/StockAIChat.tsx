@@ -1716,7 +1716,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         const wasKeyboard = panel.dataset.keyboard === "true";
         last = current;
         panel.style.setProperty("--vvh", `${current.height}px`);
-        panel.style.setProperty("--vvt", `${current.top}px`);
+        panel.style.setProperty("--vvb", `${Math.max(0, window.innerHeight - current.height - current.top)}px`);
         panel.dataset.keyboard = String(!!vv && window.innerHeight - current.height - current.top > 80);
         const keyboardInset = Math.max(0, window.innerHeight - current.height - current.top);
         const pill = mobilePillRef.current;
@@ -1846,8 +1846,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
       opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none", transition: "opacity 0.25s ease",
     }} />}
     {(open || backdropClosing) && <div ref={mobilePanelRef} className="warrent-ai-mobile-panel" style={{
-      position: "fixed", left: 0, top: 0, width: "100%", height: "var(--vvh, 100vh)",
-      transform: "translate3d(0, var(--vvt, 0px), 0)", display: "flex", flexDirection: "column", zIndex: 1000,
+      position: "fixed", left: 0, bottom: "var(--vvb, 0px)", width: "100%", height: "var(--vvh, 100vh)",
+      display: "flex", flexDirection: "column", zIndex: 1000,
       boxSizing: "border-box",
       pointerEvents: open ? "auto" : "none",
     }}>

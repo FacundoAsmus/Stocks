@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import type { MouseEvent } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
@@ -53,7 +52,21 @@ export function MobileStockPage(props: MobileStockPageProps) {
   // earnings calendar doesn't apply to them.
   const isEtf = SECTOR_ETFS.some(e => e.symbol === stock.symbol);
   const [mounted, setMounted] = useState(false);
+  const [topControlsVisible, setTopControlsVisible] = useState(true);
   useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    let previousY = window.scrollY;
+    const onScroll = () => {
+      const currentY = window.scrollY;
+      if (currentY <= 16) setTopControlsVisible(true);
+      else if (currentY < previousY - 3) setTopControlsVisible(true);
+      else if (currentY > previousY + 3) setTopControlsVisible(false);
+      previousY = currentY;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     window.dispatchEvent(new Event("stock-page-ready"));
@@ -170,13 +183,20 @@ export function MobileStockPage(props: MobileStockPageProps) {
         }}
       />
 
-      {mounted && settingsPhase === "closed" && !compareSearchOpen && createPortal(
-        <>
+      {mounted && settingsPhase === "closed" && !compareSearchOpen && (
           <div
-            className="absolute left-4 right-4 flex items-center justify-between lg:hidden"
+            className="sticky z-[500] lg:hidden"
             data-stock-top-controls
-            style={{ top: "env(safe-area-inset-top)", zIndex: 500 }}
+            style={{
+              top: 0,
+              height: "calc(2.5rem + env(safe-area-inset-top))",
+              paddingTop: "env(safe-area-inset-top)",
+              boxSizing: "border-box",
+              transform: topControlsVisible ? "translateY(0)" : "translateY(-100%)",
+              transition: "transform 180ms ease",
+            }}
           >
+            <div className="flex h-10 items-center justify-between px-4">
             <button
               onClick={handleBack}
               aria-label="Back"
@@ -194,12 +214,9 @@ export function MobileStockPage(props: MobileStockPageProps) {
                 <OptionalSvgIcon name="settings" className="h-6 w-6" />
               </button>
             </div>
+            </div>
           </div>
-        </>,
-        document.body
       )}
-
-      <div aria-hidden style={{ height: "calc(2.5rem + env(safe-area-inset-top))" }} />
 
       <div className="pb-36" style={{ opacity: 1 }} data-stock-page="">
         {comparisonSymbol ? (
