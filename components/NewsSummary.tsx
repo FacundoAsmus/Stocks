@@ -8,22 +8,19 @@ import { AIUnavailableNotice } from "@/components/AIUnavailableNotice";
 
 type SummaryState = { status: "loading" } | { status: "ready"; text: string } | { status: "error" };
 
-type SummaryPart = { text: string; format: "plain" | "company" | "peer" | "person" | "product" | "positive" | "negative" };
+type SummaryPart = { text: string; format: "plain" | "positive" | "negative" };
 
 function NewsSummaryText({ text }: { text: string }) {
   const parts = useMemo(() => {
     const result: SummaryPart[] = [];
-    const pattern = /\[\[company\]\]([\s\S]*?)\[\[\/company\]\]|\[\[peer\]\]([\s\S]*?)\[\[\/peer\]\]|\[\[person\]\]([\s\S]*?)\[\[\/person\]\]|\[\[product\]\]([\s\S]*?)\[\[\/product\]\]|\[\[\+\]\]([\s\S]*?)\[\[\/\+\]\]|\[\[\-\]\]([\s\S]*?)\[\[\/\-\]\]/g;
+    const pattern = /\[\[(company|peer|person|product)\]\]([\s\S]*?)\[\[\/\1\]\]|\[\[\+\]\]([\s\S]*?)\[\[\/\+\]\]|\[\[\-\]\]([\s\S]*?)\[\[\/\-\]\]/g;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(text)) !== null) {
       if (match.index > lastIndex) result.push({ text: text.slice(lastIndex, match.index), format: "plain" });
-      if (match[1] !== undefined) result.push({ text: match[1], format: "company" });
-      else if (match[2] !== undefined) result.push({ text: match[2], format: "peer" });
-      else if (match[3] !== undefined) result.push({ text: match[3], format: "person" });
-      else if (match[4] !== undefined) result.push({ text: match[4], format: "product" });
-      else if (match[5] !== undefined) result.push({ text: match[5], format: "positive" });
-      else result.push({ text: match[6] ?? "", format: "negative" });
+      if (match[1] !== undefined) result.push({ text: match[2] ?? "", format: "plain" });
+      else if (match[3] !== undefined) result.push({ text: match[3], format: "positive" });
+      else result.push({ text: match[4] ?? "", format: "negative" });
       lastIndex = match.index + match[0].length;
     }
     if (lastIndex < text.length) result.push({ text: text.slice(lastIndex), format: "plain" });
@@ -34,23 +31,17 @@ function NewsSummaryText({ text }: { text: string }) {
 
   let remaining = visibleLength;
   return (
-    <p className="animate-[description-fade_240ms_ease-out_both] whitespace-pre-line text-[1.05rem] text-text-primary">
+    <p className="animate-[description-fade_240ms_ease-out_both] whitespace-pre-line text-sm text-text-primary">
       {parts.map((part, index) => {
         const visibleText = part.text.slice(0, Math.max(0, Math.min(part.text.length, remaining)));
         remaining -= part.text.length;
         if (!visibleText) return null;
         const isNumericPrice = /^(?=.*\d)[+\-−$€£¥\s\d,.%]+$/u.test(part.text);
-        const style = part.format === "company"
-          ? { fontWeight: 700 }
-          : part.format === "peer"
-            ? { color: "#f97316", fontWeight: 600 }
-            : part.format === "person"
-              ? { color: "#facc15", fontWeight: 600 }
-              : part.format === "positive" && isNumericPrice
-                ? { color: "var(--color-positive)", fontWeight: 600 }
-                : part.format === "negative" && isNumericPrice
-                  ? { color: "var(--color-negative)", fontWeight: 600 }
-                  : undefined;
+        const style = part.format === "positive" && isNumericPrice
+          ? { color: "var(--color-positive)", fontWeight: 600 }
+          : part.format === "negative" && isNumericPrice
+            ? { color: "var(--color-negative)", fontWeight: 600 }
+            : undefined;
         return <span key={index} style={style}>{visibleText}</span>;
       })}
       {!complete && <TextRevealCaret />}
@@ -65,7 +56,7 @@ export function NewsSummary({ symbol, companyName, articles }: { symbol: string;
   useEffect(() => {
     if (!articles.length) return;
     const controller = new AbortController();
-    const cacheKey = `market-lens-news-summary-v4:${symbol}:${articles.map(article => article.id).join(",")}`;
+    const cacheKey = `market-lens-news-summary-v5:${symbol}:${articles.map(article => article.id).join(",")}`;
     const cached = window.sessionStorage.getItem(cacheKey);
     if (cached) {
       setState({ status: "ready", text: cached });
