@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 
 import { AddToWatchlistButton } from "@/components/AddToWatchlistButton";
@@ -53,12 +54,15 @@ export function MobileStockPage(props: MobileStockPageProps) {
   const isEtf = SECTOR_ETFS.some(e => e.symbol === stock.symbol);
   const [mounted, setMounted] = useState(false);
   const [topControlsVisible, setTopControlsVisible] = useState(true);
+  const topControlsRef = useRef<HTMLDivElement>(null);
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     let previousY = window.scrollY;
+    if (topControlsRef.current) topControlsRef.current.style.top = `${previousY}px`;
     const onScroll = () => {
       const currentY = window.scrollY;
+      if (topControlsRef.current) topControlsRef.current.style.top = `${currentY}px`;
       if (currentY <= 16) setTopControlsVisible(true);
       else if (currentY < previousY - 3) setTopControlsVisible(true);
       else if (currentY > previousY + 3) setTopControlsVisible(false);
@@ -183,16 +187,18 @@ export function MobileStockPage(props: MobileStockPageProps) {
         }}
       />
 
-      {mounted && settingsPhase === "closed" && !compareSearchOpen && (
+      {mounted && settingsPhase === "closed" && !compareSearchOpen && createPortal(
           <div
-            className="sticky z-[500] lg:hidden"
+            ref={topControlsRef}
+            className="absolute inset-x-0 z-[500] lg:hidden"
             data-stock-top-controls
             style={{
               top: 0,
               height: "calc(2.5rem + env(safe-area-inset-top))",
               paddingTop: "env(safe-area-inset-top)",
               boxSizing: "border-box",
-              transform: topControlsVisible ? "translateY(0)" : "translateY(-100%)",
+              pointerEvents: topControlsVisible ? "auto" : "none",
+              transform: topControlsVisible ? "translateY(0)" : "translateY(-110%)",
               transition: "transform 180ms ease",
             }}
           >
@@ -215,8 +221,11 @@ export function MobileStockPage(props: MobileStockPageProps) {
               </button>
             </div>
             </div>
-          </div>
+          </div>,
+          document.body
       )}
+
+      <div aria-hidden style={{ height: "calc(2.5rem + env(safe-area-inset-top))" }} />
 
       <div className="pb-36" style={{ opacity: 1 }} data-stock-page="">
         {comparisonSymbol ? (
