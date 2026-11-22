@@ -1580,6 +1580,7 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   const open = isControlled ? externalOpen : internalOpen;
   const [backdropClosing, setBackdropClosing] = useState(false);
   const mobilePanelRef = useRef<HTMLDivElement>(null);
+  const mobileBackdropRef = useRef<HTMLDivElement>(null);
   const mobilePillRef = useRef<HTMLDivElement>(null);
   const savedScrollYRef = useRef<number | null>(null);
   const closeBackdropTimer = useRef<number | null>(null);
@@ -1655,8 +1656,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   // same way the always-reliable search button lives outside <main> too.
   useEffect(() => setMounted(true), []);
 
-  // Only track the desktop split-view column. Mobile uses a stable fixed
-  // viewport and never subscribes to visualViewport keyboard events.
+  // Only track the desktop split-view column. Mobile syncs its overlay
+  // directly from VisualViewport below, without React renders.
   useEffect(() => {
     const element = containerRef?.current;
     if (!element) return;
@@ -1674,24 +1675,23 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
     };
   }, [containerRef]);
 
-  // Keep the page fixed while the full-screen phone chat is open.
+  // Lock page scrolling without fixing the body to a negative top offset.
   useEffect(() => {
     if (!open || typeof window === "undefined" || window.innerWidth >= 1024 || containerRef) return;
+    const root = document.documentElement;
     const body = document.body;
     const scrollY = window.scrollY;
     savedScrollYRef.current = scrollY;
-    const previous = { position: body.style.position, top: body.style.top, left: body.style.left, right: body.style.right, overflow: body.style.overflow };
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.left = "0";
-    body.style.right = "0";
+    const previous = { rootOverflow: root.style.overflow, bodyOverflow: body.style.overflow, rootOverscroll: root.style.overscrollBehavior, bodyOverscroll: body.style.overscrollBehavior };
+    root.style.overflow = "hidden";
     body.style.overflow = "hidden";
+    root.style.overscrollBehavior = "none";
+    body.style.overscrollBehavior = "none";
     return () => {
-      body.style.position = previous.position;
-      body.style.top = previous.top;
-      body.style.left = previous.left;
-      body.style.right = previous.right;
-      body.style.overflow = previous.overflow;
+      root.style.overflow = previous.rootOverflow;
+      body.style.overflow = previous.bodyOverflow;
+      root.style.overscrollBehavior = previous.rootOverscroll;
+      body.style.overscrollBehavior = previous.bodyOverscroll;
       window.scrollTo(0, scrollY);
       requestAnimationFrame(() => window.scrollTo(0, scrollY));
       savedScrollYRef.current = null;
@@ -1715,14 +1715,25 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         if (Object.keys(current).every(key => Math.abs(current[key as keyof typeof current] - last[key as keyof typeof last]) < 0.5)) return;
         const wasKeyboard = panel.dataset.keyboard === "true";
         last = current;
+        const documentTop = window.scrollY + current.top;
         panel.style.setProperty("--vvh", `${current.height}px`);
-        panel.style.setProperty("--vvb", `${Math.max(0, window.innerHeight - current.height - current.top)}px`);
+        panel.style.setProperty("--vvt", `${documentTop}px`);
+        const backdrop = mobileBackdropRef.current;
+        if (backdrop) {
+          backdrop.style.top = `${documentTop}px`;
+          backdrop.style.left = `${current.left}px`;
+          backdrop.style.width = `${current.width}px`;
+          backdrop.style.height = `${current.height}px`;
+        }
         panel.dataset.keyboard = String(!!vv && window.innerHeight - current.height - current.top > 80);
         const keyboardInset = Math.max(0, window.innerHeight - current.height - current.top);
         const pill = mobilePillRef.current;
-        if (pill) pill.style.bottom = open && keyboardInset > 8
-          ? `calc(${keyboardInset + 12}px - var(--phone-controls-lower))`
-          : "calc(env(safe-area-inset-bottom) - 0.5rem - var(--phone-controls-lower))";
+        if (pill) {
+          pill.style.top = `${documentTop + current.height}px`;
+          pill.style.transform = open && keyboardInset > 8
+            ? "translateY(calc(-100% - 12px + var(--phone-controls-lower)))"
+            : "translateY(calc(-100% - env(safe-area-inset-bottom) + 0.5rem + var(--phone-controls-lower)))";
+        }
         if (wasKeyboard && panel.dataset.keyboard === "false" && savedScrollYRef.current !== null) {
           const savedY = savedScrollYRef.current;
           requestAnimationFrame(() => window.scrollTo(0, savedY));
@@ -1840,13 +1851,13 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
   if (containerRef && !isDesktop) return null;
 
   if (!isDesktop && !containerRef) return createPortal(<>
-    {(open || backdropClosing) && <div aria-hidden="true" onClick={handleDismiss} style={{
-      position: "fixed", inset: 0, zIndex: 999, background: "transparent",
+    {(open || backdropClosing) && <div ref={mobileBackdropRef} aria-hidden="true" onClick={handleDismiss} style={{
+      position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 999, background: "transparent",
       backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
       opacity: open ? 1 : 0, pointerEvents: open ? "auto" : "none", transition: "opacity 0.25s ease",
     }} />}
     {(open || backdropClosing) && <div ref={mobilePanelRef} className="warrent-ai-mobile-panel" style={{
-      position: "fixed", left: 0, bottom: "var(--vvb, 0px)", width: "100%", height: "var(--vvh, 100vh)",
+      position: "absolute", left: 0, top: "var(--vvt, 0px)", width: "100%", height: "var(--vvh, 100vh)",
       display: "flex", flexDirection: "column", zIndex: 1000,
       boxSizing: "border-box",
       pointerEvents: open ? "auto" : "none",
@@ -1860,8 +1871,8 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         <MemoizedChatMessages messages={messages} graphCtx={graphCtx} textColor={textColor} loading={loading} serverError={serverError} markDone={markDone} />
       </div>
     </div>}
-    {(!hideTrigger || open || backdropClosing) && <div ref={mobilePillRef} className={`smoked-glass-surface fixed z-[1002] overflow-hidden rounded-full border border-white/15 text-accent${open ? " ai-typing-bar" : " ai-aberration"}`} style={{
-      right: open ? "1rem" : "1.25rem", bottom: "calc(env(safe-area-inset-bottom) - 0.5rem - var(--phone-controls-lower))",
+    {(!hideTrigger || open || backdropClosing) && <div ref={mobilePillRef} className={`smoked-glass-surface absolute z-[1002] overflow-hidden rounded-full border border-white/15 text-accent${open ? " ai-typing-bar" : " ai-aberration"}`} style={{
+      right: open ? "1rem" : "1.25rem", top: 0, transform: "translateY(calc(-100% - env(safe-area-inset-bottom) + 0.5rem + var(--phone-controls-lower)))",
       width: open ? "calc(100vw - 2rem)" : "3.5rem", height: "3.5rem", background: chatControlGlass,
       backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)",
       boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",
