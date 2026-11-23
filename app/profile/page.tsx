@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
+import { AppearanceControls } from "@/components/MobileNav";
 import { GlossyCloseIcon, GlossyIconButton } from "@/components/GlossyIconButton";
 import {
   getInvestorRatings,
@@ -161,6 +162,8 @@ export default function ProfilePage() {
           <p className="mt-1 text-right text-xs text-text-muted">{profile.description.length}/240</p>
           <p className="mt-2 text-xs text-text-muted">Warrent receives this profile only when your name, description, and all 10 answers are complete.</p>
         </section>
+
+        <AppearanceControls className="mt-10 max-w-3xl lg:hidden" />
       </div>
 
       {questionIndex !== null && (

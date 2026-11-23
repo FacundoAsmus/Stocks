@@ -131,6 +131,15 @@ html.light-mode {
   transform: translateY(0);
   transition: transform 480ms cubic-bezier(0.22, 1, 0.36, 1);
 }
+.market-open-beat {
+  border: 1.5px solid var(--color-positive);
+  pointer-events: none;
+  animation: market-open-beat 1.8s ease-out forwards;
+}
+@keyframes market-open-beat {
+  0% { transform: scale(0.9); opacity: 0.72; }
+  100% { transform: scale(4.5); opacity: 0; }
+}
 .phone-menu-bar[data-search-open="true"] .phone-menu-icon {
   transform: translateY(-110%);
 }

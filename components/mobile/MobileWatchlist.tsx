@@ -14,9 +14,33 @@ import { revealSparklineOnDataChange } from "@/lib/sparklineReveal";
 import { WheelPrice } from "@/components/PriceChart";
 import { cn } from "@/lib/utils";
 import { OptionalSvgIcon } from "@/components/OptionalSvgIcon";
+import { isUsEquityMarketOpen } from "@/lib/usMarketHours";
 import type { StockSummary } from "@/types/stock";
 
 const STORAGE_KEY = "market-lens-watchlist";
+
+function MarketStatusDot() {
+  const [marketOpen, setMarketOpen] = useState(false);
+  const [beat, setBeat] = useState(0);
+
+  useEffect(() => {
+    const update = () => {
+      const isOpen = isUsEquityMarketOpen();
+      setMarketOpen(isOpen);
+      if (isOpen) setBeat(value => value + 1);
+    };
+    update();
+    const timer = window.setInterval(update, 10_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <span role="status" aria-label={marketOpen ? "Market open" : "Market closed"} title={marketOpen ? "Market open" : "Market closed"} className="relative mt-1 flex h-10 w-10 items-center justify-center">
+      {marketOpen && <span key={beat} aria-hidden="true" className="market-open-beat absolute h-2.5 w-2.5 rounded-full" />}
+      <span aria-hidden="true" className="relative z-[1] h-2.5 w-2.5 rounded-full" style={{ backgroundColor: marketOpen ? "var(--color-positive)" : "var(--color-text-muted)" }} />
+    </span>
+  );
+}
 
 function readWatchlist(): string[] {
   if (typeof window === "undefined") return DEFAULT_WATCHLIST;
@@ -520,9 +544,7 @@ export function MobileWatchlist() {
             <h1 className="text-4xl font-bold text-text-primary">Your Stocks</h1>
             <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-accent">Watchlist</p>
           </div>
-          <button type="button" aria-label="Add stock" onClick={() => window.dispatchEvent(new Event("open-phone-stock-search"))} className="mt-1 flex h-10 w-10 items-center justify-center border-0 bg-transparent p-0">
-            <OptionalSvgIcon name="plus" className="h-6 w-6" />
-          </button>
+          <MarketStatusDot />
         </div>
       </div>
       <div aria-hidden="true" className="phone-watchlist-title-spacer" />

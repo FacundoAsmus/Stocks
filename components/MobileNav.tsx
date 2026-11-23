@@ -28,9 +28,40 @@ function applyTheme(theme: Theme) {
   // stray gray/dark bar just because the phone itself is set to dark mode.
 }
 
+const themeOptions: { value: Theme; label: string; iconName: string }[] = [
+  { value: "dark", label: "Dark", iconName: "theme-dark" },
+  { value: "light", label: "Light", iconName: "theme-light" },
+  { value: "system", label: "System", iconName: "theme-system" },
+];
+
+export function AppearanceControls({ className = "" }: { className?: string }) {
+  const [theme, setTheme] = useState<Theme>(getStoredTheme);
+  function changeTheme(next: Theme) {
+    setTheme(next);
+    applyTheme(next);
+    window.location.reload();
+  }
+
+  return (
+    <section className={className}>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent">Appearance</p>
+      <div className="overflow-hidden divide-y divide-border-subtle rounded-3xl border border-border-subtle bg-panel">
+        {themeOptions.map(option => (
+          <button key={option.value} type="button" onClick={() => changeTheme(option.value)} className="flex w-full items-center justify-between px-4 py-3.5 text-left">
+            <span className="flex items-center gap-3 text-sm text-text-primary">
+              <OptionalSvgIcon name={option.iconName} className="h-4 w-4" colorClassName={theme === option.value ? "text-accent" : "text-text-muted"} />
+              {option.label} Mode
+            </span>
+            <span className={cn("h-5 w-5 rounded-full border-2 transition-colors", theme === option.value ? "border-accent bg-accent" : "border-border-subtle")} />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ─── Settings panel ───────────────────────────────────────────────────────
 export function MobileSettingsPanel({ closing, onClose, origin }: { closing: boolean; onClose: () => void; origin: { x: number; y: number } }) {
-  const [theme, setTheme] = useState<Theme>(getStoredTheme);
   const [proMode, setProMode] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-mode") === "1" : false
   );
@@ -46,12 +77,6 @@ export function MobileSettingsPanel({ closing, onClose, origin }: { closing: boo
   const [showAlertLines, setShowAlertLines] = useState(() =>
     typeof window !== "undefined" ? localStorage.getItem("pro-alert-lines") === "1" : false
   );
-
-  function changeTheme(t: Theme) {
-    setTheme(t);
-    applyTheme(t);
-    window.location.reload();
-  }
 
   function toggleProMode() {
     const next = !proMode;
@@ -89,11 +114,6 @@ export function MobileSettingsPanel({ closing, onClose, origin }: { closing: boo
   }
 
 
-  const themeOptions: { value: Theme; label: string; iconName: string }[] = [
-    { value: "dark",   label: "Dark",   iconName: "theme-dark" },
-    { value: "light",  label: "Light",  iconName: "theme-light" },
-    { value: "system", label: "System", iconName: "theme-system" },
-  ];
   const viewportHeight = typeof window !== "undefined" ? window.innerHeight : 0;
   const transformOrigin = `${origin.x}px ${origin.y - viewportHeight * 0.06}px`;
 
@@ -125,27 +145,7 @@ export function MobileSettingsPanel({ closing, onClose, origin }: { closing: boo
         className="flex flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-4 pt-2 pb-8"
       >
         {/* Appearance */}
-        <section>
-          <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">Appearance</p>
-          <div className="rounded-3xl border border-border-subtle bg-panel overflow-hidden divide-y divide-border-subtle">
-            {themeOptions.map(opt => (
-              <button
-                key={opt.value}
-                onClick={() => changeTheme(opt.value)}
-                className="w-full flex items-center justify-between px-4 py-3.5 text-left"
-              >
-                <span className="flex items-center gap-3 text-sm text-text-primary">
-                  <OptionalSvgIcon name={opt.iconName} className="h-4 w-4" colorClassName={theme === opt.value ? "text-accent" : "text-text-muted"} />
-                  {opt.label} Mode
-                </span>
-                <span className={cn(
-                  "h-5 w-5 rounded-full border-2 transition-colors",
-                  theme === opt.value ? "border-accent bg-accent" : "border-border-subtle"
-                )} />
-              </button>
-            ))}
-          </div>
-        </section>
+        <AppearanceControls />
 
         <section>
           <p className="text-xs font-semibold uppercase tracking-widest text-accent mb-3">Pro Features</p>
@@ -190,7 +190,6 @@ export function MobileSettingsPanel({ closing, onClose, origin }: { closing: boo
 
 // ─── Slide helpers ────────────────────────────────────────────────────────
 const SLIDE_DURATION = 260;
-const SETTINGS_DURATION = 300;
 
 function slideAndNavigate(
   router: ReturnType<typeof useRouter>,
@@ -211,8 +210,6 @@ function slideAndNavigate(
 export function MobileNav() {
   const pathname = usePathname();
   const router   = useRouter();
-  const [settingsPhase, setSettingsPhase] = useState<"closed" | "open" | "closing">("closed");
-  const [settingsOrigin, setSettingsOrigin] = useState({ x: 0, y: 0 });
   const [activePill,   setActivePill]   = useState<"market" | "watchlist" | "conversations" | "profile">(
     pathname === "/watchlist" ? "watchlist" : pathname === "/conversations" ? "conversations" : pathname === "/profile" ? "profile" : "market"
   );
@@ -312,8 +309,7 @@ export function MobileNav() {
   const showNav = pathname === "/" || pathname === "/watchlist" || pathname === "/conversations" || pathname === "/profile";
   if (!showNav) return null;
 
-  const isWatchlist = activePill === "watchlist";
-  const activeIndex = settingsPhase !== "closed" ? 4 : activePill === "market" ? 0 : activePill === "watchlist" ? 1 : activePill === "conversations" ? 2 : 3;
+  const activeIndex = activePill === "market" ? 0 : activePill === "watchlist" ? 1 : activePill === "conversations" ? 3 : 4;
   const BUBBLE_SIZE = "3.6rem";
   const viewportHeight = visualViewport.height || (typeof window !== "undefined" ? window.innerHeight : 0);
   const keyboardInset = Math.max(0, (typeof window !== "undefined" ? window.innerHeight : 0) - viewportHeight - visualViewport.top);
@@ -338,19 +334,6 @@ export function MobileNav() {
 
   function navigateTo(href: "/" | "/watchlist" | "/conversations" | "/profile") {
     const alreadyThere = pathname === href;
-
-    if (settingsPhase !== "closed") {
-      // Leaving Settings for Market/Watchlist always plays the swipe-right
-      // close transition, then (only if actually changing page) navigates.
-      setActivePill(href === "/" ? "market" : href === "/watchlist" ? "watchlist" : href === "/conversations" ? "conversations" : "profile");
-      setSettingsPhase("closing");
-      setTimeout(() => {
-        setSettingsPhase("closed");
-        if (!alreadyThere) router.push(href);
-      }, SETTINGS_DURATION);
-      return;
-    }
-
     if (alreadyThere) return;
     setActivePill(href === "/" ? "market" : href === "/watchlist" ? "watchlist" : href === "/conversations" ? "conversations" : "profile");
     const returningToWatchlist = href === "/watchlist" && (pathname === "/conversations" || pathname === "/profile");
@@ -362,30 +345,9 @@ export function MobileNav() {
     setTimeout(() => { router.push(href); setTimeout(() => main.classList.remove(exitClass), 100); }, SLIDE_DURATION - 20);
   }
 
-  function openSettings(event: React.MouseEvent<HTMLButtonElement>) {
-    if (settingsPhase !== "closed") return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    setSettingsOrigin({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
-    const main = document.querySelector("main");
-    main?.classList.remove("page-slide-left", "page-slide-right");
-    main?.classList.add("page-slide-left"); // same "forward" direction as Market → Watchlist
-    setTimeout(() => {
-      setSettingsPhase("open");
-      setTimeout(() => main?.classList.remove("page-slide-left"), 100);
-    }, SLIDE_DURATION - 20);
-  }
-
-  function closeSettings() {
-    if (settingsPhase !== "open") return;
-    setSettingsPhase("closing");
-    setTimeout(() => setSettingsPhase("closed"), SETTINGS_DURATION);
-  }
-
   const iconWrapClass = "phone-menu-icon relative z-10 flex h-full min-w-0 flex-1 items-center justify-center";
   return (
     <>
-      {settingsPhase !== "closed" && <MobileSettingsPanel closing={settingsPhase === "closing"} onClose={closeSettings} origin={settingsOrigin} />}
-
       {/* Centered phone navigation bar. */}
       {searchOpen && <div className="fixed z-[1000] lg:hidden" style={{ top: visualViewport.top, left: visualViewport.left, width: visualViewport.width || "100vw", height: visualViewport.height || "100dvh", background: "transparent", backdropFilter: "blur(3px) brightness(0.97)", WebkitBackdropFilter: "blur(3px) brightness(0.97)" }} onClick={closeSearch} />}
       {searchOpen && (searchLoading || searchResults.length > 0 || searchQuery.trim()) && (
@@ -429,16 +391,21 @@ export function MobileNav() {
 
           <button
             className={iconWrapClass}
+            onClick={() => window.dispatchEvent(new Event("open-phone-stock-search"))}
+            aria-label="Add stock"
+          >
+            <OptionalSvgIcon name="plus" className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />
+          </button>
+
+          <button
+            className={iconWrapClass}
             onClick={() => navigateTo("/conversations")}
             aria-label="Conversations"
           >
-            <OptionalSvgIcon name="conversations" selected={activeIndex === 2} className={activeIndex === 2 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="conversations" selected={activeIndex === 3} className={activeIndex === 3 ? "h-[29px] w-[29px]" : "h-6 w-6"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
           <button className={iconWrapClass} onClick={() => navigateTo("/profile")} aria-label="Profile">
-            <OptionalSvgIcon name="profile" selected={activeIndex === 3} className={activeIndex === 3 ? "h-6 w-6" : "h-5 w-5"} colorClassName="text-[var(--phone-menu-icon)]" />
-          </button>
-          <button className={iconWrapClass} onClick={openSettings} aria-label="Settings">
-            <OptionalSvgIcon name="settings" selected={activeIndex === 4} className="h-6 w-6" colorClassName="text-[var(--phone-menu-icon)]" />
+            <OptionalSvgIcon name="profile" selected={activeIndex === 4} className={activeIndex === 4 ? "h-6 w-6" : "h-5 w-5"} colorClassName="text-[var(--phone-menu-icon)]" />
           </button>
           <div className="phone-menu-search-input absolute inset-0 z-20 flex items-center gap-2 px-2">
             <input ref={searchInputRef} value={searchQuery} onChange={event => setSearchQuery(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && searchResults[0]) openStock(searchResults[0].symbol); }} placeholder="Search stocks…" className="min-w-0 flex-1 bg-transparent px-3 text-base text-text-primary outline-none placeholder:text-text-muted" style={{ fontSize: 16, caretColor: "var(--color-accent)" }} />
