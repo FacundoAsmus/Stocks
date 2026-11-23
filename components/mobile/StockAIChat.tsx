@@ -1728,8 +1728,10 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         panel.dataset.keyboard = String(!!vv && window.innerHeight - current.height - current.top > 80);
         const keyboardInset = Math.max(0, window.innerHeight - current.height - current.top);
         const pill = mobilePillRef.current;
-        if (pill) {
+        if (pill && open) {
+          pill.style.position = "absolute";
           pill.style.top = `${documentTop + current.height}px`;
+          pill.style.bottom = "auto";
           pill.style.transform = open && keyboardInset > 8
             ? "translateY(calc(-100% - 12px + var(--phone-controls-lower)))"
             : "translateY(calc(-100% - env(safe-area-inset-bottom) + 0.5rem + var(--phone-controls-lower)))";
@@ -1871,8 +1873,12 @@ export function StockAIChat({ stock, currentPrice, sentiment, metrics, compariso
         <MemoizedChatMessages messages={messages} graphCtx={graphCtx} textColor={textColor} loading={loading} serverError={serverError} markDone={markDone} />
       </div>
     </div>}
-    {(!hideTrigger || open || backdropClosing) && <div ref={mobilePillRef} className={`smoked-glass-surface absolute z-[1002] overflow-hidden rounded-full border border-white/15 text-accent${open ? " ai-typing-bar" : " ai-aberration"}`} style={{
-      right: open ? "1rem" : "1.25rem", top: 0, transform: "translateY(calc(-100% - env(safe-area-inset-bottom) + 0.5rem + var(--phone-controls-lower)))",
+    {(!hideTrigger || open || backdropClosing) && <div ref={mobilePillRef} className={`smoked-glass-surface ${open ? "absolute" : "fixed"} z-[1002] overflow-hidden rounded-full border border-white/15 text-accent${open ? " ai-typing-bar" : " ai-aberration"}`} style={{
+      position: open ? "absolute" : "fixed",
+      right: open ? "1rem" : "1.25rem",
+      top: open ? 0 : "auto",
+      bottom: open ? "auto" : "calc(env(safe-area-inset-bottom) - 0.5rem - var(--phone-controls-lower))",
+      transform: open ? "translateY(calc(-100% - env(safe-area-inset-bottom) + 0.5rem + var(--phone-controls-lower)))" : "none",
       width: open ? "calc(100vw - 2rem)" : "3.5rem", height: "3.5rem", background: chatControlGlass,
       backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)",
       boxShadow: "0 24px 60px rgba(0,0,0,0.24), 0 5px 18px rgba(0,0,0,0.12), inset 0 0 16px rgba(0,0,0,0.18)",

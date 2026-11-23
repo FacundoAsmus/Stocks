@@ -34,7 +34,7 @@ const themeOptions: { value: Theme; label: string; iconName: string }[] = [
   { value: "system", label: "System", iconName: "theme-system" },
 ];
 
-export function AppearanceControls({ className = "" }: { className?: string }) {
+export function AppearanceControls({ className = "", variant = "settings" }: { className?: string; variant?: "settings" | "profile" }) {
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
   function changeTheme(next: Theme) {
     setTheme(next);
@@ -44,17 +44,27 @@ export function AppearanceControls({ className = "" }: { className?: string }) {
 
   return (
     <section className={className}>
-      <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent">Appearance</p>
-      <div className="overflow-hidden divide-y divide-border-subtle rounded-3xl border border-border-subtle bg-panel">
+      {variant === "profile"
+        ? <h2 className="mb-3 text-xl font-semibold text-text-primary">Appearance</h2>
+        : <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent">Appearance</p>}
+      <div
+        className={variant === "profile"
+          ? "relative overflow-hidden rounded-3xl border border-transparent px-4"
+          : "overflow-hidden divide-y divide-border-subtle rounded-3xl border border-border-subtle bg-panel"}
+        style={variant === "profile" ? { backgroundColor: "var(--phone-menu-background)" } : undefined}
+      >
+        <div className={variant === "profile" ? "relative z-[1] divide-y divide-border-subtle" : undefined}>
         {themeOptions.map(option => (
-          <button key={option.value} type="button" onClick={() => changeTheme(option.value)} className="flex w-full items-center justify-between px-4 py-3.5 text-left">
-            <span className="flex items-center gap-3 text-sm text-text-primary">
+          <button key={option.value} type="button" onClick={() => changeTheme(option.value)} className={cn("flex w-full items-center justify-between text-left", variant === "profile" ? "py-3.5" : "px-4 py-3.5")}>
+            <span className="flex items-center gap-3 text-sm font-medium text-text-primary">
               <OptionalSvgIcon name={option.iconName} className="h-4 w-4" colorClassName={theme === option.value ? "text-accent" : "text-text-muted"} />
               {option.label} Mode
             </span>
             <span className={cn("h-5 w-5 rounded-full border-2 transition-colors", theme === option.value ? "border-accent bg-accent" : "border-border-subtle")} />
           </button>
         ))}
+        </div>
+        {variant === "profile" && <span aria-hidden="true" className="watchlist-lower-outline" />}
       </div>
     </section>
   );

@@ -163,7 +163,7 @@ export default function ProfilePage() {
           <p className="mt-2 text-xs text-text-muted">Warrent receives this profile only when your name, description, and all 10 answers are complete.</p>
         </section>
 
-        <AppearanceControls className="mt-10 max-w-3xl lg:hidden" />
+        <AppearanceControls variant="profile" className="mt-10 max-w-3xl lg:hidden" />
       </div>
 
       {questionIndex !== null && (
